@@ -16,30 +16,23 @@ export default function OnboardingPage() {
   // すでにスタジオを持っている場合はダッシュボードへリダイレクト
   useEffect(() => {
     async function checkStudio() {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const res = await fetch("/api/onboarding/status");
+      const data = await res.json();
 
-      if (!user) {
+      if (data.redirectToLogin) {
         router.push("/login");
         return;
       }
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("studio_id, role")
-        .eq("id", user.id)
-        .single();
-
-      if (profile?.studio_id) {
-        // すでにスタジオがある → ダッシュボードへ
+      if (data.hasStudio) {
         router.push("/dashboard");
         return;
       }
 
-      // メールをデフォルト値にセット
-      setStudioEmail(user.email || "");
+      // メールをデフォルト値にセット（ログイン状態のユーザー情報が必要な場合は別 API で取得可能）
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      setStudioEmail(user?.email || "");
       setChecking(false);
     }
 
@@ -51,50 +44,31 @@ export default function OnboardingPage() {
     setError("");
     setLoading(true);
 
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      setError("Session expired. Please sign in again.");
-      setLoading(false);
-      return;
-    }
-
-    // 1. スタジオを作成
-    const { data: studio, error: studioError } = await supabase
-      .from("studios")
-      .insert({
+    const res = await fetch("/api/onboarding/create-studio", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         name: studioName,
-        email: studioEmail,
+        email: studioEmail || null,
         phone: studioPhone || null,
-      })
-      .select()
-      .single();
+      }),
+    });
 
-    if (studioError) {
-      setError(studioError.message);
+    let result: { error?: string };
+    try {
+      result = await res.json();
+    } catch {
+      setError("Failed to create studio. Please try again.");
       setLoading(false);
       return;
     }
 
-    // 2. プロフィールを更新（studio_id と role = owner）
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .update({
-        studio_id: studio.id,
-        role: "owner",
-      })
-      .eq("id", user.id);
-
-    if (profileError) {
-      setError(profileError.message);
+    if (!res.ok) {
+      setError(result.error || "Failed to create studio.");
       setLoading(false);
       return;
     }
 
-    // ダッシュボードへ
     router.push("/dashboard");
     router.refresh();
   }
