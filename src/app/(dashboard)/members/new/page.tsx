@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
 
 export default function NewMemberPage() {
   const router = useRouter();
@@ -20,26 +19,7 @@ export default function NewMemberPage() {
     setError("");
     setLoading(true);
 
-    const supabase = createClient();
-
-    // 現在のユーザーの studio_id を取得
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    const { data: ownerProfile } = await supabase
-      .from("profiles")
-      .select("studio_id")
-      .eq("id", user!.id)
-      .single();
-
-    if (!ownerProfile?.studio_id) {
-      setError("Studio not found.");
-      setLoading(false);
-      return;
-    }
-
-    // 1. API Route で会員の Auth ユーザーを作成
+    // API Route で会員を作成（studio_id はサーバー側で取得）
     const res = await fetch("/api/members/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -49,7 +29,6 @@ export default function NewMemberPage() {
         phone,
         planType,
         credits: planType === "monthly" ? -1 : credits,
-        studioId: ownerProfile.studio_id,
       }),
     });
 

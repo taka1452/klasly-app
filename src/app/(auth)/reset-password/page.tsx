@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import PasswordField from "@/components/ui/password-field";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -124,43 +125,27 @@ export default function ResetPasswordPage() {
           </div>
         )}
 
-        <div>
-          <label
-            htmlFor="password"
-            className="block text-sm font-medium text-gray-700"
-          >
-            New password
-          </label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="At least 6 characters"
-            required
-            minLength={6}
-            className="input-field mt-1"
-          />
-        </div>
+        <PasswordField
+          id="password"
+          label="New password"
+          value={password}
+          onChange={setPassword}
+          placeholder="At least 6 characters"
+          required
+          minLength={6}
+          autoComplete="new-password"
+        />
 
-        <div>
-          <label
-            htmlFor="confirmPassword"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Confirm new password
-          </label>
-          <input
-            id="confirmPassword"
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="Repeat your password"
-            required
-            minLength={6}
-            className="input-field mt-1"
-          />
-        </div>
+        <PasswordField
+          id="confirmPassword"
+          label="Confirm new password"
+          value={confirmPassword}
+          onChange={setConfirmPassword}
+          placeholder="Repeat your password"
+          required
+          minLength={6}
+          autoComplete="new-password"
+        />
 
         <button
           type="submit"

@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
-    // リクエストしたユーザーがオーナーか確認
+    // 認証確認
     const serverSupabase = await createServerClient();
     const {
       data: { user },
@@ -14,7 +14,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data: ownerProfile } = await serverSupabase
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceRoleKey) {
+      return NextResponse.json(
+        { error: "Server configuration error: SUPABASE_SERVICE_ROLE_KEY is not set." },
+        { status: 500 }
+      );
+    }
+
+    // service_role で profiles を取得（RLS をバイパスして 500 を回避）
+    const adminSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      serviceRoleKey
+    );
+
+    const { data: ownerProfile } = await adminSupabase
       .from("profiles")
       .select("studio_id, role")
       .eq("id", user.id)
@@ -27,18 +41,20 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { fullName, email, phone, planType, credits, studioId } = body;
 
-    if (!fullName || !email || !studioId) {
+    if (!fullName || !email) {
       return NextResponse.json(
-        { error: "Missing required fields: fullName, email, studioId" },
+        { error: "Missing required fields: fullName, email" },
         { status: 400 }
       );
     }
 
-    // service_role key で管理者クライアントを作成
-    const adminSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const targetStudioId = studioId ?? ownerProfile.studio_id;
+    if (!targetStudioId) {
+      return NextResponse.json(
+        { error: "Studio not found. Please complete onboarding first." },
+        { status: 400 }
+      );
+    }
 
     // 1. Auth ユーザーを作成（ランダムパスワード＋招待メール）
     const tempPassword =
@@ -65,7 +81,7 @@ export async function POST(request: Request) {
     await adminSupabase
       .from("profiles")
       .update({
-        studio_id: studioId,
+        studio_id: targetStudioId,
         role: "member",
         full_name: fullName,
         phone: phone || null,
@@ -76,7 +92,7 @@ export async function POST(request: Request) {
     const { error: memberError } = await adminSupabase
       .from("members")
       .insert({
-        studio_id: studioId,
+        studio_id: targetStudioId,
         profile_id: authUser.user.id,
         plan_type: planType || "drop_in",
         credits: credits ?? 0,
