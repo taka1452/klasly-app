@@ -40,6 +40,11 @@ export default async function DashboardLayout({
     redirect("/onboarding");
   }
 
+  // 会員は会員用画面へ
+  if (profile?.role === "member") {
+    redirect("/schedule");
+  }
+
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar
