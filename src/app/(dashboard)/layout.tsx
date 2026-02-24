@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@supabase/supabase-js";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 import Sidebar from "@/components/ui/sidebar";
 import Header from "@/components/ui/header";
 
@@ -8,7 +9,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
+  const supabase = await createServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -17,12 +18,22 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  // プロフィール取得
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*, studios(*)")
-    .eq("id", user.id)
-    .single();
+  // プロフィール取得（service_role で RLS をバイパス）
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const { data: profile } = serviceRoleKey
+    ? await createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        serviceRoleKey
+      )
+      .from("profiles")
+      .select("*, studios(*)")
+      .eq("id", user.id)
+      .single()
+    : await supabase
+        .from("profiles")
+        .select("*, studios(*)")
+        .eq("id", user.id)
+        .single();
 
   // スタジオ未作成の場合はオンボーディングへ
   if (!profile?.studio_id) {

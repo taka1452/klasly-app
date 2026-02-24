@@ -69,6 +69,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
+    // API ルートは除外（認証は各 API で処理）
+    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|api).*)",
   ],
 };
