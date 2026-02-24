@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@supabase/supabase-js";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { formatCredits, formatDate, getPlanLabel, getStatusColor } from "@/lib/utils";
@@ -11,7 +12,22 @@ export default async function MemberDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
+  const serverSupabase = await createServerClient();
+  const {
+    data: { user },
+  } = await serverSupabase.auth.getUser();
+
+  if (!user) {
+    notFound();
+  }
+
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabase = serviceRoleKey
+    ? createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        serviceRoleKey
+      )
+    : serverSupabase;
 
   const { data: member } = await supabase
     .from("members")
@@ -20,6 +36,17 @@ export default async function MemberDetailPage({
     .single();
 
   if (!member) {
+    notFound();
+  }
+
+  // オーナーの studio_id と一致するか確認
+  const { data: ownerProfile } = await supabase
+    .from("profiles")
+    .select("studio_id")
+    .eq("id", user.id)
+    .single();
+
+  if (ownerProfile?.studio_id !== member.studio_id) {
     notFound();
   }
 

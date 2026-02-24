@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@supabase/supabase-js";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { formatCredits, getPlanLabel, getStatusColor } from "@/lib/utils";
 import MemberSearch from "@/components/members/member-search";
@@ -9,22 +10,38 @@ export default async function MembersPage({
   searchParams: Promise<{ q?: string; status?: string }>;
 }) {
   const params = await searchParams;
-  const supabase = await createClient();
+  const serverSupabase = await createServerClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await serverSupabase.auth.getUser();
+
+  if (!user) {
+    return null; // middleware でリダイレクトされる想定
+  }
+
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabase = serviceRoleKey
+    ? createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        serviceRoleKey
+      )
+    : serverSupabase;
 
   const { data: profile } = await supabase
     .from("profiles")
     .select("studio_id")
-    .eq("id", user!.id)
+    .eq("id", user.id)
     .single();
+
+  if (!profile?.studio_id) {
+    return null; // オンボーディングへリダイレクトされる想定
+  }
 
   // 会員一覧を取得（profiles と JOIN）
   let query = supabase
     .from("members")
     .select("*, profiles(full_name, email, phone)")
-    .eq("studio_id", profile!.studio_id!)
+    .eq("studio_id", profile.studio_id)
     .order("created_at", { ascending: false });
 
   // ステータスフィルター

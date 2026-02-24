@@ -32,7 +32,14 @@ export default function NewMemberPage() {
       }),
     });
 
-    const result = await res.json();
+    let result: { error?: string };
+    try {
+      result = await res.json();
+    } catch {
+      setError("Failed to create member. Please try again.");
+      setLoading(false);
+      return;
+    }
 
     if (!res.ok) {
       setError(result.error || "Failed to create member.");
