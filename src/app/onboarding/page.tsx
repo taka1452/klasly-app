@@ -13,31 +13,54 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
 
-  // すでにスタジオを持っている場合はダッシュボードへリダイレクト
+  // すでにスタジオを持っている場合はダッシュボードへリダイレクト（マウント時に1回のみ）
   useEffect(() => {
+    let cancelled = false;
+
     async function checkStudio() {
-      const res = await fetch("/api/onboarding/status");
-      const data = await res.json();
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      if (data.redirectToLogin) {
-        router.push("/login");
-        return;
+        const res = await fetch("/api/onboarding/status", {
+          credentials: "same-origin",
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        const data = await res.json().catch(() => ({}));
+
+        if (cancelled) return;
+
+        if (data.redirectToLogin) {
+          router.push("/login");
+          return;
+        }
+
+        if (data.hasStudio) {
+          router.push("/dashboard");
+          return;
+        }
+
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!cancelled) {
+          setStudioEmail(user?.email || "");
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError("Failed to load. Please refresh the page.");
+        }
+      } finally {
+        if (!cancelled) {
+          setChecking(false);
+        }
       }
-
-      if (data.hasStudio) {
-        router.push("/dashboard");
-        return;
-      }
-
-      // メールをデフォルト値にセット（ログイン状態のユーザー情報が必要な場合は別 API で取得可能）
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      setStudioEmail(user?.email || "");
-      setChecking(false);
     }
 
     checkStudio();
-  }, [router]);
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleCreateStudio(e: React.FormEvent) {
     e.preventDefault();
