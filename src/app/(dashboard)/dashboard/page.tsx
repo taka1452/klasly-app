@@ -48,6 +48,18 @@ export default async function DashboardPage() {
   const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1)
     .toISOString()
     .split("T")[0];
+  const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    .toISOString()
+    .split("T")[0];
+
+  // 0. Studio plan status (for past_due alert)
+  const { data: studio } = await supabase
+    .from("studios")
+    .select("plan_status")
+    .eq("id", profile.studio_id)
+    .single();
+
+  const isPastDue = studio?.plan_status === "past_due";
 
   // 1. Active Members count
   const { count: activeMembersCount } = await supabase
@@ -80,7 +92,7 @@ export default async function DashboardPage() {
   // 4. This Month's Revenue (payments: status='paid', paid_at this month)
   const { data: paidPayments } = await supabase
     .from("payments")
-    .select("amount")
+    .select("amount, payment_type, type")
     .eq("studio_id", profile.studio_id)
     .eq("status", "paid")
     .gte("paid_at", `${monthStart}T00:00:00Z`)
@@ -88,6 +100,65 @@ export default async function DashboardPage() {
 
   const monthRevenue =
     paidPayments?.reduce((sum, p) => sum + (p.amount ?? 0), 0) ?? 0;
+
+  // 5. Previous month revenue (for comparison)
+  const { data: prevMonthPayments } = await supabase
+    .from("payments")
+    .select("amount")
+    .eq("studio_id", profile.studio_id)
+    .eq("status", "paid")
+    .gte("paid_at", `${prevMonthStart}T00:00:00Z`)
+    .lt("paid_at", `${monthStart}T00:00:00Z`);
+
+  const prevMonthRevenue =
+    prevMonthPayments?.reduce((sum, p) => sum + (p.amount ?? 0), 0) ?? 0;
+
+  // 6. Revenue breakdown for this month (Subscriptions, Class Packs, Drop-ins)
+  const subscriptionTypes = ["subscription", "monthly"];
+  const classPackTypes = ["pack_5", "pack_10"];
+
+  const revenueBreakdown = {
+    subscriptions:
+      paidPayments
+        ?.filter(
+          (p) =>
+            subscriptionTypes.includes(p.payment_type ?? "") ||
+            subscriptionTypes.includes(p.type ?? "")
+        )
+        .reduce((sum, p) => sum + (p.amount ?? 0), 0) ?? 0,
+    classPacks:
+      paidPayments
+        ?.filter(
+          (p) =>
+            classPackTypes.includes(p.payment_type ?? "") ||
+            classPackTypes.includes(p.type ?? "")
+        )
+        .reduce((sum, p) => sum + (p.amount ?? 0), 0) ?? 0,
+    dropIns:
+      paidPayments
+        ?.filter(
+          (p) =>
+            (p.payment_type ?? p.type ?? "") === "drop_in"
+        )
+        .reduce((sum, p) => sum + (p.amount ?? 0), 0) ?? 0,
+  };
+
+  // 7. Failed payments (status='failed')
+  const { data: failedPayments } = await supabase
+    .from("payments")
+    .select(`
+      id,
+      amount,
+      created_at,
+      member_id,
+      members (
+        profiles (full_name)
+      )
+    `)
+    .eq("studio_id", profile.studio_id)
+    .eq("status", "failed")
+    .order("created_at", { ascending: false })
+    .limit(10);
 
   // Today's classes list (for display with booking counts)
   const { data: todayClassesList } = await supabase
@@ -210,8 +281,40 @@ export default async function DashboardPage() {
   );
   const topActivities = activities.slice(0, 10);
 
+  const revenueChange =
+    prevMonthRevenue > 0
+      ? ((monthRevenue - prevMonthRevenue) / prevMonthRevenue) * 100
+      : monthRevenue > 0
+        ? 100
+        : 0;
+
+  const maxBarValue = Math.max(
+    revenueBreakdown.subscriptions,
+    revenueBreakdown.classPacks,
+    revenueBreakdown.dropIns,
+    1
+  );
+
   return (
     <div>
+      {/* Past due alert */}
+      {isPastDue && (
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <p className="text-sm font-medium text-red-800">
+              Your studio plan payment failed. Please update your payment method
+              to continue using all features.
+            </p>
+            <Link
+              href="/settings/billing"
+              className="inline-flex items-center text-sm font-semibold text-red-700 hover:text-red-800"
+            >
+              Update payment →
+            </Link>
+          </div>
+        </div>
+      )}
+
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         <p className="mt-1 text-sm text-gray-500">
@@ -250,8 +353,114 @@ export default async function DashboardPage() {
           <p className="mt-2 text-3xl font-bold text-gray-900">
             {formatCurrency(monthRevenue)}
           </p>
+          {prevMonthRevenue > 0 || monthRevenue > 0 ? (
+            <p
+              className={`mt-1 text-sm ${revenueChange >= 0 ? "text-green-600" : "text-red-600"}`}
+            >
+              {revenueChange >= 0 ? "+" : ""}
+              {revenueChange.toFixed(1)}% vs last month
+            </p>
+          ) : null}
         </div>
       </div>
+
+      {/* Revenue breakdown */}
+      <div className="mt-8">
+        <h2 className="mb-4 text-lg font-semibold text-gray-900">
+          Revenue Breakdown (This Month)
+        </h2>
+        <div className="card space-y-4">
+          <div>
+            <div className="flex justify-between text-sm">
+              <span className="font-medium text-gray-700">Subscriptions</span>
+              <span className="text-gray-900">
+                {formatCurrency(revenueBreakdown.subscriptions)}
+              </span>
+            </div>
+            <div className="mt-1 h-2 overflow-hidden rounded-full bg-gray-100">
+              <div
+                className="h-full rounded-full bg-brand-500"
+                style={{
+                  width: `${(revenueBreakdown.subscriptions / maxBarValue) * 100}%`,
+                }}
+              />
+            </div>
+          </div>
+          <div>
+            <div className="flex justify-between text-sm">
+              <span className="font-medium text-gray-700">Class Packs</span>
+              <span className="text-gray-900">
+                {formatCurrency(revenueBreakdown.classPacks)}
+              </span>
+            </div>
+            <div className="mt-1 h-2 overflow-hidden rounded-full bg-gray-100">
+              <div
+                className="h-full rounded-full bg-emerald-500"
+                style={{
+                  width: `${(revenueBreakdown.classPacks / maxBarValue) * 100}%`,
+                }}
+              />
+            </div>
+          </div>
+          <div>
+            <div className="flex justify-between text-sm">
+              <span className="font-medium text-gray-700">Drop-ins</span>
+              <span className="text-gray-900">
+                {formatCurrency(revenueBreakdown.dropIns)}
+              </span>
+            </div>
+            <div className="mt-1 h-2 overflow-hidden rounded-full bg-gray-100">
+              <div
+                className="h-full rounded-full bg-amber-500"
+                style={{
+                  width: `${(revenueBreakdown.dropIns / maxBarValue) * 100}%`,
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Failed payments */}
+      {failedPayments && failedPayments.length > 0 && (
+        <div className="mt-8">
+          <h2 className="mb-4 text-lg font-semibold text-gray-900">
+            Failed Payments
+          </h2>
+          <div className="card overflow-hidden p-0">
+            <div className="divide-y divide-gray-200">
+              {failedPayments.map((p) => {
+                const m = p.members as { profiles?: { full_name?: string } } | null;
+                const pf = m?.profiles;
+                const name = p.member_id
+                  ? ((Array.isArray(pf) ? pf[0]?.full_name : pf?.full_name) ?? "Member")
+                  : "Studio plan";
+                return (
+                  <div
+                    key={p.id}
+                    className="flex items-center justify-between gap-4 px-6 py-4"
+                  >
+                    <div>
+                      <p className="font-medium text-gray-900">{name}</p>
+                      <p className="text-sm text-gray-500">
+                        {formatCurrency(p.amount)} · {formatDate(p.created_at ?? "")}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn-secondary text-sm"
+                      disabled
+                      title="Coming soon"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Today's classes */}
       <div className="mt-8">
