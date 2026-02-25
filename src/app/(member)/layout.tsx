@@ -57,6 +57,18 @@ export default async function MemberLayout({
           >
             My Bookings
           </Link>
+          <Link
+            href="/purchase"
+            className="text-sm font-medium text-gray-600 hover:text-gray-900"
+          >
+            Purchase
+          </Link>
+          <Link
+            href="/my-payments"
+            className="text-sm font-medium text-gray-600 hover:text-gray-900"
+          >
+            Payments
+          </Link>
         </div>
       </nav>
       <main className="mx-auto max-w-4xl px-4 py-6">{children}</main>

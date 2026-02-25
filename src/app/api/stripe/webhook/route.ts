@@ -46,8 +46,55 @@ export async function POST(request: Request) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const studioId = session.metadata?.studio_id;
-        const subscriptionId = session.subscription as string | null;
+        const purchaseType = session.metadata?.purchase_type;
+        const memberId = session.metadata?.member_id;
+        const creditsStr = session.metadata?.credits;
 
+        if (purchaseType && memberId && studioId) {
+          const credits = parseInt(creditsStr ?? "0", 10);
+          const amount = session.amount_total ?? 0;
+          const paymentType =
+            purchaseType === "monthly" ? "monthly" : purchaseType;
+
+          await adminSupabase.from("payments").insert({
+            studio_id: studioId,
+            member_id: memberId,
+            amount,
+            currency: session.currency ?? "usd",
+            type: paymentType,
+            status: "paid",
+            stripe_payment_intent_id: session.payment_intent as string | null,
+            payment_type: paymentType,
+            paid_at: new Date().toISOString(),
+          });
+
+          if (purchaseType === "monthly") {
+            const subscriptionId = session.subscription as string | null;
+            await adminSupabase
+              .from("members")
+              .update({
+                plan_type: "monthly",
+                credits: -1,
+                stripe_subscription_id: subscriptionId,
+              })
+              .eq("id", memberId);
+          } else {
+            const { data: m } = await adminSupabase
+              .from("members")
+              .select("credits")
+              .eq("id", memberId)
+              .single();
+            const current = m?.credits ?? 0;
+            const next = Math.max(0, current) + credits;
+            await adminSupabase
+              .from("members")
+              .update({ credits: next })
+              .eq("id", memberId);
+          }
+          break;
+        }
+
+        const subscriptionId = session.subscription as string | null;
         if (!studioId || !subscriptionId) break;
 
         const subscription = await stripe.subscriptions.retrieve(
@@ -88,24 +135,45 @@ export async function POST(request: Request) {
           .eq("stripe_subscription_id", subscriptionId)
           .single();
 
-        if (!studio) break;
+        if (studio) {
+          await adminSupabase
+            .from("studios")
+            .update({ plan_status: "active" })
+            .eq("id", studio.id);
 
-        await adminSupabase.from("studios").update({ plan_status: "active" }).eq(
-          "id",
-          studio.id
-        );
+          await adminSupabase.from("payments").insert({
+            studio_id: studio.id,
+            member_id: null,
+            amount: invoice.amount_paid,
+            currency: invoice.currency ?? "usd",
+            type: "subscription",
+            status: "paid",
+            stripe_invoice_id: invoice.id,
+            payment_type: "subscription",
+            paid_at: new Date().toISOString(),
+          });
+          break;
+        }
 
-        await adminSupabase.from("payments").insert({
-          studio_id: studio.id,
-          member_id: null,
-          amount: invoice.amount_paid,
-          currency: invoice.currency ?? "usd",
-          type: "subscription",
-          status: "paid",
-          stripe_invoice_id: invoice.id,
-          payment_type: "subscription",
-          paid_at: new Date().toISOString(),
-        });
+        const { data: member } = await adminSupabase
+          .from("members")
+          .select("id, studio_id")
+          .eq("stripe_subscription_id", subscriptionId)
+          .single();
+
+        if (member) {
+          await adminSupabase.from("payments").insert({
+            studio_id: member.studio_id,
+            member_id: member.id,
+            amount: invoice.amount_paid,
+            currency: invoice.currency ?? "usd",
+            type: "monthly",
+            status: "paid",
+            stripe_invoice_id: invoice.id,
+            payment_type: "monthly",
+            paid_at: new Date().toISOString(),
+          });
+        }
         break;
       }
 
@@ -153,16 +221,34 @@ export async function POST(request: Request) {
           .eq("stripe_subscription_id", subscriptionId)
           .single();
 
-        if (!studio) break;
+        if (studio) {
+          await adminSupabase
+            .from("studios")
+            .update({
+              plan: "free",
+              stripe_subscription_id: null,
+              plan_status: "active",
+            })
+            .eq("id", studio.id);
+          break;
+        }
 
-        await adminSupabase
-          .from("studios")
-          .update({
-            plan: "free",
-            stripe_subscription_id: null,
-            plan_status: "active",
-          })
-          .eq("id", studio.id);
+        const { data: member } = await adminSupabase
+          .from("members")
+          .select("id")
+          .eq("stripe_subscription_id", subscriptionId)
+          .single();
+
+        if (member) {
+          await adminSupabase
+            .from("members")
+            .update({
+              plan_type: "drop_in",
+              credits: 0,
+              stripe_subscription_id: null,
+            })
+            .eq("id", member.id);
+        }
         break;
       }
 
