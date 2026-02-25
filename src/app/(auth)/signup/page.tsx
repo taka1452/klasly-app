@@ -15,6 +15,7 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
@@ -175,7 +176,41 @@ export default function SignupPage() {
           autoComplete="new-password"
         />
 
-        <button type="submit" disabled={loading} className="btn-primary w-full">
+        <div className="flex items-start gap-3">
+          <input
+            id="agreeTerms"
+            type="checkbox"
+            checked={agreedToTerms}
+            onChange={(e) => setAgreedToTerms(e.target.checked)}
+            className="mt-1 h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+          />
+          <label htmlFor="agreeTerms" className="text-sm text-gray-600">
+            I agree to the{" "}
+            <Link
+              href="/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-brand-600 hover:text-brand-700 underline"
+            >
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link
+              href="/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-brand-600 hover:text-brand-700 underline"
+            >
+              Privacy Policy
+            </Link>
+          </label>
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading || !agreedToTerms}
+          className="btn-primary w-full"
+        >
           {loading ? "Creating account..." : "Create account"}
         </button>
       </form>
