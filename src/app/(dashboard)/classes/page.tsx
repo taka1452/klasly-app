@@ -3,6 +3,11 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import WeeklySchedule from "@/components/classes/weekly-schedule";
 import EmptyState from "@/components/ui/empty-state";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Classes - Klasly",
+};
 
 export default async function ClassesPage() {
   const serverSupabase = await createServerClient();

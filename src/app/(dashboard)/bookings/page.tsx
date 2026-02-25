@@ -3,6 +3,11 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { formatDate, formatTime } from "@/lib/utils";
 import EmptyState from "@/components/ui/empty-state";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Bookings - Klasly",
+};
 
 export default async function BookingsPage() {
   const serverSupabase = await createServerClient();

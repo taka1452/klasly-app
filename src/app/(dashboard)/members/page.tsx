@@ -4,6 +4,11 @@ import Link from "next/link";
 import { formatCredits, getPlanLabel, getStatusColor } from "@/lib/utils";
 import MemberSearch from "@/components/members/member-search";
 import EmptyState from "@/components/ui/empty-state";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Members - Klasly",
+};
 
 export default async function MembersPage({
   searchParams,

@@ -6,6 +6,11 @@ import {
   formatTime,
   formatCurrency,
 } from "@/lib/utils";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Dashboard - Klasly",
+};
 
 export default async function DashboardPage() {
   const serverSupabase = await createServerClient();

@@ -5,7 +5,10 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Klasly - Studio Management Made Simple",
+  title: {
+    default: "Klasly - Studio Management Made Simple",
+    template: "%s",
+  },
   description:
     "Simple management tool for small yoga, fitness, and dance studios.",
 };

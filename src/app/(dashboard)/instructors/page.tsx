@@ -2,6 +2,11 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import EmptyState from "@/components/ui/empty-state";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Instructors - Klasly",
+};
 
 export default async function InstructorsPage() {
   const serverSupabase = await createServerClient();
