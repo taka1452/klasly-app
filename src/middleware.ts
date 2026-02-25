@@ -64,6 +64,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // ロール別リダイレクトは Server Component（layout）で実施
+  // - member → /dashboard 等: (dashboard)/layout.tsx で /schedule へリダイレクト
+  // - owner → /schedule, /my-bookings: (member)/layout.tsx で /dashboard へリダイレクト
+
   return supabaseResponse;
 }
 
