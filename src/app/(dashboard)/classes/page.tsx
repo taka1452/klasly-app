@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import WeeklySchedule from "@/components/classes/weekly-schedule";
+import EmptyState from "@/components/ui/empty-state";
 
 export default async function ClassesPage() {
   const serverSupabase = await createServerClient();
@@ -54,7 +55,15 @@ export default async function ClassesPage() {
       </div>
 
       <div className="mt-6">
-        <WeeklySchedule classes={classes || []} />
+        {classes && classes.length > 0 ? (
+          <WeeklySchedule classes={classes} />
+        ) : (
+          <EmptyState
+            title="No classes yet"
+            actionLabel="+ Create your first class"
+            actionHref="/classes/new"
+          />
+        )}
       </div>
     </div>
   );

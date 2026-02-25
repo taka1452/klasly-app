@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { formatDate, formatTime } from "@/lib/utils";
+import EmptyState from "@/components/ui/empty-state";
 
 export default async function BookingsPage() {
   const serverSupabase = await createServerClient();
@@ -76,9 +77,9 @@ export default async function BookingsPage() {
         </div>
       </div>
 
-      <div className="card mt-6 overflow-hidden p-0">
+      <div className="mt-6">
         {sessions && sessions.length > 0 ? (
-          <div className="divide-y divide-gray-200">
+          <div className="card divide-y divide-gray-200 overflow-hidden p-0">
             {sessions.map((session) => {
               const confirmed = confirmedBySession[session.id] || 0;
               const waitlist = waitlistBySession[session.id] || 0;
@@ -87,9 +88,9 @@ export default async function BookingsPage() {
                 <Link
                   key={session.id}
                   href={`/bookings/${session.id}`}
-                  className="block px-6 py-4 transition-colors hover:bg-gray-50"
+                  className="block px-4 py-4 transition-colors hover:bg-gray-50 sm:px-6"
                 >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="font-medium text-gray-900">{className}</p>
                       <p className="text-sm text-gray-500">
@@ -120,9 +121,11 @@ export default async function BookingsPage() {
             })}
           </div>
         ) : (
-          <div className="px-6 py-12 text-center">
-            <p className="text-sm text-gray-500">No upcoming sessions.</p>
-          </div>
+          <EmptyState
+            title="No upcoming sessions"
+            actionLabel="Create your first class"
+            actionHref="/classes/new"
+          />
         )}
       </div>
     </div>

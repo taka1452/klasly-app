@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
-import Sidebar from "@/components/ui/sidebar";
-import Header from "@/components/ui/header";
+import DashboardShell from "@/components/ui/dashboard-shell";
 
 export default async function DashboardLayout({
   children,
@@ -46,18 +45,13 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar
-        currentRole={profile.role}
-        studioName={profile.studios?.name || "My Studio"}
-      />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Header
-          userName={profile.full_name || user.email || "User"}
-          userEmail={user.email || ""}
-        />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
-      </div>
-    </div>
+    <DashboardShell
+      currentRole={profile.role}
+      studioName={profile.studios?.name || "My Studio"}
+      userName={profile.full_name || user.email || "User"}
+      userEmail={user.email || ""}
+    >
+      {children}
+    </DashboardShell>
   );
 }

@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import EmptyState from "@/components/ui/empty-state";
 
 export default async function InstructorsPage() {
   const serverSupabase = await createServerClient();
@@ -71,13 +72,16 @@ export default async function InstructorsPage() {
         </Link>
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-6">
         {(instructors || []).length === 0 ? (
-          <div className="card col-span-full">
-            <p className="text-sm text-gray-500">No instructors yet. Add your first instructor!</p>
-          </div>
+          <EmptyState
+            title="No instructors yet"
+            actionLabel="+ Add your first instructor"
+            actionHref="/instructors/new"
+          />
         ) : (
-          (instructors || []).map((instructor) => {
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {(instructors || []).map((instructor) => {
             const profileData = instructor.profiles as {
               full_name?: string;
               email?: string;
@@ -111,7 +115,8 @@ export default async function InstructorsPage() {
                 </Link>
               </div>
             );
-          })
+            })}
+          </div>
         )}
       </div>
     </div>

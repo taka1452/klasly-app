@@ -1,16 +1,35 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+
+const PAGE_NAMES: Record<string, string> = {
+  "/dashboard": "Dashboard",
+  "/members": "Members",
+  "/instructors": "Instructors",
+  "/classes": "Classes",
+  "/bookings": "Bookings",
+};
+
+function getPageTitle(pathname: string): string {
+  if (PAGE_NAMES[pathname]) return PAGE_NAMES[pathname];
+  if (pathname.startsWith("/members/")) return "Member";
+  if (pathname.startsWith("/instructors/")) return "Instructor";
+  if (pathname.startsWith("/classes/")) return "Class";
+  if (pathname.startsWith("/bookings/")) return "Session";
+  return "Klasly";
+}
 
 type HeaderProps = {
   userName: string;
   userEmail: string;
+  onSidebarToggle?: () => void;
 };
 
-export default function Header({ userName, userEmail }: HeaderProps) {
+export default function Header({ userName, userEmail, onSidebarToggle }: HeaderProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -41,14 +60,23 @@ export default function Header({ userName, userEmail }: HeaderProps) {
     .slice(0, 2);
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-6">
-      {/* モバイル用ロゴ（サイドバーが隠れるとき表示） */}
-      <div className="md:hidden">
-        <span className="text-lg font-bold text-brand-700">Klasly</span>
+    <header className="flex h-16 items-center justify-between gap-4 border-b border-gray-200 bg-white px-4 sm:px-6">
+      {/* モバイル: ハンバーガー + ページタイトル */}
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <button
+          type="button"
+          aria-label="Open menu"
+          onClick={onSidebarToggle ?? (() => {})}
+          className="flex shrink-0 rounded-lg p-2 text-gray-600 hover:bg-gray-100 md:hidden"
+        >
+          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+          </svg>
+        </button>
+        <span className="truncate text-lg font-semibold text-gray-900">
+          {getPageTitle(pathname)}
+        </span>
       </div>
-
-      {/* ページタイトル（デスクトップ） */}
-      <div className="hidden md:block" />
 
       {/* ユーザーメニュー */}
       <div className="relative" ref={menuRef}>
