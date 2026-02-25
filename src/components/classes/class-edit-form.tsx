@@ -14,8 +14,11 @@ const DAY_OPTIONS = [
   { value: 6, label: "Saturday" },
 ];
 
+type InstructorOption = { id: string; full_name: string };
+
 type Props = {
   classId: string;
+  instructors: InstructorOption[];
   initialData: {
     name: string;
     description: string;
@@ -24,10 +27,15 @@ type Props = {
     durationMinutes: number;
     capacity: number;
     location: string;
+    instructorId: string;
   };
 };
 
-export default function ClassEditForm({ classId, initialData }: Props) {
+export default function ClassEditForm({
+  classId,
+  instructors,
+  initialData,
+}: Props) {
   const router = useRouter();
   const [name, setName] = useState(initialData.name);
   const [description, setDescription] = useState(initialData.description);
@@ -38,6 +46,7 @@ export default function ClassEditForm({ classId, initialData }: Props) {
   );
   const [capacity, setCapacity] = useState(initialData.capacity);
   const [location, setLocation] = useState(initialData.location);
+  const [instructorId, setInstructorId] = useState(initialData.instructorId);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -62,6 +71,7 @@ export default function ClassEditForm({ classId, initialData }: Props) {
         duration_minutes: durationMinutes,
         capacity,
         location: location || null,
+        instructor_id: instructorId || null,
       })
       .eq("id", classId);
 
@@ -91,6 +101,24 @@ export default function ClassEditForm({ classId, initialData }: Props) {
             Changes saved successfully!
           </div>
         )}
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Instructor (optional)
+          </label>
+          <select
+            value={instructorId}
+            onChange={(e) => setInstructorId(e.target.value)}
+            className="input-field mt-1"
+          >
+            <option value="">No instructor</option>
+            {instructors.map((i) => (
+              <option key={i.id} value={i.id}>
+                {i.full_name}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700">

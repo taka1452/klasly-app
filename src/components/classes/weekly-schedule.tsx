@@ -5,12 +5,21 @@ import { useRouter } from "next/navigation";
 import { getDayName, formatTime } from "@/lib/utils";
 import type { Class } from "@/types/database";
 
+type ClassWithInstructor = Class & {
+  instructors?: { profiles?: { full_name?: string } } | null;
+};
+
 type Props = {
-  classes: Class[];
+  classes: ClassWithInstructor[];
 };
 
 // 曜日表示順: Mon(1), Tue(2), Wed(3), Thu(4), Fri(5), Sat(6), Sun(0)
 const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
+
+function getInstructorName(cls: ClassWithInstructor): string {
+  const instr = cls.instructors as { profiles?: { full_name?: string } } | null;
+  return instr?.profiles?.full_name || "No instructor";
+}
 
 export default function WeeklySchedule({ classes }: Props) {
   const router = useRouter();
@@ -18,7 +27,7 @@ export default function WeeklySchedule({ classes }: Props) {
   const classesByDay = DAY_ORDER.reduce((acc, dayOfWeek) => {
     acc[dayOfWeek] = classes.filter((c) => c.day_of_week === dayOfWeek);
     return acc;
-  }, {} as Record<number, Class[]>);
+  }, {} as Record<number, ClassWithInstructor[]>);
 
   return (
     <div className="overflow-x-auto">
@@ -45,6 +54,9 @@ export default function WeeklySchedule({ classes }: Props) {
                       {formatTime(cls.start_time)}
                     </p>
                     <p className="text-xs text-gray-500">
+                      {getInstructorName(cls)}
+                    </p>
+                    <p className="text-xs text-gray-400">
                       {cls.duration_minutes} min · {cls.capacity} spots
                     </p>
                   </Link>
@@ -80,6 +92,9 @@ export default function WeeklySchedule({ classes }: Props) {
                       {formatTime(cls.start_time)}
                     </p>
                     <p className="text-xs text-gray-500">
+                      {getInstructorName(cls)}
+                    </p>
+                    <p className="text-xs text-gray-400">
                       {cls.duration_minutes} min · {cls.capacity} spots
                     </p>
                   </button>

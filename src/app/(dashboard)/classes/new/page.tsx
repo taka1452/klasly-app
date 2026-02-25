@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+
+type InstructorOption = { id: string; full_name: string };
 
 const DAY_OPTIONS = [
   { value: 0, label: "Sunday" },
@@ -24,8 +26,35 @@ export default function NewClassPage() {
   const [durationMinutes, setDurationMinutes] = useState(60);
   const [capacity, setCapacity] = useState(15);
   const [location, setLocation] = useState("");
+  const [instructorId, setInstructorId] = useState<string>("");
+  const [instructors, setInstructors] = useState<InstructorOption[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    async function fetchInstructors() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("studio_id")
+        .eq("id", user?.id)
+        .single();
+      if (!profile?.studio_id) return;
+      const { data } = await supabase
+        .from("instructors")
+        .select("id, profiles(full_name)")
+        .eq("studio_id", profile.studio_id)
+        .order("created_at", { ascending: false });
+      const list = (data || []).map((i) => {
+        const p = i.profiles as { full_name?: string } | null;
+        const raw = Array.isArray(p) ? p[0] : p;
+        return { id: i.id, full_name: raw?.full_name || "—" };
+      });
+      setInstructors(list);
+    }
+    fetchInstructors();
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,7 +87,7 @@ export default function NewClassPage() {
       .from("classes")
       .insert({
         studio_id: profile.studio_id,
-        instructor_id: null,
+        instructor_id: instructorId || null,
         name,
         description: description || null,
         day_of_week: dayOfWeek,
@@ -133,6 +162,24 @@ export default function NewClassPage() {
               {error}
             </div>
           )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Instructor (optional)
+            </label>
+            <select
+              value={instructorId}
+              onChange={(e) => setInstructorId(e.target.value)}
+              className="input-field mt-1"
+            >
+              <option value="">No instructor</option>
+              {instructors.map((i) => (
+                <option key={i.id} value={i.id}>
+                  {i.full_name}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700">

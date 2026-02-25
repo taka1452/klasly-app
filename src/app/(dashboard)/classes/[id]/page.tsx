@@ -31,9 +31,15 @@ export default async function ClassDetailPage({
 
   const { data: cls } = await supabase
     .from("classes")
-    .select("*")
+    .select("*, instructors(profiles(full_name))")
     .eq("id", id)
     .single();
+
+  const { data: instructors } = await supabase
+    .from("instructors")
+    .select("id, profiles(full_name)")
+    .eq("studio_id", cls?.studio_id || "")
+    .order("created_at", { ascending: false });
 
   if (!cls) {
     notFound();
@@ -101,6 +107,14 @@ export default async function ClassDetailPage({
         <div className="lg:col-span-2">
           <ClassEditForm
             classId={cls.id}
+            instructors={(instructors || []).map((i) => {
+              const p = i.profiles as { full_name?: string } | null;
+              const raw = Array.isArray(p) ? p[0] : p;
+              return {
+                id: i.id,
+                full_name: raw?.full_name || "—",
+              };
+            })}
             initialData={{
               name: cls.name,
               description: cls.description || "",
@@ -109,6 +123,7 @@ export default async function ClassDetailPage({
               durationMinutes: cls.duration_minutes,
               capacity: cls.capacity,
               location: cls.location || "",
+              instructorId: cls.instructor_id || "",
             }}
           />
         </div>

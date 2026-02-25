@@ -33,7 +33,7 @@ export default async function ClassesPage() {
 
   const { data: classes } = await supabase
     .from("classes")
-    .select("*")
+    .select("*, instructors(profiles(full_name))")
     .eq("studio_id", profile.studio_id)
     .eq("is_active", true)
     .order("day_of_week", { ascending: true })
