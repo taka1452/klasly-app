@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 type Props = {
@@ -38,6 +39,20 @@ export default function SettingsContent({ fullName, email }: Props) {
 
   return (
     <div className="mt-8 space-y-8">
+      {/* Billing */}
+      <div className="card">
+        <h2 className="text-lg font-semibold text-gray-900">Billing</h2>
+        <p className="mt-2 text-sm text-gray-600">
+          Manage your subscription and payment methods.
+        </p>
+        <Link
+          href="/settings/billing"
+          className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+        >
+          Manage billing →
+        </Link>
+      </div>
+
       {/* Profile */}
       <div className="card">
         <h2 className="text-lg font-semibold text-gray-900">Profile</h2>

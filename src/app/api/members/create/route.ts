@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
+import { checkPlanLimit } from "@/lib/plan-limits";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -53,6 +54,16 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "Studio not found. Please complete onboarding first." },
         { status: 400 }
+      );
+    }
+
+    const limitCheck = await checkPlanLimit(adminSupabase, targetStudioId);
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: `Member limit reached. Your ${limitCheck.plan} plan allows ${limitCheck.limit} members. Current: ${limitCheck.currentCount}.`,
+        },
+        { status: 403 }
       );
     }
 
