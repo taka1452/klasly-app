@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { formatCredits, getPlanLabel, getStatusColor } from "@/lib/utils";
+import { formatCredits, formatDate, getPlanLabel, getStatusColor } from "@/lib/utils";
 import MemberSearch from "@/components/members/member-search";
 import EmptyState from "@/components/ui/empty-state";
 import type { Metadata } from "next";
@@ -43,7 +43,7 @@ export default async function MembersPage({
     return null; // オンボーディングへリダイレクトされる想定
   }
 
-  // 会員一覧を取得（profiles と JOIN）
+  // 会員一覧を取得（profiles と JOIN、waiver_signed 含む）
   let query = supabase
     .from("members")
     .select("*, profiles(full_name, email, phone)")
@@ -106,7 +106,7 @@ export default async function MembersPage({
           <>
             {/* モバイル: カードリスト */}
             <div className="space-y-3 sm:hidden">
-              {filteredMembers.map((member: { id: string; profiles?: { full_name?: string; email?: string }; plan_type: string; credits: number; status: string }) => (
+              {filteredMembers.map((member: { id: string; profiles?: { full_name?: string; email?: string }; plan_type: string; credits: number; status: string; waiver_signed?: boolean; waiver_signed_at?: string }) => (
                 <Link
                   key={member.id}
                   href={`/members/${member.id}`}
@@ -120,13 +120,24 @@ export default async function MembersPage({
                       <p className="mt-0.5 text-sm text-gray-500 truncate">
                         {member.profiles?.email || "—"}
                       </p>
-                      <span
-                        className={`mt-2 inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${getStatusColor(
-                          member.status
-                        )}`}
-                      >
-                        {member.status}
-                      </span>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${getStatusColor(
+                            member.status
+                          )}`}
+                        >
+                          {member.status}
+                        </span>
+                        {member.waiver_signed ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-green-600">
+                            ✓ {formatDate(member.waiver_signed_at ?? "")}
+                          </span>
+                        ) : (
+                          <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+                            Pending
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <span className="shrink-0 text-sm font-medium text-brand-600">
                       View
@@ -153,11 +164,14 @@ export default async function MembersPage({
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                       Status
                     </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                      Waiver
+                    </th>
                     <th className="px-6 py-3" />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {filteredMembers.map((member: { id: string; profiles?: { full_name?: string; email?: string }; plan_type: string; credits: number; status: string }) => (
+                  {filteredMembers.map((member: { id: string; profiles?: { full_name?: string; email?: string }; plan_type: string; credits: number; status: string; waiver_signed?: boolean; waiver_signed_at?: string }) => (
                     <tr key={member.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
                         <div>
@@ -183,6 +197,20 @@ export default async function MembersPage({
                         >
                           {member.status}
                         </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        {(member as { waiver_signed?: boolean; waiver_signed_at?: string }).waiver_signed ? (
+                          <span className="inline-flex items-center gap-1 text-sm text-green-600">
+                            <span>✓</span>
+                            {formatDate(
+                              (member as { waiver_signed_at: string }).waiver_signed_at ?? ""
+                            )}
+                          </span>
+                        ) : (
+                          <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+                            Pending
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-right">
                         <Link

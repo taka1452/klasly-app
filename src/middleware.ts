@@ -50,8 +50,10 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/terms") ||
     request.nextUrl.pathname.startsWith("/cookies");
 
-  // 未ログインユーザーを認証ページ・公開ページ以外からリダイレクト
-  if (!user && !isAuthPage && !isPublicPage) {
+  const isWaiverPage = request.nextUrl.pathname.startsWith("/waiver");
+
+  // 未ログインユーザーを認証ページ・公開ページ・waiver署名ページ以外からリダイレクト
+  if (!user && !isAuthPage && !isPublicPage && !isWaiverPage) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
@@ -59,6 +61,7 @@ export async function middleware(request: NextRequest) {
 
   // ログイン済みユーザーが認証ページにアクセスしたらホームへ（/でロールに応じてリダイレクト）
   // （ただし auth/callback と onboarding は除外）
+  // waiver署名ページはログイン済みでもアクセス可能（メールリンク経由）
   if (
     user &&
     isAuthPage &&

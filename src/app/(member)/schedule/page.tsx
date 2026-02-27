@@ -32,17 +32,19 @@ export default async function SchedulePage() {
   let memberCredits = 0;
 
   let planStatus = "trialing";
+  let member: { id: string; credits: number; waiver_signed?: boolean } | null = null;
   if (profile?.studio_id) {
-    const { data: member } = await supabase
+    const { data: memberData } = await supabase
       .from("members")
-      .select("id, credits")
+      .select("id, credits, waiver_signed")
       .eq("studio_id", profile.studio_id)
       .eq("profile_id", user.id)
       .single();
 
-    if (member) {
-      memberId = member.id;
-      memberCredits = member.credits;
+    if (memberData) {
+      member = memberData;
+      memberId = memberData.id;
+      memberCredits = memberData.credits;
     }
 
     const { data: studio } = await supabase
@@ -105,12 +107,22 @@ export default async function SchedulePage() {
     );
   }
 
+  const waiverSigned = member ? member.waiver_signed : true;
+
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-900">Schedule</h1>
       <p className="mt-1 text-sm text-gray-500">
         Book your classes
       </p>
+
+      {!waiverSigned && (
+        <div className="mt-6 rounded-lg border-2 border-amber-200 bg-amber-50 px-4 py-3">
+          <p className="text-sm font-medium text-amber-800">
+            ⚠️ You haven&apos;t signed the waiver yet. Please check your email for the signing link, or contact the studio.
+          </p>
+        </div>
+      )}
 
       <div className="mt-6 space-y-4">
         {sessions && sessions.length > 0 ? (
