@@ -83,6 +83,25 @@ export type Booking = {
   created_at: string;
 };
 
+export type WaiverTemplate = {
+  id: string;
+  studio_id: string;
+  title: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type WaiverSignature = {
+  id: string;
+  member_id: string;
+  sign_token: string;
+  signed_name: string;
+  signed_at: string | null;
+  token_used: boolean;
+  created_at: string;
+};
+
 export type Payment = {
   id: string;
   studio_id: string;

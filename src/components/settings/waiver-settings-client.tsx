@@ -23,6 +23,8 @@ export default function WaiverSettingsClient({
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [resendLoading, setResendLoading] = useState<string | null>(null);
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkSuccess, setBulkSuccess] = useState<number | null>(null);
 
   async function handleCreate() {
     setLoading(true);
@@ -63,6 +65,32 @@ export default function WaiverSettingsClient({
       alert(err instanceof Error ? err.message : "Failed to save");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleBulkInvite() {
+    if (unsignedMembers.length === 0) return;
+    const ok = window.confirm(
+      `Send waiver invite to ${unsignedMembers.length} unsigned member${unsignedMembers.length !== 1 ? "s" : ""}?`
+    );
+    if (!ok) return;
+
+    setBulkLoading(true);
+    setBulkSuccess(null);
+    try {
+      const res = await fetch("/api/waiver/send-bulk-invite", {
+        method: "POST",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to send");
+      }
+      setBulkSuccess(data.sent ?? 0);
+      setTimeout(() => setBulkSuccess(null), 3000);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to send invites");
+    } finally {
+      setBulkLoading(false);
     }
   }
 
@@ -157,7 +185,23 @@ export default function WaiverSettingsClient({
         </p>
 
         {unsignedMembers.length > 0 && (
-          <div className="mt-6">
+          <>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={handleBulkInvite}
+                disabled={!!bulkLoading}
+                className="btn-primary text-sm"
+              >
+                {bulkLoading ? "Sending…" : "Send to All Unsigned Members"}
+              </button>
+              {bulkSuccess !== null && (
+                <span className="text-sm font-medium text-green-600">
+                  Invites sent to {bulkSuccess} members
+                </span>
+              )}
+            </div>
+            <div className="mt-6">
             <h3 className="text-sm font-medium text-gray-700">Unsigned members</h3>
             <ul className="mt-3 divide-y divide-gray-200">
               {unsignedMembers.map((m) => (
@@ -180,7 +224,8 @@ export default function WaiverSettingsClient({
                 </li>
               ))}
             </ul>
-          </div>
+            </div>
+          </>
         )}
 
         {unsignedMembers.length === 0 && totalCount > 0 && (
