@@ -151,6 +151,41 @@ export default function OnboardingPlanPage() {
         <p className="mt-6 text-center text-xs text-gray-500">
           Cancel anytime during the trial. No charge until {trialEndStr}.
         </p>
+
+        {/* DEV ONLY: Skip to dashboard without Stripe. Hidden in production. */}
+        {process.env.NODE_ENV === "development" && (
+          <button
+            type="button"
+            onClick={async () => {
+              const res = await fetch("/api/dev/skip-onboarding", {
+                method: "POST",
+              });
+              const data = await res.json().catch(() => ({}));
+              if (res.ok && data.redirect) {
+                window.location.href = data.redirect;
+              } else {
+                alert(data.error || "Skip failed");
+              }
+            }}
+            className="fixed bottom-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-amber-400/90 text-amber-900 shadow-lg hover:bg-amber-500/90"
+            title="Skip to dashboard (dev only)"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+              stroke="currentColor"
+              className="h-5 w-5"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+              />
+            </svg>
+          </button>
+        )}
       </div>
     </div>
   );
