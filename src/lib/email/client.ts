@@ -11,4 +11,6 @@ export const FROM_EMAIL = "Klasly <onboarding@resend.dev>";
 // 本番で klasly.app ドメイン検証後:
 // export const FROM_EMAIL = "Klasly <notifications@klasly.app>";
 
+export const WAIVER_FROM_EMAIL = "Klasly <notifications@klasly.app>";
+
 export { resend };

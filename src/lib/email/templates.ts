@@ -155,6 +155,32 @@ export function paymentFailed(params: {
   };
 }
 
+export function waiverInvite(params: {
+  memberName: string;
+  studioName: string;
+  signUrl: string;
+}) {
+  const { memberName, studioName, signUrl } = params;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">Please sign the waiver</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${memberName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      Welcome to <strong>${studioName}</strong>! Before your first class, please review and sign our liability waiver.
+    </p>
+    <p style="margin:0 0 16px;">
+      <a href="${signUrl}" style="display:inline-block;background:${BRAND_COLOR};color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">Sign Waiver</a>
+    </p>
+    <p style="margin:0 0 16px;font-size:14px;color:#6b7280;">
+      This link is unique to you. Please do not share it.
+    </p>
+    <p style="margin:0;font-size:14px;">Thanks,<br>${studioName}</p>
+  `;
+  return {
+    subject: `Please sign the waiver for ${studioName}`,
+    html: baseHtml(content),
+  };
+}
+
 export function welcomeMember(params: { memberName: string; studioName: string }) {
   const { memberName, studioName } = params;
   const content = `

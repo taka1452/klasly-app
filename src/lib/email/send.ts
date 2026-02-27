@@ -4,13 +4,19 @@ type SendEmailParams = {
   to: string;
   subject: string;
   html: string;
+  from?: string;
 };
 
 /**
  * メール送信ヘルパー
  * 送信失敗してもアプリの処理は止めない（try-catchでログ出力のみ）
  */
-export async function sendEmail({ to, subject, html }: SendEmailParams): Promise<boolean> {
+export async function sendEmail({
+  to,
+  subject,
+  html,
+  from = FROM_EMAIL,
+}: SendEmailParams): Promise<boolean> {
   if (!process.env.RESEND_API_KEY) {
     console.warn("[Email] RESEND_API_KEY is not set. Skipping email send.");
     return false;
@@ -18,7 +24,7 @@ export async function sendEmail({ to, subject, html }: SendEmailParams): Promise
 
   try {
     const { data, error } = await resend.emails.send({
-      from: FROM_EMAIL,
+      from,
       to,
       subject,
       html,
