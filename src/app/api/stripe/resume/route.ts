@@ -3,7 +3,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { stripe } from "@/lib/stripe/server";
 import { NextResponse } from "next/server";
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
     const serverSupabase = await createServerClient();
     const {
@@ -39,42 +39,25 @@ export async function POST(request: Request) {
 
     const { data: studio } = await adminSupabase
       .from("studios")
-      .select("stripe_subscription_id, plan_status")
+      .select("stripe_subscription_id")
       .eq("id", profile.studio_id)
       .single();
 
     if (!studio?.stripe_subscription_id) {
       return NextResponse.json(
-        { error: "No active subscription" },
+        { error: "No subscription found" },
         { status: 400 }
       );
     }
 
-    const planStatus = studio.plan_status ?? "active";
-    const body = (await request.json().catch(() => ({}))) as {
-      isTrialing?: boolean;
-      requestRefund?: boolean;
-    };
-    const isTrialing = body?.isTrialing ?? planStatus === "trialing";
+    await stripe.subscriptions.update(studio.stripe_subscription_id, {
+      cancel_at_period_end: false,
+    });
 
-    if (isTrialing) {
-      await stripe.subscriptions.cancel(studio.stripe_subscription_id);
-      await adminSupabase
-        .from("studios")
-        .update({
-          plan_status: "canceled",
-          stripe_subscription_id: null,
-        })
-        .eq("id", profile.studio_id);
-    } else {
-      await stripe.subscriptions.update(studio.stripe_subscription_id, {
-        cancel_at_period_end: true,
-      });
-      await adminSupabase
-        .from("studios")
-        .update({ cancel_at_period_end: true })
-        .eq("id", profile.studio_id);
-    }
+    await adminSupabase
+      .from("studios")
+      .update({ cancel_at_period_end: false })
+      .eq("id", profile.studio_id);
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {

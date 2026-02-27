@@ -3,9 +3,29 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { usePlanAccess } from "@/components/ui/plan-access-provider";
 
 export default function NewInstructorPage() {
   const router = useRouter();
+  const planAccess = usePlanAccess();
+
+  if (planAccess && !planAccess.canCreate) {
+    return (
+      <div className="card max-w-xl">
+        <p className="text-gray-600">
+          Your plan doesn&apos;t allow this action. Please update your payment
+          to add new instructors.
+        </p>
+        <Link
+          href="/settings/billing"
+          className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+        >
+          Go to Billing →
+        </Link>
+      </div>
+    );
+  }
+
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");

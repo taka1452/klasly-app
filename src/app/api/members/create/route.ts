@@ -1,6 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { checkPlanLimit } from "@/lib/plan-limits";
+import { sendEmail } from "@/lib/email/send";
+import { welcomeMember } from "@/lib/email/templates";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -95,6 +97,7 @@ export async function POST(request: Request) {
         studio_id: targetStudioId,
         role: "member",
         full_name: fullName,
+        email: email,
         phone: phone || null,
       })
       .eq("id", authUser.user.id);
@@ -122,6 +125,18 @@ export async function POST(request: Request) {
       type: "recovery",
       email,
     });
+
+    // 5. ウェルカムメールを送信
+    const { data: studioData } = await adminSupabase
+      .from("studios")
+      .select("name")
+      .eq("id", targetStudioId)
+      .single();
+    const { subject, html } = welcomeMember({
+      memberName: fullName,
+      studioName: studioData?.name ?? "Studio",
+    });
+    sendEmail({ to: email, subject, html });
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {

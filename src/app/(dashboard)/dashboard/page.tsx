@@ -52,15 +52,6 @@ export default async function DashboardPage() {
     .toISOString()
     .split("T")[0];
 
-  // 0. Studio plan status (for past_due alert)
-  const { data: studio } = await supabase
-    .from("studios")
-    .select("plan_status")
-    .eq("id", profile.studio_id)
-    .single();
-
-  const isPastDue = studio?.plan_status === "past_due";
-
   // 1. Active Members count
   const { count: activeMembersCount } = await supabase
     .from("members")
@@ -297,24 +288,6 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      {/* Past due alert */}
-      {isPastDue && (
-        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <p className="text-sm font-medium text-red-800">
-              Your studio plan payment failed. Please update your payment method
-              to continue using all features.
-            </p>
-            <Link
-              href="/settings/billing"
-              className="inline-flex items-center text-sm font-semibold text-red-700 hover:text-red-800"
-            >
-              Update payment →
-            </Link>
-          </div>
-        </div>
-      )}
-
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         <p className="mt-1 text-sm text-gray-500">

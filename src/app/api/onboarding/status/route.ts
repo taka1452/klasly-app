@@ -29,8 +29,25 @@ export async function GET() {
       .eq("id", user.id)
       .single();
 
+    if (!profile?.studio_id) {
+      return NextResponse.json({
+        hasStudio: false,
+        needsPlan: false,
+        redirectToLogin: false,
+      });
+    }
+
+    const { data: studio } = await adminSupabase
+      .from("studios")
+      .select("stripe_subscription_id")
+      .eq("id", profile.studio_id)
+      .single();
+
+    const needsPlan = !studio?.stripe_subscription_id;
+
     return NextResponse.json({
-      hasStudio: !!profile?.studio_id,
+      hasStudio: true,
+      needsPlan,
       redirectToLogin: false,
     });
   } catch {

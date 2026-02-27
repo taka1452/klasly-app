@@ -105,9 +105,9 @@ export default function SignupPage() {
       </div>
 
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Create your studio</h2>
+        <h2 className="text-2xl font-bold text-gray-900">Start your free trial</h2>
         <p className="mt-1 text-sm text-gray-500">
-          Start managing your studio in minutes
+          30 days free. No charge until your trial ends.
         </p>
       </div>
 

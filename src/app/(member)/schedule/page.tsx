@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { formatDate, formatTime } from "@/lib/utils";
+import { getPlanAccess } from "@/lib/plan-guard";
 import BookingButton from "@/components/bookings/booking-button";
 
 export default async function SchedulePage() {
@@ -30,6 +31,7 @@ export default async function SchedulePage() {
   let memberId: string | null = null;
   let memberCredits = 0;
 
+  let planStatus = "trialing";
   if (profile?.studio_id) {
     const { data: member } = await supabase
       .from("members")
@@ -42,7 +44,16 @@ export default async function SchedulePage() {
       memberId = member.id;
       memberCredits = member.credits;
     }
+
+    const { data: studio } = await supabase
+      .from("studios")
+      .select("plan_status")
+      .eq("id", profile.studio_id)
+      .single();
+    planStatus = studio?.plan_status ?? "trialing";
   }
+
+  const planAccess = getPlanAccess(planStatus);
 
   const today = new Date().toISOString().split("T")[0];
   const { data: sessions } = await supabase
@@ -129,6 +140,7 @@ export default async function SchedulePage() {
                   existingBooking={existing || null}
                   memberCredits={memberCredits}
                   confirmedCount={confirmed}
+                  canBook={planAccess.canBook}
                 />
               </div>
             );

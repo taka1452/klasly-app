@@ -110,7 +110,7 @@ export default function LoginPage() {
           href="/signup"
           className="font-medium text-brand-600 hover:text-brand-700"
         >
-          Create your studio
+          Start your free trial
         </Link>
       </p>
     </div>

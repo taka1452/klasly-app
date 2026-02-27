@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { getPlanAccess } from "@/lib/plan-guard";
 import PurchaseOptions from "@/components/purchase/purchase-options";
 
 export default async function PurchasePage() {
@@ -38,7 +39,7 @@ export default async function PurchasePage() {
   const { data: studio } = await supabase
     .from("studios")
     .select(
-      "id, drop_in_price, pack_5_price, pack_10_price, monthly_price"
+      "id, drop_in_price, pack_5_price, pack_10_price, monthly_price, plan_status"
     )
     .eq("id", member.studio_id)
     .single();
@@ -51,12 +52,29 @@ export default async function PurchasePage() {
     );
   }
 
+  const planAccess = getPlanAccess(studio.plan_status ?? "trialing");
   const pricing = {
     drop_in_price: studio.drop_in_price ?? 2000,
     pack_5_price: studio.pack_5_price ?? 8000,
     pack_10_price: studio.pack_10_price ?? 15000,
     monthly_price: studio.monthly_price ?? 12000,
   };
+
+  if (!planAccess.canPurchase) {
+    return (
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Purchase Options</h1>
+        <p className="mt-1 text-sm text-gray-500">
+          Buy credits or monthly membership
+        </p>
+        <div className="mt-6 card">
+          <p className="text-amber-600">
+            Purchases are temporarily unavailable. Please try again later.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>

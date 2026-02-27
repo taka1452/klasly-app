@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { usePlanAccess } from "@/components/ui/plan-access-provider";
 
 type InstructorOption = { id: string; full_name: string };
 
@@ -19,6 +20,25 @@ const DAY_OPTIONS = [
 
 export default function NewClassPage() {
   const router = useRouter();
+  const planAccess = usePlanAccess();
+
+  if (planAccess && !planAccess.canCreate) {
+    return (
+      <div className="card max-w-xl">
+        <p className="text-gray-600">
+          Your plan doesn&apos;t allow this action. Please update your payment
+          to add new classes.
+        </p>
+        <Link
+          href="/settings/billing"
+          className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+        >
+          Go to Billing →
+        </Link>
+      </div>
+    );
+  }
+
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [dayOfWeek, setDayOfWeek] = useState(1);

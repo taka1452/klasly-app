@@ -37,9 +37,31 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    const body = await request.json();
+    const { period } = body as { period?: string };
+
+    if (period !== "monthly" && period !== "yearly") {
+      return NextResponse.json(
+        { error: "Invalid period. Use monthly or yearly." },
+        { status: 400 }
+      );
+    }
+
+    const monthlyId = process.env.STRIPE_PRO_MONTHLY_PRICE_ID;
+    const yearlyId = process.env.STRIPE_PRO_YEARLY_PRICE_ID;
+
+    if (!monthlyId || !yearlyId) {
+      return NextResponse.json(
+        { error: "Stripe price IDs not configured" },
+        { status: 500 }
+      );
+    }
+
+    const newPriceId = period === "monthly" ? monthlyId : yearlyId;
+
     const { data: studio } = await adminSupabase
       .from("studios")
-      .select("stripe_subscription_id, plan_status")
+      .select("stripe_subscription_id")
       .eq("id", profile.studio_id)
       .single();
 
@@ -50,31 +72,28 @@ export async function POST(request: Request) {
       );
     }
 
-    const planStatus = studio.plan_status ?? "active";
-    const body = (await request.json().catch(() => ({}))) as {
-      isTrialing?: boolean;
-      requestRefund?: boolean;
-    };
-    const isTrialing = body?.isTrialing ?? planStatus === "trialing";
+    const sub = await stripe.subscriptions.retrieve(
+      studio.stripe_subscription_id,
+      { expand: ["items.data.price"] }
+    );
 
-    if (isTrialing) {
-      await stripe.subscriptions.cancel(studio.stripe_subscription_id);
-      await adminSupabase
-        .from("studios")
-        .update({
-          plan_status: "canceled",
-          stripe_subscription_id: null,
-        })
-        .eq("id", profile.studio_id);
-    } else {
-      await stripe.subscriptions.update(studio.stripe_subscription_id, {
-        cancel_at_period_end: true,
-      });
-      await adminSupabase
-        .from("studios")
-        .update({ cancel_at_period_end: true })
-        .eq("id", profile.studio_id);
+    const itemId = sub.items.data[0]?.id;
+    if (!itemId) {
+      return NextResponse.json(
+        { error: "Subscription has no items" },
+        { status: 400 }
+      );
     }
+
+    await stripe.subscriptions.update(studio.stripe_subscription_id, {
+      items: [{ id: itemId, price: newPriceId }],
+      proration_behavior: "always_invoice",
+    });
+
+    await adminSupabase
+      .from("studios")
+      .update({ subscription_period: period })
+      .eq("id", profile.studio_id);
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {

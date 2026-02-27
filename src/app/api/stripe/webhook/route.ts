@@ -2,6 +2,9 @@ import { createClient } from "@supabase/supabase-js";
 import { stripe } from "@/lib/stripe/server";
 import Stripe from "stripe";
 import { NextResponse } from "next/server";
+import { sendEmail } from "@/lib/email/send";
+import { paymentReceipt, paymentFailed } from "@/lib/email/templates";
+
 
 export const runtime = "nodejs";
 
@@ -38,9 +41,6 @@ export async function POST(request: Request) {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       serviceRoleKey
     );
-
-    const studioPriceId = process.env.STRIPE_STUDIO_PRICE_ID;
-    const growPriceId = process.env.STRIPE_GROW_PRICE_ID;
 
     switch (event.type) {
       case "checkout.session.completed": {
@@ -91,6 +91,40 @@ export async function POST(request: Request) {
               .update({ credits: next })
               .eq("id", memberId);
           }
+
+          const { data: memberProfile } = await adminSupabase
+            .from("members")
+            .select("profiles(full_name, email)")
+            .eq("id", memberId)
+            .single();
+          const { data: studioData } = await adminSupabase
+            .from("studios")
+            .select("name")
+            .eq("id", studioId)
+            .single();
+          const memberProf = (memberProfile as { profiles?: { full_name?: string; email?: string } })?.profiles;
+          const prof = Array.isArray(memberProf) ? memberProf[0] : memberProf;
+          const toEmail = prof?.email;
+          const memberName = prof?.full_name ?? "Member";
+          const studioName = studioData?.name ?? "Studio";
+
+          if (toEmail) {
+            const desc =
+              purchaseType === "monthly"
+                ? "Monthly membership"
+                : purchaseType === "pack_5"
+                  ? "5-Class Pack"
+                  : purchaseType === "pack_10"
+                    ? "10-Class Pack"
+                    : "Drop-in";
+            const { subject, html } = paymentReceipt({
+              memberName,
+              amount,
+              description: desc,
+              studioName,
+            });
+            sendEmail({ to: toEmail, subject, html });
+          }
           break;
         }
 
@@ -100,24 +134,80 @@ export async function POST(request: Request) {
         const subscription = await stripe.subscriptions.retrieve(
           subscriptionId
         );
-        const priceId =
-          subscription.items.data[0]?.price?.id ?? "";
+        const priceId = subscription.items.data[0]?.price?.id ?? "";
+        const period: "monthly" | "yearly" =
+          priceId === process.env.STRIPE_PRO_YEARLY_PRICE_ID ? "yearly" : "monthly";
 
-        const plan =
-          priceId === growPriceId
-            ? "grow"
-            : priceId === studioPriceId
-            ? "studio"
-            : "free";
+        const trialEnd = subscription.trial_end;
+        const trialEndAt = trialEnd
+          ? new Date(trialEnd * 1000).toISOString()
+          : null;
+
+        const periodEnd = subscription.items.data[0]?.current_period_end;
+        const currentPeriodEnd = periodEnd
+          ? new Date(periodEnd * 1000).toISOString()
+          : null;
 
         await adminSupabase
           .from("studios")
           .update({
             stripe_subscription_id: subscriptionId,
-            plan,
-            plan_status: "active",
+            plan: "pro",
+            plan_status: "trialing",
+            trial_ends_at: trialEndAt,
+            subscription_period: period,
+            current_period_end: currentPeriodEnd,
+            cancel_at_period_end: subscription.cancel_at_period_end ?? false,
           })
           .eq("id", studioId);
+        break;
+      }
+
+      case "customer.subscription.updated": {
+        const subscription = event.data.object as Stripe.Subscription;
+        const subscriptionId = subscription.id;
+
+        const { data: studio } = await adminSupabase
+          .from("studios")
+          .select("id")
+          .eq("stripe_subscription_id", subscriptionId)
+          .single();
+
+        if (!studio) break;
+
+        const status = subscription.status;
+        const priceId = subscription.items.data[0]?.price?.id ?? "";
+        const period: "monthly" | "yearly" =
+          priceId === process.env.STRIPE_PRO_YEARLY_PRICE_ID ? "yearly" : "monthly";
+        const periodEnd = subscription.items.data[0]?.current_period_end;
+        const currentPeriodEnd = periodEnd
+          ? new Date(periodEnd * 1000).toISOString()
+          : null;
+
+        let planStatus = "trialing";
+        let gracePeriodEndsAt: string | null = null;
+
+        if (status === "active") {
+          planStatus = "active";
+        } else if (status === "past_due") {
+          planStatus = "past_due";
+          const in14Days = new Date();
+          in14Days.setDate(in14Days.getDate() + 14);
+          gracePeriodEndsAt = in14Days.toISOString();
+        } else if (status === "trialing") {
+          planStatus = "trialing";
+        }
+
+        await adminSupabase
+          .from("studios")
+          .update({
+            plan_status: planStatus,
+            subscription_period: period,
+            current_period_end: currentPeriodEnd,
+            cancel_at_period_end: subscription.cancel_at_period_end ?? false,
+            grace_period_ends_at: gracePeriodEndsAt,
+          })
+          .eq("id", studio.id);
         break;
       }
 
@@ -152,6 +242,28 @@ export async function POST(request: Request) {
             payment_type: "subscription",
             paid_at: new Date().toISOString(),
           });
+
+          const { data: ownerProfile } = await adminSupabase
+            .from("profiles")
+            .select("full_name, email")
+            .eq("studio_id", studio.id)
+            .eq("role", "owner")
+            .limit(1)
+            .single();
+          const { data: studioData } = await adminSupabase
+            .from("studios")
+            .select("name")
+            .eq("id", studio.id)
+            .single();
+          if (ownerProfile?.email) {
+            const { subject, html } = paymentReceipt({
+              memberName: ownerProfile.full_name ?? "Studio Owner",
+              amount: invoice.amount_paid,
+              description: "Pro plan subscription",
+              studioName: studioData?.name ?? "Studio",
+            });
+            sendEmail({ to: ownerProfile.email, subject, html });
+          }
           break;
         }
 
@@ -173,6 +285,28 @@ export async function POST(request: Request) {
             payment_type: "monthly",
             paid_at: new Date().toISOString(),
           });
+
+          const { data: prof } = await adminSupabase
+            .from("members")
+            .select("profiles(full_name, email)")
+            .eq("id", member.id)
+            .single();
+          const { data: studioData } = await adminSupabase
+            .from("studios")
+            .select("name")
+            .eq("id", member.studio_id)
+            .single();
+          const p = (prof as { profiles?: { full_name?: string; email?: string } })?.profiles;
+          const pf = Array.isArray(p) ? p[0] : p;
+          if (pf?.email) {
+            const { subject, html } = paymentReceipt({
+              memberName: pf.full_name ?? "Member",
+              amount: invoice.amount_paid,
+              description: "Monthly membership",
+              studioName: studioData?.name ?? "Studio",
+            });
+            sendEmail({ to: pf.email, subject, html });
+          }
         }
         break;
       }
@@ -187,27 +321,97 @@ export async function POST(request: Request) {
 
         const { data: studio } = await adminSupabase
           .from("studios")
-          .select("id")
+          .select("id, plan_status")
           .eq("stripe_subscription_id", subscriptionId)
           .single();
 
-        if (!studio) break;
+        if (studio) {
+          const isPastDue = studio.plan_status === "past_due";
+          if (!isPastDue) {
+            const in14Days = new Date();
+            in14Days.setDate(in14Days.getDate() + 14);
+            await adminSupabase
+              .from("studios")
+              .update({
+                plan_status: "past_due",
+                grace_period_ends_at: in14Days.toISOString(),
+              })
+              .eq("id", studio.id);
+          }
 
-        await adminSupabase
-          .from("studios")
-          .update({ plan_status: "past_due" })
-          .eq("id", studio.id);
+          await adminSupabase.from("payments").insert({
+            studio_id: studio.id,
+            member_id: null,
+            amount: invoice.amount_due,
+            currency: invoice.currency ?? "usd",
+            type: "subscription",
+            status: "failed",
+            stripe_invoice_id: invoice.id,
+            payment_type: "subscription",
+          });
 
-        await adminSupabase.from("payments").insert({
-          studio_id: studio.id,
-          member_id: null,
-          amount: invoice.amount_due,
-          currency: invoice.currency ?? "usd",
-          type: "subscription",
-          status: "failed",
-          stripe_invoice_id: invoice.id,
-          payment_type: "subscription",
-        });
+          const { data: ownerProfile } = await adminSupabase
+            .from("profiles")
+            .select("full_name, email")
+            .eq("studio_id", studio.id)
+            .eq("role", "owner")
+            .limit(1)
+            .single();
+          const { data: studioData } = await adminSupabase
+            .from("studios")
+            .select("name")
+            .eq("id", studio.id)
+            .single();
+          if (ownerProfile?.email) {
+            const { subject, html } = paymentFailed({
+              memberName: ownerProfile.full_name ?? "Studio Owner",
+              amount: invoice.amount_due,
+              studioName: studioData?.name ?? "Studio",
+            });
+            sendEmail({ to: ownerProfile.email, subject, html });
+          }
+          break;
+        }
+
+        const { data: member } = await adminSupabase
+          .from("members")
+          .select("id, studio_id")
+          .eq("stripe_subscription_id", subscriptionId)
+          .single();
+
+        if (member) {
+          await adminSupabase.from("payments").insert({
+            studio_id: member.studio_id,
+            member_id: member.id,
+            amount: invoice.amount_due,
+            currency: invoice.currency ?? "usd",
+            type: "monthly",
+            status: "failed",
+            stripe_invoice_id: invoice.id,
+            payment_type: "monthly",
+          });
+
+          const { data: prof } = await adminSupabase
+            .from("members")
+            .select("profiles(full_name, email)")
+            .eq("id", member.id)
+            .single();
+          const { data: studioData } = await adminSupabase
+            .from("studios")
+            .select("name")
+            .eq("id", member.studio_id)
+            .single();
+          const p = (prof as { profiles?: { full_name?: string; email?: string } })?.profiles;
+          const pf = Array.isArray(p) ? p[0] : p;
+          if (pf?.email) {
+            const { subject, html } = paymentFailed({
+              memberName: pf.full_name ?? "Member",
+              amount: invoice.amount_due,
+              studioName: studioData?.name ?? "Studio",
+            });
+            sendEmail({ to: pf.email, subject, html });
+          }
+        }
         break;
       }
 
@@ -225,9 +429,10 @@ export async function POST(request: Request) {
           await adminSupabase
             .from("studios")
             .update({
-              plan: "free",
+              plan_status: "canceled",
               stripe_subscription_id: null,
-              plan_status: "active",
+              cancel_at_period_end: false,
+              grace_period_ends_at: null,
             })
             .eq("id", studio.id);
           break;

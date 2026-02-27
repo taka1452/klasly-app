@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { formatDate, formatTime } from "@/lib/utils";
+import { getPlanAccess } from "@/lib/plan-guard";
 import BookingButton from "@/components/bookings/booking-button";
 
 export default async function MyBookingsPage() {
@@ -23,10 +24,20 @@ export default async function MyBookingsPage() {
 
   const { data: memberList } = await supabase
     .from("members")
-    .select("id, credits")
+    .select("id, credits, studio_id")
     .eq("profile_id", user.id);
 
   const member = memberList?.[0];
+  let planStatus = "trialing";
+  if (member?.studio_id) {
+    const { data: studio } = await supabase
+      .from("studios")
+      .select("plan_status")
+      .eq("id", member.studio_id)
+      .single();
+    planStatus = studio?.plan_status ?? "trialing";
+  }
+  const planAccess = getPlanAccess(planStatus);
   const memberIds = (memberList || []).map((m) => m.id);
   const creditsByMember: Record<string, number> = (memberList || []).reduce(
     (acc, m) => {
@@ -154,6 +165,7 @@ export default async function MyBookingsPage() {
                     existingBooking={{ id: booking.id, status: booking.status }}
                     memberCredits={creditsByMember[booking.member_id] ?? 0}
                     confirmedCount={confirmedCount}
+                    canBook={planAccess.canBook}
                   />
                 </div>
               );

@@ -3,6 +3,13 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { stripe } from "@/lib/stripe/server";
 import { NextResponse } from "next/server";
 
+/*
+ * Stripe: Create Product "Klasly Pro" with:
+ * - Price 1: $19/month (recurring monthly)
+ * - Price 2: $190/year (recurring yearly)
+ * Env: STRIPE_PRO_MONTHLY_PRICE_ID, STRIPE_PRO_YEARLY_PRICE_ID
+ */
+
 export async function POST(request: Request) {
   try {
     const serverSupabase = await createServerClient();
@@ -38,21 +45,31 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { priceId } = body;
+    const { period, priceId, successPath } = body;
 
-    if (!priceId) {
+    let priceIdToUse = priceId;
+
+    if (!priceIdToUse && period) {
+      const monthlyId = process.env.STRIPE_PRO_MONTHLY_PRICE_ID;
+      const yearlyId = process.env.STRIPE_PRO_YEARLY_PRICE_ID;
+
+      if (period === "monthly") priceIdToUse = monthlyId;
+      else if (period === "yearly") priceIdToUse = yearlyId;
+    }
+
+    if (!priceIdToUse) {
       return NextResponse.json(
-        { error: "Missing priceId" },
+        { error: "Missing period or priceId" },
         { status: 400 }
       );
     }
 
     const validPrices = [
-      process.env.STRIPE_STUDIO_PRICE_ID,
-      process.env.STRIPE_GROW_PRICE_ID,
+      process.env.STRIPE_PRO_MONTHLY_PRICE_ID,
+      process.env.STRIPE_PRO_YEARLY_PRICE_ID,
     ].filter(Boolean);
 
-    if (!validPrices.includes(priceId)) {
+    if (!validPrices.includes(priceIdToUse)) {
       return NextResponse.json(
         { error: "Invalid price" },
         { status: 400 }
@@ -84,15 +101,27 @@ export async function POST(request: Request) {
         .eq("id", studio.id);
     }
 
-    const origin = request.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const origin =
+      request.headers.get("origin") ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      "http://localhost:3000";
+
+    const isOnboarding = successPath === "onboarding";
+    const successUrl = isOnboarding
+      ? `${origin}/onboarding/success?session_id={CHECKOUT_SESSION_ID}`
+      : `${origin}/settings/billing/success?session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = isOnboarding
+      ? `${origin}/onboarding/plan`
+      : `${origin}/settings/billing`;
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer: customerId,
-      line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${origin}/settings/billing/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/settings/billing`,
+      line_items: [{ price: priceIdToUse, quantity: 1 }],
+      success_url: successUrl,
+      cancel_url: cancelUrl,
       metadata: { studio_id: studio.id },
+      ...(isOnboarding ? { subscription_data: { trial_period_days: 30 } } : {}),
     });
 
     return NextResponse.json({ url: session.url });

@@ -2,6 +2,9 @@ import { redirect } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import DashboardShell from "@/components/ui/dashboard-shell";
+import PlanLockScreen from "@/components/ui/plan-lock-screen";
+import PlanBanner from "@/components/ui/plan-banner";
+import { getPlanAccess } from "@/lib/plan-guard";
 
 export default async function DashboardLayout({
   children,
@@ -17,39 +20,63 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  // プロフィール取得（service_role で RLS をバイパス）
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const { data: profile } = serviceRoleKey
-    ? await createClient(
+  const adminSupabase = serviceRoleKey
+    ? createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         serviceRoleKey
       )
-      .from("profiles")
-      .select("*, studios(*)")
-      .eq("id", user.id)
-      .single()
-    : await supabase
-        .from("profiles")
-        .select("*, studios(*)")
-        .eq("id", user.id)
-        .single();
+    : supabase;
 
-  // スタジオ未作成の場合はオンボーディングへ
+  const { data: profile } = await adminSupabase
+    .from("profiles")
+    .select("*, studios(*)")
+    .eq("id", user.id)
+    .single();
+
   if (!profile?.studio_id) {
     redirect("/onboarding");
   }
 
-  // 会員は会員用画面へ
   if (profile?.role === "member") {
     redirect("/schedule");
   }
 
+  const studio = profile.studios as {
+    stripe_subscription_id?: string | null;
+    plan_status?: string | null;
+    grace_period_ends_at?: string | null;
+  } | null;
+
+  if (!studio?.stripe_subscription_id) {
+    redirect("/onboarding/plan");
+  }
+
+  const planStatus = studio?.plan_status ?? "trialing";
+  const planAccess = getPlanAccess(planStatus);
+
+  if (planAccess.isFullyLocked) {
+    return <PlanLockScreen />;
+  }
+
+  const showBanner =
+    planStatus === "past_due" || planStatus === "grace";
+
   return (
     <DashboardShell
       currentRole={profile.role}
-      studioName={profile.studios?.name || "My Studio"}
+      studioName={(profile.studios as { name?: string })?.name || "My Studio"}
       userName={profile.full_name || user.email || "User"}
       userEmail={user.email || ""}
+      planAccess={planAccess}
+      banner={
+        showBanner ? (
+          <PlanBanner
+            planStatus={planStatus}
+            gracePeriodEndsAt={studio?.grace_period_ends_at ?? null}
+          />
+        ) : null
+      }
     >
       {children}
     </DashboardShell>

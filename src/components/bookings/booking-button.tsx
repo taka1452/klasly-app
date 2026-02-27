@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 
 type Props = {
   sessionId: string;
@@ -12,16 +11,17 @@ type Props = {
   existingBooking: { id: string; status: string } | null;
   memberCredits: number;
   confirmedCount: number;
+  canBook?: boolean;
 };
 
 export default function BookingButton({
   sessionId,
-  studioId,
   capacity,
   memberId,
   existingBooking,
   memberCredits,
   confirmedCount,
+  canBook = true,
 }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -35,43 +35,58 @@ export default function BookingButton({
     );
   }
 
+  if (!canBook) {
+    return (
+      <span className="text-sm text-amber-600">
+        Bookings are temporarily unavailable
+      </span>
+    );
+  }
+
+  async function handleBook(action: "book" | "rebook" | "cancel" | "leave_waitlist") {
+    const status = showWaitlist ? "waitlist" : "confirmed";
+    if (
+      (action === "book" || action === "rebook") &&
+      status === "confirmed" &&
+      memberCredits >= 0 &&
+      memberCredits < 1
+    ) {
+      alert("No credits remaining.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action,
+          sessionId,
+          memberId,
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || "Something went wrong");
+        return;
+      }
+
+      router.refresh();
+    } catch {
+      alert("Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   if (existingBooking) {
     if (existingBooking.status === "cancelled") {
       return (
         <button
           type="button"
-          onClick={async () => {
-            setLoading(true);
-            const supabase = createClient();
-            const status = showWaitlist ? "waitlist" : "confirmed";
-
-            if (memberCredits >= 0 && status === "confirmed" && memberCredits < 1) {
-              alert("No credits remaining.");
-              setLoading(false);
-              return;
-            }
-
-            const { error } = await supabase
-              .from("bookings")
-              .update({ status })
-              .eq("id", existingBooking.id);
-
-            if (error) {
-              alert(error.message);
-              setLoading(false);
-              return;
-            }
-
-            if (memberCredits >= 0 && status === "confirmed") {
-              await supabase
-                .from("members")
-                .update({ credits: memberCredits - 1 })
-                .eq("id", memberId);
-            }
-
-            setLoading(false);
-            router.refresh();
-          }}
+          onClick={() => handleBook("rebook")}
           disabled={loading}
           className="btn-primary text-sm"
         >
@@ -83,23 +98,7 @@ export default function BookingButton({
       return (
         <button
           type="button"
-          onClick={async () => {
-            setLoading(true);
-            const supabase = createClient();
-            const { error } = await supabase
-              .from("bookings")
-              .update({ status: "cancelled" })
-              .eq("id", existingBooking.id);
-
-            if (error) {
-              alert(error.message);
-              setLoading(false);
-              return;
-            }
-
-            setLoading(false);
-            router.refresh();
-          }}
+          onClick={() => handleBook("leave_waitlist")}
           disabled={loading}
           className="btn-secondary text-sm"
         >
@@ -112,31 +111,7 @@ export default function BookingButton({
         <span className="text-sm font-medium text-green-600">Booked ✓</span>
         <button
           type="button"
-          onClick={async () => {
-            if (!confirm("Cancel this booking?")) return;
-            setLoading(true);
-            const supabase = createClient();
-            const { error } = await supabase
-              .from("bookings")
-              .update({ status: "cancelled" })
-              .eq("id", existingBooking.id);
-
-            if (error) {
-              alert(error.message);
-              setLoading(false);
-              return;
-            }
-
-            if (memberCredits >= 0) {
-              await supabase
-                .from("members")
-                .update({ credits: memberCredits + 1 })
-                .eq("id", memberId);
-            }
-
-            setLoading(false);
-            router.refresh();
-          }}
+          onClick={() => handleBook("cancel")}
           disabled={loading}
           className="text-sm text-gray-500 underline hover:text-red-600"
         >
@@ -149,40 +124,7 @@ export default function BookingButton({
   return (
     <button
       type="button"
-      onClick={async () => {
-        setLoading(true);
-        const supabase = createClient();
-        const status = showWaitlist ? "waitlist" : "confirmed";
-
-        if (memberCredits >= 0 && status === "confirmed" && memberCredits < 1) {
-          alert("No credits remaining.");
-          setLoading(false);
-          return;
-        }
-
-        const { error } = await supabase.from("bookings").insert({
-          studio_id: studioId,
-          session_id: sessionId,
-          member_id: memberId,
-          status,
-        });
-
-        if (error) {
-          alert(error.message);
-          setLoading(false);
-          return;
-        }
-
-        if (memberCredits >= 0 && status === "confirmed") {
-          await supabase
-            .from("members")
-            .update({ credits: memberCredits - 1 })
-            .eq("id", memberId);
-        }
-
-        setLoading(false);
-        router.refresh();
-      }}
+      onClick={() => handleBook("book")}
       disabled={loading}
       className={
         showWaitlist ? "btn-secondary text-sm" : "btn-primary text-sm"

@@ -37,7 +37,11 @@ export default function OnboardingPage() {
         }
 
         if (data.hasStudio) {
-          router.push("/dashboard");
+          if (data.needsPlan) {
+            router.push("/onboarding/plan");
+          } else {
+            router.push("/dashboard");
+          }
           return;
         }
 
@@ -92,7 +96,7 @@ export default function OnboardingPage() {
       return;
     }
 
-    router.push("/dashboard");
+    router.push("/onboarding/plan");
     router.refresh();
   }
 
@@ -186,10 +190,10 @@ export default function OnboardingPage() {
 
             <div className="rounded-lg bg-brand-50 p-4">
               <p className="text-sm font-medium text-brand-800">
-                Free plan — up to 10 members
+                Next: Choose your plan and start your 30-day free trial
               </p>
               <p className="mt-1 text-xs text-brand-600">
-                You can upgrade to Studio ($19/mo) or Grow ($39/mo) anytime.
+                Card required. No charge during trial.
               </p>
             </div>
 

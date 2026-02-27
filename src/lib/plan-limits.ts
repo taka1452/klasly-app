@@ -1,13 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
- * Klasly プラン別会員上限
- * Free: 10, Studio: 50, Grow: 無制限
+ * Klasly Pro プラン - 会員数無制限
+ * 旧 Free/Studio/Grow は廃止
  */
 export const PLAN_MEMBER_LIMITS: Record<string, number> = {
-  free: 10,
-  studio: 50,
-  grow: Infinity,
+  pro: Infinity,
 };
 
 export type PlanLimitResult = {
@@ -30,8 +28,8 @@ export async function checkPlanLimit(
     .eq("id", studioId)
     .single();
 
-  const plan = studio?.plan || "free";
-  const limit = PLAN_MEMBER_LIMITS[plan] ?? 10;
+  const plan = studio?.plan || "pro";
+  const limit = PLAN_MEMBER_LIMITS[plan] ?? Infinity;
 
   if (limit === Infinity) {
     const { count } = await supabase

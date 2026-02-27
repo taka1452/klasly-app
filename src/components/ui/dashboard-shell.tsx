@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import Sidebar from "./sidebar";
 import Header from "./header";
+import { PlanAccessProvider } from "./plan-access-provider";
+import type { PlanAccess } from "@/lib/plan-guard";
 
 type DashboardShellProps = {
   children: React.ReactNode;
@@ -10,6 +12,8 @@ type DashboardShellProps = {
   studioName: string;
   userName: string;
   userEmail: string;
+  planAccess?: PlanAccess;
+  banner?: React.ReactNode;
 };
 
 export default function DashboardShell({
@@ -18,6 +22,8 @@ export default function DashboardShell({
   studioName,
   userName,
   userEmail,
+  planAccess,
+  banner,
 }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -31,7 +37,6 @@ export default function DashboardShell({
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* モバイル: オーバーレイ背景 */}
       <button
         type="button"
         aria-label="Close menu"
@@ -54,7 +59,16 @@ export default function DashboardShell({
           userEmail={userEmail}
           onSidebarToggle={() => setSidebarOpen((o) => !o)}
         />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto p-6">
+          {banner && <div className="mb-6">{banner}</div>}
+          {planAccess ? (
+            <PlanAccessProvider planAccess={planAccess}>
+              {children}
+            </PlanAccessProvider>
+          ) : (
+            children
+          )}
+        </main>
       </div>
     </div>
   );

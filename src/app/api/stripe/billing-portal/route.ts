@@ -39,44 +39,29 @@ export async function POST(request: Request) {
 
     const { data: studio } = await adminSupabase
       .from("studios")
-      .select("stripe_subscription_id, plan_status")
+      .select("stripe_customer_id")
       .eq("id", profile.studio_id)
       .single();
 
-    if (!studio?.stripe_subscription_id) {
+    if (!studio?.stripe_customer_id) {
       return NextResponse.json(
-        { error: "No active subscription" },
+        { error: "No billing account found" },
         { status: 400 }
       );
     }
 
-    const planStatus = studio.plan_status ?? "active";
-    const body = (await request.json().catch(() => ({}))) as {
-      isTrialing?: boolean;
-      requestRefund?: boolean;
-    };
-    const isTrialing = body?.isTrialing ?? planStatus === "trialing";
+    const origin =
+      request.headers.get("origin") ||
+      request.headers.get("referer")?.replace(/\/[^/]*$/, "") ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      "http://localhost:3000";
 
-    if (isTrialing) {
-      await stripe.subscriptions.cancel(studio.stripe_subscription_id);
-      await adminSupabase
-        .from("studios")
-        .update({
-          plan_status: "canceled",
-          stripe_subscription_id: null,
-        })
-        .eq("id", profile.studio_id);
-    } else {
-      await stripe.subscriptions.update(studio.stripe_subscription_id, {
-        cancel_at_period_end: true,
-      });
-      await adminSupabase
-        .from("studios")
-        .update({ cancel_at_period_end: true })
-        .eq("id", profile.studio_id);
-    }
+    const session = await stripe.billingPortal.sessions.create({
+      customer: studio.stripe_customer_id,
+      return_url: `${origin}/settings/billing`,
+    });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ url: session.url });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal error";
     return NextResponse.json({ error: message }, { status: 500 });
