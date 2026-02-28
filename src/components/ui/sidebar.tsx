@@ -8,6 +8,7 @@ type SidebarProps = {
   studioName: string;
   isMobileOpen?: boolean;
   onMobileClose?: () => void;
+  showAdminLink?: boolean;
 };
 
 const ownerNavItems = [
@@ -82,6 +83,7 @@ export default function Sidebar({
   studioName,
   isMobileOpen = false,
   onMobileClose,
+  showAdminLink = false,
 }: SidebarProps) {
   const pathname = usePathname();
 
@@ -138,6 +140,18 @@ export default function Sidebar({
             );
           })}
         </nav>
+        {showAdminLink && (
+          <div className="border-t border-gray-200 px-6 py-3">
+            <Link
+              href="/admin"
+              onClick={onMobileClose}
+              className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-700"
+            >
+              <span aria-hidden>🔒</span>
+              System Admin
+            </Link>
+          </div>
+        )}
         <div className="border-t border-gray-200 px-6 py-4 space-y-2">
           <p className="text-xs text-gray-400">Free Plan</p>
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
@@ -194,6 +208,17 @@ export default function Sidebar({
         })}
       </nav>
 
+      {showAdminLink && (
+        <div className="border-t border-gray-200 px-6 py-3">
+          <Link
+            href="/admin"
+            className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-700"
+          >
+            <span aria-hidden>🔒</span>
+            System Admin
+          </Link>
+        </div>
+      )}
       {/* フッター */}
       <div className="border-t border-gray-200 px-6 py-4 space-y-2">
         <p className="text-xs text-gray-400">Free Plan</p>

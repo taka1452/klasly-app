@@ -13,6 +13,15 @@ export async function GET(request: Request) {
     if (!error) {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        const email = (user.email ?? "").trim().toLowerCase();
+        const adminEmails = (process.env.ADMIN_EMAILS ?? "")
+          .split(",")
+          .map((e) => e.trim().toLowerCase())
+          .filter(Boolean);
+        if (adminEmails.length > 0 && adminEmails.includes(email)) {
+          return NextResponse.redirect(`${origin}/admin`);
+        }
+
         const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
         const adminSupabase = serviceRoleKey
           ? createClient(

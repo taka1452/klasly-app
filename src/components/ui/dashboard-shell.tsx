@@ -13,6 +13,7 @@ type DashboardShellProps = {
   userName: string;
   userEmail: string;
   planAccess?: PlanAccess;
+  showAdminLink?: boolean;
   banner?: React.ReactNode;
 };
 
@@ -23,6 +24,7 @@ export default function DashboardShell({
   userName,
   userEmail,
   planAccess,
+  showAdminLink = false,
   banner,
 }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -51,6 +53,7 @@ export default function DashboardShell({
         studioName={studioName}
         isMobileOpen={sidebarOpen}
         onMobileClose={() => setSidebarOpen(false)}
+        showAdminLink={showAdminLink}
       />
 
       <div className="flex flex-1 flex-col overflow-hidden">

@@ -5,6 +5,7 @@ import DashboardShell from "@/components/ui/dashboard-shell";
 import PlanLockScreen from "@/components/ui/plan-lock-screen";
 import PlanBanner from "@/components/ui/plan-banner";
 import { getPlanAccess } from "@/lib/plan-guard";
+import { isAdmin } from "@/lib/admin/auth";
 
 export default async function DashboardLayout({
   children,
@@ -45,6 +46,8 @@ export default async function DashboardLayout({
     redirect("/schedule");
   }
 
+  const showAdminLink = await isAdmin();
+
   const studio = profile.studios as {
     stripe_subscription_id?: string | null;
     plan_status?: string | null;
@@ -72,6 +75,7 @@ export default async function DashboardLayout({
       userName={profile.full_name || user.email || "User"}
       userEmail={user.email || ""}
       planAccess={planAccess}
+      showAdminLink={showAdminLink}
       banner={
         showBanner ? (
           <PlanBanner
