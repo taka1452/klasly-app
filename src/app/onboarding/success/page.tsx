@@ -58,43 +58,45 @@ export default async function OnboardingSuccessPage({
 
       if (subscriptionId && studioId === studio.id) {
         const sub =
-          typeof session.subscription === "object"
+          typeof session.subscription === "object" && session.subscription
             ? session.subscription
             : await stripe.subscriptions.retrieve(subscriptionId);
 
-        const priceId = sub.items.data[0]?.price?.id ?? "";
-        const period: "monthly" | "yearly" =
-          priceId === process.env.STRIPE_PRO_YEARLY_PRICE_ID
-            ? "yearly"
-            : "monthly";
+        if (sub) {
+          const priceId = sub.items.data[0]?.price?.id ?? "";
+          const period: "monthly" | "yearly" =
+            priceId === process.env.STRIPE_PRO_YEARLY_PRICE_ID
+              ? "yearly"
+              : "monthly";
 
-        const trialEnd = sub.trial_end;
-        const trialEndAt = trialEnd
-          ? new Date(trialEnd * 1000).toISOString()
-          : null;
+          const trialEnd = sub.trial_end;
+          const trialEndAt = trialEnd
+            ? new Date(trialEnd * 1000).toISOString()
+            : null;
 
-        const periodEnd = sub.items.data[0]?.current_period_end;
-        const currentPeriodEnd = periodEnd
-          ? new Date(periodEnd * 1000).toISOString()
-          : null;
+          const periodEnd = sub.items.data[0]?.current_period_end;
+          const currentPeriodEnd = periodEnd
+            ? new Date(periodEnd * 1000).toISOString()
+            : null;
 
-        await supabase
-          .from("studios")
-          .update({
-            stripe_subscription_id: subscriptionId,
-            plan: "pro",
-            plan_status: "trialing",
+          await supabase
+            .from("studios")
+            .update({
+              stripe_subscription_id: subscriptionId,
+              plan: "pro",
+              plan_status: "trialing",
+              trial_ends_at: trialEndAt,
+              subscription_period: period,
+              current_period_end: currentPeriodEnd,
+              cancel_at_period_end: sub.cancel_at_period_end ?? false,
+            })
+            .eq("id", studio.id);
+
+          studio = {
+            ...studio,
             trial_ends_at: trialEndAt,
-            subscription_period: period,
-            current_period_end: currentPeriodEnd,
-            cancel_at_period_end: sub.cancel_at_period_end ?? false,
-          })
-          .eq("id", studio.id);
-
-        studio = {
-          ...studio,
-          trial_ends_at: trialEndAt,
-        };
+          };
+        }
       }
     } catch {
       // Stripe API エラー時は無視（Webhook に任せる）
