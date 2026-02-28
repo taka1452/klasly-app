@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { stripe } from "@/lib/stripe/server";
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email/send";
+import { insertCronLog, insertEmailLog } from "@/lib/admin/logs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -44,6 +45,12 @@ export async function GET(request: Request) {
     .lt("grace_period_ends_at", now);
 
   if (!studios?.length) {
+    await insertCronLog(supabase, {
+      job_name: "grace-check",
+      status: "success",
+      affected_count: 0,
+      details: {},
+    });
     return NextResponse.json({ processed: 0 });
   }
 
@@ -101,9 +108,23 @@ export async function GET(request: Request) {
 </body>
 </html>`;
       await sendEmail({ to: owner.email, subject, html: wrapped });
+      await insertEmailLog(supabase, {
+        studio_id: studio.id,
+        to_email: owner.email,
+        template: "grace_check_suspension",
+        subject,
+        status: "sent",
+      });
     }
     updated++;
   }
+
+  await insertCronLog(supabase, {
+    job_name: "grace-check",
+    status: "success",
+    affected_count: updated,
+    details: { studios_processed: studios.length },
+  });
 
   return NextResponse.json({ processed: studios.length, updated });
 }

@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email/send";
+import { insertCronLog, insertEmailLog } from "@/lib/admin/logs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -43,6 +44,12 @@ export async function GET(request: Request) {
     .lte("trial_ends_at", inThreeDays.toISOString());
 
   if (!studios?.length) {
+    await insertCronLog(supabase, {
+      job_name: "trial-reminder",
+      status: "success",
+      affected_count: 0,
+      details: {},
+    });
     return NextResponse.json({ processed: 0 });
   }
 
@@ -98,12 +105,26 @@ export async function GET(request: Request) {
 </html>`;
 
     await sendEmail({ to: owner.email, subject, html: wrapped });
+    await insertEmailLog(supabase, {
+      studio_id: studio.id,
+      to_email: owner.email,
+      template: "trial_reminder",
+      subject,
+      status: "sent",
+    });
     await supabase
       .from("studios")
       .update({ trial_reminder_sent: true })
       .eq("id", studio.id);
     sent++;
   }
+
+  await insertCronLog(supabase, {
+    job_name: "trial-reminder",
+    status: "success",
+    affected_count: sent,
+    details: { studios_processed: studios.length },
+  });
 
   return NextResponse.json({ processed: studios.length, sent });
 }
