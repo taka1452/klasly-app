@@ -121,6 +121,7 @@ export async function POST(request: Request) {
       success_url: successUrl,
       cancel_url: cancelUrl,
       metadata: { studio_id: studio.id },
+      allow_promotion_codes: true,
       ...(isOnboarding ? { subscription_data: { trial_period_days: 30 } } : {}),
     });
 

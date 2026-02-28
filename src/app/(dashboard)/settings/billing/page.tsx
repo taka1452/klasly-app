@@ -49,12 +49,13 @@ export default async function BillingPage() {
   let nextBillingDate: string | null = null;
   let cardLast4: string | null = null;
   let subscriptionStart: number | null = null;
+  let appliedCouponCode: string | null = null;
 
   if (studio.stripe_subscription_id) {
     try {
       const sub = await stripe.subscriptions.retrieve(
         studio.stripe_subscription_id,
-        { expand: ["default_payment_method"] }
+        { expand: ["default_payment_method", "discounts.promotion_code"] }
       );
       const periodEnd = sub.items?.data?.[0]?.current_period_end;
       if (periodEnd) {
@@ -68,6 +69,12 @@ export default async function BillingPage() {
         card?: { last4?: string };
       } | null;
       if (pm?.card?.last4) cardLast4 = pm.card.last4;
+      const first = Array.isArray(sub.discounts) && sub.discounts.length > 0 ? sub.discounts[0] : null;
+      const discount = first && typeof first === "object" ? first : null;
+      const promo = discount && "promotion_code" in discount && discount.promotion_code
+        ? (typeof discount.promotion_code === "object" ? (discount.promotion_code as { code?: string }).code ?? null : null)
+        : null;
+      if (promo) appliedCouponCode = promo;
     } catch {
       // ignore Stripe errors
     }
@@ -194,6 +201,14 @@ export default async function BillingPage() {
               </dd>
             </div>
           )}
+          {appliedCouponCode && (
+            <div>
+              <dt className="text-xs text-gray-400">Discount</dt>
+              <dd className="text-sm font-medium text-green-600">
+                {appliedCouponCode}
+              </dd>
+            </div>
+          )}
         </dl>
 
         <div className="mt-6">
@@ -203,6 +218,7 @@ export default async function BillingPage() {
             cancelAtPeriodEnd={!!studio.cancel_at_period_end}
             hasStripeSubscription={!!studio.stripe_subscription_id}
             isYearlyWithinRefundWindow={!!isYearlyWithinRefund}
+            appliedCouponCode={appliedCouponCode}
           />
         </div>
       </div>

@@ -8,6 +8,7 @@ type Props = {
   cancelAtPeriodEnd: boolean;
   hasStripeSubscription: boolean;
   isYearlyWithinRefundWindow: boolean;
+  appliedCouponCode?: string | null;
 };
 
 export default function BillingActions({
@@ -16,8 +17,11 @@ export default function BillingActions({
   cancelAtPeriodEnd,
   hasStripeSubscription,
   isYearlyWithinRefundWindow,
+  appliedCouponCode = null,
 }: Props) {
   const [loading, setLoading] = useState<string | null>(null);
+  const [promoCode, setPromoCode] = useState("");
+  const [promoError, setPromoError] = useState<string | null>(null);
 
   async function handleCheckout(period: "monthly" | "yearly") {
     setLoading(`checkout-${period}`);
@@ -137,8 +141,53 @@ export default function BillingActions({
     }
   }
 
+  async function handleApplyPromoCode() {
+    const code = promoCode.trim();
+    if (!code) return;
+    setPromoError(null);
+    setLoading("apply-promo");
+    try {
+      const res = await fetch("/api/stripe/apply-promotion-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ promotion_code: code }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to apply code");
+      window.location.reload();
+    } catch (err) {
+      setPromoError(err instanceof Error ? err.message : "Failed to apply code");
+    } finally {
+      setLoading(null);
+    }
+  }
+
   return (
-    <div className="flex flex-wrap gap-3">
+    <div className="space-y-4">
+      {hasStripeSubscription && !appliedCouponCode && (
+        <div className="rounded border border-gray-200 bg-gray-50 p-3">
+          <p className="text-sm font-medium text-gray-700">Apply promotion code</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <input
+              type="text"
+              value={promoCode}
+              onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+              placeholder="e.g. SAVE20"
+              className="rounded border border-gray-300 px-3 py-1.5 text-sm"
+            />
+            <button
+              type="button"
+              onClick={handleApplyPromoCode}
+              disabled={!!loading || !promoCode.trim()}
+              className="btn-secondary"
+            >
+              {loading === "apply-promo" ? "Applying…" : "Apply"}
+            </button>
+          </div>
+          {promoError && <p className="mt-1 text-sm text-red-600">{promoError}</p>}
+        </div>
+      )}
+      <div className="flex flex-wrap gap-3">
       {/* Trialing: Cancel Trial */}
       {planStatus === "trialing" && (
         <button
@@ -263,6 +312,7 @@ export default function BillingActions({
             )}
           </>
         )}
+      </div>
     </div>
   );
 }
