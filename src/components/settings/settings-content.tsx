@@ -81,7 +81,19 @@ export default function SettingsContent({ fullName, email }: Props) {
         </Link>
       </div>
 
-      {/* Profile */}
+      {/* Support */}
+      <div className="card">
+        <h2 className="text-lg font-semibold text-gray-900">Support</h2>
+        <p className="mt-2 text-sm text-gray-600">
+          Open a support ticket or view your existing tickets.
+        </p>
+        <Link
+          href="/settings/support"
+          className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+        >
+          Support tickets →
+        </Link>
+      </div>
       <div className="card">
         <h2 className="text-lg font-semibold text-gray-900">Profile</h2>
         <dl className="mt-4 space-y-3">
