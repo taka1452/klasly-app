@@ -87,7 +87,7 @@ export async function POST(request: Request) {
 
     await stripe.subscriptions.update(studio.stripe_subscription_id, {
       items: [{ id: itemId, price: newPriceId }],
-      proration_behavior: "always_invoice",
+      proration_behavior: "create_prorations",
     });
 
     await adminSupabase

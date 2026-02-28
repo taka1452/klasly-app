@@ -50,15 +50,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const origin =
-      request.headers.get("origin") ||
-      request.headers.get("referer")?.replace(/\/[^/]*$/, "") ||
-      process.env.NEXT_PUBLIC_APP_URL ||
-      "http://localhost:3000";
-
     const session = await stripe.billingPortal.sessions.create({
       customer: studio.stripe_customer_id,
-      return_url: `${origin}/settings/billing`,
+      return_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/settings/billing`,
     });
 
     return NextResponse.json({ url: session.url });

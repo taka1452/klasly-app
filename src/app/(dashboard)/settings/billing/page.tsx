@@ -47,9 +47,15 @@ export default async function BillingPage() {
   if (!studio) redirect("/");
 
   let nextBillingDate: string | null = null;
-  let cardLast4: string | null = null;
   let subscriptionStart: number | null = null;
   let appliedCouponCode: string | null = null;
+  type PaymentMethodInfo = {
+    brand: string;
+    last4: string;
+    exp_month: number;
+    exp_year: number;
+  } | null;
+  let paymentMethod: PaymentMethodInfo = null;
 
   if (studio.stripe_subscription_id) {
     try {
@@ -66,9 +72,16 @@ export default async function BillingPage() {
       }
       subscriptionStart = sub.created;
       const pm = sub.default_payment_method as {
-        card?: { last4?: string };
+        card?: { brand?: string; last4?: string; exp_month?: number; exp_year?: number };
       } | null;
-      if (pm?.card?.last4) cardLast4 = pm.card.last4;
+      if (pm?.card?.last4) {
+        paymentMethod = {
+          brand: pm.card.brand ?? "Card",
+          last4: pm.card.last4,
+          exp_month: pm.card.exp_month ?? 0,
+          exp_year: pm.card.exp_year ?? 0,
+        };
+      }
       const first = Array.isArray(sub.discounts) && sub.discounts.length > 0 ? sub.discounts[0] : null;
       const discount = first && typeof first === "object" ? first : null;
       const promo = discount && "promotion_code" in discount && discount.promotion_code
@@ -122,6 +135,11 @@ export default async function BillingPage() {
       ? "Yearly ($190/year)"
       : "Monthly ($19/month)";
 
+  const planLabelShort =
+    studio.subscription_period === "yearly"
+      ? "Pro (Yearly) - $190/year"
+      : "Pro (Monthly) - $19/month";
+
   const isYearlyWithinRefund =
     studio.subscription_period === "yearly" &&
     subscriptionStart != null &&
@@ -141,30 +159,37 @@ export default async function BillingPage() {
         Manage your subscription and payment methods
       </p>
 
-      <div className="mt-8 card">
-        <h2 className="text-lg font-semibold text-gray-900">Current Plan</h2>
-        <dl className="mt-4 space-y-3">
-          <div>
-            <dt className="text-xs text-gray-400">Plan</dt>
-            <dd className="text-sm font-medium text-gray-900">
-              Pro ({periodLabel})
-            </dd>
-          </div>
-          <div>
-            <dt className="text-xs text-gray-400">Status</dt>
-            <dd className="text-sm font-medium text-gray-900">{statusLabel}</dd>
-          </div>
-          {studio.plan_status === "trialing" && trialEndsAtFormatted && (
+      <div className="mt-8 space-y-6">
+        {/* Current Plan */}
+        <div className="card">
+          <h2 className="text-lg font-semibold text-gray-900">Current Plan</h2>
+          <dl className="mt-4 space-y-3">
             <div>
-              <dt className="text-xs text-gray-400">Trial ends on</dt>
+              <dt className="text-xs text-gray-400">Plan</dt>
               <dd className="text-sm font-medium text-gray-900">
-                {trialEndsAtFormatted}
+                {planLabelShort}
               </dd>
             </div>
-          )}
-          {(studio.plan_status === "active" ||
-            studio.plan_status === "past_due" ||
-            studio.plan_status === "grace") &&
+            <div>
+              <dt className="text-xs text-gray-400">Status</dt>
+              <dd className="text-sm font-medium text-gray-900">{statusLabel}</dd>
+            </div>
+            {studio.plan_status === "trialing" && trialEndsAtFormatted && (
+              <>
+                <div>
+                  <dt className="text-xs text-gray-400">Trial ends on</dt>
+                  <dd className="text-sm font-medium text-gray-900">
+                    {trialEndsAtFormatted}
+                  </dd>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Your trial will convert to {studio.subscription_period === "yearly" ? "Yearly" : "Monthly"} on {trialEndsAtFormatted}.
+                </p>
+              </>
+            )}
+            {(studio.plan_status === "active" ||
+              studio.plan_status === "past_due" ||
+              studio.plan_status === "grace") &&
             (currentPeriodEndFormatted || nextBillingDate) && (
               <div>
                 <dt className="text-xs text-gray-400">
@@ -177,50 +202,43 @@ export default async function BillingPage() {
                 </dd>
               </div>
             )}
-          {studio.cancel_at_period_end && (
-            <div className="rounded border border-amber-200 bg-amber-50 px-3 py-2">
-              <p className="text-sm text-amber-800">
-                Your subscription will end on{" "}
-                {currentPeriodEndFormatted || "the period end"}.
-              </p>
-            </div>
-          )}
-          {studio.plan_status === "grace" && gracePeriodEndsAtFormatted && (
-            <div>
-              <dt className="text-xs text-gray-400">Access suspended on</dt>
-              <dd className="text-sm font-medium text-gray-900">
-                {gracePeriodEndsAtFormatted}
-              </dd>
-            </div>
-          )}
-          {cardLast4 && (
-            <div>
-              <dt className="text-xs text-gray-400">Card</dt>
-              <dd className="text-sm font-medium text-gray-900">
-                •••• {cardLast4}
-              </dd>
-            </div>
-          )}
-          {appliedCouponCode && (
-            <div>
-              <dt className="text-xs text-gray-400">Discount</dt>
-              <dd className="text-sm font-medium text-green-600">
-                {appliedCouponCode}
-              </dd>
-            </div>
-          )}
-        </dl>
-
-        <div className="mt-6">
-          <BillingActions
-            planStatus={studio.plan_status ?? "trialing"}
-            subscriptionPeriod={studio.subscription_period ?? "monthly"}
-            cancelAtPeriodEnd={!!studio.cancel_at_period_end}
-            hasStripeSubscription={!!studio.stripe_subscription_id}
-            isYearlyWithinRefundWindow={!!isYearlyWithinRefund}
-            appliedCouponCode={appliedCouponCode}
-          />
+            {studio.cancel_at_period_end && (
+              <div className="rounded border border-amber-200 bg-amber-50 px-3 py-2">
+                <p className="text-sm text-amber-800">
+                  Your subscription will end on{" "}
+                  {currentPeriodEndFormatted || "the period end"}.
+                </p>
+              </div>
+            )}
+            {studio.plan_status === "grace" && gracePeriodEndsAtFormatted && (
+              <div>
+                <dt className="text-xs text-gray-400">Access suspended on</dt>
+                <dd className="text-sm font-medium text-gray-900">
+                  {gracePeriodEndsAtFormatted}
+                </dd>
+              </div>
+            )}
+            {appliedCouponCode && (
+              <div>
+                <dt className="text-xs text-gray-400">Discount</dt>
+                <dd className="text-sm font-medium text-green-600">
+                  {appliedCouponCode}
+                </dd>
+              </div>
+            )}
+          </dl>
         </div>
+
+        {/* Switch Plan, Payment Method, Promotion Code, Cancel */}
+        <BillingActions
+          planStatus={studio.plan_status ?? "trialing"}
+          subscriptionPeriod={studio.subscription_period ?? "monthly"}
+          cancelAtPeriodEnd={!!studio.cancel_at_period_end}
+          hasStripeSubscription={!!studio.stripe_subscription_id}
+          isYearlyWithinRefundWindow={!!isYearlyWithinRefund}
+          appliedCouponCode={appliedCouponCode}
+          paymentMethod={paymentMethod}
+        />
       </div>
     </div>
   );
