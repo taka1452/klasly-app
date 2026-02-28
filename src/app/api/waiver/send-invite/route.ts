@@ -123,7 +123,7 @@ export async function POST(request: Request) {
       signUrl,
     });
 
-    sendEmail({
+    await sendEmail({
       to: memberEmail,
       subject,
       html,

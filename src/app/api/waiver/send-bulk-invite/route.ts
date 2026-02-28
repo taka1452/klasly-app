@@ -125,7 +125,7 @@ export async function POST() {
         signUrl,
       });
 
-      sendEmail({
+      await sendEmail({
         to: profile.email,
         subject,
         html,

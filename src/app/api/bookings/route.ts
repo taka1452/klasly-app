@@ -156,7 +156,7 @@ export async function POST(request: Request) {
 
         if (status === "confirmed" && memberEmail) {
           const { subject, html } = bookingConfirmation(emailPayload);
-          sendEmail({ to: memberEmail, subject, html });
+          await sendEmail({ to: memberEmail, subject, html });
         }
       } else {
         const { error } = await adminSupabase.from("bookings").insert({
@@ -182,7 +182,7 @@ export async function POST(request: Request) {
 
         if (status === "confirmed" && memberEmail) {
           const { subject, html } = bookingConfirmation(emailPayload);
-          sendEmail({ to: memberEmail, subject, html });
+          await sendEmail({ to: memberEmail, subject, html });
         }
       }
     } else if (action === "cancel") {
@@ -221,7 +221,7 @@ export async function POST(request: Request) {
 
       if (memberEmail) {
         const { subject, html } = bookingCancelled(emailPayload);
-        sendEmail({ to: memberEmail, subject, html });
+        await sendEmail({ to: memberEmail, subject, html });
       }
 
       const { count: confirmedCount } = await adminSupabase
@@ -288,7 +288,7 @@ export async function POST(request: Request) {
           ...emailPayload,
           memberName: promotedMemberName,
         });
-        sendEmail({ to: promotedMemberEmail, subject, html });
+        await sendEmail({ to: promotedMemberEmail, subject, html });
       }
     } else if (action === "leave_waitlist") {
       const { data: existing } = await adminSupabase

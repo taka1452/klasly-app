@@ -154,7 +154,7 @@ export async function POST(request: Request) {
         studioName: studioData?.name ?? "Studio",
         signUrl,
       });
-      sendEmail({
+      await sendEmail({
         to: email,
         subject,
         html,
@@ -178,7 +178,7 @@ export async function POST(request: Request) {
       memberName: fullName,
       studioName: studioData?.name ?? "Studio",
     });
-    sendEmail({ to: email, subject, html });
+    await sendEmail({ to: email, subject, html });
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {

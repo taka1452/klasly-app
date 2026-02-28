@@ -244,7 +244,7 @@ export async function POST(request: Request) {
           memberName: fullName,
           studioName,
         });
-        sendEmail({ to: emailTrimmed, subject, html });
+        await sendEmail({ to: emailTrimmed, subject, html });
         if (imported % BATCH_SIZE === 0 && i < records.length - 1) {
           await new Promise((r) => setTimeout(r, EMAIL_DELAY_MS));
         }
