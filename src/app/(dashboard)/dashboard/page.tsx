@@ -154,7 +154,7 @@ export default async function DashboardPage() {
   // Today's classes list (for display with booking counts)
   const { data: todayClassesList } = await supabase
     .from("class_sessions")
-    .select("id, session_date, start_time, capacity, classes(name)")
+    .select("id, class_id, session_date, start_time, capacity, classes(name)")
     .eq("studio_id", profile.studio_id)
     .eq("session_date", today)
     .eq("is_cancelled", false)
@@ -165,15 +165,35 @@ export default async function DashboardPage() {
     todayListSessionIds.length > 0
       ? await supabase
           .from("bookings")
-          .select("session_id, status")
+          .select("session_id, status, attended")
           .in("session_id", todayListSessionIds)
           .eq("status", "confirmed")
+      : { data: [] };
+
+  const { data: todayDropIns } =
+    todayListSessionIds.length > 0
+      ? await supabase
+          .from("drop_in_attendances")
+          .select("session_id")
+          .in("session_id", todayListSessionIds)
       : { data: [] };
 
   const confirmedBySession = (todayBookings || []).reduce((acc, b) => {
     if (b.status === "confirmed") {
       acc[b.session_id] = (acc[b.session_id] || 0) + 1;
     }
+    return acc;
+  }, {} as Record<string, number>);
+
+  const attendedBySession = (todayBookings || [])
+    .filter((b) => b.attended)
+    .reduce((acc, b) => {
+      acc[b.session_id] = (acc[b.session_id] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+  const dropInBySession = (todayDropIns || []).reduce((acc, d) => {
+    acc[d.session_id] = (acc[d.session_id] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
@@ -449,24 +469,47 @@ export default async function DashboardPage() {
                   "—";
                 const confirmed =
                   confirmedBySession[session.id] || 0;
+                const attended =
+                  (attendedBySession[session.id] || 0) +
+                  (dropInBySession[session.id] || 0);
+                const classIdForLink =
+                  (session as { class_id?: string }).class_id ?? "";
                 return (
-                  <Link
+                  <div
                     key={session.id}
-                    href={`/bookings/${session.id}`}
-                    className="block px-6 py-4 transition-colors hover:bg-gray-50"
+                    className="flex items-center justify-between gap-4 px-6 py-4 transition-colors hover:bg-gray-50"
                   >
-                    <div className="flex items-center justify-between gap-4">
+                    <Link
+                      href={`/bookings/${session.id}`}
+                      className="flex-1"
+                    >
                       <div>
                         <p className="font-medium text-gray-900">{className}</p>
                         <p className="text-sm text-gray-500">
                           {formatTime(session.start_time)}
                         </p>
                       </div>
-                      <span className="text-sm text-gray-600">
-                        {confirmed}/{session.capacity}
-                      </span>
-                    </div>
-                  </Link>
+                    </Link>
+                    <span className="text-sm text-gray-600">
+                      Attended: {attended}/{confirmed} · {confirmed}/
+                      {session.capacity} booked
+                    </span>
+                    {classIdForLink ? (
+                      <Link
+                        href={`/classes/${classIdForLink}/sessions/${session.id}`}
+                        className="shrink-0 text-sm text-blue-600 hover:text-blue-800"
+                      >
+                        Take Attendance →
+                      </Link>
+                    ) : (
+                      <Link
+                        href={`/bookings/${session.id}`}
+                        className="shrink-0 text-sm text-blue-600 hover:text-blue-800"
+                      >
+                        View →
+                      </Link>
+                    )}
+                  </div>
                 );
               })}
             </div>

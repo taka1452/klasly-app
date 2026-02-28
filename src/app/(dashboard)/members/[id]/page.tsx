@@ -5,6 +5,7 @@ import Link from "next/link";
 import { formatCredits, formatDate, getPlanLabel, getStatusColor } from "@/lib/utils";
 import MemberEditForm from "@/components/members/member-edit-form";
 import MemberDeleteButton from "@/components/members/member-delete-button";
+import MemberAttendanceHistory from "@/components/attendance/member-attendance-history";
 
 export default async function MemberDetailPage({
   params,
@@ -129,6 +130,10 @@ export default async function MemberDetailPage({
             <MemberDeleteButton memberId={member.id} />
           </div>
         </div>
+      </div>
+
+      <div className="mt-8">
+        <MemberAttendanceHistory memberId={member.id} />
       </div>
     </div>
   );

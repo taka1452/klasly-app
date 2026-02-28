@@ -80,6 +80,18 @@ export type Booking = {
   member_id: string;
   status: "confirmed" | "cancelled" | "waitlist";
   attended: boolean;
+  credit_deducted?: boolean;
+  created_at: string;
+};
+
+export type DropInAttendance = {
+  id: string;
+  studio_id: string;
+  session_id: string;
+  member_id: string;
+  attended_at: string;
+  credit_deducted: boolean;
+  notes: string | null;
   created_at: string;
 };
 

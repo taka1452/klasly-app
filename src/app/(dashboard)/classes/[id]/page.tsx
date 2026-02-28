@@ -172,11 +172,14 @@ export default async function ClassDetailPage({
                   return (
                     <li
                       key={session.id}
-                      className="flex items-center justify-between text-sm"
+                      className="flex items-center justify-between gap-2 text-sm"
                     >
-                      <span className="text-gray-700">
+                      <Link
+                        href={`/classes/${id}/sessions/${session.id}`}
+                        className="text-gray-700 hover:text-brand-600"
+                      >
                         {formatDate(session.session_date)}
-                      </span>
+                      </Link>
                       <span
                         className={
                           session.is_cancelled
@@ -188,6 +191,14 @@ export default async function ClassDetailPage({
                           ? "Cancelled"
                           : `${booked}/${session.capacity}`}
                       </span>
+                      {!session.is_cancelled && (
+                        <Link
+                          href={`/classes/${id}/sessions/${session.id}`}
+                          className="shrink-0 text-xs text-blue-600 hover:text-blue-800"
+                        >
+                          Take Attendance →
+                        </Link>
+                      )}
                     </li>
                   );
                 })}
