@@ -153,7 +153,6 @@ export default function Sidebar({
           </div>
         )}
         <div className="border-t border-gray-200 px-6 py-4 space-y-2">
-          <p className="text-xs text-gray-400">Free Plan</p>
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
             <Link href="/privacy" onClick={onMobileClose} className="text-gray-500 hover:text-gray-700">
               Privacy
@@ -221,7 +220,6 @@ export default function Sidebar({
       )}
       {/* フッター */}
       <div className="border-t border-gray-200 px-6 py-4 space-y-2">
-        <p className="text-xs text-gray-400">Free Plan</p>
         <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
           <Link href="/privacy" className="text-gray-500 hover:text-gray-700">
             Privacy
