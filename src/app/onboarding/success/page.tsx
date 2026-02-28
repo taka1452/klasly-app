@@ -53,7 +53,12 @@ export default async function OnboardingSuccessPage({
       const session = await stripe.checkout.sessions.retrieve(sessionId, {
         expand: ["subscription"],
       });
-      const subscriptionId = session.subscription as string | null;
+      const subscriptionId =
+        session.subscription == null
+          ? null
+          : typeof session.subscription === "string"
+            ? session.subscription
+            : (session.subscription as { id: string }).id;
       const studioId = session.metadata?.studio_id;
 
       if (subscriptionId && studioId === studio.id) {

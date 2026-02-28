@@ -7,6 +7,10 @@ import { sendEmail } from "@/lib/email/send";
 import { paymentReceipt, paymentFailed } from "@/lib/email/templates";
 import { insertWebhookLog } from "@/lib/admin/logs";
 
+/** session.subscription は string | Subscription (expand時) のため、必ずID文字列を返す */
+function getSubscriptionId(sub: string | Stripe.Subscription | null): string | null {
+  return sub == null ? null : typeof sub === "string" ? sub : sub.id;
+}
 
 export const runtime = "nodejs";
 
@@ -73,7 +77,7 @@ export async function POST(request: Request) {
           });
 
           if (purchaseType === "monthly") {
-            const subscriptionId = session.subscription as string | null;
+            const subscriptionId = getSubscriptionId(session.subscription as string | Stripe.Subscription | null);
             await adminSupabase
               .from("members")
               .update({
@@ -138,7 +142,7 @@ export async function POST(request: Request) {
           break;
         }
 
-        const subscriptionId = session.subscription as string | null;
+        const subscriptionId = getSubscriptionId(session.subscription as string | Stripe.Subscription | null);
         if (!studioId || !subscriptionId) break;
 
         const subscription = await stripe.subscriptions.retrieve(
