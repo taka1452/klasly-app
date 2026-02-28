@@ -32,9 +32,11 @@ export default async function MemberLayout({
     .eq("id", user.id)
     .single();
 
-  // オーナーは会員用画面にアクセス不可 → ダッシュボードへ
   if (profile?.role === "owner") {
     redirect("/dashboard");
+  }
+  if (profile?.role === "instructor") {
+    redirect("/instructor");
   }
 
   return (

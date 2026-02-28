@@ -1,6 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { sendEmail } from "@/lib/email/send";
+import { instructorInvite } from "@/lib/email/templates";
 
 export async function POST(request: Request) {
   try {
@@ -106,10 +108,20 @@ export async function POST(request: Request) {
       );
     }
 
-    await adminSupabase.auth.admin.generateLink({
-      type: "recovery",
+    const { data: studio } = await adminSupabase
+      .from("studios")
+      .select("name")
+      .eq("id", targetStudioId)
+      .single();
+
+    const studioName = (studio as { name?: string })?.name ?? "Studio";
+    const invite = instructorInvite({
+      instructorName: fullName,
+      studioName,
       email,
+      tempPassword,
     });
+    await sendEmail({ to: email, subject: invite.subject, html: invite.html });
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {

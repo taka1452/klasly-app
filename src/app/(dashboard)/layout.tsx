@@ -38,6 +38,9 @@ export default async function DashboardLayout({
     redirect("/onboarding");
   }
 
+  if (profile?.role === "instructor") {
+    redirect("/instructor");
+  }
   if (profile?.role === "member") {
     redirect("/schedule");
   }

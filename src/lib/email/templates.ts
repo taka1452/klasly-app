@@ -181,6 +181,37 @@ export function waiverInvite(params: {
   };
 }
 
+export function instructorInvite(params: {
+  instructorName: string;
+  studioName: string;
+  email: string;
+  tempPassword?: string;
+}) {
+  const { instructorName, studioName, email, tempPassword } = params;
+  const passwordLine = tempPassword
+    ? `<p style="margin:0 0 8px;font-size:14px;color:#6b7280;">Temporary password: ${tempPassword}</p><p style="margin:0 0 16px;font-size:13px;color:#6b7280;">Please change it after your first login.</p>`
+    : `<p style="margin:0 0 16px;font-size:14px;color:#6b7280;">Please set your password after your first login (use &quot;Forgot password&quot; if needed).</p>`;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">You've been added as an instructor</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${instructorName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      You've been added as an instructor at <strong>${studioName}</strong> on Klasly.
+    </p>
+    <p style="margin:0 0 16px;">
+      <a href="https://app.klasly.app/login" style="display:inline-block;background:${BRAND_COLOR};color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">Log in here</a>
+    </p>
+    <p style="margin:0 0 8px;font-size:14px;color:#6b7280;">
+      Email: ${email}
+    </p>
+    ${passwordLine}
+    <p style="margin:0;font-size:14px;">Thanks,<br>${studioName}</p>
+  `;
+  return {
+    subject: `You've been added as an instructor on ${studioName}`,
+    html: baseHtml(content),
+  };
+}
+
 export function welcomeMember(params: { memberName: string; studioName: string }) {
   const { memberName, studioName } = params;
   const content = `
