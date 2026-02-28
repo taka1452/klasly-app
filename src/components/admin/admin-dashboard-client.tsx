@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useAdminLocale } from "@/lib/admin/locale-context";
 
@@ -30,10 +31,67 @@ export default function AdminDashboardClient({
   activities: ActivityItem[];
 }) {
   const { t, formatDate, formatDateTime } = useAdminLocale();
+  const [testEmailTo, setTestEmailTo] = useState("");
+  const [testEmailLoading, setTestEmailLoading] = useState(false);
+  const [testEmailMessage, setTestEmailMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
+
+  async function handleSendTestEmail() {
+    const to = testEmailTo.trim();
+    if (!to) {
+      setTestEmailMessage({ type: "error", text: "Email is required" });
+      return;
+    }
+    setTestEmailMessage(null);
+    setTestEmailLoading(true);
+    try {
+      const res = await fetch("/api/admin/test-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setTestEmailMessage({ type: "error", text: data.error || "Failed to send" });
+        return;
+      }
+      setTestEmailMessage({ type: "ok", text: `Test email sent to ${to}` });
+      setTestEmailTo("");
+    } finally {
+      setTestEmailLoading(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-white">{t("dashboard.title")}</h1>
+
+      {/* テスト用: メール送信チェック（確認後削除） */}
+      <div className="rounded-lg border border-amber-700 bg-amber-900/30 p-4">
+        <h2 className="text-sm font-medium text-amber-200">Test email (temporary)</h2>
+        <p className="mt-1 text-xs text-slate-400">Send a test email to verify delivery. Remove this block after testing.</p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <input
+            type="email"
+            value={testEmailTo}
+            onChange={(e) => setTestEmailTo(e.target.value)}
+            placeholder="your@email.com"
+            className="rounded border border-slate-600 bg-slate-800 px-3 py-1.5 text-sm text-white placeholder-slate-500"
+          />
+          <button
+            type="button"
+            onClick={handleSendTestEmail}
+            disabled={testEmailLoading}
+            className="rounded bg-amber-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-500 disabled:opacity-50"
+          >
+            {testEmailLoading ? "Sending…" : "Send test email"}
+          </button>
+        </div>
+        {testEmailMessage && (
+          <p className={`mt-2 text-sm ${testEmailMessage.type === "ok" ? "text-green-400" : "text-red-400"}`}>
+            {testEmailMessage.text}
+          </p>
+        )}
+      </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
