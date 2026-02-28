@@ -3,6 +3,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { formatDate, formatTime } from "@/lib/utils";
 import EmptyState from "@/components/ui/empty-state";
+import ExportCsvButton from "@/components/ui/export-csv-button";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -80,6 +81,10 @@ export default async function BookingsPage() {
             Upcoming sessions
           </p>
         </div>
+        <ExportCsvButton
+          url="/api/export/bookings"
+          filename={`bookings-${new Date().toISOString().slice(0, 10)}.csv`}
+        />
       </div>
 
       <div className="mt-6">

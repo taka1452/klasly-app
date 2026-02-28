@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import PaymentsTable from "@/components/payments/payments-table";
+import ExportCsvButton from "@/components/ui/export-csv-button";
 
 export default async function PaymentsPage({
   searchParams,
@@ -73,12 +74,23 @@ export default async function PaymentsPage({
     .filter((p) => p.status === "paid" && p.paid_at && new Date(p.paid_at) >= startOfMonth)
     .reduce((sum, p) => sum + (p.amount ?? 0), 0);
 
+  const today = new Date().toISOString().slice(0, 10);
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
-      <p className="mt-1 text-sm text-gray-500">
-        View payment history and revenue
-      </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            View payment history and revenue
+          </p>
+        </div>
+        <ExportCsvButton
+          url={`/api/export/payments?from=${thirtyDaysAgo}&to=${today}`}
+          filename={`payments-${thirtyDaysAgo}-to-${today}.csv`}
+        />
+      </div>
 
       <div className="mt-6 card">
         <h2 className="text-lg font-semibold text-gray-900">

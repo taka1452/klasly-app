@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/admin/supabase";
 import { sendEmail } from "@/lib/email/send";
-import { insertEmailLog } from "@/lib/admin/logs";
 
 export async function POST(
   request: Request,
@@ -50,13 +49,12 @@ export async function POST(
     }
 
     const html = bodyText.replace(/\n/g, "<br>");
-    const ok = await sendEmail({ to: toEmail, subject, html });
-    await insertEmailLog(supabase, {
-      studio_id: studioId,
-      to_email: toEmail,
-      template: "admin_send",
+    const ok = await sendEmail({
+      to: toEmail,
       subject,
-      status: ok ? "sent" : "failed",
+      html,
+      studioId,
+      templateName: "admin_send",
     });
     if (!ok) {
       return NextResponse.json(

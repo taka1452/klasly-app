@@ -9,8 +9,27 @@ export type Studio = {
   email: string | null;
   phone: string | null;
   address: string | null;
-  plan: "free" | "studio" | "grow";
+  plan: string; // 'pro'（旧: free/studio/grow）
+  plan_status: string; // trialing / active / past_due / grace / canceled
   max_members: number;
+  // Stripe連携
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  // 課金管理
+  trial_ends_at: string | null;
+  subscription_period: string | null; // monthly / yearly
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  grace_period_ends_at: string | null;
+  trial_reminder_sent: boolean;
+  email_notifications_enabled: boolean;
+  // スタジオ料金設定（会員向け）
+  drop_in_price: number | null;
+  pack_5_price: number | null;
+  pack_10_price: number | null;
+  monthly_price: number | null;
+  // Admin
+  admin_memo: string | null;
   created_at: string;
 };
 
@@ -30,11 +49,17 @@ export type Member = {
   studio_id: string;
   profile_id: string;
   plan_type: "monthly" | "pack" | "drop_in";
-  credits: number; // -1 = 月額プラン
+  credits: number;
   status: "active" | "paused" | "cancelled";
   joined_at: string;
   notes: string | null;
   created_at: string;
+  // Stripe連携
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  // Waiver
+  waiver_signed: boolean;
+  waiver_signed_at: string | null;
 };
 
 export type Instructor = {

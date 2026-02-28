@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  # ビルドに必要な環境変数（ダミー値。実際の値はVercelで設定済み）
+  NEXT_PUBLIC_SUPABASE_URL: https://dummy.supabase.co
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-anon-key
+  SUPABASE_SERVICE_ROLE_KEY: dummy-service-role-key
+  STRIPE_SECRET_KEY: sk_test_dummy
+  STRIPE_WEBHOOK_SECRET: whsec_dummy
+  STRIPE_PRO_MONTHLY_PRICE_ID: price_dummy_monthly
+  STRIPE_PRO_YEARLY_PRICE_ID: price_dummy_yearly
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_dummy
+  RESEND_API_KEY: re_dummy
+  NEXT_PUBLIC_APP_URL: https://app.klasly.app
+  ADMIN_EMAILS: test@example.com
+
+jobs:
+  ci:
+    name: Build & Type Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build

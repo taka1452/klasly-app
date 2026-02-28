@@ -5,7 +5,7 @@ import Stripe from "stripe";
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email/send";
 import { paymentReceipt, paymentFailed } from "@/lib/email/templates";
-import { insertWebhookLog, insertEmailLog } from "@/lib/admin/logs";
+import { insertWebhookLog } from "@/lib/admin/logs";
 
 
 export const runtime = "nodejs";
@@ -127,13 +127,12 @@ export async function POST(request: Request) {
               description: desc,
               studioName,
             });
-            const sent = await sendEmail({ to: toEmail, subject, html });
-            await insertEmailLog(adminSupabase, {
-              studio_id: studioId,
-              to_email: toEmail,
-              template: "payment_receipt",
+            await sendEmail({
+              to: toEmail,
               subject,
-              status: sent ? "sent" : "failed",
+              html,
+              studioId,
+              templateName: "payment_receipt",
             });
           }
           break;
@@ -273,13 +272,12 @@ export async function POST(request: Request) {
               description: "Pro plan subscription",
               studioName: studioData?.name ?? "Studio",
             });
-            const sent = await sendEmail({ to: ownerProfile.email, subject, html });
-            await insertEmailLog(adminSupabase, {
-              studio_id: studio.id,
-              to_email: ownerProfile.email,
-              template: "payment_receipt",
+            await sendEmail({
+              to: ownerProfile.email,
               subject,
-              status: sent ? "sent" : "failed",
+              html,
+              studioId: studio.id,
+              templateName: "payment_receipt",
             });
           }
           break;
@@ -323,13 +321,12 @@ export async function POST(request: Request) {
               description: "Monthly membership",
               studioName: studioData?.name ?? "Studio",
             });
-            const sent = await sendEmail({ to: pf.email, subject, html });
-            await insertEmailLog(adminSupabase, {
-              studio_id: member.studio_id,
-              to_email: pf.email,
-              template: "payment_receipt",
+            await sendEmail({
+              to: pf.email,
               subject,
-              status: sent ? "sent" : "failed",
+              html,
+              studioId: member.studio_id,
+              templateName: "payment_receipt",
             });
           }
         }
@@ -393,13 +390,12 @@ export async function POST(request: Request) {
               amount: invoice.amount_due,
               studioName: studioData?.name ?? "Studio",
             });
-            const sent = await sendEmail({ to: ownerProfile.email, subject, html });
-            await insertEmailLog(adminSupabase, {
-              studio_id: studio.id,
-              to_email: ownerProfile.email,
-              template: "payment_failed",
+            await sendEmail({
+              to: ownerProfile.email,
               subject,
-              status: sent ? "sent" : "failed",
+              html,
+              studioId: studio.id,
+              templateName: "payment_failed",
             });
           }
           break;
@@ -441,13 +437,12 @@ export async function POST(request: Request) {
               amount: invoice.amount_due,
               studioName: studioData?.name ?? "Studio",
             });
-            const sent = await sendEmail({ to: pf.email, subject, html });
-            await insertEmailLog(adminSupabase, {
-              studio_id: member.studio_id,
-              to_email: pf.email,
-              template: "payment_failed",
+            await sendEmail({
+              to: pf.email,
               subject,
-              status: sent ? "sent" : "failed",
+              html,
+              studioId: member.studio_id,
+              templateName: "payment_failed",
             });
           }
         }

@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email/send";
-import { insertCronLog, insertEmailLog } from "@/lib/admin/logs";
+import { createAdminClient } from "@/lib/admin/supabase";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -31,6 +31,25 @@ export async function GET(request: Request) {
     serviceRoleKey
   );
 
+  const cronStartedAt = new Date().toISOString();
+  let cronLogId: string | null = null;
+  try {
+    const adminDb = createAdminClient();
+    const { data: logRow } = await adminDb
+      .from("cron_logs")
+      .insert({
+        job_name: "trial-reminder",
+        status: "success",
+        started_at: cronStartedAt,
+      })
+      .select("id")
+      .single();
+    cronLogId = logRow?.id ?? null;
+  } catch {
+    // ログ記録失敗はスキップ
+  }
+
+  try {
   const now = new Date();
   const inThreeDays = new Date(now);
   inThreeDays.setDate(inThreeDays.getDate() + 3);
@@ -44,12 +63,22 @@ export async function GET(request: Request) {
     .lte("trial_ends_at", inThreeDays.toISOString());
 
   if (!studios?.length) {
-    await insertCronLog(supabase, {
-      job_name: "trial-reminder",
-      status: "success",
-      affected_count: 0,
-      details: {},
-    });
+    try {
+      if (cronLogId) {
+        const adminDb = createAdminClient();
+        await adminDb
+          .from("cron_logs")
+          .update({
+            status: "success",
+            affected_count: 0,
+            details: {},
+            completed_at: new Date().toISOString(),
+          })
+          .eq("id", cronLogId);
+      }
+    } catch {
+      // ログ記録失敗はスキップ
+    }
     return NextResponse.json({ processed: 0 });
   }
 
@@ -104,13 +133,12 @@ export async function GET(request: Request) {
 </body>
 </html>`;
 
-    await sendEmail({ to: owner.email, subject, html: wrapped });
-    await insertEmailLog(supabase, {
-      studio_id: studio.id,
-      to_email: owner.email,
-      template: "trial_reminder",
+    await sendEmail({
+      to: owner.email,
       subject,
-      status: "sent",
+      html: wrapped,
+      studioId: studio.id,
+      templateName: "trial_reminder",
     });
     await supabase
       .from("studios")
@@ -119,12 +147,40 @@ export async function GET(request: Request) {
     sent++;
   }
 
-  await insertCronLog(supabase, {
-    job_name: "trial-reminder",
-    status: "success",
-    affected_count: sent,
-    details: { studios_processed: studios.length },
-  });
+    try {
+      if (cronLogId) {
+        const adminDb = createAdminClient();
+        await adminDb
+          .from("cron_logs")
+          .update({
+            status: "success",
+            affected_count: sent,
+            details: { studios_processed: studios.length },
+            completed_at: new Date().toISOString(),
+          })
+          .eq("id", cronLogId);
+      }
+    } catch {
+      // ログ記録失敗はスキップ
+    }
 
   return NextResponse.json({ processed: studios.length, sent });
+  } catch (error) {
+    try {
+      if (cronLogId) {
+        const adminDb = createAdminClient();
+        await adminDb
+          .from("cron_logs")
+          .update({
+            status: "failure",
+            error_message: error instanceof Error ? error.message : "Unknown error",
+            completed_at: new Date().toISOString(),
+          })
+          .eq("id", cronLogId);
+      }
+    } catch {
+      // ログ記録失敗はスキップ
+    }
+    throw error;
+  }
 }

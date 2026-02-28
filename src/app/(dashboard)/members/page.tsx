@@ -4,6 +4,7 @@ import Link from "next/link";
 import { formatCredits, formatDate, getPlanLabel, getStatusColor } from "@/lib/utils";
 import MemberSearch from "@/components/members/member-search";
 import EmptyState from "@/components/ui/empty-state";
+import ExportCsvButton from "@/components/ui/export-csv-button";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -77,9 +78,15 @@ export default async function MembersPage({
             {filteredMembers.length} member{filteredMembers.length !== 1 ? "s" : ""}
           </p>
         </div>
-        <Link href="/members/new" className="btn-primary">
-          + Add member
-        </Link>
+        <div className="flex items-center gap-2">
+          <ExportCsvButton
+            url="/api/export/members"
+            filename={`members-${new Date().toISOString().slice(0, 10)}.csv`}
+          />
+          <Link href="/members/new" className="btn-primary">
+            + Add member
+          </Link>
+        </div>
       </div>
 
       {/* 検索・フィルター */}

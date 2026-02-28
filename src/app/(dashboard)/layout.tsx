@@ -54,7 +54,13 @@ export default async function DashboardLayout({
     grace_period_ends_at?: string | null;
   } | null;
 
-  if (!studio?.stripe_subscription_id) {
+  // stripe_subscription_idがなく、かつplan_statusがactiveでもtrialingでもない場合のみリダイレクト
+  // （管理者がDBで直接activeに設定したケースや、無料トライアル開始時を考慮）
+  const hasValidPlan =
+    studio?.stripe_subscription_id ||
+    studio?.plan_status === "active" ||
+    studio?.plan_status === "trialing";
+  if (!hasValidPlan) {
     redirect("/onboarding/plan");
   }
 

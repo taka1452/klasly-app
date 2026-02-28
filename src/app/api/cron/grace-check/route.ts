@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { stripe } from "@/lib/stripe/server";
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email/send";
-import { insertCronLog, insertEmailLog } from "@/lib/admin/logs";
+import { createAdminClient } from "@/lib/admin/supabase";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -35,6 +35,25 @@ export async function GET(request: Request) {
     serviceRoleKey
   );
 
+  const cronStartedAt = new Date().toISOString();
+  let cronLogId: string | null = null;
+  try {
+    const adminDb = createAdminClient();
+    const { data: logRow } = await adminDb
+      .from("cron_logs")
+      .insert({
+        job_name: "grace-check",
+        status: "success",
+        started_at: cronStartedAt,
+      })
+      .select("id")
+      .single();
+    cronLogId = logRow?.id ?? null;
+  } catch {
+    // ログ記録失敗はスキップ
+  }
+
+  try {
   const now = new Date().toISOString();
 
   const { data: studios } = await supabase
@@ -45,12 +64,22 @@ export async function GET(request: Request) {
     .lt("grace_period_ends_at", now);
 
   if (!studios?.length) {
-    await insertCronLog(supabase, {
-      job_name: "grace-check",
-      status: "success",
-      affected_count: 0,
-      details: {},
-    });
+    try {
+      if (cronLogId) {
+        const adminDb = createAdminClient();
+        await adminDb
+          .from("cron_logs")
+          .update({
+            status: "success",
+            affected_count: 0,
+            details: {},
+            completed_at: new Date().toISOString(),
+          })
+          .eq("id", cronLogId);
+      }
+    } catch {
+      // ログ記録失敗はスキップ
+    }
     return NextResponse.json({ processed: 0 });
   }
 
@@ -107,24 +136,51 @@ export async function GET(request: Request) {
   </div>
 </body>
 </html>`;
-      await sendEmail({ to: owner.email, subject, html: wrapped });
-      await insertEmailLog(supabase, {
-        studio_id: studio.id,
-        to_email: owner.email,
-        template: "grace_check_suspension",
+      await sendEmail({
+        to: owner.email,
         subject,
-        status: "sent",
+        html: wrapped,
+        studioId: studio.id,
+        templateName: "grace_check_suspension",
       });
     }
     updated++;
   }
 
-  await insertCronLog(supabase, {
-    job_name: "grace-check",
-    status: "success",
-    affected_count: updated,
-    details: { studios_processed: studios.length },
-  });
+    try {
+      if (cronLogId) {
+        const adminDb = createAdminClient();
+        await adminDb
+          .from("cron_logs")
+          .update({
+            status: "success",
+            affected_count: updated,
+            details: { studios_processed: studios.length },
+            completed_at: new Date().toISOString(),
+          })
+          .eq("id", cronLogId);
+      }
+    } catch {
+      // ログ記録失敗はスキップ
+    }
 
   return NextResponse.json({ processed: studios.length, updated });
+  } catch (error) {
+    try {
+      if (cronLogId) {
+        const adminDb = createAdminClient();
+        await adminDb
+          .from("cron_logs")
+          .update({
+            status: "failure",
+            error_message: error instanceof Error ? error.message : "Unknown error",
+            completed_at: new Date().toISOString(),
+          })
+          .eq("id", cronLogId);
+      }
+    } catch {
+      // ログ記録失敗はスキップ
+    }
+    throw error;
+  }
 }
