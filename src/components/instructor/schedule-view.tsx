@@ -25,14 +25,18 @@ export default function ScheduleView({
   const [viewMode, setViewMode] = useState<"week" | "list">("week");
   const [weekOffset, setWeekOffset] = useState(0);
 
-  const today = new Date();
-  const weekStart = new Date(today);
-  weekStart.setDate(today.getDate() - today.getDay() + 1 + weekOffset * 7);
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekStart.getDate() + 6);
-
-  const weekStartStr = weekStart.toISOString().split("T")[0];
-  const weekEndStr = weekEnd.toISOString().split("T")[0];
+  const { weekStart, weekStartStr, weekEndStr } = useMemo(() => {
+    const today = new Date();
+    const start = new Date(today);
+    start.setDate(today.getDate() - today.getDay() + 1 + weekOffset * 7);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    return {
+      weekStart: start,
+      weekStartStr: start.toISOString().split("T")[0],
+      weekEndStr: end.toISOString().split("T")[0],
+    };
+  }, [weekOffset]);
 
   const weekSessions = useMemo(() => {
     return sessions.filter(

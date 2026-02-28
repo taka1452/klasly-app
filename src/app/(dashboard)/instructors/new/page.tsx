@@ -9,6 +9,14 @@ export default function NewInstructorPage() {
   const router = useRouter();
   const planAccess = usePlanAccess();
 
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [bio, setBio] = useState("");
+  const [specialties, setSpecialties] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
   if (planAccess && !planAccess.canCreate) {
     return (
       <div className="card max-w-xl">
@@ -25,14 +33,6 @@ export default function NewInstructorPage() {
       </div>
     );
   }
-
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [bio, setBio] = useState("");
-  const [specialties, setSpecialties] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

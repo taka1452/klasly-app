@@ -10,8 +10,7 @@ const STORAGE_KEY = "klasly-admin-locale";
 
 export type AdminLocale = "ja" | "en";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const dictionaries: Record<AdminLocale, Record<string, any>> = { ja, en };
+const dictionaries: Record<AdminLocale, Record<string, unknown>> = { ja, en };
 
 function getNested(obj: Record<string, unknown>, path: string): string | undefined {
   const parts = path.split(".");
