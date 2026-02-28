@@ -2,8 +2,13 @@ import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { stripe } from "@/lib/stripe/server";
 
-export default async function OnboardingSuccessPage() {
+export default async function OnboardingSuccessPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ session_id?: string }>;
+}) {
   const serverSupabase = await createServerClient();
   const {
     data: { user },
@@ -27,11 +32,74 @@ export default async function OnboardingSuccessPage() {
 
   if (!profile?.studio_id) redirect("/onboarding");
 
-  const { data: studio } = await supabase
+  const params = await searchParams;
+  const sessionId = params.session_id;
+
+  const { data: studioData } = await supabase
     .from("studios")
-    .select("trial_ends_at")
+    .select("id, trial_ends_at, stripe_subscription_id")
     .eq("id", profile.studio_id)
     .single();
+
+  let studio = studioData;
+
+  // Webhook がまだ来ていない場合、session_id から DB を直接更新
+  if (
+    !studio?.stripe_subscription_id &&
+    sessionId &&
+    studio?.id
+  ) {
+    try {
+      const session = await stripe.checkout.sessions.retrieve(sessionId, {
+        expand: ["subscription"],
+      });
+      const subscriptionId = session.subscription as string | null;
+      const studioId = session.metadata?.studio_id;
+
+      if (subscriptionId && studioId === studio.id) {
+        const sub =
+          typeof session.subscription === "object"
+            ? session.subscription
+            : await stripe.subscriptions.retrieve(subscriptionId);
+
+        const priceId = sub.items.data[0]?.price?.id ?? "";
+        const period: "monthly" | "yearly" =
+          priceId === process.env.STRIPE_PRO_YEARLY_PRICE_ID
+            ? "yearly"
+            : "monthly";
+
+        const trialEnd = sub.trial_end;
+        const trialEndAt = trialEnd
+          ? new Date(trialEnd * 1000).toISOString()
+          : null;
+
+        const periodEnd = sub.items.data[0]?.current_period_end;
+        const currentPeriodEnd = periodEnd
+          ? new Date(periodEnd * 1000).toISOString()
+          : null;
+
+        await supabase
+          .from("studios")
+          .update({
+            stripe_subscription_id: subscriptionId,
+            plan: "pro",
+            plan_status: "trialing",
+            trial_ends_at: trialEndAt,
+            subscription_period: period,
+            current_period_end: currentPeriodEnd,
+            cancel_at_period_end: sub.cancel_at_period_end ?? false,
+          })
+          .eq("id", studio.id);
+
+        studio = {
+          ...studio,
+          trial_ends_at: trialEndAt,
+        };
+      }
+    } catch {
+      // Stripe API エラー時は無視（Webhook に任せる）
+    }
+  }
 
   const trialEndStr = studio?.trial_ends_at
     ? new Date(studio.trial_ends_at).toLocaleDateString("en-US", {
