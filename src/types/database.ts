@@ -149,3 +149,107 @@ export type BookingWithDetails = Booking & {
     classes: Class;
   };
 };
+
+// ============================================
+// Admin / クーポン / サポート
+// ============================================
+
+export type AdminNote = {
+  id: string;
+  studio_id: string;
+  content: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type SupportTicket = {
+  id: string;
+  ticket_number: number;
+  studio_id: string | null;
+  subject: string;
+  description: string | null;
+  status: string;
+  priority: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type SupportTicketComment = {
+  id: string;
+  ticket_id: string;
+  content: string;
+  created_by: string;
+  created_at: string;
+};
+
+export type WebhookLog = {
+  id: string;
+  event_type: string;
+  event_id: string | null;
+  studio_id: string | null;
+  status: string;
+  payload: Record<string, unknown> | null;
+  error_message: string | null;
+  created_at: string;
+};
+
+export type CronLog = {
+  id: string;
+  job_name: string;
+  status: string;
+  affected_count: number;
+  details: Record<string, unknown> | null;
+  error_message: string | null;
+  started_at: string;
+  completed_at: string | null;
+};
+
+export type EmailLog = {
+  id: string;
+  studio_id: string | null;
+  to_email: string;
+  template: string;
+  subject: string | null;
+  status: string;
+  resend_id: string | null;
+  error_message: string | null;
+  created_at: string;
+};
+
+export type Coupon = {
+  id: string;
+  stripe_coupon_id: string;
+  name: string;
+  discount_type: string;
+  discount_value: number;
+  duration: string;
+  duration_months: number | null;
+  status: string;
+  notes: string | null;
+  created_by: string;
+  created_at: string;
+};
+
+export type PromotionCode = {
+  id: string;
+  coupon_id: string;
+  stripe_promo_id: string;
+  code: string;
+  max_redemptions: number | null;
+  times_redeemed: number;
+  expires_at: string | null;
+  first_time_only: boolean;
+  is_active: boolean;
+  created_at: string;
+};
+
+export type CouponRedemption = {
+  id: string;
+  studio_id: string;
+  coupon_id: string;
+  promotion_code_id: string | null;
+  stripe_subscription_id: string | null;
+  redeemed_at: string;
+};
