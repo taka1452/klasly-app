@@ -1,9 +1,27 @@
 import { requireAdmin } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/admin/supabase";
+import { getStripe } from "@/lib/stripe/server";
 import Link from "next/link";
 import AdminStudioDetail from "@/components/admin/admin-studio-detail";
 
 const STRIPE_DASHBOARD = "https://dashboard.stripe.com";
+
+async function getAppliedCoupon(subscriptionId: string | null): Promise<{ id: string; name: string } | null> {
+  if (!subscriptionId) return null;
+  try {
+    const stripe = getStripe();
+    const sub = await stripe.subscriptions.retrieve(subscriptionId, { expand: ["discounts.promotion_code"] });
+    const first = Array.isArray(sub.discounts) && sub.discounts.length > 0 ? sub.discounts[0] : null;
+    const discount = first && typeof first === "object" ? first : null;
+    const promo = discount && "promotion_code" in discount && discount.promotion_code
+      ? (typeof discount.promotion_code === "object" ? discount.promotion_code as { id: string; code?: string } : null)
+      : null;
+    if (!promo?.id) return null;
+    return { id: promo.id, name: promo.code ?? promo.id };
+  } catch {
+    return null;
+  }
+}
 
 export default async function AdminStudioDetailPage({
   params,
@@ -82,6 +100,7 @@ export default async function AdminStudioDetailPage({
 
   const stripeCustomerId = studio.stripe_customer_id as string | null;
   const stripeSubscriptionId = studio.stripe_subscription_id as string | null;
+  const appliedCoupon = await getAppliedCoupon(stripeSubscriptionId);
 
   return (
     <div className="space-y-6">
@@ -98,6 +117,7 @@ export default async function AdminStudioDetailPage({
         payments={payments ?? []}
         stripeCustomerUrl={stripeCustomerId ? `${STRIPE_DASHBOARD}/customers/${stripeCustomerId}` : null}
         stripeSubscriptionUrl={stripeSubscriptionId ? `${STRIPE_DASHBOARD}/subscriptions/${stripeSubscriptionId}` : null}
+        appliedCoupon={appliedCoupon}
       />
     </div>
   );
