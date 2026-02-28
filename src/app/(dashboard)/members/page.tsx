@@ -3,7 +3,6 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { formatCredits, formatDate, getPlanLabel, getStatusColor } from "@/lib/utils";
 import MemberSearch from "@/components/members/member-search";
-import EmptyState from "@/components/ui/empty-state";
 import ExportCsvButton from "@/components/ui/export-csv-button";
 import type { Metadata } from "next";
 
@@ -83,6 +82,9 @@ export default async function MembersPage({
             url="/api/export/members"
             filename={`members-${new Date().toISOString().slice(0, 10)}.csv`}
           />
+          <Link href="/members/import" className="btn-secondary">
+            📥 Import CSV
+          </Link>
           <Link href="/members/new" className="btn-primary">
             + Add member
           </Link>
@@ -103,11 +105,19 @@ export default async function MembersPage({
               <p className="text-sm text-gray-500">No members match your search.</p>
             </div>
           ) : (
-            <EmptyState
-              title="No members yet"
-              actionLabel="+ Add your first member"
-              actionHref="/members/new"
-            />
+            <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50/50 px-6 py-16 text-center">
+              <p className="text-base font-medium text-gray-900">
+                No members yet. Add your first member or import from CSV.
+              </p>
+              <div className="mt-4 flex flex-wrap justify-center gap-3">
+                <Link href="/members/new" className="btn-primary">
+                  + Add member
+                </Link>
+                <Link href="/members/import" className="btn-secondary">
+                  📥 Import from CSV
+                </Link>
+              </div>
+            </div>
           )
         ) : (
           <>
