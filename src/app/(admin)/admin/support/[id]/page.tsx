@@ -37,15 +37,6 @@ export default async function AdminSupportTicketPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <Link href="/admin/support" className="text-sm text-slate-400 hover:text-white">
-          ← Back to Support
-        </Link>
-        <h1 className="mt-2 text-2xl font-bold text-white">
-          Ticket #{ticket.ticket_number}
-        </h1>
-      </div>
-
       <AdminTicketDetail
         ticket={{ ...ticket, studio_name }}
         comments={comments ?? []}

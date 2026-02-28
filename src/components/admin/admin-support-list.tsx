@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useAdminLocale } from "@/lib/admin/locale-context";
 
 type Ticket = {
   id: string;
@@ -46,57 +47,59 @@ export default function AdminSupportList({
     return p.toString();
   }
 
-  const formatDate = (d: string) => new Date(d).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
-
+  const { t, formatDateTime } = useAdminLocale();
+  const formatDate = (d: string) => formatDateTime(d);
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
   return (
     <div className="space-y-4">
+      <h1 className="text-2xl font-bold text-white">{t("support.title")}</h1>
+      <p className="text-slate-400">{t("support.subtitle")}</p>
       <form
         method="get"
         action="/admin/support"
         className="flex flex-wrap items-end gap-3 rounded-lg border border-slate-700 bg-slate-800 p-4"
       >
         <div>
-          <label className="block text-xs text-slate-400">Status</label>
+          <label className="block text-xs text-slate-400">{t("support.status")}</label>
           <select
             name="status"
             defaultValue={currentStatus}
             className="mt-1 rounded border border-slate-600 bg-slate-900 px-2 py-1.5 text-sm text-white"
           >
-            <option value="">All</option>
-            <option value="open">Open</option>
-            <option value="in_progress">In progress</option>
-            <option value="resolved">Resolved</option>
-            <option value="closed">Closed</option>
+            <option value="">{t("logs.all")}</option>
+            <option value="open">{t("support.open")}</option>
+            <option value="in_progress">{t("support.inProgress")}</option>
+            <option value="resolved">{t("support.resolved")}</option>
+            <option value="closed">{t("support.closed")}</option>
           </select>
         </div>
         <div>
-          <label className="block text-xs text-slate-400">Priority</label>
+          <label className="block text-xs text-slate-400">{t("support.priority")}</label>
           <select
             name="priority"
             defaultValue={currentPriority}
             className="mt-1 rounded border border-slate-600 bg-slate-900 px-2 py-1.5 text-sm text-white"
           >
-            <option value="">All</option>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
+            <option value="">{t("logs.all")}</option>
+            <option value="low">{t("support.low")}</option>
+            <option value="medium">{t("support.medium")}</option>
+            <option value="high">{t("support.high")}</option>
           </select>
         </div>
         <div>
-          <label className="block text-xs text-slate-400">Search</label>
+          <label className="block text-xs text-slate-400">{t("support.search")}</label>
           <input
             type="text"
             name="search"
             defaultValue={currentSearch}
-            placeholder="Subject or description"
+            placeholder={t("support.searchPlaceholder")}
             className="mt-1 w-48 rounded border border-slate-600 bg-slate-900 px-2 py-1.5 text-sm text-white placeholder-slate-500"
           />
         </div>
         <input type="hidden" name="page" value="1" />
         <button type="submit" className="rounded bg-slate-600 px-3 py-1.5 text-sm text-white hover:bg-slate-500">
-          Filter
+          {t("support.filter")}
         </button>
       </form>
 
@@ -106,18 +109,18 @@ export default function AdminSupportList({
             <thead>
               <tr className="border-b border-slate-600 bg-slate-900/50 text-left text-slate-400">
                 <th className="p-3">#</th>
-                <th className="p-3">Subject</th>
-                <th className="p-3">Studio</th>
-                <th className="p-3">Status</th>
-                <th className="p-3">Priority</th>
-                <th className="p-3">Created</th>
+                <th className="p-3">{t("support.subject")}</th>
+                <th className="p-3">{t("support.studio")}</th>
+                <th className="p-3">{t("support.status")}</th>
+                <th className="p-3">{t("support.priority")}</th>
+                <th className="p-3">{t("support.createdAt")}</th>
               </tr>
             </thead>
             <tbody>
               {tickets.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="p-4 text-slate-500">
-                    No tickets. Users can create tickets from Settings → Support.
+                    {t("support.noTickets")}
                   </td>
                 </tr>
               ) : (
@@ -167,12 +170,12 @@ export default function AdminSupportList({
             <div className="flex gap-2">
               {page > 1 && (
                 <Link href={`/admin/support?${buildQuery({ page: page - 1 })}`} className="text-indigo-400 hover:underline">
-                  Previous
+                  {t("studios.previous")}
                 </Link>
               )}
               {page < totalPages && (
                 <Link href={`/admin/support?${buildQuery({ page: page + 1 })}`} className="text-indigo-400 hover:underline">
-                  Next
+                  {t("studios.next")}
                 </Link>
               )}
             </div>

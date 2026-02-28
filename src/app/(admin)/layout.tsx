@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin/auth";
+import { AdminLocaleProvider } from "@/lib/admin/locale-context";
 import AdminShell from "@/components/admin/admin-shell";
 
 export default async function AdminLayout({
@@ -22,8 +23,10 @@ export default async function AdminLayout({
   const userEmail = user.email ?? "admin";
 
   return (
-    <AdminShell userEmail={userEmail}>
-      {children}
-    </AdminShell>
+    <AdminLocaleProvider>
+      <AdminShell userEmail={userEmail}>
+        {children}
+      </AdminShell>
+    </AdminLocaleProvider>
   );
 }

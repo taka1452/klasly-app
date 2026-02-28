@@ -18,7 +18,6 @@ export default async function AdminStudiosPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-white">Studios</h1>
       <AdminStudiosList statusCounts={counts} />
     </div>
   );

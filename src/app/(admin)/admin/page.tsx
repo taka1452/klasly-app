@@ -1,6 +1,6 @@
 import { requireAdmin } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/admin/supabase";
-import Link from "next/link";
+import AdminDashboardClient from "@/components/admin/admin-dashboard-client";
 
 export default async function AdminDashboardPage() {
   await requireAdmin();
@@ -137,13 +137,14 @@ export default async function AdminDashboardPage() {
     alerts.push({ type: "canceled", studioName: s.name, studioId: s.id })
   );
 
-  type ActivityItem = { at: string; icon: string; text: string };
+  type ActivityItem = { at: string; icon: string; textKey: string; textParams?: Record<string, string | number> };
   const activities: ActivityItem[] = [];
   (recentStudios || []).forEach((s) => {
     activities.push({
       at: s.created_at,
       icon: "🆕",
-      text: `${s.name} signed up`,
+      textKey: "dashboard.signedUp",
+      textParams: { name: s.name },
     });
   });
   (recentWebhooks || []).forEach((w) => {
@@ -152,114 +153,28 @@ export default async function AdminDashboardPage() {
       const payload = w.payload as { data?: { object?: { amount_paid?: number } } } | null;
       const amount = payload?.data?.object?.amount_paid ?? 0;
       const dollars = (amount / 100).toFixed(0);
-      activities.push({ at: w.created_at, icon: "💳", text: `${name} paid $${dollars}` });
+      activities.push({ at: w.created_at, icon: "💳", textKey: "dashboard.paid", textParams: { name, amount: dollars } });
     } else if (w.event_type?.includes("payment_failed")) {
-      activities.push({ at: w.created_at, icon: "❌", text: `${name} payment failed` });
+      activities.push({ at: w.created_at, icon: "❌", textKey: "dashboard.paymentFailed", textParams: { name } });
     } else if (w.event_type?.includes("subscription.deleted") || w.event_type?.includes("customer.subscription.deleted")) {
-      activities.push({ at: w.created_at, icon: "🚫", text: `${name} subscription canceled` });
+      activities.push({ at: w.created_at, icon: "🚫", textKey: "dashboard.subscriptionCanceled", textParams: { name } });
     }
   });
   activities.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
   const topActivities = activities.slice(0, 10);
 
-  const formatDate = (d: string) => new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-  const formatTime = (d: string) => new Date(d).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-white">Admin Dashboard</h1>
-
-      {/* KPI row 1 */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
-          <p className="text-sm text-slate-400">Total Studios</p>
-          <p className="mt-1 text-2xl font-bold text-white">{totalStudios ?? 0}</p>
-        </div>
-        <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
-          <p className="text-sm text-slate-400">Active</p>
-          <p className="mt-1 text-2xl font-bold text-white">{activeCount ?? 0}</p>
-        </div>
-        <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
-          <p className="text-sm text-slate-400">MRR</p>
-          <p className="mt-1 text-2xl font-bold text-white">${MRR.toFixed(0)}</p>
-        </div>
-        <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
-          <p className="text-sm text-slate-400">Past Due</p>
-          <p className={`mt-1 text-2xl font-bold ${(pastDueCount ?? 0) > 0 ? "text-red-400" : "text-white"}`}>
-            {pastDueCount ?? 0}
-          </p>
-        </div>
-      </div>
-
-      {/* KPI row 2 */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
-          <p className="text-sm text-slate-400">Trialing</p>
-          <p className="mt-1 text-xl font-bold text-white">{trialingCount ?? 0}</p>
-        </div>
-        <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
-          <p className="text-sm text-slate-400">Trials Ending ≤7d</p>
-          <p className="mt-1 text-xl font-bold text-white">{trialsEnding7d ?? 0}</p>
-        </div>
-        <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
-          <p className="text-sm text-slate-400">ARR</p>
-          <p className="mt-1 text-xl font-bold text-white">${ARR.toFixed(0)}</p>
-        </div>
-        <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
-          <p className="text-sm text-slate-400">Active Coupons</p>
-          <p className="mt-1 text-xl font-bold text-white">{activeCouponsCount ?? 0}</p>
-        </div>
-      </div>
-
-      {/* Alerts */}
-      <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
-        <h2 className="text-sm font-medium text-slate-300">Alerts</h2>
-        {alerts.length === 0 ? (
-          <p className="mt-2 text-green-400">✓ All clear – no alerts</p>
-        ) : (
-          <ul className="mt-3 space-y-2">
-            {alerts.map((a) => (
-              <li key={`${a.studioId}-${a.type}`}>
-                <Link
-                  href={`/admin/studios/${a.studioId}`}
-                  className={`block rounded px-3 py-2 text-sm ${
-                    a.type === "past_due" || a.type === "grace"
-                      ? "bg-red-900/50 text-red-200 hover:bg-red-900/70"
-                      : a.type === "trial"
-                        ? "bg-yellow-900/50 text-yellow-200 hover:bg-yellow-900/70"
-                        : "bg-slate-700 text-slate-300 hover:bg-slate-600"
-                  }`}
-                >
-                  {a.type === "past_due" && `⚠ Payment failed: ${a.studioName}`}
-                  {a.type === "grace" && `⚠ Grace period: ${a.studioName} – auto-cancel in ${a.extra}`}
-                  {a.type === "trial" && `Trial ending soon: ${a.studioName} – ${a.extra}`}
-                  {a.type === "canceled" && `Recently canceled: ${a.studioName}`}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {/* Recent activity */}
-      <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
-        <h2 className="text-sm font-medium text-slate-300">Recent Activity</h2>
-        <ul className="mt-3 space-y-2">
-          {topActivities.length === 0 ? (
-            <li className="text-sm text-slate-500">No recent activity</li>
-          ) : (
-            topActivities.map((a, i) => (
-              <li key={`${a.at}-${i}`} className="flex items-center gap-3 text-sm text-slate-300">
-                <span className="text-slate-500">
-                  {formatDate(a.at)} {formatTime(a.at)}
-                </span>
-                <span>{a.icon}</span>
-                <span>{a.text}</span>
-              </li>
-            ))
-          )}
-        </ul>
-      </div>
-    </div>
+    <AdminDashboardClient
+      totalStudios={totalStudios ?? 0}
+      activeCount={activeCount ?? 0}
+      MRR={MRR}
+      pastDueCount={pastDueCount ?? 0}
+      trialingCount={trialingCount ?? 0}
+      trialsEnding7d={trialsEnding7d ?? 0}
+      ARR={ARR}
+      activeCouponsCount={activeCouponsCount ?? 0}
+      alerts={alerts}
+      activities={topActivities}
+    />
   );
 }

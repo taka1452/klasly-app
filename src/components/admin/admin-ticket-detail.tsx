@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAdminLocale } from "@/lib/admin/locale-context";
 
 type Ticket = {
   id: string;
@@ -41,8 +42,8 @@ export default function AdminTicketDetail({
   const [priority, setPriority] = useState(ticket.priority);
   const [updatingMeta, setUpdatingMeta] = useState(false);
 
-  const formatDate = (d: string) =>
-    new Date(d).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  const { t, formatDateTime } = useAdminLocale();
+  const formatDate = (d: string) => formatDateTime(d);
 
   async function handleAddComment(e: React.FormEvent) {
     e.preventDefault();
@@ -114,6 +115,14 @@ export default function AdminTicketDetail({
 
   return (
     <div className="space-y-6">
+      <div>
+        <Link href="/admin/support" className="text-sm text-slate-400 hover:text-white">
+          ← {t("support.backToList")}
+        </Link>
+        <h1 className="mt-2 text-2xl font-bold text-white">
+          #{ticket.ticket_number}
+        </h1>
+      </div>
       {error && (
         <div className="rounded-lg border border-red-500/50 bg-red-500/10 px-4 py-2 text-sm text-red-300">
           {error}
@@ -124,7 +133,7 @@ export default function AdminTicketDetail({
         <h2 className="text-lg font-medium text-white">{ticket.subject}</h2>
         <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
           <div>
-            <dt className="text-slate-500">Status</dt>
+            <dt className="text-slate-500">{t("support.status")}</dt>
             <dd>
               <select
                 value={status}
@@ -132,15 +141,15 @@ export default function AdminTicketDetail({
                 disabled={updatingMeta}
                 className="mt-0.5 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-white disabled:opacity-50"
               >
-                <option value="open">Open</option>
-                <option value="in_progress">In progress</option>
-                <option value="resolved">Resolved</option>
-                <option value="closed">Closed</option>
+                <option value="open">{t("support.open")}</option>
+                <option value="in_progress">{t("support.inProgress")}</option>
+                <option value="resolved">{t("support.resolved")}</option>
+                <option value="closed">{t("support.closed")}</option>
               </select>
             </dd>
           </div>
           <div>
-            <dt className="text-slate-500">Priority</dt>
+            <dt className="text-slate-500">{t("support.priority")}</dt>
             <dd>
               <select
                 value={priority}
@@ -148,14 +157,14 @@ export default function AdminTicketDetail({
                 disabled={updatingMeta}
                 className="mt-0.5 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-white disabled:opacity-50"
               >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
+                <option value="low">{t("support.low")}</option>
+                <option value="medium">{t("support.medium")}</option>
+                <option value="high">{t("support.high")}</option>
               </select>
             </dd>
           </div>
           <div>
-            <dt className="text-slate-500">Studio</dt>
+            <dt className="text-slate-500">{t("support.studio")}</dt>
             <dd className="text-white">
               {ticket.studio_id ? (
                 <Link href={`/admin/studios/${ticket.studio_id}`} className="text-indigo-400 hover:underline">
@@ -167,17 +176,17 @@ export default function AdminTicketDetail({
             </dd>
           </div>
           <div>
-            <dt className="text-slate-500">Created by</dt>
+            <dt className="text-slate-500">{t("support.createdBy")}</dt>
             <dd className="text-white">{ticket.created_by}</dd>
           </div>
           <div>
-            <dt className="text-slate-500">Created</dt>
+            <dt className="text-slate-500">{t("support.createdAt")}</dt>
             <dd className="text-slate-300">{formatDate(ticket.created_at)}</dd>
           </div>
         </dl>
         {ticket.description && (
           <div className="mt-4 border-t border-slate-700 pt-4">
-            <dt className="text-slate-500">Description</dt>
+            <dt className="text-slate-500">{t("support.description")}</dt>
             <dd className="mt-1 whitespace-pre-wrap text-white">{ticket.description}</dd>
           </div>
         )}
@@ -187,7 +196,7 @@ export default function AdminTicketDetail({
         <h3 className="text-sm font-medium text-slate-400">Comments</h3>
         <ul className="mt-4 space-y-4">
           {comments.length === 0 ? (
-            <li className="text-sm text-slate-500">No comments yet.</li>
+            <li className="text-sm text-slate-500">{t("common.noData")}</li>
           ) : (
             comments.map((c) => (
               <li key={c.id} className="rounded border border-slate-600 bg-slate-900/50 p-3">
@@ -201,12 +210,12 @@ export default function AdminTicketDetail({
         </ul>
 
         <form onSubmit={handleAddComment} className="mt-4 border-t border-slate-700 pt-4">
-          <label className="block text-sm text-slate-400">Add comment</label>
+          <label className="block text-sm text-slate-400">{t("support.addComment")}</label>
           <textarea
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             rows={3}
-            placeholder="Reply to the ticket..."
+            placeholder={t("support.reply")}
             className="mt-2 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           />
           <button
@@ -214,7 +223,7 @@ export default function AdminTicketDetail({
             disabled={submitting || !newComment.trim()}
             className="mt-2 rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
           >
-            {submitting ? "Sending…" : "Send comment"}
+            {submitting ? "…" : t("support.addComment")}
           </button>
         </form>
       </div>

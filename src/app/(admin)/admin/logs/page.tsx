@@ -1,6 +1,7 @@
 import { requireAdmin } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/admin/supabase";
 import Link from "next/link";
+import AdminLogsTitle from "@/components/admin/admin-logs-title";
 
 const LIMIT = 50;
 
@@ -81,9 +82,7 @@ export default async function AdminLogsPage({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-white">Logs</h1>
-      <p className="text-slate-400">Webhooks, cron jobs, and email delivery</p>
-
+      <AdminLogsTitle />
       <div className="flex flex-wrap gap-2 border-b border-slate-700 pb-2">
         <Link
           href={tabLink("webhooks")}

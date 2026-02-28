@@ -40,9 +40,6 @@ export default async function AdminSupportPage({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-white">Support</h1>
-      <p className="text-slate-400">Support tickets from studios</p>
-
       <AdminSupportList
         tickets={list}
         total={totalCount ?? 0}

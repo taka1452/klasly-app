@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useAdminLocale } from "@/lib/admin/locale-context";
 
 type StudioRow = {
   id: string;
@@ -35,6 +36,7 @@ const STATUS_CLASS: Record<string, string> = {
 };
 
 export default function AdminStudiosList({ statusCounts }: { statusCounts: StatusCounts }) {
+  const { t, formatDate: formatDateLocale } = useAdminLocale();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [sort, setSort] = useState("newest");
@@ -60,7 +62,7 @@ export default function AdminStudiosList({ statusCounts }: { statusCounts: Statu
   }, [search, status, sort, page]);
 
   const totalPages = Math.ceil(data.total / 20) || 1;
-  const formatDate = (d: string) => new Date(d).toISOString().split("T")[0];
+  const formatDate = (d: string) => formatDateLocale(d);
   const trialDaysLeft = (end: string | null) => {
     if (!end) return null;
     const days = Math.ceil((new Date(end).getTime() - Date.now()) / (24 * 60 * 60 * 1000));
@@ -69,10 +71,11 @@ export default function AdminStudiosList({ statusCounts }: { statusCounts: Statu
 
   return (
     <div className="space-y-4">
+      <h1 className="text-2xl font-bold text-white">{t("studios.title")}</h1>
       <div className="flex flex-wrap items-center gap-4">
         <input
           type="text"
-          placeholder="Search by name or email..."
+          placeholder={t("studios.searchPlaceholder")}
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
@@ -92,7 +95,7 @@ export default function AdminStudiosList({ statusCounts }: { statusCounts: Statu
                 status === s ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-white"
               }`}
             >
-              {s === "all" ? "All" : STATUS_LABELS[s] ?? s} ({statusCounts[s] ?? 0})
+              {s === "all" ? t("studios.all") : STATUS_LABELS[s] ?? s} ({statusCounts[s] ?? 0})
             </button>
           ))}
         </div>
@@ -104,29 +107,29 @@ export default function AdminStudiosList({ statusCounts }: { statusCounts: Statu
           }}
           className="rounded border border-slate-600 bg-slate-800 px-3 py-2 text-white focus:border-indigo-500 focus:outline-none"
         >
-          <option value="newest">Newest first</option>
-          <option value="oldest">Oldest first</option>
-          <option value="members">Most members</option>
-          <option value="name">Name A-Z</option>
+          <option value="newest">{t("studios.newestFirst")}</option>
+          <option value="oldest">{t("studios.oldestFirst")}</option>
+          <option value="members">{t("studios.mostMembers")}</option>
+          <option value="name">{t("studios.nameAZ")}</option>
         </select>
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-slate-700 bg-slate-800">
         {loading ? (
-          <div className="p-8 text-center text-slate-400">Loading...</div>
+          <div className="p-8 text-center text-slate-400">{t("studios.loading")}</div>
         ) : data.studios.length === 0 ? (
-          <div className="p-8 text-center text-slate-400">No studios found</div>
+          <div className="p-8 text-center text-slate-400">{t("studios.noStudiosFound")}</div>
         ) : (
           <table className="w-full min-w-[800px]">
             <thead>
               <tr className="border-b border-slate-600 text-left text-xs text-slate-400">
-                <th className="p-3 font-medium">Studio</th>
-                <th className="p-3 font-medium">Owner Email</th>
-                <th className="p-3 font-medium">Status</th>
-                <th className="p-3 font-medium">Period</th>
-                <th className="p-3 font-medium">Members</th>
-                <th className="p-3 font-medium">Created</th>
-                <th className="p-3 font-medium">Trial Ends</th>
+                <th className="p-3 font-medium">{t("studios.studioName")}</th>
+                <th className="p-3 font-medium">{t("studios.ownerEmail")}</th>
+                <th className="p-3 font-medium">{t("studios.planStatus")}</th>
+                <th className="p-3 font-medium">{t("studios.period")}</th>
+                <th className="p-3 font-medium">{t("studios.members")}</th>
+                <th className="p-3 font-medium">{t("studios.created")}</th>
+                <th className="p-3 font-medium">{t("studios.trialEnds")}</th>
               </tr>
             </thead>
             <tbody>
@@ -182,7 +185,7 @@ export default function AdminStudiosList({ statusCounts }: { statusCounts: Statu
             disabled={page <= 1}
             className="rounded border border-slate-600 bg-slate-800 px-3 py-1.5 text-white disabled:opacity-50"
           >
-            Previous
+            {t("studios.previous")}
           </button>
           <button
             type="button"
@@ -190,7 +193,7 @@ export default function AdminStudiosList({ statusCounts }: { statusCounts: Statu
             disabled={page >= totalPages}
             className="rounded border border-slate-600 bg-slate-800 px-3 py-1.5 text-white disabled:opacity-50"
           >
-            Next
+            {t("studios.next")}
           </button>
         </div>
       </div>

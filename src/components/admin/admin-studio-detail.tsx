@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAdminLocale } from "@/lib/admin/locale-context";
 
 type Studio = Record<string, unknown> & {
   id: string;
@@ -94,8 +95,9 @@ export default function AdminStudioDetail({
 
   const studioId = studio.id as string;
   const hasSubscription = !!studio.stripe_subscription_id;
+  const { t, formatDate: formatDateLocale } = useAdminLocale();
 
-  const formatDate = (d: string | null) => (d ? new Date(d).toISOString().split("T")[0] : "—");
+  const formatDate = (d: string | null) => (d ? formatDateLocale(d) : "—");
   const formatCurrency = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
   async function saveMemo() {
@@ -191,7 +193,7 @@ export default function AdminStudioDetail({
 
   function doDeleteStudio() {
     if (deleteConfirmName.trim() !== studio.name) {
-      setError("Studio name does not match.");
+      setError(t("studioDetail.studioNameMismatch"));
       return;
     }
     runAction("delete", `/api/admin/studios/${studioId}/delete`, { confirm_name: deleteConfirmName.trim() }, () => {
@@ -244,22 +246,22 @@ export default function AdminStudioDetail({
       )}
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-lg border border-slate-700 bg-slate-800 p-6">
-          <h3 className="text-sm font-medium text-slate-400">Basic Info</h3>
+          <h3 className="text-sm font-medium text-slate-400">{t("studioDetail.basicInfo")}</h3>
           <dl className="mt-4 space-y-2 text-sm">
-            <div><dt className="text-slate-500">Studio Name</dt><dd className="text-white">{studio.name}</dd></div>
-            <div><dt className="text-slate-500">Email</dt><dd className="text-white">{studio.email ?? "—"}</dd></div>
-            <div><dt className="text-slate-500">Phone</dt><dd className="text-white">{studio.phone ?? "—"}</dd></div>
-            <div><dt className="text-slate-500">Address</dt><dd className="text-white">{studio.address ?? "—"}</dd></div>
-            <div><dt className="text-slate-500">Created</dt><dd className="text-white">{formatDate(studio.created_at)}</dd></div>
+            <div><dt className="text-slate-500">{t("studioDetail.studioNameLabel")}</dt><dd className="text-white">{studio.name}</dd></div>
+            <div><dt className="text-slate-500">{t("studioDetail.email")}</dt><dd className="text-white">{studio.email ?? "—"}</dd></div>
+            <div><dt className="text-slate-500">{t("studioDetail.phone")}</dt><dd className="text-white">{studio.phone ?? "—"}</dd></div>
+            <div><dt className="text-slate-500">{t("studioDetail.address")}</dt><dd className="text-white">{studio.address ?? "—"}</dd></div>
+            <div><dt className="text-slate-500">{t("studios.created")}</dt><dd className="text-white">{formatDate(studio.created_at)}</dd></div>
           </dl>
         </div>
         <div className="rounded-lg border border-slate-700 bg-slate-800 p-6">
-          <h3 className="text-sm font-medium text-slate-400">Owner & Stripe</h3>
+          <h3 className="text-sm font-medium text-slate-400">{t("studioDetail.ownerAndStripe")}</h3>
           <dl className="mt-4 space-y-2 text-sm">
-            <div><dt className="text-slate-500">Owner Name</dt><dd className="text-white">{studio.owner_name ?? "—"}</dd></div>
-            <div><dt className="text-slate-500">Owner Email</dt><dd className="text-white">{studio.owner_email ?? "—"}</dd></div>
+            <div><dt className="text-slate-500">{t("studioDetail.ownerName")}</dt><dd className="text-white">{studio.owner_name ?? "—"}</dd></div>
+            <div><dt className="text-slate-500">{t("studios.ownerEmail")}</dt><dd className="text-white">{studio.owner_email ?? "—"}</dd></div>
             <div>
-              <dt className="text-slate-500">Stripe Customer</dt>
+              <dt className="text-slate-500">{t("studioDetail.stripeCustomer")}</dt>
               <dd>
                 {stripeCustomerUrl ? (
                   <a href={stripeCustomerUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">
@@ -271,7 +273,7 @@ export default function AdminStudioDetail({
               </dd>
             </div>
             <div>
-              <dt className="text-slate-500">Stripe Subscription</dt>
+              <dt className="text-slate-500">{t("studioDetail.stripeSubscription")}</dt>
               <dd>
                 {stripeSubscriptionUrl ? (
                   <a href={stripeSubscriptionUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">
@@ -287,10 +289,10 @@ export default function AdminStudioDetail({
       </div>
 
       <div className="rounded-lg border border-slate-700 bg-slate-800 p-6">
-        <h3 className="text-sm font-medium text-slate-400">Billing</h3>
+        <h3 className="text-sm font-medium text-slate-400">{t("studioDetail.billingInfo")}</h3>
         <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <dt className="text-slate-500">Plan Status</dt>
+            <dt className="text-slate-500">{t("studioDetail.planStatus")}</dt>
             <dd className="mt-1 flex items-center gap-2">
               <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[String(planStatus)] ?? "bg-slate-600 text-slate-300"}`}>
                 {String(planStatus || "—")}
@@ -306,9 +308,9 @@ export default function AdminStudioDetail({
               </select>
             </dd>
           </div>
-          <div><dt className="text-slate-500">Period</dt><dd className="text-white">{studio.subscription_period ?? "—"}</dd></div>
+          <div><dt className="text-slate-500">{t("studioDetail.period")}</dt><dd className="text-white">{studio.subscription_period ?? "—"}</dd></div>
           <div>
-            <dt className="text-slate-500">Trial Ends</dt>
+            <dt className="text-slate-500">{t("studios.trialEnds")}</dt>
             <dd className="flex items-center gap-2">
               <span className="text-white">{formatDate(studio.trial_ends_at ?? null)}</span>
               <button
@@ -316,32 +318,32 @@ export default function AdminStudioDetail({
                 onClick={() => setShowExtendModal(true)}
                 className="rounded border border-slate-500 px-2 py-0.5 text-xs text-slate-300 hover:bg-slate-700"
               >
-                Extend
+                {t("studioDetail.extend")}
               </button>
             </dd>
           </div>
-          <div><dt className="text-slate-500">Current Period End</dt><dd className="text-white">{formatDate(studio.current_period_end ?? null)}</dd></div>
+          <div><dt className="text-slate-500">{t("studioDetail.currentPeriodEnd")}</dt><dd className="text-white">{formatDate(studio.current_period_end ?? null)}</dd></div>
           <div>
-            <dt className="text-slate-500">Cancel at Period End</dt>
+            <dt className="text-slate-500">{t("studioDetail.cancelAtPeriodEnd")}</dt>
             <dd className="flex items-center gap-2">
-              <span className="text-white">{cancelAtPeriodEnd ? "Yes" : "No"}</span>
+              <span className="text-white">{cancelAtPeriodEnd ? t("studioDetail.yes") : t("studioDetail.no")}</span>
               {hasSubscription && (
                 <button
                   type="button"
                   onClick={handleCancelAtPeriodEndToggle}
                   className={`rounded px-2 py-0.5 text-xs ${cancelAtPeriodEnd ? "bg-orange-500/20 text-orange-300" : "bg-slate-600 text-slate-300"} hover:opacity-90`}
                 >
-                  {cancelAtPeriodEnd ? "Revert" : "Set"}
+                  {cancelAtPeriodEnd ? t("studioDetail.revert") : t("studioDetail.set")}
                 </button>
               )}
             </dd>
           </div>
           {studio.plan_status === "grace" && (
-            <div><dt className="text-slate-500">Grace Period Ends</dt><dd className="text-white">{formatDate(studio.grace_period_ends_at ?? null)}</dd></div>
+            <div><dt className="text-slate-500">{t("studioDetail.gracePeriodEnds")}</dt><dd className="text-white">{formatDate(studio.grace_period_ends_at ?? null)}</dd></div>
           )}
         </dl>
         <div className="mt-4 border-t border-slate-700 pt-4">
-          <dt className="text-slate-500">Applied Coupon</dt>
+          <dt className="text-slate-500">{t("studioDetail.appliedCoupon")}</dt>
           <dd className="mt-1 flex flex-wrap items-center gap-2">
             {appliedCoupon ? (
               <>
@@ -352,11 +354,11 @@ export default function AdminStudioDetail({
                   disabled={couponLoading}
                   className="rounded border border-red-500/50 px-2 py-0.5 text-xs text-red-300 hover:bg-red-500/20 disabled:opacity-50"
                 >
-                  {couponLoading ? "…" : "Remove"}
+                  {couponLoading ? "…" : t("studioDetail.remove")}
                 </button>
               </>
             ) : (
-              <span className="text-slate-500">None</span>
+              <span className="text-slate-500">{t("studioDetail.none")}</span>
             )}
             {hasSubscription && (
               <span className="flex items-center gap-2">
@@ -364,7 +366,7 @@ export default function AdminStudioDetail({
                   type="text"
                   value={applyCouponCode}
                   onChange={(e) => setApplyCouponCode(e.target.value.toUpperCase())}
-                  placeholder="Promo code"
+                  placeholder={t("studioDetail.promoCode")}
                   className="w-28 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
                 />
                 <button
@@ -373,7 +375,7 @@ export default function AdminStudioDetail({
                   disabled={couponLoading || !applyCouponCode.trim()}
                   className="rounded border border-indigo-500 px-2 py-1 text-xs text-indigo-400 hover:bg-indigo-500/20 disabled:opacity-50"
                 >
-                  Apply Coupon
+                  {t("studioDetail.applyCoupon")}
                 </button>
               </span>
             )}
@@ -382,7 +384,7 @@ export default function AdminStudioDetail({
       </div>
 
       <div className="rounded-lg border border-slate-700 bg-slate-800 p-6">
-        <h3 className="text-sm font-medium text-slate-400">Management Actions</h3>
+        <h3 className="text-sm font-medium text-slate-400">{t("studioDetail.managementActions")}</h3>
         <div className="mt-4 flex flex-wrap gap-2">
           <button
             type="button"
@@ -390,7 +392,7 @@ export default function AdminStudioDetail({
             disabled={!!actionLoading}
             className="rounded border border-slate-500 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-700 disabled:opacity-50"
           >
-            {actionLoading === "extend" ? "…" : "Extend Trial"}
+            {actionLoading === "extend" ? "…" : t("studioDetail.extendTrial")}
           </button>
           <button
             type="button"
@@ -398,7 +400,7 @@ export default function AdminStudioDetail({
             disabled={!!actionLoading}
             className="rounded border border-slate-500 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-700 disabled:opacity-50"
           >
-            {actionLoading === "reset" ? "…" : "Reset to Trial"}
+            {actionLoading === "reset" ? "…" : t("studioDetail.resetToTrial")}
           </button>
           <button
             type="button"
@@ -406,7 +408,7 @@ export default function AdminStudioDetail({
             disabled={!!actionLoading}
             className="rounded border border-slate-500 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-700 disabled:opacity-50"
           >
-            {actionLoading === "email" ? "…" : "Send Email"}
+            {actionLoading === "email" ? "…" : t("studioDetail.sendEmail")}
           </button>
           {hasSubscription && (
             <>
@@ -416,7 +418,7 @@ export default function AdminStudioDetail({
                 disabled={!!actionLoading}
                 className="rounded border border-orange-500/50 px-3 py-1.5 text-sm text-orange-300 hover:bg-orange-500/20 disabled:opacity-50"
               >
-                {actionLoading === "cancel" ? "…" : "Cancel Subscription"}
+                {actionLoading === "cancel" ? "…" : t("studioDetail.cancelSubscription")}
               </button>
               <button
                 type="button"
@@ -424,7 +426,7 @@ export default function AdminStudioDetail({
                 disabled={!!actionLoading}
                 className="rounded border border-red-500/50 px-3 py-1.5 text-sm text-red-300 hover:bg-red-500/20 disabled:opacity-50"
               >
-                {actionLoading === "cancel" ? "…" : "Immediately Cancel"}
+                {actionLoading === "cancel" ? "…" : t("studioDetail.immediatelyCancel")}
               </button>
             </>
           )}
@@ -434,39 +436,39 @@ export default function AdminStudioDetail({
             disabled={!!actionLoading}
             className="rounded border border-red-600 px-3 py-1.5 text-sm text-red-400 hover:bg-red-500/20 disabled:opacity-50"
           >
-            {actionLoading === "delete" ? "…" : "Delete Studio"}
+            {actionLoading === "delete" ? "…" : t("studioDetail.deleteStudio")}
           </button>
         </div>
       </div>
 
       <div className="rounded-lg border border-slate-700 bg-slate-800 p-6">
-        <h3 className="text-sm font-medium text-slate-400">Usage</h3>
+        <h3 className="text-sm font-medium text-slate-400">{t("studioDetail.usageStats")}</h3>
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div><p className="text-slate-500">Members</p><p className="text-white">Active {usage.members_active} / Paused {usage.members_paused} / Cancelled {usage.members_cancelled}</p></div>
-          <div><p className="text-slate-500">Instructors</p><p className="text-white">{usage.instructors}</p></div>
-          <div><p className="text-slate-500">Active Classes</p><p className="text-white">{usage.active_classes}</p></div>
-          <div><p className="text-slate-500">Bookings (30d)</p><p className="text-white">{usage.bookings_30d}</p></div>
-          <div><p className="text-slate-500">Attendance (30d)</p><p className="text-white">{usage.attendance_30d}</p></div>
-          <div><p className="text-slate-500">Waiver Completion</p><p className="text-white">{usage.waiver_signed} / {usage.waiver_total}</p></div>
+          <div><p className="text-slate-500">{t("studioDetail.totalMembers")}</p><p className="text-white">{t("studioDetail.membersActivePaused", { active: usage.members_active, paused: usage.members_paused, cancelled: usage.members_cancelled })}</p></div>
+          <div><p className="text-slate-500">{t("studioDetail.totalInstructors")}</p><p className="text-white">{usage.instructors}</p></div>
+          <div><p className="text-slate-500">{t("studioDetail.activeClasses")}</p><p className="text-white">{usage.active_classes}</p></div>
+          <div><p className="text-slate-500">{t("studioDetail.bookings30d")}</p><p className="text-white">{usage.bookings_30d}</p></div>
+          <div><p className="text-slate-500">{t("studioDetail.attendance30d")}</p><p className="text-white">{usage.attendance_30d}</p></div>
+          <div><p className="text-slate-500">{t("studioDetail.waiverCompletion")}</p><p className="text-white">{usage.waiver_signed} / {usage.waiver_total}</p></div>
         </div>
       </div>
 
       <div className="rounded-lg border border-slate-700 bg-slate-800 p-6">
-        <h3 className="text-sm font-medium text-slate-400">Payment History</h3>
+        <h3 className="text-sm font-medium text-slate-400">{t("studioDetail.paymentHistory")}</h3>
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-600 text-left text-slate-400">
-                <th className="p-2">Date</th>
-                <th className="p-2">Amount</th>
-                <th className="p-2">Type</th>
-                <th className="p-2">Status</th>
-                <th className="p-2">Stripe ID</th>
+                <th className="p-2">{t("common.date")}</th>
+                <th className="p-2">{t("common.amount")}</th>
+                <th className="p-2">{t("common.type")}</th>
+                <th className="p-2">{t("common.status")}</th>
+                <th className="p-2">{t("common.stripeId")}</th>
               </tr>
             </thead>
             <tbody>
               {payments.length === 0 ? (
-                <tr><td colSpan={5} className="p-4 text-slate-500">No payments</td></tr>
+                <tr><td colSpan={5} className="p-4 text-slate-500">{t("studioDetail.noPayments")}</td></tr>
               ) : (
                 payments.map((p) => (
                   <tr key={p.id} className="border-b border-slate-700">
@@ -490,13 +492,13 @@ export default function AdminStudioDetail({
       </div>
 
       <div className="rounded-lg border border-slate-700 bg-slate-800 p-6">
-        <h3 className="text-sm font-medium text-slate-400">Admin Memo</h3>
+        <h3 className="text-sm font-medium text-slate-400">{t("studioDetail.adminNotes")}</h3>
         <textarea
           value={memo}
           onChange={(e) => setMemo(e.target.value)}
           rows={4}
           className="mt-2 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          placeholder="Internal notes..."
+          placeholder={t("studioDetail.internalNotes")}
         />
         <div className="mt-2 flex items-center gap-2">
           <button
@@ -505,17 +507,17 @@ export default function AdminStudioDetail({
             disabled={saving}
             className="rounded border border-indigo-500 bg-transparent px-4 py-2 text-sm font-medium text-indigo-400 hover:bg-indigo-500/20 disabled:opacity-50"
           >
-            {saving ? "Saving..." : "Save Note"}
+            {saving ? t("studioDetail.saving") : t("studioDetail.saveNote")}
           </button>
-          {saved && <span className="text-sm text-green-400">Saved</span>}
+          {saved && <span className="text-sm text-green-400">{t("studioDetail.saved")}</span>}
         </div>
       </div>
 
       {showExtendModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setShowExtendModal(false)}>
           <div className="w-full max-w-sm rounded-lg border border-slate-600 bg-slate-800 p-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h4 className="text-sm font-medium text-white">Extend Trial</h4>
-            <p className="mt-1 text-xs text-slate-400">Add days to trial_ends_at</p>
+            <h4 className="text-sm font-medium text-white">{t("studioDetail.extendTrial")}</h4>
+            <p className="mt-1 text-xs text-slate-400">{t("studioDetail.addDaysToTrial")}</p>
             <div className="mt-3 flex items-center gap-2">
               <input
                 type="number"
@@ -525,11 +527,11 @@ export default function AdminStudioDetail({
                 onChange={(e) => setExtendDays(parseInt(e.target.value, 10) || 7)}
                 className="w-20 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-white"
               />
-              <span className="text-slate-400">days</span>
+              <span className="text-slate-400">{t("studioDetail.days")}</span>
             </div>
             <div className="mt-4 flex justify-end gap-2">
-              <button type="button" onClick={() => setShowExtendModal(false)} className="rounded border border-slate-500 px-3 py-1 text-sm text-slate-300">Cancel</button>
-              <button type="button" onClick={doExtendTrial} disabled={!!actionLoading} className="rounded bg-indigo-600 px-3 py-1 text-sm text-white hover:bg-indigo-500 disabled:opacity-50">Extend</button>
+              <button type="button" onClick={() => setShowExtendModal(false)} className="rounded border border-slate-500 px-3 py-1 text-sm text-slate-300">{t("common.cancel")}</button>
+              <button type="button" onClick={doExtendTrial} disabled={!!actionLoading} className="rounded bg-indigo-600 px-3 py-1 text-sm text-white hover:bg-indigo-500 disabled:opacity-50">{t("studioDetail.extend")}</button>
             </div>
           </div>
         </div>
@@ -538,10 +540,10 @@ export default function AdminStudioDetail({
       {showResetConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setShowResetConfirm(false)}>
           <div className="w-full max-w-sm rounded-lg border border-slate-600 bg-slate-800 p-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h4 className="text-sm font-medium text-white">Reset to Trial</h4>
-            <p className="mt-1 text-xs text-slate-400">Set plan to trialing, trial_ends_at = now + 30 days. Any Stripe subscription will be canceled.</p>
+            <h4 className="text-sm font-medium text-white">{t("studioDetail.resetToTrial")}</h4>
+            <p className="mt-1 text-xs text-slate-400">{t("studioDetail.resetTrialConfirm")}</p>
             <div className="mt-4 flex justify-end gap-2">
-              <button type="button" onClick={() => setShowResetConfirm(false)} className="rounded border border-slate-500 px-3 py-1 text-sm text-slate-300">Cancel</button>
+              <button type="button" onClick={() => setShowResetConfirm(false)} className="rounded border border-slate-500 px-3 py-1 text-sm text-slate-300">{t("common.cancel")}</button>
               <button type="button" onClick={doResetTrial} disabled={!!actionLoading} className="rounded bg-orange-600 px-3 py-1 text-sm text-white hover:bg-orange-500 disabled:opacity-50">Reset</button>
             </div>
           </div>
@@ -551,25 +553,25 @@ export default function AdminStudioDetail({
       {showEmailModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setShowEmailModal(false)}>
           <div className="w-full max-w-md rounded-lg border border-slate-600 bg-slate-800 p-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h4 className="text-sm font-medium text-white">Send Email to Owner</h4>
+            <h4 className="text-sm font-medium text-white">{t("studioDetail.sendEmailToOwner")}</h4>
             <p className="mt-1 text-xs text-slate-400">To: {String(studio.owner_email)}</p>
             <input
               type="text"
               value={emailSubject}
               onChange={(e) => setEmailSubject(e.target.value)}
-              placeholder="Subject"
+              placeholder={t("studioDetail.subject")}
               className="mt-3 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-white placeholder-slate-500"
             />
             <textarea
               value={emailBody}
               onChange={(e) => setEmailBody(e.target.value)}
-              placeholder="Body (plain text)"
+              placeholder={t("studioDetail.bodyPlaceholder")}
               rows={5}
               className="mt-2 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-white placeholder-slate-500"
             />
             <div className="mt-4 flex justify-end gap-2">
-              <button type="button" onClick={() => setShowEmailModal(false)} className="rounded border border-slate-500 px-3 py-1 text-sm text-slate-300">Cancel</button>
-              <button type="button" onClick={doSendEmail} disabled={!!actionLoading || !emailSubject.trim() || !emailBody.trim()} className="rounded bg-indigo-600 px-3 py-1 text-sm text-white hover:bg-indigo-500 disabled:opacity-50">Send</button>
+              <button type="button" onClick={() => setShowEmailModal(false)} className="rounded border border-slate-500 px-3 py-1 text-sm text-slate-300">{t("common.cancel")}</button>
+              <button type="button" onClick={doSendEmail} disabled={!!actionLoading || !emailSubject.trim() || !emailBody.trim()} className="rounded bg-indigo-600 px-3 py-1 text-sm text-white hover:bg-indigo-500 disabled:opacity-50">{t("studioDetail.send")}</button>
             </div>
           </div>
         </div>
@@ -578,13 +580,13 @@ export default function AdminStudioDetail({
       {showCancelConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setShowCancelConfirm(false)}>
           <div className="w-full max-w-sm rounded-lg border border-slate-600 bg-slate-800 p-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h4 className="text-sm font-medium text-white">{cancelImmediate ? "Immediately Cancel" : "Cancel at Period End"}</h4>
+            <h4 className="text-sm font-medium text-white">{cancelImmediate ? t("studioDetail.cancelImmediateTitle") : t("studioDetail.cancelConfirmTitle")}</h4>
             <p className="mt-1 text-xs text-slate-400">
-              {cancelImmediate ? "Subscription will be canceled now. Access may be lost immediately." : "Subscription will cancel at the end of the current period."}
+              {cancelImmediate ? t("studioDetail.cancelImmediateDesc") : t("studioDetail.cancelConfirmDesc")}
             </p>
             <div className="mt-4 flex justify-end gap-2">
-              <button type="button" onClick={() => setShowCancelConfirm(false)} className="rounded border border-slate-500 px-3 py-1 text-sm text-slate-300">Cancel</button>
-              <button type="button" onClick={doCancelSubscription} disabled={!!actionLoading} className="rounded bg-red-600 px-3 py-1 text-sm text-white hover:bg-red-500 disabled:opacity-50">Confirm</button>
+              <button type="button" onClick={() => setShowCancelConfirm(false)} className="rounded border border-slate-500 px-3 py-1 text-sm text-slate-300">{t("common.cancel")}</button>
+              <button type="button" onClick={doCancelSubscription} disabled={!!actionLoading} className="rounded bg-red-600 px-3 py-1 text-sm text-white hover:bg-red-500 disabled:opacity-50">{t("common.confirm")}</button>
             </div>
           </div>
         </div>
@@ -593,19 +595,19 @@ export default function AdminStudioDetail({
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setShowDeleteConfirm(false)}>
           <div className="w-full max-w-sm rounded-lg border border-slate-600 bg-slate-800 p-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h4 className="text-sm font-medium text-red-400">Delete Studio</h4>
-            <p className="mt-1 text-xs text-slate-400">This will permanently delete the studio and related data. Type the studio name to confirm.</p>
+            <h4 className="text-sm font-medium text-red-400">{t("studioDetail.deleteConfirmTitle")}</h4>
+            <p className="mt-1 text-xs text-slate-400">{t("studioDetail.deleteConfirmDesc")}</p>
             <p className="mt-2 text-xs font-medium text-white">{studio.name}</p>
             <input
               type="text"
               value={deleteConfirmName}
               onChange={(e) => setDeleteConfirmName(e.target.value)}
-              placeholder="Type studio name"
+              placeholder={t("studioDetail.typeStudioName")}
               className="mt-2 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-white placeholder-slate-500"
             />
             <div className="mt-4 flex justify-end gap-2">
-              <button type="button" onClick={() => setShowDeleteConfirm(false)} className="rounded border border-slate-500 px-3 py-1 text-sm text-slate-300">Cancel</button>
-              <button type="button" onClick={doDeleteStudio} disabled={!!actionLoading || deleteConfirmName.trim() !== studio.name} className="rounded bg-red-600 px-3 py-1 text-sm text-white hover:bg-red-500 disabled:opacity-50">Delete</button>
+              <button type="button" onClick={() => setShowDeleteConfirm(false)} className="rounded border border-slate-500 px-3 py-1 text-sm text-slate-300">{t("common.cancel")}</button>
+              <button type="button" onClick={doDeleteStudio} disabled={!!actionLoading || deleteConfirmName.trim() !== studio.name} className="rounded bg-red-600 px-3 py-1 text-sm text-white hover:bg-red-500 disabled:opacity-50">{t("common.delete")}</button>
             </div>
           </div>
         </div>

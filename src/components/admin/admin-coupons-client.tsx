@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAdminLocale } from "@/lib/admin/locale-context";
 
 type Coupon = {
   id: string;
@@ -18,6 +19,7 @@ type Coupon = {
 };
 
 export default function AdminCouponsPageClient() {
+  const { t } = useAdminLocale();
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,15 +49,15 @@ export default function AdminCouponsPageClient() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Coupons</h1>
-          <p className="mt-1 text-slate-400">Create and manage coupons and promotion codes</p>
+          <h1 className="text-2xl font-bold text-white">{t("coupons.title")}</h1>
+          <p className="mt-1 text-slate-400">{t("coupons.subtitle")}</p>
         </div>
         <button
           type="button"
           onClick={() => setShowCreateCoupon(true)}
           className="rounded-lg border border-indigo-500 bg-indigo-500/20 px-4 py-2 text-sm font-medium text-indigo-300 hover:bg-indigo-500/30"
         >
-          Create Coupon
+          {t("coupons.createCoupon")}
         </button>
       </div>
 
@@ -66,12 +68,12 @@ export default function AdminCouponsPageClient() {
       )}
 
       {loading ? (
-        <p className="text-slate-400">Loading…</p>
+        <p className="text-slate-400">{t("coupons.loading")}</p>
       ) : (
         <div className="space-y-4">
           {coupons.length === 0 ? (
             <div className="rounded-lg border border-slate-700 bg-slate-800 p-8 text-center text-slate-400">
-              No coupons yet. Create one to get started.
+              {t("coupons.noCouponsYet")}
             </div>
           ) : (
             coupons.map((c) => (
@@ -100,18 +102,18 @@ export default function AdminCouponsPageClient() {
                       onClick={() => setShowCreatePromo(showCreatePromo === c.id ? null : c.id)}
                       className="rounded border border-slate-500 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700"
                     >
-                      Add promotion code
+                      {t("coupons.addPromotionCode")}
                     </button>
                     <CouponStatusToggle couponId={c.id} status={c.status} onToggle={fetchCoupons} />
                   </div>
                 </div>
                 <p className="mt-1 text-xs text-slate-500">{c.notes || "—"}</p>
-                <p className="mt-1 text-xs text-slate-500">Redemptions: {c.redemption_count}</p>
+                <p className="mt-1 text-xs text-slate-500">{t("coupons.redemptions")}: {c.redemption_count}</p>
 
                 <div className="mt-4 border-t border-slate-700 pt-4">
-                  <h3 className="text-sm font-medium text-slate-400">Promotion codes</h3>
+                  <h3 className="text-sm font-medium text-slate-400">{t("coupons.promotionCodes")}</h3>
                   {c.promotion_codes.length === 0 ? (
-                    <p className="mt-2 text-sm text-slate-500">None</p>
+                    <p className="mt-2 text-sm text-slate-500">{t("studioDetail.none")}</p>
                   ) : (
                     <ul className="mt-2 space-y-2">
                       {c.promotion_codes.map((p) => (
@@ -237,6 +239,7 @@ function PromoActiveToggle({
 }
 
 function CreateCouponForm({ onDone, onCancel }: { onDone: () => void; onCancel: () => void }) {
+  const { t } = useAdminLocale();
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -284,11 +287,11 @@ function CreateCouponForm({ onDone, onCancel }: { onDone: () => void; onCancel: 
         className="w-full max-w-md rounded-lg border border-slate-600 bg-slate-800 p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-lg font-medium text-white">Create coupon</h3>
+        <h3 className="text-lg font-medium text-white">{t("coupons.createCouponTitle")}</h3>
         {err && <p className="mt-2 text-sm text-red-400">{err}</p>}
         <form onSubmit={submit} className="mt-4 space-y-3">
           <div>
-            <label className="block text-xs text-slate-400">Name</label>
+            <label className="block text-xs text-slate-400">{t("coupons.name")}</label>
             <input
               type="text"
               value={name}
@@ -299,18 +302,18 @@ function CreateCouponForm({ onDone, onCancel }: { onDone: () => void; onCancel: 
           </div>
           <div className="flex gap-4">
             <div>
-              <label className="block text-xs text-slate-400">Discount type</label>
+              <label className="block text-xs text-slate-400">{t("coupons.discountType")}</label>
               <select
                 value={discountType}
                 onChange={(e) => setDiscountType(e.target.value as "percent" | "amount")}
                 className="mt-1 rounded border border-slate-600 bg-slate-900 px-3 py-2 text-white"
               >
-                <option value="percent">Percent</option>
-                <option value="amount">Amount ($)</option>
+                <option value="percent">{t("coupons.percentage")}</option>
+                <option value="amount">{t("coupons.fixedAmount")}</option>
               </select>
             </div>
             <div>
-              <label className="block text-xs text-slate-400">{discountType === "percent" ? "Percent" : "Amount (USD)"}</label>
+              <label className="block text-xs text-slate-400">{discountType === "percent" ? t("coupons.percentage") : t("coupons.fixedAmount")}</label>
               <input
                 type="number"
                 step={discountType === "percent" ? 0.1 : 0.01}
@@ -324,20 +327,20 @@ function CreateCouponForm({ onDone, onCancel }: { onDone: () => void; onCancel: 
             </div>
           </div>
           <div>
-            <label className="block text-xs text-slate-400">Duration</label>
+            <label className="block text-xs text-slate-400">{t("coupons.duration")}</label>
             <select
               value={duration}
               onChange={(e) => setDuration(e.target.value as "forever" | "once" | "repeating")}
               className="mt-1 rounded border border-slate-600 bg-slate-900 px-3 py-2 text-white"
             >
-              <option value="once">Once</option>
-              <option value="forever">Forever</option>
-              <option value="repeating">Repeating</option>
+              <option value="once">{t("coupons.once")}</option>
+              <option value="forever">{t("coupons.forever")}</option>
+              <option value="repeating">{t("coupons.repeating")}</option>
             </select>
           </div>
           {duration === "repeating" && (
             <div>
-              <label className="block text-xs text-slate-400">Months</label>
+              <label className="block text-xs text-slate-400">{t("coupons.durationMonths")}</label>
               <input
                 type="number"
                 min={1}
@@ -358,14 +361,14 @@ function CreateCouponForm({ onDone, onCancel }: { onDone: () => void; onCancel: 
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <button type="button" onClick={onCancel} className="rounded border border-slate-500 px-4 py-2 text-sm text-slate-300">
-              Cancel
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
               disabled={loading}
               className="rounded bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-500 disabled:opacity-50"
             >
-              {loading ? "Creating…" : "Create"}
+              {loading ? "…" : t("coupons.addCode")}
             </button>
           </div>
         </form>
@@ -383,6 +386,7 @@ function CreatePromoForm({
   onDone: () => void;
   onCancel: () => void;
 }) {
+  const { t } = useAdminLocale();
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [code, setCode] = useState("");
@@ -421,11 +425,11 @@ function CreatePromoForm({
 
   return (
     <div className="mt-4 rounded border border-slate-600 bg-slate-900/50 p-4">
-      <h4 className="text-sm font-medium text-slate-300">New promotion code</h4>
+      <h4 className="text-sm font-medium text-slate-300">{t("coupons.promotionCode")}</h4>
       {err && <p className="mt-1 text-sm text-red-400">{err}</p>}
       <form onSubmit={submit} className="mt-3 flex flex-wrap items-end gap-3">
         <div>
-          <label className="block text-xs text-slate-400">Code</label>
+          <label className="block text-xs text-slate-400">{t("coupons.promotionCode")}</label>
           <input
             type="text"
             value={code}
@@ -435,7 +439,7 @@ function CreatePromoForm({
           />
         </div>
         <div>
-          <label className="block text-xs text-slate-400">Max redemptions</label>
+          <label className="block text-xs text-slate-400">{t("coupons.maxRedemptions")}</label>
           <input
             type="number"
             min={1}
@@ -445,7 +449,7 @@ function CreatePromoForm({
           />
         </div>
         <div>
-          <label className="block text-xs text-slate-400">Expires at</label>
+          <label className="block text-xs text-slate-400">{t("coupons.expiresAt")}</label>
           <input
             type="date"
             value={expiresAt}
@@ -455,18 +459,18 @@ function CreatePromoForm({
         </div>
         <label className="flex items-center gap-2 text-sm text-slate-400">
           <input type="checkbox" checked={firstTimeOnly} onChange={(e) => setFirstTimeOnly(e.target.checked)} />
-          First-time only
+          {t("coupons.firstTimeOnly")}
         </label>
         <div className="flex gap-2">
           <button type="button" onClick={onCancel} className="rounded border border-slate-500 px-3 py-1 text-sm text-slate-300">
-            Cancel
+            {t("common.cancel")}
           </button>
           <button
             type="submit"
             disabled={loading}
             className="rounded bg-indigo-600 px-3 py-1 text-sm text-white disabled:opacity-50"
           >
-            {loading ? "…" : "Create"}
+            {loading ? "…" : t("coupons.addCode")}
           </button>
         </div>
       </form>

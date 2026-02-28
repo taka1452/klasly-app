@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useAdminLocale } from "@/lib/admin/locale-context";
 
 type AdminHeaderProps = {
   userEmail: string;
@@ -15,6 +16,7 @@ export default function AdminHeader({
   onSidebarToggle,
 }: AdminHeaderProps) {
   const router = useRouter();
+  const { locale, setLocale, t } = useAdminLocale();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -49,11 +51,34 @@ export default function AdminHeader({
       </button>
 
       <div className="flex flex-1 items-center justify-end gap-3">
+        <div className="flex items-center gap-1 rounded-lg border border-slate-600 bg-slate-800/50 p-0.5">
+          <button
+            type="button"
+            onClick={() => setLocale("ja")}
+            className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
+              locale === "ja" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-white"
+            }`}
+            title="日本語"
+          >
+            JP
+          </button>
+          <button
+            type="button"
+            onClick={() => setLocale("en")}
+            className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
+              locale === "en" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-white"
+            }`}
+            title="English"
+          >
+            EN
+          </button>
+        </div>
+
         <Link
           href="/"
           className="text-sm text-slate-400 hover:text-white"
         >
-          Back to App
+          {t("header.backToApp")}
         </Link>
 
         <div className="relative" ref={menuRef}>
@@ -89,7 +114,7 @@ export default function AdminHeader({
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
                 </svg>
-                Sign out
+                {t("header.signOut")}
               </button>
             </div>
           )}
