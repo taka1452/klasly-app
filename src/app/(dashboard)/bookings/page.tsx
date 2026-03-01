@@ -5,12 +5,38 @@ import { formatDate, formatTime } from "@/lib/utils";
 import EmptyState from "@/components/ui/empty-state";
 import ExportCsvButton from "@/components/ui/export-csv-button";
 import type { Metadata } from "next";
+import BookingsMonthNav from "./bookings-month-nav";
 
 export const metadata: Metadata = {
   title: "Bookings - Klasly",
 };
 
-export default async function BookingsPage() {
+function getMonthRange(monthParam: string | undefined) {
+  const now = new Date();
+  let year = now.getFullYear();
+  let month = now.getMonth() + 1;
+  if (monthParam && /^\d{4}-\d{2}$/.test(monthParam)) {
+    const [y, m] = monthParam.split("-").map(Number);
+    year = y;
+    month = m;
+  }
+  const start = new Date(year, month - 1, 1);
+  const end = new Date(year, month, 0);
+  return {
+    year,
+    month,
+    startDate: start.toISOString().split("T")[0],
+    endDate: end.toISOString().split("T")[0],
+  };
+}
+
+export default async function BookingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ month?: string }>;
+}) {
+  const params = await searchParams;
+  const { year, month, startDate, endDate } = getMonthRange(params.month);
   const serverSupabase = await createServerClient();
   const {
     data: { user },
@@ -38,15 +64,15 @@ export default async function BookingsPage() {
     return null;
   }
 
-  const today = new Date().toISOString().split("T")[0];
   const { data: sessions } = await supabase
     .from("class_sessions")
     .select("id, session_date, start_time, capacity, is_cancelled, classes(name)")
     .eq("studio_id", profile.studio_id)
-    .gte("session_date", today)
+    .gte("session_date", startDate)
+    .lte("session_date", endDate)
     .order("session_date", { ascending: true })
     .order("start_time", { ascending: true })
-    .limit(50);
+    .limit(200);
 
   const sessionIds = (sessions || []).map((s) => s.id);
   const { data: bookings } =
@@ -74,17 +100,20 @@ export default async function BookingsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Bookings</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Upcoming sessions
+            {year}年{month}月のセッション
           </p>
         </div>
-        <ExportCsvButton
-          url="/api/export/bookings"
-          filename={`bookings-${new Date().toISOString().slice(0, 10)}.csv`}
-        />
+        <div className="flex items-center gap-4">
+          <BookingsMonthNav year={year} month={month} />
+          <ExportCsvButton
+            url={`/api/export/bookings?from=${startDate}&to=${endDate}`}
+            filename={`bookings-${year}-${String(month).padStart(2, "0")}.csv`}
+          />
+        </div>
       </div>
 
       <div className="mt-6">
