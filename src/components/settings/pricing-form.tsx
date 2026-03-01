@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 type Props = {
   studioId: string;
@@ -23,6 +24,7 @@ function dollarsToCents(val: string): number {
 }
 
 export default function PricingForm({ studioId, defaults }: Props) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [values, setValues] = useState({
     drop_in_price: centsToDollars(defaults.drop_in_price),
@@ -50,7 +52,7 @@ export default function PricingForm({ studioId, defaults }: Props) {
 
       if (!res.ok) throw new Error(data.error || "Save failed");
 
-      alert("Pricing saved successfully.");
+      router.push("/settings");
     } catch (err) {
       alert(err instanceof Error ? err.message : "Save failed");
     } finally {

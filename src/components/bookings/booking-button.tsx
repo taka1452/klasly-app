@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 type Props = {
   sessionId: string;
@@ -28,6 +29,7 @@ export default function BookingButton({
 
   const isFull = confirmedCount >= capacity;
   const showWaitlist = isFull;
+  const hasNoCredits = memberCredits === 0;
 
   if (!memberId) {
     return (
@@ -83,6 +85,21 @@ export default function BookingButton({
 
   if (existingBooking) {
     if (existingBooking.status === "cancelled") {
+      if (hasNoCredits) {
+        return (
+          <div className="flex flex-col items-end gap-2 text-right">
+            <span className="text-sm text-amber-600">
+              No credits remaining. Please purchase a plan to book classes.
+            </span>
+            <Link
+              href="/purchase"
+              className="text-sm font-medium text-brand-600 hover:text-brand-700"
+            >
+              Purchase
+            </Link>
+          </div>
+        );
+      }
       return (
         <button
           type="button"
@@ -117,6 +134,22 @@ export default function BookingButton({
         >
           Cancel
         </button>
+      </div>
+    );
+  }
+
+  if (!existingBooking && hasNoCredits && !showWaitlist) {
+    return (
+      <div className="flex flex-col items-end gap-2 text-right">
+        <span className="text-sm text-amber-600">
+          No credits remaining. Please purchase a plan to book classes.
+        </span>
+        <Link
+          href="/purchase"
+          className="text-sm font-medium text-brand-600 hover:text-brand-700"
+        >
+          Purchase
+        </Link>
       </div>
     );
   }

@@ -61,7 +61,7 @@ export async function POST(request: Request) {
 
     const { data: member } = await adminSupabase
       .from("members")
-      .select("id, studio_id")
+      .select("id, studio_id, credits")
       .eq("id", member_id)
       .single();
 
@@ -101,12 +101,31 @@ export async function POST(request: Request) {
       );
     }
 
+    const credits = member.credits ?? 0;
+    const isUnlimited = credits === -1;
+    const shouldDeductCredit = !isUnlimited && credits >= 1;
+
+    if (shouldDeductCredit) {
+      const { error: updateErr } = await adminSupabase
+        .from("members")
+        .update({ credits: credits - 1 })
+        .eq("id", member_id);
+
+      if (updateErr) {
+        return NextResponse.json(
+          { error: updateErr.message },
+          { status: 500 }
+        );
+      }
+    }
+
     const { data: dropIn, error } = await adminSupabase
       .from("drop_in_attendances")
       .insert({
         studio_id: profile.studio_id,
         session_id,
         member_id,
+        credit_deducted: shouldDeductCredit,
       })
       .select("id")
       .single();

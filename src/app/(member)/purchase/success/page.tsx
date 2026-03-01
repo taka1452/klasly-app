@@ -8,9 +8,21 @@ export default function PurchaseSuccessPage() {
         Thank you for your purchase. Your credits or membership have been
         updated.
       </p>
-      <Link href="/schedule" className="btn-primary mt-6 inline-block">
-        View Schedule
-      </Link>
+      <p className="mt-2 text-sm text-gray-500">
+        Your payment is being processed. It will appear in your payment history
+        shortly.
+      </p>
+      <div className="mt-6 flex flex-wrap justify-center gap-3">
+        <Link href="/schedule" className="btn-primary inline-block">
+          View Schedule
+        </Link>
+        <Link
+          href="/my-payments"
+          className="btn-secondary inline-block"
+        >
+          View Payment History
+        </Link>
+      </div>
     </div>
   );
 }

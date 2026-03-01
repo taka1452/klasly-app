@@ -2,9 +2,10 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { formatCredits, formatDate, getPlanLabel, getStatusColor } from "@/lib/utils";
+import { formatDate, getPlanLabel, getStatusColor } from "@/lib/utils";
 import MemberEditForm from "@/components/members/member-edit-form";
 import MemberDeleteButton from "@/components/members/member-delete-button";
+import MemberAdjustCredits from "@/components/members/member-adjust-credits";
 import MemberAttendanceHistory from "@/components/attendance/member-attendance-history";
 
 export default async function MemberDetailPage({
@@ -108,10 +109,10 @@ export default async function MemberDetailPage({
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-gray-400">Credits</dt>
-                <dd className="text-sm font-medium text-gray-900">
-                  {formatCredits(member.credits)}
-                </dd>
+                <MemberAdjustCredits
+                  memberId={member.id}
+                  currentCredits={member.credits}
+                />
               </div>
               <div>
                 <dt className="text-xs text-gray-400">Joined</dt>
