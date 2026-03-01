@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { WAIVER_PRESETS, type WaiverPreset } from "@/lib/waiver-presets";
+import { WaiverPresetIcon } from "@/components/waiver-preset-icon";
 import { htmlToMarkdown, markdownToHtml } from "@/lib/waiver-content";
 
 type Template = { id: string; title: string; content: string } | null;
@@ -38,9 +39,7 @@ function PresetGrid({
           disabled={disabled}
           className="flex flex-col rounded-lg border border-gray-200 bg-white p-4 text-left shadow-sm transition hover:border-gray-300 hover:shadow-md disabled:opacity-50"
         >
-          <span className="text-2xl" aria-hidden>
-            {preset.icon}
-          </span>
+          <WaiverPresetIcon presetId={preset.id} className="h-6 w-6 shrink-0 text-gray-500" />
           <h3 className="mt-2 font-semibold text-gray-900">{preset.name}</h3>
           <p className="mt-1 line-clamp-3 text-sm text-gray-500">
             {preset.description}

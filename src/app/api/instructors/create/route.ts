@@ -88,7 +88,7 @@ export async function POST(request: Request) {
       // 既存ユーザーをメールで検索（listUsers はメール絞り込み非対応のため取得してからフィルタ）
       const { data: listData } = await adminSupabase.auth.admin.listUsers({
         page: 1,
-        per_page: 1000,
+        perPage: 1000,
       });
       const existingAuthUser = listData?.users?.find(
         (u) => (u.email ?? "").trim().toLowerCase() === emailNorm

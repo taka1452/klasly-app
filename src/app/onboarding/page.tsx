@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { WAIVER_PRESETS } from "@/lib/waiver-presets";
+import { WaiverPresetIcon } from "@/components/waiver-preset-icon";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -210,7 +211,7 @@ export default function OnboardingPage() {
                         : "border-gray-200 bg-white hover:border-gray-300"
                     }`}
                   >
-                    <span className="text-xl">{preset.icon}</span>
+                    <WaiverPresetIcon presetId={preset.id} selected={waiverPresetId === preset.id} />
                     <span className="mt-1 text-xs font-medium text-gray-900">
                       {preset.name}
                     </span>
