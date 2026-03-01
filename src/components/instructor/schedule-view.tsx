@@ -66,21 +66,28 @@ export default function ScheduleView({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setWeekOffset((o) => o - 1)}
-            className="btn-secondary text-sm"
-          >
-            ← Previous Week
-          </button>
-          <button
-            type="button"
-            onClick={() => setWeekOffset((o) => o + 1)}
-            className="btn-secondary text-sm"
-          >
-            Next Week →
-          </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setWeekOffset((o) => o - 1)}
+              className="btn-secondary text-sm"
+            >
+              ← Previous Week
+            </button>
+            <button
+              type="button"
+              onClick={() => setWeekOffset((o) => o + 1)}
+              className="btn-secondary text-sm"
+            >
+              Next Week →
+            </button>
+          </div>
+          <p className="text-sm font-medium text-gray-600">
+            Week of {weekStart.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+            {" – "}
+            {weekDates[6].toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+          </p>
         </div>
         <button
           type="button"

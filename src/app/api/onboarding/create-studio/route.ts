@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { WAIVER_PRESETS } from "@/lib/waiver-presets";
 
 export async function POST(request: Request) {
   try {
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
       serviceRoleKey
     );
 
-    let body: { name?: string; email?: string; phone?: string };
+    let body: { name?: string; email?: string; phone?: string; waiverPresetId?: string };
     try {
       body = await request.json();
     } catch {
@@ -97,6 +98,19 @@ export async function POST(request: Request) {
         { error: `Profile: ${profileError.message}` },
         { status: 400 }
       );
+    }
+
+    const waiverPresetId = body.waiverPresetId?.trim();
+    if (waiverPresetId) {
+      const preset = WAIVER_PRESETS.find((p) => p.id === waiverPresetId);
+      if (preset) {
+        const waiverContent = preset.content.replaceAll("{{STUDIO_NAME}}", name);
+        await adminSupabase.from("waiver_templates").insert({
+          studio_id: studio.id,
+          title: "Liability Waiver",
+          content: waiverContent,
+        });
+      }
     }
 
     return NextResponse.json({ success: true, studioId: studio.id });

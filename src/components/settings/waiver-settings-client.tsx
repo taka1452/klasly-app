@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { WAIVER_PRESETS, type WaiverPreset } from "@/lib/waiver-presets";
+import { htmlToMarkdown, markdownToHtml } from "@/lib/waiver-content";
 
 type Template = { id: string; title: string; content: string } | null;
 type UnsignedMember = { id: string; fullName: string; email: string };
@@ -61,7 +62,9 @@ export default function WaiverSettingsClient({
   unsignedMembers,
 }: Props) {
   const [title, setTitle] = useState(initialTemplate?.title ?? "Liability Waiver");
-  const [content, setContent] = useState(initialTemplate?.content ?? "");
+  const [content, setContent] = useState(
+    initialTemplate?.content != null ? htmlToMarkdown(initialTemplate.content) : ""
+  );
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [resendLoading, setResendLoading] = useState<string | null>(null);
@@ -93,7 +96,7 @@ export default function WaiverSettingsClient({
   }
 
   function handleLoadPreset(contentWithStudio: string) {
-    setContent(contentWithStudio);
+    setContent(htmlToMarkdown(contentWithStudio));
     setShowPresetPicker(false);
   }
 
@@ -104,7 +107,10 @@ export default function WaiverSettingsClient({
       const res = await fetch("/api/waiver/template", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, content }),
+        body: JSON.stringify({
+          title,
+          content: markdownToHtml(content),
+        }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -238,12 +244,15 @@ export default function WaiverSettingsClient({
 
             <div className="mt-4">
               <label className="block text-sm font-medium text-gray-700">Content</label>
+              <p className="mt-1 text-xs text-gray-500">
+                Write in plain text (Markdown). Headings: # ## ###, bold: **text**, lists: - item
+              </p>
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                rows={12}
-                className="input-field mt-1 w-full resize-y"
-                placeholder="Enter your waiver text here. This will be shown to members before they sign."
+                rows={14}
+                className="input-field mt-1 w-full resize-y font-mono text-sm"
+                placeholder="# Liability Waiver&#10;&#10;Enter your waiver text here. Use # for headings, ** for bold."
               />
             </div>
 

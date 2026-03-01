@@ -3,12 +3,14 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { WAIVER_PRESETS } from "@/lib/waiver-presets";
 
 export default function OnboardingPage() {
   const router = useRouter();
   const [studioName, setStudioName] = useState("");
   const [studioEmail, setStudioEmail] = useState("");
   const [studioPhone, setStudioPhone] = useState("");
+  const [waiverPresetId, setWaiverPresetId] = useState<string>(() => WAIVER_PRESETS[0]?.id ?? "general-fitness");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -78,6 +80,7 @@ export default function OnboardingPage() {
         name: studioName,
         email: studioEmail || null,
         phone: studioPhone || null,
+        waiverPresetId: waiverPresetId || undefined,
       }),
     });
 
@@ -186,6 +189,34 @@ export default function OnboardingPage() {
                 placeholder="+1 (555) 123-4567"
                 className="input-field mt-1"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Waiver template
+              </label>
+              <p className="mt-1 text-xs text-gray-500">
+                Choose a liability waiver template. You can edit it later in Settings.
+              </p>
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {WAIVER_PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => setWaiverPresetId(preset.id)}
+                    className={`flex flex-col items-center rounded-lg border-2 p-3 text-center transition ${
+                      waiverPresetId === preset.id
+                        ? "border-brand-600 bg-brand-50"
+                        : "border-gray-200 bg-white hover:border-gray-300"
+                    }`}
+                  >
+                    <span className="text-xl">{preset.icon}</span>
+                    <span className="mt-1 text-xs font-medium text-gray-900">
+                      {preset.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="rounded-lg bg-brand-50 p-4">
