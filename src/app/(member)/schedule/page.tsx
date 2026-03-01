@@ -107,22 +107,12 @@ export default async function SchedulePage() {
     );
   }
 
-  const waiverSigned = member ? member.waiver_signed : true;
-
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-900">Schedule</h1>
       <p className="mt-1 text-sm text-gray-500">
         Book your classes
       </p>
-
-      {!waiverSigned && (
-        <div className="mt-6 rounded-lg border-2 border-amber-200 bg-amber-50 px-4 py-3">
-          <p className="text-sm font-medium text-amber-800">
-            ⚠️ You haven&apos;t signed the waiver yet. Please check your email for the signing link, or contact the studio.
-          </p>
-        </div>
-      )}
 
       <div className="mt-6 space-y-4">
         {sessions && sessions.length > 0 ? (

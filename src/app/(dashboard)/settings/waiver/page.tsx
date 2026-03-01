@@ -28,6 +28,12 @@ export default async function WaiverSettingsPage() {
 
   if (!profile?.studio_id || profile.role !== "owner") redirect("/");
 
+  const { data: studio } = await supabase
+    .from("studios")
+    .select("name")
+    .eq("id", profile.studio_id)
+    .single();
+
   const { data: template } = await supabase
     .from("waiver_templates")
     .select("id, title, content")
@@ -53,13 +59,14 @@ export default async function WaiverSettingsPage() {
         ← Back to Settings
       </Link>
 
-      <h1 className="mt-4 text-2xl font-bold text-gray-900">Waiver Settings</h1>
+      <h1 className="mt-4 text-2xl font-bold text-gray-900">Waiver & Liability Release</h1>
       <p className="mt-1 text-sm text-gray-500">
-        Manage your liability waiver template and track signing status
+        Protect your studio with a digital waiver. Members will sign electronically before their first class.
       </p>
 
       <WaiverSettingsClient
         template={template}
+        studioName={studio?.name ?? "Your Studio"}
         signedCount={signedCount}
         totalCount={totalCount}
         unsignedMembers={unsignedMembers.map((m) => ({
