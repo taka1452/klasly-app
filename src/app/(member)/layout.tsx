@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import MemberHeader from "@/components/member/member-header";
-import InlineWaiverSign from "@/components/waiver/inline-waiver-sign";
+import WaiverGate from "@/components/waiver/waiver-gate";
 
 export default async function MemberLayout({
   children,
@@ -44,10 +44,9 @@ export default async function MemberLayout({
     profile?.studio_id != null && profile.studio_id !== "";
   let member: { id: string; waiver_signed: boolean } | null = null;
   let waiverTemplate: { id: string; title: string; content: string } | null = null;
-  let studioName = "";
 
   if (needsWaiverCheck && profile.studio_id) {
-    const [memberRes, templateRes, studioRes] = await Promise.all([
+    const [memberRes, templateRes] = await Promise.all([
       supabase
         .from("members")
         .select("id, waiver_signed")
@@ -59,38 +58,16 @@ export default async function MemberLayout({
         .select("id, title, content")
         .eq("studio_id", profile.studio_id)
         .maybeSingle(),
-      supabase
-        .from("studios")
-        .select("name")
-        .eq("id", profile.studio_id)
-        .single(),
     ]);
     member = memberRes.data ?? null;
     waiverTemplate = templateRes.data ?? null;
-    studioName = (studioRes.data as { name?: string } | null)?.name ?? "";
   }
 
   const needsWaiver =
     !!waiverTemplate && !!member && !member.waiver_signed;
 
   if (needsWaiver) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <MemberHeader
-          userName={profile?.full_name || user.email || "User"}
-          userEmail={user.email || ""}
-        />
-        <main className="mx-auto max-w-2xl px-4 py-8">
-          <InlineWaiverSign
-            memberId={member!.id}
-            waiverTitle={waiverTemplate!.title}
-            waiverContent={waiverTemplate!.content}
-            studioName={studioName}
-            memberName={profile?.full_name || ""}
-          />
-        </main>
-      </div>
-    );
+    return <WaiverGate needsWaiver>{children}</WaiverGate>;
   }
 
   return (

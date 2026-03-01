@@ -8,6 +8,7 @@ type Props = {
   waiverContent: string;
   studioName: string;
   memberName: string;
+  redirectTo?: string;
 };
 
 export default function InlineWaiverSign({
@@ -16,6 +17,7 @@ export default function InlineWaiverSign({
   waiverContent,
   studioName,
   memberName,
+  redirectTo,
 }: Props) {
   const [signedName, setSignedName] = useState(memberName);
   const [agreed, setAgreed] = useState(false);
@@ -39,7 +41,11 @@ export default function InlineWaiverSign({
         setError(data.error || "Failed to sign");
         return;
       }
-      window.location.reload();
+      if (redirectTo) {
+        window.location.href = redirectTo;
+      } else {
+        window.location.reload();
+      }
     } catch {
       setError("Failed to sign");
     } finally {

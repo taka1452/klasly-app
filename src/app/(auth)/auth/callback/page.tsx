@@ -30,7 +30,21 @@ async function getRedirectUrl(
   if (!profile?.studio_id) return `${origin}/onboarding`;
   if (profile.role === "owner") return `${origin}/`;
   if (profile.role === "instructor") return `${origin}/instructor`;
-  if (profile.role === "member") return `${origin}/schedule`;
+  if (profile.role === "member") {
+    const { data: member } = await adminSupabase
+      .from("members")
+      .select("waiver_signed")
+      .eq("profile_id", userId)
+      .eq("studio_id", profile.studio_id)
+      .maybeSingle();
+    const { data: template } = await adminSupabase
+      .from("waiver_templates")
+      .select("id")
+      .eq("studio_id", profile.studio_id)
+      .maybeSingle();
+    if (template && member && !member.waiver_signed) return `${origin}/waiver`;
+    return `${origin}/schedule`;
+  }
   return next ? `${origin}${next}` : `${origin}/`;
 }
 

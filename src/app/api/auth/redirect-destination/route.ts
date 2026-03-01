@@ -44,6 +44,20 @@ export async function GET() {
     return NextResponse.json({ url: "/instructor" });
   }
   if (profile.role === "member") {
+    const { data: member } = await adminSupabase
+      .from("members")
+      .select("waiver_signed")
+      .eq("profile_id", user.id)
+      .eq("studio_id", profile.studio_id)
+      .maybeSingle();
+    const hasTemplate = await adminSupabase
+      .from("waiver_templates")
+      .select("id")
+      .eq("studio_id", profile.studio_id)
+      .maybeSingle();
+    if (hasTemplate.data && member && !member.waiver_signed) {
+      return NextResponse.json({ url: "/waiver" });
+    }
     return NextResponse.json({ url: "/schedule" });
   }
   return NextResponse.json({ url: "/" });

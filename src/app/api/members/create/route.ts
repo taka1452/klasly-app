@@ -2,10 +2,8 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { checkPlanLimit } from "@/lib/plan-limits";
 import { sendEmail } from "@/lib/email/send";
-import { welcomeMember, waiverInvite } from "@/lib/email/templates";
-import { WAIVER_FROM_EMAIL } from "@/lib/email/client";
+import { welcomeMember } from "@/lib/email/templates";
 import { NextResponse } from "next/server";
-import { randomUUID } from "crypto";
 import { getAppUrl } from "@/lib/app-url";
 
 export async function POST(request: Request) {
@@ -137,44 +135,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3b. Waiver template が存在する場合は waver 招待メールを送信
-    const { data: waiverTemplate } = await adminSupabase
-      .from("waiver_templates")
-      .select("id")
-      .eq("studio_id", targetStudioId)
-      .single();
-
-    if (waiverTemplate && newMember?.id) {
-      const token = randomUUID();
-      await adminSupabase.from("waiver_signatures").insert({
-        member_id: newMember.id,
-        sign_token: token,
-        signed_name: "",
-        signed_at: null,
-        token_used: false,
-      });
-
-      const baseUrl = getAppUrl();
-      const signUrl = `${baseUrl}/waiver/sign/${token}`;
-      const { data: studioData } = await adminSupabase
-        .from("studios")
-        .select("name")
-        .eq("id", targetStudioId)
-        .single();
-      const { subject, html } = waiverInvite({
-        memberName: fullName,
-        studioName: studioData?.name ?? "Studio",
-        signUrl,
-      });
-      await sendEmail({
-        to: email,
-        subject,
-        html,
-        from: WAIVER_FROM_EMAIL,
-      });
-    }
-
-    // 4. ウェルカムメールを送信（マジックリンク付き）
+    // 4. ウェルカムメールを送信（マジックリンク付き）。ウェイバーは初回ログイン時に /waiver で署名
     const { data: studioData } = await adminSupabase
       .from("studios")
       .select("name")
