@@ -43,6 +43,28 @@ export async function POST(request: Request) {
       .eq("id", profile.studio_id)
       .single();
 
+    const planStatus = studio?.plan_status ?? "active";
+    const body = (await request.json().catch(() => ({}))) as {
+      isTrialing?: boolean;
+      requestRefund?: boolean;
+    };
+    const isTrialing = body?.isTrialing ?? planStatus === "trialing";
+
+    // トライアルキャンセル: 「今後課金しない」だけにして、ステータスは trialing のまま
+    if (isTrialing) {
+      if (studio?.stripe_subscription_id) {
+        await stripe.subscriptions.update(studio.stripe_subscription_id, {
+          cancel_at_period_end: true,
+        });
+      }
+      await adminSupabase
+        .from("studios")
+        .update({ cancel_at_period_end: true })
+        .eq("id", profile.studio_id);
+      return NextResponse.json({ success: true });
+    }
+
+    // 本契約のキャンセルは Stripe サブスク必須
     if (!studio?.stripe_subscription_id) {
       return NextResponse.json(
         { error: "No active subscription" },
@@ -50,31 +72,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const planStatus = studio.plan_status ?? "active";
-    const body = (await request.json().catch(() => ({}))) as {
-      isTrialing?: boolean;
-      requestRefund?: boolean;
-    };
-    const isTrialing = body?.isTrialing ?? planStatus === "trialing";
-
-    if (isTrialing) {
-      await stripe.subscriptions.cancel(studio.stripe_subscription_id);
-      await adminSupabase
-        .from("studios")
-        .update({
-          plan_status: "canceled",
-          stripe_subscription_id: null,
-        })
-        .eq("id", profile.studio_id);
-    } else {
-      await stripe.subscriptions.update(studio.stripe_subscription_id, {
-        cancel_at_period_end: true,
-      });
-      await adminSupabase
-        .from("studios")
-        .update({ cancel_at_period_end: true })
-        .eq("id", profile.studio_id);
-    }
+    await stripe.subscriptions.update(studio.stripe_subscription_id, {
+      cancel_at_period_end: true,
+    });
+    await adminSupabase
+      .from("studios")
+      .update({ cancel_at_period_end: true })
+      .eq("id", profile.studio_id);
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
