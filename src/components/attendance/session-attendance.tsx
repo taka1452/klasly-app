@@ -423,6 +423,28 @@ function AddDropInButton({
   const [members, setMembers] = useState<MemberOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [adding, setAdding] = useState<string | null>(null);
+  const [highlightIndex, setHighlightIndex] = useState(0);
+
+  const handleSelect = useCallback(
+    async (member: MemberOption) => {
+      setAdding(member.id);
+      const res = await fetch("/api/attendance/drop-in", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sessionId, member_id: member.id }),
+      });
+      setAdding(null);
+      if (res.ok) {
+        setOpen(false);
+        setQuery("");
+        onAdded();
+      } else {
+        const err = await res.json();
+        alert(err.error || "追加に失敗しました");
+      }
+    },
+    [sessionId, onAdded]
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -432,79 +454,127 @@ function AddDropInButton({
         `/api/attendance/members-for-dropin?session_id=${encodeURIComponent(sessionId)}&q=${encodeURIComponent(query)}`
       )
         .then((r) => r.json())
-        .then((d) => setMembers(d.members || []))
+        .then((d) => {
+          setMembers(d.members || []);
+          setHighlightIndex(0);
+        })
         .catch(() => setMembers([]))
         .finally(() => setLoading(false));
-    }, 200);
+    }, 300);
     return () => clearTimeout(timer);
   }, [open, sessionId, query]);
 
-  const handleSelect = async (member: MemberOption) => {
-    setAdding(member.id);
-    const res = await fetch("/api/attendance/drop-in", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ session_id: sessionId, member_id: member.id }),
-    });
-    setAdding(null);
-    if (res.ok) {
-      setOpen(false);
-      setQuery("");
-      onAdded();
-    } else {
-      const err = await res.json();
-      alert(err.error || "Failed to add");
-    }
-  };
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        return;
+      }
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setHighlightIndex((i) => (i + 1) % Math.max(1, members.length));
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setHighlightIndex((i) =>
+          i <= 0 ? Math.max(0, members.length - 1) : i - 1
+        );
+        return;
+      }
+      if (e.key === "Enter" && members[highlightIndex]) {
+        e.preventDefault();
+        handleSelect(members[highlightIndex]);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open, members, highlightIndex, handleSelect]);
+
+  const emptyMessage =
+    query.trim() === ""
+      ? "追加できるメンバーはいません（既に予約済み・ドロップイン済みの方は除きます）"
+      : `「${query}」に一致するメンバーはいません`;
 
   return (
     <div className="relative">
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="text-sm text-blue-600 hover:text-blue-800"
+        className="inline-flex items-center gap-1.5 rounded-md border border-brand-200 bg-white px-3 py-2 text-sm font-medium text-brand-700 shadow-sm hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-1"
       >
-        + Add Drop-in
+        <span className="text-base leading-none">+</span>
+        ドロップインを追加
       </button>
       {open && (
         <>
           <div
             className="fixed inset-0 z-10"
             onClick={() => setOpen(false)}
+            aria-hidden
           />
-          <div className="absolute right-0 top-full z-20 mt-1 w-72 rounded-lg border border-gray-200 bg-white p-3 shadow-lg">
-            <input
-              type="text"
-              placeholder="Search members..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-              autoFocus
-            />
-            <div className="mt-2 max-h-48 overflow-y-auto">
+          <div
+            className="absolute right-0 top-full z-20 mt-2 w-80 rounded-xl border border-gray-200 bg-white py-3 shadow-xl"
+            role="dialog"
+            aria-label="ドロップインを追加"
+          >
+            <div className="px-3">
+              <p className="mb-2 text-xs font-medium text-gray-500">
+                メンバーを選んで追加
+              </p>
+              <input
+                type="text"
+                placeholder="メンバーを検索..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm placeholder:text-gray-400 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                autoFocus
+              />
+            </div>
+            <div className="mt-2 max-h-56 overflow-y-auto">
               {loading ? (
-                <p className="py-4 text-center text-sm text-gray-500">
-                  Searching...
-                </p>
+                <div className="flex items-center justify-center gap-2 py-8 text-sm text-gray-500">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
+                  検索中...
+                </div>
               ) : members.length === 0 ? (
-                <p className="py-4 text-center text-sm text-gray-500">
-                  No members available
+                <p className="px-3 py-6 text-center text-sm text-gray-500">
+                  {emptyMessage}
                 </p>
               ) : (
-                members.map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => handleSelect(m)}
-                    disabled={adding === m.id}
-                    className="flex w-full items-center justify-between rounded px-2 py-2 text-left text-sm hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    <span className="font-medium">{m.full_name}</span>
-                    <span className="text-xs text-gray-500">
-                      {getPlanLabel(m.plan_type)}
-                    </span>
-                  </button>
-                ))
+                <ul className="py-1" role="listbox">
+                  {members.map((m, idx) => (
+                    <li key={m.id} role="option" aria-selected={highlightIndex === idx}>
+                      <button
+                        type="button"
+                        onClick={() => handleSelect(m)}
+                        disabled={adding === m.id}
+                        className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm transition-colors ${
+                          highlightIndex === idx
+                            ? "bg-brand-50 text-brand-900"
+                            : "hover:bg-gray-50"
+                        } disabled:opacity-60`}
+                      >
+                        <span className="font-medium text-gray-900 truncate">
+                          {m.full_name}
+                        </span>
+                        <span className="flex shrink-0 items-center gap-2">
+                          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                            {getPlanLabel(m.plan_type)}
+                          </span>
+                          {adding === m.id ? (
+                            <span className="text-xs text-gray-400">追加中...</span>
+                          ) : (
+                            <span className="text-xs text-gray-400">
+                              {m.credits === -1 ? "∞" : m.credits}回
+                            </span>
+                          )}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               )}
             </div>
           </div>
