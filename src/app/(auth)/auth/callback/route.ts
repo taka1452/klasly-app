@@ -35,6 +35,12 @@ export async function GET(request: Request) {
           .eq("id", user.id)
           .single();
 
+        // 2. studio_id がない場合 → オンボーディングへ（role より先）
+        if (!profile?.studio_id) {
+          return NextResponse.redirect(`${origin}/onboarding`);
+        }
+
+        // 3. Role 判定（studio_id がある場合のみ）
         if (profile?.role === "owner") {
           return NextResponse.redirect(`${origin}/`);
         }
@@ -43,9 +49,6 @@ export async function GET(request: Request) {
         }
         if (profile?.role === "member") {
           return NextResponse.redirect(`${origin}/schedule`);
-        }
-        if (!profile?.studio_id) {
-          return NextResponse.redirect(`${origin}/onboarding`);
         }
       }
       const next = searchParams.get("next") ?? "/";

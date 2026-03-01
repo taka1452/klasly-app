@@ -20,10 +20,19 @@ export default async function Home() {
     );
     const { data: profile } = await adminSupabase
       .from("profiles")
-      .select("role")
+      .select("role, studio_id")
       .eq("id", user.id)
       .single();
 
+    // studio_id がない場合 → オンボーディングへ（role に関わらず）
+    if (!profile?.studio_id) {
+      redirect("/onboarding");
+    }
+
+    // Role 判定（studio_id がある場合のみ）
+    if (profile?.role === "owner") {
+      redirect("/dashboard");
+    }
     if (profile?.role === "instructor") {
       redirect("/instructor");
     }
@@ -32,5 +41,6 @@ export default async function Home() {
     }
   }
 
+  // 4. フォールバック
   redirect("/dashboard");
 }
