@@ -78,7 +78,12 @@ export default async function AuthCallbackPage({
           params?.type === "magiclink" &&
           (user.user_metadata as { invited_without_password?: boolean } | undefined)?.invited_without_password
         ) {
-          const path = new URL(url).pathname;
+          let path = "/";
+          try {
+            path = new URL(url).pathname || "/";
+          } catch {
+            path = url.startsWith("/") ? url.split("?")[0] || "/" : "/";
+          }
           redirect(`${origin}/set-password?next=${encodeURIComponent(path)}`);
         }
         redirect(url);
