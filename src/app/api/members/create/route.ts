@@ -6,6 +6,7 @@ import { welcomeMember, waiverInvite } from "@/lib/email/templates";
 import { WAIVER_FROM_EMAIL } from "@/lib/email/client";
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
+import { getAppUrl } from "@/lib/app-url";
 
 export async function POST(request: Request) {
   try {
@@ -86,7 +87,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const appUrl = getAppUrl();
     const { data: linkData, error: linkError } =
       await adminSupabase.auth.admin.generateLink({
         type: "magiclink",
@@ -153,8 +154,7 @@ export async function POST(request: Request) {
         token_used: false,
       });
 
-      const baseUrl =
-        process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+      const baseUrl = getAppUrl();
       const signUrl = `${baseUrl}/waiver/sign/${token}`;
       const { data: studioData } = await adminSupabase
         .from("studios")

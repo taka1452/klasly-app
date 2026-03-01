@@ -3,6 +3,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email/send";
 import { instructorInvite } from "@/lib/email/templates";
+import { getAppUrl } from "@/lib/app-url";
 
 export async function POST(request: Request) {
   try {
@@ -76,8 +77,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. マジックリンクを生成
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    // 2. マジックリンクを生成（本番では getAppUrl が NEXT_PUBLIC_APP_URL または VERCEL_URL を返す）
+    const appUrl = getAppUrl();
     const { data: linkData, error: linkError } =
       await adminSupabase.auth.admin.generateLink({
         type: "magiclink",
