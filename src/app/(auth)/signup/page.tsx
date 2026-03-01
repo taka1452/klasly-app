@@ -164,6 +164,9 @@ export default function SignupPage() {
           minLength={6}
           autoComplete="new-password"
         />
+        <p className="-mt-2 text-xs text-gray-500">
+          At least 6 characters.
+        </p>
 
         <PasswordField
           id="confirmPassword"
