@@ -100,12 +100,6 @@ export async function POST(request: Request) {
         );
       }
 
-      const { data: existingProfile } = await adminSupabase
-        .from("profiles")
-        .select("studio_id, role")
-        .eq("id", existingAuthUser.id)
-        .single();
-
       // 同じスタジオに既にインストラクターとして登録済みか
       const { data: existingInstructor } = await adminSupabase
         .from("instructors")
