@@ -71,16 +71,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // 1. Auth ユーザーを作成（ランダムパスワード＋招待メール）
-    const tempPassword =
-      Math.random().toString(36).slice(-12) +
-      Math.random().toString(36).slice(-4).toUpperCase() +
-      "!";
-
+    // 1. Auth ユーザーを作成（パスワードなし・マジックリンクで初回ログイン）
     const { data: authUser, error: authError } =
       await adminSupabase.auth.admin.createUser({
         email,
-        password: tempPassword,
         email_confirm: true,
         user_metadata: { full_name: fullName },
       });
@@ -91,6 +85,24 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const { data: linkData, error: linkError } =
+      await adminSupabase.auth.admin.generateLink({
+        type: "magiclink",
+        email,
+        options: {
+          redirectTo: `${appUrl}/auth/callback`,
+        },
+      });
+
+    if (linkError) {
+      console.error("Failed to generate magic link for member:", linkError.message);
+    }
+
+    const magicLinkUrl =
+      (linkData as { properties?: { action_link?: string } })?.properties
+        ?.action_link ?? (linkData as { action_link?: string })?.action_link ?? null;
 
     // 2. profiles を更新（トリガーで作成済みなので update）
     await adminSupabase
@@ -162,13 +174,7 @@ export async function POST(request: Request) {
       });
     }
 
-    // 4. パスワードリセットメールを送信（会員が自分でパスワードを設定できるように）
-    await adminSupabase.auth.admin.generateLink({
-      type: "recovery",
-      email,
-    });
-
-    // 5. ウェルカムメールを送信
+    // 4. ウェルカムメールを送信（マジックリンク付き）
     const { data: studioData } = await adminSupabase
       .from("studios")
       .select("name")
@@ -177,6 +183,7 @@ export async function POST(request: Request) {
     const { subject, html } = welcomeMember({
       memberName: fullName,
       studioName: studioData?.name ?? "Studio",
+      magicLinkUrl,
     });
     await sendEmail({ to: email, subject, html });
 

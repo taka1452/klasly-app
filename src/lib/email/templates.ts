@@ -185,35 +185,67 @@ export function instructorInvite(params: {
   instructorName: string;
   studioName: string;
   email: string;
-  tempPassword?: string;
+  magicLinkUrl?: string | null;
 }) {
-  const { instructorName, studioName, email, tempPassword } = params;
-  const passwordLine = tempPassword
-    ? `<p style="margin:0 0 8px;font-size:14px;color:#6b7280;">Temporary password: ${tempPassword}</p><p style="margin:0 0 16px;font-size:13px;color:#6b7280;">Please change it after your first login.</p>`
-    : `<p style="margin:0 0 16px;font-size:14px;color:#6b7280;">Please set your password after your first login (use &quot;Forgot password&quot; if needed).</p>`;
+  const { instructorName, studioName, email, magicLinkUrl } = params;
+
+  const loginButton = magicLinkUrl
+    ? `<p style="margin:0 0 16px;">
+        <a href="${magicLinkUrl}" style="display:inline-block;background:${BRAND_COLOR};color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">
+          Accept Invitation & Log In
+        </a>
+      </p>
+      <p style="margin:0 0 16px;font-size:13px;color:#6b7280;">
+        This link expires in 24 hours. After that, use "Forgot password" on the login page to set your password.
+      </p>`
+    : `<p style="margin:0 0 16px;">
+        <a href="https://app.klasly.app/login" style="display:inline-block;background:${BRAND_COLOR};color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">
+          Log In
+        </a>
+      </p>
+      <p style="margin:0 0 16px;font-size:13px;color:#6b7280;">
+        Use "Forgot password" on the login page to set your password.
+      </p>`;
+
   const content = `
-    <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">You've been added as an instructor</h2>
+    <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">You've been invited as an instructor</h2>
     <p style="margin:0 0 8px;font-size:15px;">Hi ${instructorName},</p>
     <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
       You've been added as an instructor at <strong>${studioName}</strong> on Klasly.
+      Click below to accept the invitation and access your schedule.
     </p>
-    <p style="margin:0 0 16px;">
-      <a href="https://app.klasly.app/login" style="display:inline-block;background:${BRAND_COLOR};color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">Log in here</a>
-    </p>
+    ${loginButton}
     <p style="margin:0 0 8px;font-size:14px;color:#6b7280;">
       Email: ${email}
     </p>
-    ${passwordLine}
     <p style="margin:0;font-size:14px;">Thanks,<br>${studioName}</p>
   `;
   return {
-    subject: `You've been added as an instructor on ${studioName}`,
+    subject: `You've been invited as an instructor at ${studioName}`,
     html: baseHtml(content),
   };
 }
 
-export function welcomeMember(params: { memberName: string; studioName: string }) {
-  const { memberName, studioName } = params;
+export function welcomeMember(params: {
+  memberName: string;
+  studioName: string;
+  magicLinkUrl?: string | null;
+}) {
+  const { memberName, studioName, magicLinkUrl } = params;
+  const loginButton = magicLinkUrl
+    ? `<p style="margin:0 0 16px;">
+        <a href="${magicLinkUrl}" style="display:inline-block;background:${BRAND_COLOR};color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">
+          Log in to view schedule & book classes
+        </a>
+      </p>
+      <p style="margin:0 0 16px;font-size:13px;color:#6b7280;">
+        This link expires in 24 hours. After that, use "Forgot password" on the login page to set your password.
+      </p>`
+    : `<p style="margin:0 0 16px;">
+        <a href="https://app.klasly.app/login" style="display:inline-block;background:${BRAND_COLOR};color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">
+          Log in
+        </a>
+      </p>`;
   const content = `
     <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">Welcome!</h2>
     <p style="margin:0 0 8px;font-size:15px;">Hi ${memberName},</p>
@@ -223,9 +255,7 @@ export function welcomeMember(params: { memberName: string; studioName: string }
     <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
       You can log in to view the schedule and book classes:
     </p>
-    <p style="margin:0;">
-      <a href="https://app.klasly.app/login" style="display:inline-block;background:${BRAND_COLOR};color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">Log in</a>
-    </p>
+    ${loginButton}
   `;
   return {
     subject: `Welcome to ${studioName}!`,

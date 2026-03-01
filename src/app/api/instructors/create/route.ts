@@ -61,15 +61,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const tempPassword =
-      Math.random().toString(36).slice(-12) +
-      Math.random().toString(36).slice(-4).toUpperCase() +
-      "!";
-
+    // 1. パスワードなしでユーザーを作成（メール確認済みとしてマーク）
     const { data: authUser, error: authError } =
       await adminSupabase.auth.admin.createUser({
         email,
-        password: tempPassword,
         email_confirm: true,
         user_metadata: { full_name: fullName },
       });
@@ -80,6 +75,26 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    // 2. マジックリンクを生成
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const { data: linkData, error: linkError } =
+      await adminSupabase.auth.admin.generateLink({
+        type: "magiclink",
+        email,
+        options: {
+          redirectTo: `${appUrl}/auth/callback`,
+        },
+      });
+
+    if (linkError) {
+      console.error("Failed to generate magic link:", linkError.message);
+    }
+
+    // 3. マジックリンクURLを組み立て（generateLink が返す action_link を使用）
+    const magicLinkUrl =
+      (linkData as { properties?: { action_link?: string } })?.properties
+        ?.action_link ?? (linkData as { action_link?: string })?.action_link ?? null;
 
     await adminSupabase.from("profiles").update({
       studio_id: targetStudioId,
@@ -119,7 +134,7 @@ export async function POST(request: Request) {
       instructorName: fullName,
       studioName,
       email,
-      tempPassword,
+      magicLinkUrl,
     });
     await sendEmail({ to: email, subject: invite.subject, html: invite.html });
 
