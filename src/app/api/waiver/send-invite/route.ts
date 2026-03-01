@@ -80,6 +80,7 @@ export async function POST(request: Request) {
       .from("waiver_signatures")
       .insert({
         member_id: memberId,
+        studio_id: member.studio_id,
         sign_token: token,
         signed_name: "",
         signed_at: null,

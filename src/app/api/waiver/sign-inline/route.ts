@@ -51,7 +51,7 @@ export async function POST(request: Request) {
 
     const { data: member } = await supabase
       .from("members")
-      .select("id, profile_id")
+      .select("id, profile_id, studio_id")
       .eq("id", memberId)
       .single();
 
@@ -67,6 +67,7 @@ export async function POST(request: Request) {
 
     const { error: insertError } = await supabase.from("waiver_signatures").insert({
       member_id: memberId,
+      studio_id: member.studio_id,
       sign_token: signToken,
       signed_name: trimmedName,
       signed_at: signedAt,

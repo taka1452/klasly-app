@@ -108,6 +108,7 @@ export async function POST() {
         .from("waiver_signatures")
         .insert({
           member_id: member.id,
+          studio_id: ownerProfile.studio_id,
           sign_token: token,
           signed_name: "",
           signed_at: null,
