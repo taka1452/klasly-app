@@ -62,12 +62,26 @@ export async function POST(request: Request) {
       );
     }
 
+    const { data: template } = await supabase
+      .from("waiver_templates")
+      .select("id")
+      .eq("studio_id", member.studio_id)
+      .single();
+
+    if (!template) {
+      return NextResponse.json(
+        { error: "No waiver template configured for this studio." },
+        { status: 400 }
+      );
+    }
+
     const signToken = randomUUID();
     const signedAt = new Date().toISOString();
 
     const { error: insertError } = await supabase.from("waiver_signatures").insert({
       member_id: memberId,
       studio_id: member.studio_id,
+      template_id: template.id,
       sign_token: signToken,
       signed_name: trimmedName,
       signed_at: signedAt,

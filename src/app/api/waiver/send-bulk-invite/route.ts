@@ -109,6 +109,7 @@ export async function POST() {
         .insert({
           member_id: member.id,
           studio_id: ownerProfile.studio_id,
+          template_id: template.id,
           sign_token: token,
           signed_name: "",
           signed_at: null,

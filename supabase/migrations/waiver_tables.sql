@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS waiver_signatures (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   member_id uuid NOT NULL REFERENCES members(id) ON DELETE CASCADE,
   studio_id uuid NOT NULL REFERENCES studios(id) ON DELETE CASCADE,
+  template_id uuid NOT NULL REFERENCES waiver_templates(id) ON DELETE CASCADE,
   sign_token uuid NOT NULL UNIQUE,
   signed_name text DEFAULT '',
   signed_at timestamptz,
