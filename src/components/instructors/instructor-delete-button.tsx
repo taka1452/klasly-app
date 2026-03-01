@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 
 export default function InstructorDeleteButton({
   instructorId,
@@ -15,26 +14,13 @@ export default function InstructorDeleteButton({
 
   async function handleDelete() {
     setLoading(true);
-    const supabase = createClient();
+    const res = await fetch(`/api/instructors/${instructorId}`, {
+      method: "DELETE",
+    });
 
-    const { error: updateError } = await supabase
-      .from("classes")
-      .update({ instructor_id: null })
-      .eq("instructor_id", instructorId);
-
-    if (updateError) {
-      alert("Failed to unassign classes: " + updateError.message);
-      setLoading(false);
-      return;
-    }
-
-    const { error } = await supabase
-      .from("instructors")
-      .delete()
-      .eq("id", instructorId);
-
-    if (error) {
-      alert("Failed to delete instructor: " + error.message);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(data?.error ?? "Failed to delete instructor");
       setLoading(false);
       return;
     }

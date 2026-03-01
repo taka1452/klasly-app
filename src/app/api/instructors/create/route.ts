@@ -62,19 +62,83 @@ export async function POST(request: Request) {
       );
     }
 
-    // 1. パスワードなしでユーザーを作成（メール確認済みとしてマーク）
-    const { data: authUser, error: authError } =
+    const emailNorm = (email as string).trim().toLowerCase();
+    let authUserId: string;
+
+    // 1. Auth ユーザー作成（既存の場合は listUsers で検索して再利用 or 同一スタジオならエラー）
+    const { data: authData, error: authError } =
       await adminSupabase.auth.admin.createUser({
-        email,
+        email: emailNorm,
         email_confirm: true,
         user_metadata: { full_name: fullName },
       });
 
     if (authError) {
-      return NextResponse.json(
-        { error: authError.message },
-        { status: 400 }
+      const isAlreadyRegistered =
+        /already registered|already exists|already been registered/i.test(
+          authError.message
+        );
+      if (!isAlreadyRegistered) {
+        return NextResponse.json(
+          { error: authError.message },
+          { status: 400 }
+        );
+      }
+
+      // 既存ユーザーをメールで検索（listUsers はメール絞り込み非対応のため取得してからフィルタ）
+      const { data: listData } = await adminSupabase.auth.admin.listUsers({
+        page: 1,
+        per_page: 1000,
+      });
+      const existingAuthUser = listData?.users?.find(
+        (u) => (u.email ?? "").trim().toLowerCase() === emailNorm
       );
+      if (!existingAuthUser) {
+        return NextResponse.json(
+          { error: authError.message },
+          { status: 400 }
+        );
+      }
+
+      const { data: existingProfile } = await adminSupabase
+        .from("profiles")
+        .select("studio_id, role")
+        .eq("id", existingAuthUser.id)
+        .single();
+
+      // 同じスタジオに既にインストラクターとして登録済みか
+      const { data: existingInstructor } = await adminSupabase
+        .from("instructors")
+        .select("id")
+        .eq("profile_id", existingAuthUser.id)
+        .eq("studio_id", targetStudioId)
+        .maybeSingle();
+
+      if (existingInstructor) {
+        return NextResponse.json(
+          {
+            error: "This instructor is already registered in your studio.",
+          },
+          { status: 400 }
+        );
+      }
+
+      // 別スタジオ or studio_id が NULL → 既存ユーザーを再利用
+      authUserId = existingAuthUser.id;
+      await adminSupabase.from("profiles").update({
+        studio_id: targetStudioId,
+        role: "instructor",
+        full_name: fullName,
+        phone: phone || null,
+      }).eq("id", authUserId);
+    } else {
+      authUserId = authData!.user.id;
+      await adminSupabase.from("profiles").update({
+        studio_id: targetStudioId,
+        role: "instructor",
+        full_name: fullName,
+        phone: phone || null,
+      }).eq("id", authUserId);
     }
 
     // 2. マジックリンクを生成（本番では getAppUrl が NEXT_PUBLIC_APP_URL または VERCEL_URL を返す）
@@ -82,7 +146,7 @@ export async function POST(request: Request) {
     const { data: linkData, error: linkError } =
       await adminSupabase.auth.admin.generateLink({
         type: "magiclink",
-        email,
+        email: emailNorm,
         options: {
           redirectTo: `${appUrl}/auth/callback`,
         },
@@ -92,23 +156,15 @@ export async function POST(request: Request) {
       console.error("Failed to generate magic link:", linkError.message);
     }
 
-    // 3. マジックリンクURLを組み立て（generateLink が返す action_link を使用）
     const magicLinkUrl =
       (linkData as { properties?: { action_link?: string } })?.properties
         ?.action_link ?? (linkData as { action_link?: string })?.action_link ?? null;
-
-    await adminSupabase.from("profiles").update({
-      studio_id: targetStudioId,
-      role: "instructor",
-      full_name: fullName,
-      phone: phone || null,
-    }).eq("id", authUser.user.id);
 
     const { error: instructorError } = await adminSupabase
       .from("instructors")
       .insert({
         studio_id: targetStudioId,
-        profile_id: authUser.user.id,
+        profile_id: authUserId,
         bio: bio || null,
         specialties: Array.isArray(specialties)
           ? specialties
