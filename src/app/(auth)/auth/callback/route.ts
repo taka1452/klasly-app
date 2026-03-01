@@ -5,12 +5,18 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+  const type = searchParams.get("type");
 
   if (code) {
     const supabase = await createServerClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
+      // パスワードリセット（recovery）の場合は /reset-password へ転送
+      if (type === "recovery") {
+        return NextResponse.redirect(`${origin}/reset-password`);
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const email = (user.email ?? "").trim().toLowerCase();

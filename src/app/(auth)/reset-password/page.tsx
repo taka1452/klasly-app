@@ -16,15 +16,35 @@ export default function ResetPasswordPage() {
   const [sessionReady, setSessionReady] = useState(false);
 
   // メールのリンクからリダイレクトされた時にセッションを取得
+  // ハッシュフラグメント・PKCE両対応: 即時 getSession + onAuthStateChange(PASSWORD_RECOVERY|SIGNED_IN) + 5秒フォールバック
   useEffect(() => {
     const supabase = createClient();
 
-    // URL のハッシュフラグメントからセッションを復元
-    supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") {
+    // 即座にセッション確認（PKCEでcallback経由の場合は既にセッションがある）
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setSessionReady(true);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") {
         setSessionReady(true);
       }
     });
+
+    // フォールバック: 5秒後に再確認（イベントを取り逃した場合）
+    const timer = setTimeout(async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session) setSessionReady(true);
+    }, 5000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timer);
+    };
   }, []);
 
   async function handleResetPassword(e: React.FormEvent) {
