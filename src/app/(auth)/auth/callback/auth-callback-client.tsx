@@ -3,6 +3,16 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
+/** 招待でパスワード未設定なら /set-password?next=... を返す。そうでなければ null */
+async function redirectPathOrSetPassword(session: { user: { user_metadata?: Record<string, unknown> } }): Promise<string | null> {
+  const invited = (session.user.user_metadata as { invited_without_password?: boolean } | undefined)?.invited_without_password;
+  if (!invited) return null;
+  const res = await fetch("/api/auth/redirect-destination");
+  const data = await res.json().catch(() => ({ url: "/" }));
+  const path = typeof data?.url === "string" ? new URL(data.url, "http://x").pathname : "/";
+  return `/set-password?next=${encodeURIComponent(path)}`;
+}
+
 export default function AuthCallbackClient() {
   const [status, setStatus] = useState<"loading" | "error">("loading");
 
@@ -16,6 +26,11 @@ export default function AuthCallbackClient() {
           data: { session },
         } = await supabase.auth.getSession();
         if (session) {
+          const nextPath = await redirectPathOrSetPassword(session);
+          if (nextPath) {
+            window.location.replace(nextPath);
+            return;
+          }
           const res = await fetch("/api/auth/redirect-destination");
           const data = await res.json().catch(() => ({ url: "/" }));
           window.location.replace(data.url ?? "/");
@@ -35,6 +50,14 @@ export default function AuthCallbackClient() {
           refresh_token: refreshToken,
         });
         if (!setError) {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            const nextPath = await redirectPathOrSetPassword(session);
+            if (nextPath) {
+              window.location.replace(nextPath);
+              return;
+            }
+          }
           const res = await fetch("/api/auth/redirect-destination");
           const data = await res.json().catch(() => ({ url: "/" }));
           window.location.replace(data.url ?? "/");
@@ -56,6 +79,11 @@ export default function AuthCallbackClient() {
         return;
       }
       if (session) {
+        const nextPath = await redirectPathOrSetPassword(session);
+        if (nextPath) {
+          window.location.replace(nextPath);
+          return;
+        }
         const res = await fetch("/api/auth/redirect-destination");
         const data = await res.json().catch(() => ({ url: "/" }));
         window.location.replace(data.url ?? "/");

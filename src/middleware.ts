@@ -40,6 +40,7 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/signup") ||
     request.nextUrl.pathname.startsWith("/forgot-password") ||
     request.nextUrl.pathname.startsWith("/reset-password") ||
+    request.nextUrl.pathname.startsWith("/set-password") ||
     request.nextUrl.pathname.startsWith("/auth");
 
   const isOnboardingPage =
@@ -60,12 +61,13 @@ export async function middleware(request: NextRequest) {
   }
 
   // ログイン済みユーザーが認証ページにアクセスしたらホームへ（/でロールに応じてリダイレクト）
-  // （ただし auth/callback と onboarding は除外）
+  // （ただし auth/callback, set-password, onboarding は除外）
   // waiver署名ページはログイン済みでもアクセス可能（メールリンク経由）
   if (
     user &&
     isAuthPage &&
-    !request.nextUrl.pathname.startsWith("/auth")
+    !request.nextUrl.pathname.startsWith("/auth") &&
+    !request.nextUrl.pathname.startsWith("/set-password")
   ) {
     const url = request.nextUrl.clone();
     url.pathname = "/";

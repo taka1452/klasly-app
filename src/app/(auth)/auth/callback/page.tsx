@@ -73,6 +73,14 @@ export default async function AuthCallbackPage({
           redirect(`${origin}/admin`);
         }
         const url = await getRedirectUrl(user.id, params?.type ?? null, params?.next ?? null);
+        // マジックリンク招待でパスワード未設定の場合は先に /set-password へ
+        if (
+          params?.type === "magiclink" &&
+          (user.user_metadata as { invited_without_password?: boolean } | undefined)?.invited_without_password
+        ) {
+          const path = new URL(url).pathname;
+          redirect(`${origin}/set-password?next=${encodeURIComponent(path)}`);
+        }
         redirect(url);
       }
       redirect(params?.next ? `${origin}${params.next}` : `${origin}/`);

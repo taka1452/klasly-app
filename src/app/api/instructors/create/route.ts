@@ -70,7 +70,7 @@ export async function POST(request: Request) {
       await adminSupabase.auth.admin.createUser({
         email: emailNorm,
         email_confirm: true,
-        user_metadata: { full_name: fullName },
+        user_metadata: { full_name: fullName, invited_without_password: true },
       });
 
     if (authError) {
