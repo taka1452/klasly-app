@@ -1,11 +1,13 @@
 "use client";
 
 import { useTour, type TourState } from "@/hooks/useTour";
+import TourSuccessModal from "./TourSuccessModal";
 
 type TourOverlayProps = {
   role: string;
   onboardingCompleted: boolean;
   onboardingStep: number;
+  onboardingStartedAt: string | null;
   userId: string | undefined;
   forceStart?: boolean;
 };
@@ -14,24 +16,36 @@ export default function TourOverlay({
   role,
   onboardingCompleted,
   onboardingStep,
+  onboardingStartedAt,
   userId,
   forceStart = false,
 }: TourOverlayProps) {
   const isEnabled =
-    (role === "owner" || role === "instructor") &&
+    (role === "owner" || role === "instructor" || role === "member") &&
     (!onboardingCompleted || forceStart);
-  const { state, nextStep, prevStep, skipTour, finishTour, restartTour } =
-    useTour(role, isEnabled, userId, forceStart ? 0 : onboardingStep, !forceStart);
+  const { state, nextStep, prevStep, skipTour, finishTour, closeSuccessModal } =
+    useTour(
+      role,
+      isEnabled,
+      userId,
+      forceStart ? 0 : onboardingStep,
+      !forceStart,
+      onboardingStartedAt
+    );
 
-  if (!state.isActive || state.steps.length === 0) return null;
+  const showOverlay = state.isActive && state.steps.length > 0;
+  const step = showOverlay ? state.steps[state.currentStep] : null;
 
-  const step = state.steps[state.currentStep];
-  if (!step) return null;
+  if (!showOverlay && !state.showSuccessModal) return null;
 
-  const isLastStep = state.currentStep >= state.steps.length - 1;
-  const stepLabel = `${state.currentStep + 1} / ${state.steps.length}`;
+  const isLastStep = step && state.currentStep >= state.steps.length - 1;
+  const stepLabel = step
+    ? `${state.currentStep + 1} / ${state.steps.length}`
+    : "";
 
   return (
+    <>
+    {showOverlay && step && (
     <div
       className="fixed inset-0 z-[9998] animate-[fadeIn_0.2s_ease-out]"
       aria-modal="true"
@@ -113,6 +127,11 @@ export default function TourOverlay({
         </div>
       )}
     </div>
+    )}
+    {state.showSuccessModal && (
+      <TourSuccessModal role={role} onClose={closeSuccessModal} />
+    )}
+    </>
   );
 }
 

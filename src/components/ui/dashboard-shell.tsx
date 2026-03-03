@@ -17,6 +17,7 @@ type DashboardShellProps = {
   showAdminLink?: boolean;
   onboardingCompleted?: boolean;
   onboardingStep?: number;
+  onboardingStartedAt?: string | null;
   userId?: string;
   banner?: React.ReactNode;
 };
@@ -31,6 +32,7 @@ export default function DashboardShell({
   showAdminLink = false,
   onboardingCompleted = true,
   onboardingStep = 0,
+  onboardingStartedAt = null,
   userId,
   banner,
 }: DashboardShellProps) {
@@ -49,6 +51,7 @@ export default function DashboardShell({
       role={currentRole}
       onboardingCompleted={onboardingCompleted}
       onboardingStep={onboardingStep}
+      onboardingStartedAt={onboardingStartedAt}
       userId={userId}
     >
     <div className="flex h-screen bg-gray-50">

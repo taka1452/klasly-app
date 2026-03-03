@@ -44,8 +44,45 @@ export const INSTRUCTOR_STEPS: TourStep[] = [
   },
 ];
 
+export const MEMBER_STEPS: TourStep[] = [
+  {
+    target: "available-classes",
+    title: "Available Classes",
+    description: "Browse upcoming classes you can book.",
+  },
+  {
+    target: "booking-button",
+    title: "Book a Class",
+    description: "Click to reserve your spot.",
+  },
+  {
+    target: "my-bookings",
+    title: "My Bookings",
+    description: "View and manage your booked classes.",
+  },
+];
+
 export function getStepsForRole(role: string): TourStep[] {
   if (role === "owner") return OWNER_STEPS;
   if (role === "instructor") return INSTRUCTOR_STEPS;
+  if (role === "member") return MEMBER_STEPS;
   return [];
+}
+
+export type SuccessCta = {
+  label: string;
+  href: string;
+};
+
+export function getSuccessCtaForRole(role: string): SuccessCta {
+  if (role === "owner") {
+    return { label: "Create your first real class", href: "/classes/new" };
+  }
+  if (role === "instructor") {
+    return { label: "View your schedule", href: "/instructor/schedule" };
+  }
+  if (role === "member") {
+    return { label: "Book your first class", href: "/schedule" };
+  }
+  return { label: "Continue", href: "/" };
 }

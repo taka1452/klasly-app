@@ -12,6 +12,7 @@ type InstructorShellProps = {
   userEmail: string;
   onboardingCompleted?: boolean;
   onboardingStep?: number;
+  onboardingStartedAt?: string | null;
   userId?: string;
 };
 
@@ -22,6 +23,7 @@ export default function InstructorShell({
   userEmail,
   onboardingCompleted = true,
   onboardingStep = 0,
+  onboardingStartedAt = null,
   userId,
 }: InstructorShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -39,6 +41,7 @@ export default function InstructorShell({
       role="instructor"
       onboardingCompleted={onboardingCompleted}
       onboardingStep={onboardingStep}
+      onboardingStartedAt={onboardingStartedAt}
       userId={userId}
     >
     <div className="flex h-screen bg-gray-50">

@@ -114,9 +114,9 @@ export default async function SchedulePage() {
         Book your classes
       </p>
 
-      <div className="mt-6 space-y-4">
+      <div className="mt-6 space-y-4" data-tour="available-classes">
         {sessions && sessions.length > 0 ? (
-          sessions.map((session) => {
+          sessions.map((session, idx) => {
             const className = (session as { classes?: { name?: string } }).classes?.name || "—";
             const existing = myBookingBySession[session.id];
             const confirmed = confirmedBySession[session.id] || 0;
@@ -143,12 +143,13 @@ export default async function SchedulePage() {
                   memberCredits={memberCredits}
                   confirmedCount={confirmed}
                   canBook={planAccess.canBook}
+                  data-tour={idx === 0 ? "booking-button" : undefined}
                 />
               </div>
             );
           })
         ) : (
-          <div className="card">
+          <div className="card" data-tour="available-classes">
             <p className="text-sm text-gray-500">No upcoming classes.</p>
           </div>
         )}

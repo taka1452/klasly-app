@@ -46,6 +46,8 @@ export type Profile = {
   avatar_url: string | null;
   onboarding_completed: boolean;
   onboarding_step: number;
+  onboarding_started_at: string | null;
+  onboarding_completed_at: string | null;
   created_at: string;
 };
 

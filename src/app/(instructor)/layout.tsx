@@ -60,6 +60,8 @@ export default async function InstructorLayout({
     (profile as { onboarding_completed?: boolean })?.onboarding_completed ?? true;
   const onboardingStep =
     (profile as { onboarding_step?: number })?.onboarding_step ?? 0;
+  const onboardingStartedAt =
+    (profile as { onboarding_started_at?: string | null })?.onboarding_started_at ?? null;
 
   return (
     <InstructorShell
@@ -68,6 +70,7 @@ export default async function InstructorLayout({
       userEmail={userEmail}
       onboardingCompleted={onboardingCompleted}
       onboardingStep={onboardingStep}
+      onboardingStartedAt={onboardingStartedAt}
       userId={user.id}
     >
       {children}

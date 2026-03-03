@@ -1,9 +1,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
-import Link from "next/link";
-import MemberHeader from "@/components/member/member-header";
 import WaiverGate from "@/components/waiver/waiver-gate";
+import MemberLayoutClient from "@/components/member/member-layout-client";
 
 export default async function MemberLayout({
   children,
@@ -29,7 +28,7 @@ export default async function MemberLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, role, studio_id")
+    .select("full_name, role, studio_id, onboarding_completed, onboarding_step, onboarding_started_at")
     .eq("id", user.id)
     .single();
 
@@ -70,41 +69,23 @@ export default async function MemberLayout({
     return <WaiverGate needsWaiver>{children}</WaiverGate>;
   }
 
+  const onboardingCompleted =
+    (profile as { onboarding_completed?: boolean })?.onboarding_completed ?? true;
+  const onboardingStep =
+    (profile as { onboarding_step?: number })?.onboarding_step ?? 0;
+  const onboardingStartedAt =
+    (profile as { onboarding_started_at?: string | null })?.onboarding_started_at ?? null;
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <MemberHeader
-        userName={profile?.full_name || user.email || "User"}
-        userEmail={user.email || ""}
-      />
-      <nav className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-4xl gap-6 px-4 py-3">
-          <Link
-            href="/schedule"
-            className="text-sm font-medium text-gray-600 hover:text-gray-900"
-          >
-            Schedule
-          </Link>
-          <Link
-            href="/my-bookings"
-            className="text-sm font-medium text-gray-600 hover:text-gray-900"
-          >
-            My Bookings
-          </Link>
-          <Link
-            href="/purchase"
-            className="text-sm font-medium text-gray-600 hover:text-gray-900"
-          >
-            Purchase
-          </Link>
-          <Link
-            href="/my-payments"
-            className="text-sm font-medium text-gray-600 hover:text-gray-900"
-          >
-            Payments
-          </Link>
-        </div>
-      </nav>
-      <main className="mx-auto max-w-4xl px-4 py-6">{children}</main>
-    </div>
+    <MemberLayoutClient
+      userName={profile?.full_name || user.email || "User"}
+      userEmail={user.email || ""}
+      onboardingCompleted={onboardingCompleted}
+      onboardingStep={onboardingStep}
+      onboardingStartedAt={onboardingStartedAt}
+      userId={user.id}
+    >
+      {children}
+    </MemberLayoutClient>
   );
 }

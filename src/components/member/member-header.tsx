@@ -4,16 +4,19 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useTourActions } from "@/components/tour/TourProvider";
 
 type Props = {
   userName: string;
   userEmail: string;
+  showTourHelp?: boolean;
 };
 
-export default function MemberHeader({ userName, userEmail }: Props) {
+export default function MemberHeader({ userName, userEmail, showTourHelp = false }: Props) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const tourActions = useTourActions();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -34,9 +37,20 @@ export default function MemberHeader({ userName, userEmail }: Props) {
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-gray-200 bg-white px-4">
-      <Link href="/schedule" className="text-xl font-bold text-brand-700">
-        Klasly
-      </Link>
+      <div className="flex items-center gap-3">
+        <Link href="/schedule" className="text-xl font-bold text-brand-700">
+          Klasly
+        </Link>
+        {showTourHelp && (
+          <button
+            type="button"
+            onClick={() => tourActions?.restartTour()}
+            className="shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+          >
+            Help
+          </button>
+        )}
+      </div>
       <div className="relative" ref={menuRef}>
         <button
           onClick={() => setMenuOpen(!menuOpen)}

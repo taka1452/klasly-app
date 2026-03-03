@@ -13,6 +13,7 @@ type Props = {
   memberCredits: number;
   confirmedCount: number;
   canBook?: boolean;
+  "data-tour"?: string;
 };
 
 export default function BookingButton({
@@ -23,6 +24,7 @@ export default function BookingButton({
   memberCredits,
   confirmedCount,
   canBook = true,
+  "data-tour": dataTour,
 }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -31,15 +33,19 @@ export default function BookingButton({
   const showWaitlist = isFull;
   const hasNoCredits = memberCredits === 0;
 
+  const tourProps = dataTour ? { "data-tour": dataTour } : {};
+
   if (!memberId) {
     return (
-      <span className="text-sm text-gray-500">Member access required</span>
+      <span className="text-sm text-gray-500" {...tourProps}>
+        Member access required
+      </span>
     );
   }
 
   if (!canBook) {
     return (
-      <span className="text-sm text-amber-600">
+      <span className="text-sm text-amber-600" {...tourProps}>
         Bookings are temporarily unavailable
       </span>
     );
@@ -106,6 +112,7 @@ export default function BookingButton({
           onClick={() => handleBook("rebook")}
           disabled={loading}
           className="btn-primary text-sm"
+          {...tourProps}
         >
           {loading ? "..." : "Re-book"}
         </button>
@@ -118,13 +125,14 @@ export default function BookingButton({
           onClick={() => handleBook("leave_waitlist")}
           disabled={loading}
           className="btn-secondary text-sm"
+          {...tourProps}
         >
           {loading ? "..." : "Leave waitlist"}
         </button>
       );
     }
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2" {...tourProps}>
         <span className="text-sm font-medium text-green-600">Booked ✓</span>
         <button
           type="button"
@@ -140,7 +148,7 @@ export default function BookingButton({
 
   if (!existingBooking && hasNoCredits && !showWaitlist) {
     return (
-      <div className="flex flex-col items-end gap-2 text-right">
+      <div className="flex flex-col items-end gap-2 text-right" {...tourProps}>
         <span className="text-sm text-amber-600">
           No credits remaining. Please purchase a plan to book classes.
         </span>
@@ -162,6 +170,7 @@ export default function BookingButton({
       className={
         showWaitlist ? "btn-secondary text-sm" : "btn-primary text-sm"
       }
+      {...tourProps}
     >
       {loading ? "..." : showWaitlist ? "Waitlist" : "Book"}
     </button>

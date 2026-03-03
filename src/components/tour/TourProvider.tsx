@@ -18,6 +18,7 @@ type TourProviderProps = {
   role: string;
   onboardingCompleted: boolean;
   onboardingStep: number;
+  onboardingStartedAt: string | null;
   userId: string | undefined;
   children: React.ReactNode;
 };
@@ -26,6 +27,7 @@ export default function TourProvider({
   role,
   onboardingCompleted,
   onboardingStep,
+  onboardingStartedAt,
   userId,
   children,
 }: TourProviderProps) {
@@ -36,7 +38,7 @@ export default function TourProvider({
   }, []);
 
   const showTour =
-    (role === "owner" || role === "instructor") &&
+    (role === "owner" || role === "instructor" || role === "member") &&
     (!onboardingCompleted || forceStart);
 
   return (
@@ -47,6 +49,7 @@ export default function TourProvider({
           role={role}
           onboardingCompleted={onboardingCompleted}
           onboardingStep={onboardingStep}
+          onboardingStartedAt={onboardingStartedAt}
           userId={userId}
           forceStart={forceStart}
         />
