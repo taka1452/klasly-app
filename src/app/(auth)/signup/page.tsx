@@ -1,21 +1,29 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import PasswordField from "@/components/ui/password-field";
+import GoogleSignInButton from "@/components/auth/google-sign-in-button";
 
-export default function SignupPage() {
-  const router = useRouter();
+function SignupForm() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const searchParams = useSearchParams();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+
+  useEffect(() => {
+    const err = searchParams.get("error");
+    if (err === "auth_callback_failed") {
+      setError("Sign up with Google failed. Please try again or use email/password.");
+    }
+  }, [searchParams]);
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
@@ -111,7 +119,20 @@ export default function SignupPage() {
         </p>
       </div>
 
-      <form onSubmit={handleSignup} className="mt-8 space-y-5">
+      <div className="mt-8">
+        <GoogleSignInButton mode="signup" className="mb-6" />
+      </div>
+
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center" aria-hidden="true">
+          <div className="w-full border-t border-gray-200" />
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="bg-white px-4 text-gray-500">or sign up with email</span>
+        </div>
+      </div>
+
+      <form onSubmit={handleSignup} className="mt-6 space-y-5">
         {error && (
           <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
             {error}
@@ -228,5 +249,18 @@ export default function SignupPage() {
         </Link>
       </p>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900">Start your free trial</h2>
+        <p className="mt-4 text-sm text-gray-500">Loading...</p>
+      </div>
+    }>
+      <SignupForm />
+    </Suspense>
   );
 }

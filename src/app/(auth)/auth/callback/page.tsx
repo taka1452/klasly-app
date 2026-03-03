@@ -51,11 +51,19 @@ async function getRedirectUrl(
 export default async function AuthCallbackPage({
   searchParams,
 }: {
-  searchParams: Promise<{ code?: string; type?: string; next?: string }>;
+  searchParams: Promise<{ code?: string; type?: string; next?: string; error?: string; error_description?: string }>;
 }) {
   const params = await searchParams;
   const code = params?.code;
+  const error = params?.error;
+  const errorDescription = params?.error_description;
   const origin = getAppUrl();
+
+  // OAuth provider returned an error (e.g. user denied, redirect_uri_mismatch)
+  if (error) {
+    const msg = errorDescription ?? error;
+    redirect(`${origin}/login?error=auth_callback_failed&msg=${encodeURIComponent(msg)}`);
+  }
 
   if (code) {
     const supabase = await createServerClient();

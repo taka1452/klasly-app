@@ -1,17 +1,35 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import PasswordField from "@/components/ui/password-field";
+import GoogleSignInButton from "@/components/auth/google-sign-in-button";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const err = searchParams.get("error");
+    const msg = searchParams.get("msg");
+    if (err === "auth_callback_failed") {
+      let displayMsg = "Sign in with Google failed. Please try again or use email/password.";
+      if (msg) {
+        try {
+          displayMsg = decodeURIComponent(msg);
+        } catch {
+          displayMsg = msg;
+        }
+      }
+      setError(displayMsg);
+    }
+  }, [searchParams]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -102,6 +120,17 @@ export default function LoginPage() {
         <button type="submit" disabled={loading} className="btn-primary w-full">
           {loading ? "Signing in..." : "Sign in"}
         </button>
+
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center" aria-hidden="true">
+            <div className="w-full border-t border-gray-200" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="bg-white px-4 text-gray-500">or</span>
+          </div>
+        </div>
+
+        <GoogleSignInButton mode="login" />
       </form>
 
       <p className="mt-6 text-center text-sm text-gray-500">
@@ -114,5 +143,18 @@ export default function LoginPage() {
         </Link>
       </p>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900">Welcome back</h2>
+        <p className="mt-4 text-sm text-gray-500">Loading...</p>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }
