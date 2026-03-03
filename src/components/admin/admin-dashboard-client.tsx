@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAdminLocale } from "@/lib/admin/locale-context";
+import OnboardingStatsCard from "./OnboardingStatsCard";
 
 type AlertItem = { type: string; studioName: string; studioId: string; extra?: string };
 type ActivityItem = { at: string; icon: string; textKey: string; textParams?: Record<string, string | number> };
@@ -132,6 +133,8 @@ export default function AdminDashboardClient({
           <p className="mt-1 text-xl font-bold text-white">{activeCouponsCount}</p>
         </div>
       </div>
+
+      <OnboardingStatsCard />
 
       <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
         <h2 className="text-sm font-medium text-slate-300">{t("alerts.title")}</h2>

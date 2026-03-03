@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useTourActions } from "@/components/tour/TourProvider";
+import Toast from "@/components/ui/toast";
 
 type Props = {
   fullName: string;
@@ -9,8 +12,18 @@ type Props = {
 };
 
 export default function SettingsContent({ fullName, email }: Props) {
+  const router = useRouter();
+  const tourActions = useTourActions();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [showMarkCompleteConfirm, setShowMarkCompleteConfirm] = useState(false);
+  const [markCompleteLoading, setMarkCompleteLoading] = useState(false);
+  const [replayLoading, setReplayLoading] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  function showToast(msg: string) {
+    setToastMessage(msg);
+  }
 
   async function handleExport() {
     const res = await fetch("/api/account/export");
@@ -21,6 +34,47 @@ export default function SettingsContent({ fullName, email }: Props) {
     a.download = "klasly-export.json";
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  async function handleReplayTutorial() {
+    setReplayLoading(true);
+    try {
+      const res = await fetch("/api/account/onboarding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "replay" }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error ?? "Failed to replay tutorial");
+        return;
+      }
+      showToast("Tutorial will restart");
+      tourActions?.restartTour();
+    } finally {
+      setReplayLoading(false);
+    }
+  }
+
+  async function handleMarkComplete() {
+    setMarkCompleteLoading(true);
+    try {
+      const res = await fetch("/api/account/onboarding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "mark_complete" }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error ?? "Failed to mark complete");
+        return;
+      }
+      setShowMarkCompleteConfirm(false);
+      showToast("Tutorial marked as complete");
+      router.refresh();
+    } finally {
+      setMarkCompleteLoading(false);
+    }
   }
 
   async function handleDelete() {
@@ -125,6 +179,57 @@ export default function SettingsContent({ fullName, email }: Props) {
         </p>
       </div>
 
+      {/* Tutorial */}
+      <div className="card">
+        <h2 className="text-lg font-semibold text-gray-900">Tutorial</h2>
+        <p className="mt-2 text-sm text-gray-600">
+          Replay the onboarding tour or mark it as complete.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={handleReplayTutorial}
+            disabled={replayLoading}
+            className="btn-secondary"
+          >
+            {replayLoading ? "Starting…" : "Replay Tutorial"}
+          </button>
+          {!showMarkCompleteConfirm ? (
+            <button
+              type="button"
+              onClick={() => setShowMarkCompleteConfirm(true)}
+              className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            >
+              Mark Tutorial as Complete
+            </button>
+          ) : (
+            <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+              <p className="text-sm text-amber-800">
+                This will permanently mark the tutorial as done. Continue?
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleMarkComplete}
+                  disabled={markCompleteLoading}
+                  className="rounded bg-amber-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-50"
+                >
+                  {markCompleteLoading ? "Saving…" : "Yes"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowMarkCompleteConfirm(false)}
+                  disabled={markCompleteLoading}
+                  className="rounded border border-amber-300 px-3 py-1.5 text-sm font-medium text-amber-800 hover:bg-amber-100"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Data Export */}
       <div className="card">
         <h2 className="text-lg font-semibold text-gray-900">Export your data</h2>
@@ -184,6 +289,13 @@ export default function SettingsContent({ fullName, email }: Props) {
           </div>
         )}
       </div>
+
+      {toastMessage && (
+        <Toast
+          message={toastMessage}
+          onClose={() => setToastMessage(null)}
+        />
+      )}
     </div>
   );
 }
