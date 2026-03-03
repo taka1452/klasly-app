@@ -308,15 +308,27 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Welcome back, {profile?.full_name || "there"}!
-        </p>
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Welcome back, {profile?.full_name || "there"}!
+          </p>
+        </div>
+        <Link
+          href="/classes/new"
+          className="inline-flex shrink-0 items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+          data-tour="create-class-button"
+        >
+          + Create class
+        </Link>
       </div>
 
       {/* Stats cards */}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div
+        className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
+        data-tour="dashboard-stats"
+      >
         <div className="card">
           <p className="text-sm font-medium text-gray-500">Active Members</p>
           <p className="mt-2 text-3xl font-bold text-gray-900">

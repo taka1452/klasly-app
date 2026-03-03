@@ -27,7 +27,7 @@ export default async function InstructorLayout({
 
   const { data: profile } = await adminSupabase
     .from("profiles")
-    .select("role, full_name, studio_id")
+    .select("role, full_name, studio_id, onboarding_completed")
     .eq("id", user.id)
     .single();
 
@@ -56,12 +56,16 @@ export default async function InstructorLayout({
   const studioName = (studio as { name?: string })?.name || "Studio";
   const userName = profile.full_name || user.email || "Instructor";
   const userEmail = user.email || "";
+  const onboardingCompleted =
+    (profile as { onboarding_completed?: boolean })?.onboarding_completed ?? true;
 
   return (
     <InstructorShell
       studioName={studioName}
       userName={userName}
       userEmail={userEmail}
+      onboardingCompleted={onboardingCompleted}
+      userId={user.id}
     >
       {children}
     </InstructorShell>

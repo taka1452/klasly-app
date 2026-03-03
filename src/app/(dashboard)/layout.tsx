@@ -74,6 +74,9 @@ export default async function DashboardLayout({
   const showBanner =
     planStatus === "past_due" || planStatus === "grace";
 
+  const onboardingCompleted =
+    (profile as { onboarding_completed?: boolean })?.onboarding_completed ?? true;
+
   return (
     <DashboardShell
       currentRole={profile.role}
@@ -82,6 +85,8 @@ export default async function DashboardLayout({
       userEmail={user.email || ""}
       planAccess={planAccess}
       showAdminLink={showAdminLink}
+      onboardingCompleted={onboardingCompleted}
+      userId={user.id}
       banner={
         showBanner ? (
           <PlanBanner

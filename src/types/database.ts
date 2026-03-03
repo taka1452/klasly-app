@@ -44,6 +44,7 @@ export type Profile = {
   email: string | null;
   phone: string | null;
   avatar_url: string | null;
+  onboarding_completed: boolean;
   created_at: string;
 };
 

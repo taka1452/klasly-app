@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Sidebar from "./sidebar";
 import Header from "./header";
 import { PlanAccessProvider } from "./plan-access-provider";
+import TourProvider from "@/components/tour/TourProvider";
 import type { PlanAccess } from "@/lib/plan-guard";
 
 type DashboardShellProps = {
@@ -14,6 +15,8 @@ type DashboardShellProps = {
   userEmail: string;
   planAccess?: PlanAccess;
   showAdminLink?: boolean;
+  onboardingCompleted?: boolean;
+  userId?: string;
   banner?: React.ReactNode;
 };
 
@@ -25,6 +28,8 @@ export default function DashboardShell({
   userEmail,
   planAccess,
   showAdminLink = false,
+  onboardingCompleted = true,
+  userId,
   banner,
 }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -38,6 +43,11 @@ export default function DashboardShell({
   }, []);
 
   return (
+    <TourProvider
+      role={currentRole}
+      onboardingCompleted={onboardingCompleted}
+      userId={userId}
+    >
     <div className="flex h-screen bg-gray-50">
       <button
         type="button"
@@ -61,6 +71,7 @@ export default function DashboardShell({
           userName={userName}
           userEmail={userEmail}
           onSidebarToggle={() => setSidebarOpen((o) => !o)}
+          showTourHelp={currentRole === "owner"}
         />
         <main className="flex-1 overflow-y-auto p-6">
           {banner && <div className="mb-6">{banner}</div>}
@@ -74,5 +85,6 @@ export default function DashboardShell({
         </main>
       </div>
     </div>
+    </TourProvider>
   );
 }

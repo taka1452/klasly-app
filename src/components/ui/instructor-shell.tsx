@@ -3,12 +3,15 @@
 import { useState, useEffect } from "react";
 import InstructorSidebar from "./instructor-sidebar";
 import InstructorHeader from "./instructor-header";
+import TourProvider from "@/components/tour/TourProvider";
 
 type InstructorShellProps = {
   children: React.ReactNode;
   studioName: string;
   userName: string;
   userEmail: string;
+  onboardingCompleted?: boolean;
+  userId?: string;
 };
 
 export default function InstructorShell({
@@ -16,6 +19,8 @@ export default function InstructorShell({
   studioName,
   userName,
   userEmail,
+  onboardingCompleted = true,
+  userId,
 }: InstructorShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -28,6 +33,11 @@ export default function InstructorShell({
   }, []);
 
   return (
+    <TourProvider
+      role="instructor"
+      onboardingCompleted={onboardingCompleted}
+      userId={userId}
+    >
     <div className="flex h-screen bg-gray-50">
       <button
         type="button"
@@ -49,9 +59,11 @@ export default function InstructorShell({
           userName={userName}
           userEmail={userEmail}
           onSidebarToggle={() => setSidebarOpen((o) => !o)}
+          showTourHelp
         />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</main>
       </div>
     </div>
+    </TourProvider>
   );
 }

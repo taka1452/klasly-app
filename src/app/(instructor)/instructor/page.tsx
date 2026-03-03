@@ -137,13 +137,13 @@ export default async function InstructorDashboardPage() {
         <p className="mt-1 text-sm text-gray-500">{studioName}</p>
       </div>
 
-      <section className="mb-8">
+      <section className="mb-8" data-tour="assigned-classes">
         <h2 className="mb-4 text-lg font-semibold text-gray-900">
           Today&apos;s Classes
         </h2>
         {todaySessions && todaySessions.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2">
-            {todaySessions.map((session) => {
+            {todaySessions.map((session, idx) => {
               const cls = session.classes as { name?: string; duration_minutes?: number; location?: string } | null;
               const raw = Array.isArray(cls) ? cls[0] : cls;
               const className = raw?.name || "—";
@@ -160,6 +160,7 @@ export default async function InstructorDashboardPage() {
                   key={session.id}
                   href={`/instructor/sessions/${session.id}`}
                   className="card block transition-colors hover:border-emerald-300 hover:bg-emerald-50/30"
+                  {...(idx === 0 ? { "data-tour": "attendance-section" } : {})}
                 >
                   <p className="font-medium text-gray-900">{className}</p>
                   <p className="mt-1 text-sm text-gray-600">
@@ -180,7 +181,7 @@ export default async function InstructorDashboardPage() {
             })}
           </div>
         ) : (
-          <div className="card py-12 text-center">
+          <div className="card py-12 text-center" data-tour="attendance-section">
             <p className="text-gray-600">
               No classes today. Enjoy your day off!
             </p>
