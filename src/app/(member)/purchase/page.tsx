@@ -39,7 +39,7 @@ export default async function PurchasePage() {
   const { data: studio } = await supabase
     .from("studios")
     .select(
-      "id, drop_in_price, pack_5_price, pack_10_price, monthly_price, plan_status"
+      "id, drop_in_price, pack_5_price, pack_10_price, monthly_price, plan_status, stripe_connect_account_id, stripe_connect_onboarding_complete"
     )
     .eq("id", member.studio_id)
     .single();
@@ -70,6 +70,26 @@ export default async function PurchasePage() {
         <div className="mt-6 card">
           <p className="text-amber-600">
             Purchases are temporarily unavailable. Please try again later.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (
+    !studio.stripe_connect_account_id ||
+    !studio.stripe_connect_onboarding_complete
+  ) {
+    return (
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Purchase Options</h1>
+        <p className="mt-1 text-sm text-gray-500">
+          Buy credits or monthly membership
+        </p>
+        <div className="mt-6 card">
+          <p className="text-amber-600">
+            Online payments are not yet available for this studio. Please
+            contact the studio owner.
           </p>
         </div>
       </div>

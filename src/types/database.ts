@@ -15,6 +15,9 @@ export type Studio = {
   // Stripe連携
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
+  // Stripe Connect（メンバー決済用）
+  stripe_connect_account_id: string | null;
+  stripe_connect_onboarding_complete: boolean;
   // 課金管理
   trial_ends_at: string | null;
   subscription_period: string | null; // monthly / yearly
@@ -57,6 +60,8 @@ export type Member = {
   // Stripe連携
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
+  /** Stripe Connect 経由の決済用（Connected Account 側の顧客 ID） */
+  stripe_connect_customer_id: string | null;
   // Waiver
   waiver_signed: boolean;
   waiver_signed_at: string | null;
@@ -277,4 +282,11 @@ export type CouponRedemption = {
   promotion_code_id: string | null;
   stripe_subscription_id: string | null;
   redeemed_at: string;
+};
+
+/** Admin で管理するプラットフォーム設定（platform_settings テーブル） */
+export type PlatformSetting = {
+  key: string;
+  value: string;
+  updated_at: string;
 };

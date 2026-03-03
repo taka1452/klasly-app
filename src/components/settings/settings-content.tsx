@@ -39,6 +39,20 @@ export default function SettingsContent({ fullName, email }: Props) {
 
   return (
     <div className="mt-8 space-y-8">
+      {/* Stripe Connect */}
+      <div className="card">
+        <h2 className="text-lg font-semibold text-gray-900">Stripe Connect</h2>
+        <p className="mt-2 text-sm text-gray-600">
+          Connect your Stripe account to receive payments from members (drop-in, packs, monthly).
+        </p>
+        <Link
+          href="/settings/connect"
+          className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+        >
+          Stripe Connect →
+        </Link>
+      </div>
+
       {/* Billing */}
       <div className="card">
         <h2 className="text-lg font-semibold text-gray-900">Billing</h2>

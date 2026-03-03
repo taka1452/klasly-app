@@ -50,10 +50,24 @@ export async function POST(request: Request) {
       serviceRoleKey
     );
 
+    const connectedAccountId = (event as Stripe.Event & { account?: string })
+      .account;
+
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        const studioId = session.metadata?.studio_id;
+        let studioId = session.metadata?.studio_id as string | undefined;
+
+        if (connectedAccountId) {
+          const { data: studio } = await adminSupabase
+            .from("studios")
+            .select("id")
+            .eq("stripe_connect_account_id", connectedAccountId)
+            .single();
+          if (!studio) break;
+          studioId = studio.id;
+        }
+
         const purchaseType = session.metadata?.purchase_type;
         const memberId = session.metadata?.member_id;
         const creditsStr = session.metadata?.credits;
@@ -141,6 +155,8 @@ export async function POST(request: Request) {
           }
           break;
         }
+
+        if (connectedAccountId) break;
 
         const subscriptionId = getSubscriptionId(session.subscription as string | Stripe.Subscription | null);
         if (!studioId || !subscriptionId) break;
@@ -529,7 +545,18 @@ async function getStudioIdFromStripeEvent(
   supabase: ReturnType<typeof createClient>
 ): Promise<string | null> {
   try {
+    const connectedAccountId = (event as Stripe.Event & { account?: string })
+      .account;
+
     if (event.type === "checkout.session.completed") {
+      if (connectedAccountId) {
+        const { data: studio } = await supabase
+          .from("studios")
+          .select("id")
+          .eq("stripe_connect_account_id", connectedAccountId)
+          .single();
+        return studio?.id ?? null;
+      }
       const session = event.data.object as Stripe.Checkout.Session;
       return (session.metadata?.studio_id as string) ?? null;
     }

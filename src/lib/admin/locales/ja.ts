@@ -10,6 +10,7 @@ export const ja = {
     metrics: "指標",
     support: "サポート",
     logs: "ログ",
+    settings: "プラットフォーム設定",
     switchToOwner: "オーナー画面へ",
     systemAdmin: "システム管理",
   },
