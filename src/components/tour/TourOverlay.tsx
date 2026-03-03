@@ -5,6 +5,7 @@ import { useTour, type TourState } from "@/hooks/useTour";
 type TourOverlayProps = {
   role: string;
   onboardingCompleted: boolean;
+  onboardingStep: number;
   userId: string | undefined;
   forceStart?: boolean;
 };
@@ -12,6 +13,7 @@ type TourOverlayProps = {
 export default function TourOverlay({
   role,
   onboardingCompleted,
+  onboardingStep,
   userId,
   forceStart = false,
 }: TourOverlayProps) {
@@ -19,7 +21,7 @@ export default function TourOverlay({
     (role === "owner" || role === "instructor") &&
     (!onboardingCompleted || forceStart);
   const { state, nextStep, prevStep, skipTour, finishTour, restartTour } =
-    useTour(role, isEnabled, userId, !forceStart);
+    useTour(role, isEnabled, userId, forceStart ? 0 : onboardingStep, !forceStart);
 
   if (!state.isActive || state.steps.length === 0) return null;
 

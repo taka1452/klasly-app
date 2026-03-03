@@ -11,6 +11,7 @@ type InstructorShellProps = {
   userName: string;
   userEmail: string;
   onboardingCompleted?: boolean;
+  onboardingStep?: number;
   userId?: string;
 };
 
@@ -20,6 +21,7 @@ export default function InstructorShell({
   userName,
   userEmail,
   onboardingCompleted = true,
+  onboardingStep = 0,
   userId,
 }: InstructorShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -36,6 +38,7 @@ export default function InstructorShell({
     <TourProvider
       role="instructor"
       onboardingCompleted={onboardingCompleted}
+      onboardingStep={onboardingStep}
       userId={userId}
     >
     <div className="flex h-screen bg-gray-50">

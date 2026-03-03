@@ -76,6 +76,8 @@ export default async function DashboardLayout({
 
   const onboardingCompleted =
     (profile as { onboarding_completed?: boolean })?.onboarding_completed ?? true;
+  const onboardingStep =
+    (profile as { onboarding_step?: number })?.onboarding_step ?? 0;
 
   return (
     <DashboardShell
@@ -86,6 +88,7 @@ export default async function DashboardLayout({
       planAccess={planAccess}
       showAdminLink={showAdminLink}
       onboardingCompleted={onboardingCompleted}
+      onboardingStep={onboardingStep}
       userId={user.id}
       banner={
         showBanner ? (

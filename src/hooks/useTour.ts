@@ -19,7 +19,7 @@ export type UseTourReturn = {
   state: TourState;
   nextStep: () => void;
   prevStep: () => void;
-  skipTour: () => void;
+  skipTour: () => Promise<void>;
   finishTour: () => Promise<void>;
   restartTour: () => void;
 };
@@ -28,14 +28,22 @@ function findElement(target: string): Element | null {
   return document.querySelector(`[data-tour="${target}"]`);
 }
 
+async function updateProfile(userId: string, data: { onboarding_completed?: boolean; onboarding_step?: number }) {
+  const supabase = createClient();
+  await supabase.from("profiles").update(data).eq("id", userId);
+}
+
 export function useTour(
   role: string,
   isEnabled: boolean,
   userId: string | undefined,
-  persistOnFinish = true
+  initialStep: number,
+  persistChanges: boolean
 ): UseTourReturn {
   const steps = getStepsForRole(role);
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState(
+    Math.min(Math.max(0, initialStep), Math.max(0, steps.length - 1))
+  );
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const [showTooltip, setShowTooltip] = useState(false);
   const [isActive, setIsActive] = useState(false);
@@ -60,12 +68,19 @@ export function useTour(
   }, [currentStep, steps]);
 
   useEffect(() => {
-    if (!isEnabled || role !== "owner" && role !== "instructor" || steps.length === 0) {
+    if (!isEnabled || (role !== "owner" && role !== "instructor") || steps.length === 0) {
+      return;
+    }
+    let step = Math.min(Math.max(0, initialStep), Math.max(0, steps.length - 1));
+    if (step >= steps.length) {
+      if (persistChanges && userId) {
+        void updateProfile(userId, { onboarding_completed: true });
+      }
       return;
     }
     setIsActive(true);
-    setCurrentStep(0);
-  }, [isEnabled, role, steps.length]);
+    setCurrentStep(step);
+  }, [isEnabled, role, steps.length, initialStep, userId, persistChanges]);
 
   useEffect(() => {
     if (!isActive) return;
@@ -82,37 +97,44 @@ export function useTour(
   }, [isActive, currentStep, updateTargetRect]);
 
   const finishTour = useCallback(async () => {
-    if (persistOnFinish && userId) {
-      const supabase = createClient();
-      await supabase
-        .from("profiles")
-        .update({ onboarding_completed: true })
-        .eq("id", userId);
+    if (persistChanges && userId) {
+      await updateProfile(userId, { onboarding_completed: true, onboarding_step: 0 });
     }
     setIsActive(false);
     setCurrentStep(0);
     setTargetRect(null);
     setShowTooltip(false);
-  }, [userId, persistOnFinish]);
+  }, [userId, persistChanges]);
 
-  const nextStep = useCallback(() => {
+  const nextStep = useCallback(async () => {
     if (currentStep >= steps.length - 1) {
       void finishTour();
       return;
     }
-    setCurrentStep((s) => Math.min(s + 1, steps.length - 1));
-  }, [currentStep, steps.length, finishTour]);
+    const next = currentStep + 1;
+    if (persistChanges && userId) {
+      await updateProfile(userId, { onboarding_step: next });
+    }
+    setCurrentStep(next);
+  }, [currentStep, steps.length, userId, persistChanges, finishTour]);
 
-  const prevStep = useCallback(() => {
-    setCurrentStep((s) => Math.max(0, s - 1));
-  }, []);
+  const prevStep = useCallback(async () => {
+    const prev = Math.max(0, currentStep - 1);
+    if (persistChanges && userId) {
+      await updateProfile(userId, { onboarding_step: prev });
+    }
+    setCurrentStep(prev);
+  }, [currentStep, userId, persistChanges]);
 
-  const skipTour = useCallback(() => {
+  const skipTour = useCallback(async () => {
+    if (persistChanges && userId) {
+      await updateProfile(userId, { onboarding_completed: true });
+    }
     setIsActive(false);
     setCurrentStep(0);
     setTargetRect(null);
     setShowTooltip(false);
-  }, []);
+  }, [userId, persistChanges]);
 
   const restartTour = useCallback(() => {
     setCurrentStep(0);

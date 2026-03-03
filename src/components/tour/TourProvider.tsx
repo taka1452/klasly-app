@@ -17,6 +17,7 @@ export function useTourActions() {
 type TourProviderProps = {
   role: string;
   onboardingCompleted: boolean;
+  onboardingStep: number;
   userId: string | undefined;
   children: React.ReactNode;
 };
@@ -24,6 +25,7 @@ type TourProviderProps = {
 export default function TourProvider({
   role,
   onboardingCompleted,
+  onboardingStep,
   userId,
   children,
 }: TourProviderProps) {
@@ -44,6 +46,7 @@ export default function TourProvider({
         <TourOverlay
           role={role}
           onboardingCompleted={onboardingCompleted}
+          onboardingStep={onboardingStep}
           userId={userId}
           forceStart={forceStart}
         />

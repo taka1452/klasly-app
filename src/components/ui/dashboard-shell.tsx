@@ -16,6 +16,7 @@ type DashboardShellProps = {
   planAccess?: PlanAccess;
   showAdminLink?: boolean;
   onboardingCompleted?: boolean;
+  onboardingStep?: number;
   userId?: string;
   banner?: React.ReactNode;
 };
@@ -29,6 +30,7 @@ export default function DashboardShell({
   planAccess,
   showAdminLink = false,
   onboardingCompleted = true,
+  onboardingStep = 0,
   userId,
   banner,
 }: DashboardShellProps) {
@@ -46,6 +48,7 @@ export default function DashboardShell({
     <TourProvider
       role={currentRole}
       onboardingCompleted={onboardingCompleted}
+      onboardingStep={onboardingStep}
       userId={userId}
     >
     <div className="flex h-screen bg-gray-50">
