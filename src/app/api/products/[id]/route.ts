@@ -2,15 +2,18 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
+type ProfileRow = { studio_id: string | null; role: string };
+
 async function getOwnerStudioId(
   adminSupabase: ReturnType<typeof createClient>,
   userId: string
 ): Promise<string | null> {
-  const { data: profile } = await adminSupabase
+  const { data } = await adminSupabase
     .from("profiles")
     .select("studio_id, role")
     .eq("id", userId)
     .single();
+  const profile = data as ProfileRow | null;
   if (profile?.role !== "owner" || !profile?.studio_id) return null;
   return profile.studio_id;
 }
