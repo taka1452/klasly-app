@@ -4,8 +4,17 @@ import { NextResponse } from "next/server";
 
 type ProfileRow = { studio_id: string | null; role: string };
 
+/** Minimal type to avoid SupabaseClient generic mismatch with createClient() return type */
+type SupabaseLike = {
+  from: (table: string) => {
+    select: (...columns: string[]) => {
+      eq: (column: string, value: string) => { single: () => Promise<{ data: unknown }> };
+    };
+  };
+};
+
 async function getOwnerStudioId(
-  adminSupabase: ReturnType<typeof createClient>,
+  adminSupabase: SupabaseLike,
   userId: string
 ): Promise<string | null> {
   const { data } = await adminSupabase
