@@ -4,17 +4,9 @@ import { NextResponse } from "next/server";
 
 type ProfileRow = { studio_id: string | null; role: string };
 
-/** Minimal type to avoid SupabaseClient generic mismatch with createClient() return type */
-type SupabaseLike = {
-  from: (table: string) => {
-    select: (...columns: string[]) => {
-      eq: (column: string, value: string) => { single: () => Promise<{ data: unknown }> };
-    };
-  };
-};
-
 async function getOwnerStudioId(
-  adminSupabase: SupabaseLike,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- avoid SupabaseClient deep type instantiation
+  adminSupabase: any,
   userId: string
 ): Promise<string | null> {
   const { data } = await adminSupabase
