@@ -80,36 +80,42 @@ export default async function DashboardLayout({
         id: "tutorial",
         label: "Complete the tutorial",
         done: onboardingCompleted,
+        hint: "Take a quick tour to learn the dashboard.",
       },
       {
         id: "stripe-connect",
         label: "Connect Stripe Connect",
         done: studio?.stripe_connect_onboarding_complete ?? false,
         href: "/settings/connect",
+        hint: "Required so members can pay for classes and packs online.",
       },
       {
         id: "create-class",
         label: "Create at least one class",
         done: (classesCount ?? 0) >= 1,
         href: "/classes/new",
+        hint: "Add a recurring class (e.g. Yoga Monday 10am) so members can book.",
       },
       {
         id: "add-instructor",
         label: "Add an instructor",
         done: (instructorsCount ?? 0) >= 1,
         href: "/instructors/new",
+        hint: "Invite instructors to manage their classes and attendance.",
       },
       {
         id: "add-member",
         label: "Add a member",
         done: (membersCount ?? 0) >= 1,
         href: "/members/new",
+        hint: "Add members so they can book classes and purchase credits.",
       },
       {
         id: "pricing",
-        label: "Set pricing",
+        label: "Products & Pricing",
         done: hasPricing,
         href: "/settings/pricing",
+        hint: "Create plans and packages (e.g. drop-in, class packs, monthly) for members to buy.",
       },
     ];
   }

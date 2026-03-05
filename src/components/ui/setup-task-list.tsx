@@ -7,6 +7,8 @@ export type SetupTask = {
   label: string;
   done: boolean;
   href?: string | null;
+  /** Short hint shown under the label */
+  hint?: string | null;
 };
 
 type SetupTaskListProps = {
@@ -23,17 +25,17 @@ export default function SetupTaskList({
 
   return (
     <div
-      className="fixed bottom-6 right-6 z-[9990] w-72 rounded-xl border border-gray-200 bg-white p-4 shadow-lg"
+      className="fixed bottom-6 right-6 z-[9990] w-80 rounded-xl border border-gray-200 bg-white p-4 shadow-lg"
       aria-label={title}
     >
       <h3 className="mb-3 text-sm font-semibold text-gray-900">
         {allDone ? "All set!" : title}
       </h3>
-      <ul className="space-y-2">
+      <ul className="space-y-3">
         {tasks.map((task) => (
-          <li key={task.id} className="flex items-center gap-3">
+          <li key={task.id} className="flex items-start gap-3">
             <span
-              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs"
+              className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs"
               aria-hidden
             >
               {task.done ? (
@@ -56,20 +58,25 @@ export default function SetupTaskList({
                 <span className="h-5 w-5 rounded-full border-2 border-gray-300" />
               )}
             </span>
-            {task.href && !task.done ? (
-              <Link
-                href={task.href}
-                className="text-sm text-gray-700 hover:text-indigo-600 hover:underline"
-              >
-                {task.label}
-              </Link>
-            ) : (
-              <span
-                className={`text-sm ${task.done ? "text-gray-500 line-through" : "text-gray-700"}`}
-              >
-                {task.label}
-              </span>
-            )}
+            <span className="min-w-0 flex-1">
+              {task.href && !task.done ? (
+                <Link
+                  href={task.href}
+                  className="text-sm font-medium text-gray-700 hover:text-indigo-600 hover:underline"
+                >
+                  {task.label}
+                </Link>
+              ) : (
+                <span
+                  className={`text-sm font-medium ${task.done ? "text-gray-500 line-through" : "text-gray-700"}`}
+                >
+                  {task.label}
+                </span>
+              )}
+              {task.hint && (
+                <p className="mt-0.5 text-xs text-gray-500">{task.hint}</p>
+              )}
+            </span>
           </li>
         ))}
       </ul>
