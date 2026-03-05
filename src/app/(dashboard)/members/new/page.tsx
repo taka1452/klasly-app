@@ -159,6 +159,9 @@ export default function NewMemberPage() {
               <option value="pack">Class Pack</option>
               <option value="monthly">Monthly (Unlimited)</option>
             </select>
+            <p className="mt-1 text-xs text-gray-500">
+              Changeable. This is only the initial state. Actual charges and purchases use Products &amp; Pricing.
+            </p>
           </div>
 
           {planType === "pack" && (
