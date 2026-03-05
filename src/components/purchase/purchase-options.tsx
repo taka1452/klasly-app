@@ -93,7 +93,7 @@ export default function PurchaseOptions({ products, memberId }: Props) {
             type="button"
             onClick={() => handleBuy(product.id)}
             disabled={!!loading}
-            className="btn-primary mt-auto mt-4"
+            className="btn-primary mt-4"
           >
             {loading === product.id ? "Redirecting…" : "Buy"}
           </button>

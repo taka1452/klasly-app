@@ -250,55 +250,53 @@ export async function POST(request: Request) {
         .eq("status", "confirmed");
 
       if ((confirmedCount ?? 0) < session.capacity) {
-        const { data: firstWaitlist } = await adminSupabase
+        // ウェイトリスト全員を古い順に取得し、クレジットのある最初の人を昇格
+        const { data: waitlistQueue } = await adminSupabase
           .from("bookings")
           .select("member_id")
           .eq("session_id", sessionId)
           .eq("status", "waitlist")
-          .order("created_at", { ascending: true })
-          .limit(1)
-          .single();
+          .order("created_at", { ascending: true });
 
-        if (firstWaitlist) {
-          const { data: promotedProfile } = await adminSupabase
+        for (const waitlistItem of waitlistQueue || []) {
+          const { data: waitlistMember } = await adminSupabase
             .from("members")
-            .select("profile_id")
-            .eq("id", firstWaitlist.member_id)
+            .select("id, credits, profile_id")
+            .eq("id", waitlistItem.member_id)
             .single();
 
-          if (promotedProfile) {
-            const { data: promoted } = await adminSupabase
-              .from("profiles")
-              .select("full_name, email")
-              .eq("id", promotedProfile.profile_id)
-              .single();
+          if (!waitlistMember) continue;
 
-            if (promoted?.email) {
-              promotedMemberEmail = promoted.email;
-              promotedMemberName = promoted.full_name ?? "Member";
-            }
+          // credits === 0 のメンバーはスキップ（クレジット不足のため昇格不可）
+          if (waitlistMember.credits === 0) continue;
+
+          // 昇格対象確定 — プロフィール取得してメール送信情報を準備
+          const { data: promoted } = await adminSupabase
+            .from("profiles")
+            .select("full_name, email")
+            .eq("id", waitlistMember.profile_id)
+            .single();
+
+          if (promoted?.email) {
+            promotedMemberEmail = promoted.email;
+            promotedMemberName = promoted.full_name ?? "Member";
           }
 
           await adminSupabase
             .from("bookings")
             .update({ status: "confirmed" })
             .eq("session_id", sessionId)
-            .eq("member_id", firstWaitlist.member_id);
+            .eq("member_id", waitlistItem.member_id);
 
-          const promotedMember = await adminSupabase
-            .from("members")
-            .select("credits")
-            .eq("id", firstWaitlist.member_id)
-            .single();
-
-          if (promotedMember.data && promotedMember.data.credits >= 0) {
+          // unlimited(-1) でなければクレジットを1消費
+          if (waitlistMember.credits > 0) {
             await adminSupabase
               .from("members")
-              .update({
-                credits: promotedMember.data.credits - 1,
-              })
-              .eq("id", firstWaitlist.member_id);
+              .update({ credits: waitlistMember.credits - 1 })
+              .eq("id", waitlistItem.member_id);
           }
+
+          break; // 1人昇格したら終了
         }
       }
 
