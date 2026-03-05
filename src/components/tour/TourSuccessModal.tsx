@@ -76,20 +76,32 @@ export default function TourSuccessModal({
             You now know your way around. Ready to get started?
           </p>
           <div className="mt-6 flex flex-col gap-3">
-            <Link
-              href={cta.href}
-              onClick={onClose}
-              className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
-            >
-              {cta.label}
-            </Link>
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-sm font-medium text-gray-500 hover:text-gray-700"
-            >
-              Close
-            </button>
+            {cta.href ? (
+              <Link
+                href={cta.href}
+                onClick={onClose}
+                className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+              >
+                {cta.label}
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={onClose}
+                className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+              >
+                {cta.label}
+              </button>
+            )}
+            {cta.href && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="text-sm font-medium text-gray-500 hover:text-gray-700"
+              >
+                Close
+              </button>
+            )}
           </div>
         </div>
       </div>
