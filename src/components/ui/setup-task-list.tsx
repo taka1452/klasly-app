@@ -1,6 +1,9 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
+
+const STORAGE_KEY = "klasly-setup-checklist-dismissed";
 
 export type SetupTask = {
   id: string;
@@ -20,17 +23,50 @@ export default function SetupTaskList({
   tasks,
   title = "Setup checklist",
 }: SetupTaskListProps) {
+  const [dismissed, setDismissed] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    try {
+      setDismissed(localStorage.getItem(STORAGE_KEY) === "1");
+    } catch {
+      setDismissed(false);
+    }
+    setMounted(true);
+  }, []);
+
+  const handleClose = () => {
+    try {
+      localStorage.setItem(STORAGE_KEY, "1");
+    } catch {
+      // ignore
+    }
+    setDismissed(true);
+  };
+
   const allDone = tasks.every((t) => t.done);
-  if (tasks.length === 0) return null;
+  if (tasks.length === 0 || !mounted || dismissed) return null;
 
   return (
     <div
       className="fixed bottom-6 right-6 z-[9990] w-80 rounded-xl border border-gray-200 bg-white p-4 shadow-lg"
       aria-label={title}
     >
-      <h3 className="mb-3 text-sm font-semibold text-gray-900">
-        {allDone ? "All set!" : title}
-      </h3>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold text-gray-900">
+          {allDone ? "All set!" : title}
+        </h3>
+        <button
+          type="button"
+          onClick={handleClose}
+          className="shrink-0 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          aria-label="Close checklist"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
       <ul className="space-y-3">
         {tasks.map((task) => (
           <li key={task.id} className="flex items-start gap-3">
