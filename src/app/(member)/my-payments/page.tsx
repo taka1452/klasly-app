@@ -34,7 +34,7 @@ export default async function MyPaymentsPage() {
 
   const { data: payments } = await supabase
     .from("payments")
-    .select("id, amount, currency, type, payment_type, status, paid_at, created_at")
+    .select("id, amount, currency, type, payment_type, status, paid_at, created_at, products(name)")
     .in("member_id", memberIds)
     .order("created_at", { ascending: false });
 
@@ -47,12 +47,19 @@ export default async function MyPaymentsPage() {
     return `$${(cents / 100).toFixed(2)}`;
   }
 
-  function typeLabel(pt: string | undefined, t: string): string {
+  function typeLabel(
+    pt: string | undefined,
+    t: string,
+    productRef?: { name: string } | { name: string }[] | null
+  ): string {
+    const productName = productRef == null ? null : Array.isArray(productRef) ? productRef[0] : productRef;
+    if (productName?.name) return productName.name;
     const p = pt ?? t;
     if (p === "monthly") return "Monthly";
     if (p === "pack_5") return "5-Pack";
     if (p === "pack_10") return "10-Pack";
     if (p === "drop_in") return "Drop-in";
+    if (t === "product_purchase") return pt ?? "Purchase";
     return p;
   }
 
@@ -100,7 +107,11 @@ export default async function MyPaymentsPage() {
                       {formatAmount(p.amount)}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
-                      {typeLabel(p.payment_type, p.type)}
+                      {typeLabel(
+                        p.payment_type,
+                        p.type,
+                        (p as unknown as { products?: { name: string } | { name: string }[] | null }).products
+                      )}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3">
                       <span

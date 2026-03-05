@@ -68,39 +68,38 @@ export async function POST(request: Request) {
           studioId = studio.id;
         }
 
-        const purchaseType = session.metadata?.purchase_type;
-        const memberId = session.metadata?.member_id;
-        const creditsStr = session.metadata?.credits;
+        const productId = session.metadata?.product_id as string | undefined;
+        const memberId = session.metadata?.member_id as string | undefined;
+        const creditsStr = session.metadata?.credits as string | undefined;
 
-        if (purchaseType && memberId && studioId) {
+        if (productId && memberId && studioId) {
           const credits = parseInt(creditsStr ?? "0", 10);
           const amount = session.amount_total ?? 0;
-          const paymentType =
-            purchaseType === "monthly" ? "monthly" : purchaseType;
 
           await adminSupabase.from("payments").insert({
             studio_id: studioId,
             member_id: memberId,
+            product_id: productId,
             amount,
             currency: session.currency ?? "usd",
-            type: paymentType,
+            type: "product_purchase",
             status: "paid",
             stripe_payment_intent_id: session.payment_intent as string | null,
-            payment_type: paymentType,
+            payment_type: productId,
             paid_at: new Date().toISOString(),
           });
 
-          if (purchaseType === "monthly") {
+          if (credits === -1) {
             const subscriptionId = getSubscriptionId(session.subscription as string | Stripe.Subscription | null);
             await adminSupabase
               .from("members")
               .update({
-                plan_type: "monthly",
+                plan_type: "subscription",
                 credits: -1,
                 stripe_subscription_id: subscriptionId,
               })
               .eq("id", memberId);
-          } else {
+          } else if (credits > 0) {
             const { data: m } = await adminSupabase
               .from("members")
               .select("credits")
@@ -124,25 +123,23 @@ export async function POST(request: Request) {
             .select("name")
             .eq("id", studioId)
             .single();
+          const { data: productRow } = await adminSupabase
+            .from("products")
+            .select("name")
+            .eq("id", productId)
+            .single();
           const memberProf = (memberProfile as { profiles?: { full_name?: string; email?: string } })?.profiles;
           const prof = Array.isArray(memberProf) ? memberProf[0] : memberProf;
           const toEmail = prof?.email;
           const memberName = prof?.full_name ?? "Member";
           const studioName = studioData?.name ?? "Studio";
+          const productName = (productRow as { name?: string } | null)?.name ?? "Purchase";
 
           if (toEmail) {
-            const desc =
-              purchaseType === "monthly"
-                ? "Monthly membership"
-                : purchaseType === "pack_5"
-                  ? "5-Class Pack"
-                  : purchaseType === "pack_10"
-                    ? "10-Class Pack"
-                    : "Drop-in";
             const { subject, html } = paymentReceipt({
               memberName,
               amount,
-              description: desc,
+              description: productName,
               studioName,
             });
             await sendEmail({
@@ -571,7 +568,8 @@ async function getStudioIdFromStripeEvent(
     }
     if (event.type === "invoice.paid" || event.type === "invoice.payment_failed") {
       const invoice = event.data.object as Stripe.Invoice;
-      const subId = typeof invoice.subscription === "string" ? invoice.subscription : invoice.subscription?.id ?? null;
+      const subRef = invoice.parent?.subscription_details?.subscription;
+      const subId = typeof subRef === "string" ? subRef : (subRef as { id?: string } | null | undefined)?.id ?? null;
       if (!subId) return null;
       const { data: studio } = await supabase
         .from("studios")

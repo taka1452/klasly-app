@@ -4,6 +4,7 @@ import Link from "next/link";
 import { formatCredits, formatDate, getPlanLabel, getStatusColor } from "@/lib/utils";
 import MemberSearch from "@/components/members/member-search";
 import ExportCsvButton from "@/components/ui/export-csv-button";
+import FlowHintPanel from "@/components/ui/flow-hint-panel";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -70,12 +71,16 @@ export default async function MembersPage({
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Members</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            {filteredMembers.length} member{filteredMembers.length !== 1 ? "s" : ""}
-          </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Members</h1>
+            <p className="mt-1 text-sm text-gray-500">
+              {filteredMembers.length} member{filteredMembers.length !== 1 ? "s" : ""}
+            </p>
+          </div>
+          <FlowHintPanel flowType="members" />
+          <FlowHintPanel flowType="member-invite" buttonLabel="Where to send invite?" />
         </div>
         <div className="flex items-center gap-2">
           <ExportCsvButton

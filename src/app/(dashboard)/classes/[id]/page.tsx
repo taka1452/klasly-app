@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getDayName, formatTime, formatDate } from "@/lib/utils";
 import ClassEditForm from "@/components/classes/class-edit-form";
 import ClassDeactivateButton from "@/components/classes/class-deactivate-button";
+import FlowHintPanel from "@/components/ui/flow-hint-panel";
 
 export default async function ClassDetailPage({
   params,
@@ -96,7 +97,10 @@ export default async function ClassDetailPage({
         >
           ← Back to classes
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-gray-900">{cls.name}</h1>
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <h1 className="text-2xl font-bold text-gray-900">{cls.name}</h1>
+          <FlowHintPanel flowType="instructor-assign" buttonLabel="How to assign instructor?" />
+        </div>
         {cls.description && (
           <p className="mt-1 text-sm text-gray-600">{cls.description}</p>
         )}

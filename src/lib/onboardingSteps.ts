@@ -71,12 +71,12 @@ export function getStepsForRole(role: string): TourStep[] {
 
 export type SuccessCta = {
   label: string;
-  href: string;
+  href: string | null;
 };
 
 export function getSuccessCtaForRole(role: string): SuccessCta {
   if (role === "owner") {
-    return { label: "Create your first real class", href: "/classes/new" };
+    return { label: "Continue", href: null };
   }
   if (role === "instructor") {
     return { label: "View your schedule", href: "/instructor/schedule" };

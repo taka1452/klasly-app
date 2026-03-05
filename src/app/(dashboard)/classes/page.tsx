@@ -3,6 +3,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import WeeklySchedule from "@/components/classes/weekly-schedule";
 import EmptyState from "@/components/ui/empty-state";
+import FlowHintPanel from "@/components/ui/flow-hint-panel";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -47,12 +48,15 @@ export default async function ClassesPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Classes</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Weekly schedule
-          </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Classes</h1>
+            <p className="mt-1 text-sm text-gray-500">
+              Weekly schedule
+            </p>
+          </div>
+          <FlowHintPanel flowType="instructor-assign" buttonLabel="How to assign instructor?" />
         </div>
         <Link href="/classes/new" className="btn-primary">
           + Add class

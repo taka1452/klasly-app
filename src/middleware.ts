@@ -49,7 +49,8 @@ export async function middleware(request: NextRequest) {
   const isPublicPage =
     request.nextUrl.pathname.startsWith("/privacy") ||
     request.nextUrl.pathname.startsWith("/terms") ||
-    request.nextUrl.pathname.startsWith("/cookies");
+    request.nextUrl.pathname.startsWith("/cookies") ||
+    request.nextUrl.pathname.startsWith("/help");
 
   const isWaiverPage = request.nextUrl.pathname.startsWith("/waiver");
 

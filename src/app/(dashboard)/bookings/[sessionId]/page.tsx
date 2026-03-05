@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { formatDate, formatTime } from "@/lib/utils";
 import AttendanceToggle from "@/components/bookings/attendance-toggle";
+import OwnerCancelButton from "@/components/bookings/owner-cancel-button";
 
 export default async function SessionBookingsPage({
   params,
@@ -102,6 +103,7 @@ export default async function SessionBookingsPage({
                       </span>
                     </div>
                   </div>
+                  <OwnerCancelButton bookingId={booking.id} />
                 </li>
               );
             })}

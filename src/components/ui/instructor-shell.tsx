@@ -65,7 +65,6 @@ export default function InstructorShell({
           userName={userName}
           userEmail={userEmail}
           onSidebarToggle={() => setSidebarOpen((o) => !o)}
-          showTourHelp
         />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</main>
       </div>

@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { useTourActions } from "@/components/tour/TourProvider";
 
 const PAGE_NAMES: Record<string, string> = {
   "/dashboard": "Dashboard",
@@ -27,13 +26,11 @@ type HeaderProps = {
   userName: string;
   userEmail: string;
   onSidebarToggle?: () => void;
-  showTourHelp?: boolean;
 };
 
-export default function Header({ userName, userEmail, onSidebarToggle, showTourHelp = false }: HeaderProps) {
+export default function Header({ userName, userEmail, onSidebarToggle }: HeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const tourActions = useTourActions();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -65,17 +62,8 @@ export default function Header({ userName, userEmail, onSidebarToggle, showTourH
 
   return (
     <header className="flex h-16 items-center justify-between gap-4 border-b border-gray-200 bg-white px-4 sm:px-6">
-      {/* モバイル: ハンバーガー + ページタイトル + Help */}
+      {/* モバイル: ハンバーガー + ページタイトル */}
       <div className="flex min-w-0 flex-1 items-center gap-3">
-        {showTourHelp && (
-          <button
-            type="button"
-            onClick={() => tourActions?.restartTour()}
-            className="shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
-          >
-            Help
-          </button>
-        )}
         <button
           type="button"
           aria-label="Open menu"

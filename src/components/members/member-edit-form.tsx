@@ -136,6 +136,9 @@ export default function MemberEditForm({
               <option value="pack">Class Pack</option>
               <option value="monthly">Monthly</option>
             </select>
+            <p className="mt-1 text-xs text-gray-500">
+              Changeable. This is the current display state. Actual charges use Products &amp; Pricing.
+            </p>
           </div>
 
           {planType !== "monthly" && (

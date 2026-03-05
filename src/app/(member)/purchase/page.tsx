@@ -39,7 +39,7 @@ export default async function PurchasePage() {
   const { data: studio } = await supabase
     .from("studios")
     .select(
-      "id, drop_in_price, pack_5_price, pack_10_price, monthly_price, plan_status, stripe_connect_account_id, stripe_connect_onboarding_complete"
+      "id, plan_status, stripe_connect_account_id, stripe_connect_onboarding_complete"
     )
     .eq("id", member.studio_id)
     .single();
@@ -52,13 +52,14 @@ export default async function PurchasePage() {
     );
   }
 
+  const { data: products } = await supabase
+    .from("products")
+    .select("id, name, type, credits, price, currency, billing_interval, description")
+    .eq("studio_id", member.studio_id)
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
+
   const planAccess = getPlanAccess(studio.plan_status ?? "trialing");
-  const pricing = {
-    drop_in_price: studio.drop_in_price ?? 2000,
-    pack_5_price: studio.pack_5_price ?? 8000,
-    pack_10_price: studio.pack_10_price ?? 15000,
-    monthly_price: studio.monthly_price ?? 12000,
-  };
 
   if (!planAccess.canPurchase) {
     return (
@@ -103,7 +104,7 @@ export default async function PurchasePage() {
         Buy credits or monthly membership
       </p>
 
-      <PurchaseOptions memberId={member.id} pricing={pricing} />
+      <PurchaseOptions memberId={member.id} products={products ?? []} />
     </div>
   );
 }

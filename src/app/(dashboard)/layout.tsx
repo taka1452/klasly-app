@@ -6,6 +6,7 @@ import PlanLockScreen from "@/components/ui/plan-lock-screen";
 import PlanBanner from "@/components/ui/plan-banner";
 import { getPlanAccess } from "@/lib/plan-guard";
 import { isAdmin } from "@/lib/admin/auth";
+import type { SetupTask } from "@/components/ui/setup-task-list";
 
 export default async function DashboardLayout({
   children,
@@ -52,7 +53,72 @@ export default async function DashboardLayout({
     stripe_subscription_id?: string | null;
     plan_status?: string | null;
     grace_period_ends_at?: string | null;
+    stripe_connect_onboarding_complete?: boolean | null;
+    drop_in_price?: number | null;
+    monthly_price?: number | null;
   } | null;
+
+  const onboardingCompleted =
+    (profile as { onboarding_completed?: boolean })?.onboarding_completed ?? true;
+  const onboardingStep =
+    (profile as { onboarding_step?: number })?.onboarding_step ?? 0;
+  const onboardingStartedAt =
+    (profile as { onboarding_started_at?: string | null })?.onboarding_started_at ?? null;
+
+  let setupTasks: SetupTask[] = [];
+  if (profile.role === "owner" && profile.studio_id) {
+    const [{ count: classesCount }, { count: instructorsCount }, { count: membersCount }, { count: productsCount }] =
+      await Promise.all([
+        adminSupabase.from("classes").select("id", { count: "exact", head: true }).eq("studio_id", profile.studio_id),
+        adminSupabase.from("instructors").select("id", { count: "exact", head: true }).eq("studio_id", profile.studio_id),
+        adminSupabase.from("members").select("id", { count: "exact", head: true }).eq("studio_id", profile.studio_id),
+        adminSupabase.from("products").select("id", { count: "exact", head: true }).eq("studio_id", profile.studio_id).eq("is_active", true),
+      ]);
+    const hasPricing = (productsCount ?? 0) > 0;
+    setupTasks = [
+      {
+        id: "tutorial",
+        label: "Complete the tutorial",
+        done: onboardingCompleted,
+        hint: "Take a quick tour to learn the dashboard.",
+      },
+      {
+        id: "stripe-connect",
+        label: "Connect Stripe Connect",
+        done: studio?.stripe_connect_onboarding_complete ?? false,
+        href: "/settings/connect",
+        hint: "Required so members can pay for classes and packs online.",
+      },
+      {
+        id: "create-class",
+        label: "Create at least one class",
+        done: (classesCount ?? 0) >= 1,
+        href: "/classes/new",
+        hint: "Add a recurring class (e.g. Yoga Monday 10am) so members can book.",
+      },
+      {
+        id: "add-instructor",
+        label: "Add an instructor",
+        done: (instructorsCount ?? 0) >= 1,
+        href: "/instructors/new",
+        hint: "Invite instructors to manage their classes and attendance.",
+      },
+      {
+        id: "add-member",
+        label: "Add a member",
+        done: (membersCount ?? 0) >= 1,
+        href: "/members/new",
+        hint: "Add members so they can book classes and purchase credits.",
+      },
+      {
+        id: "pricing",
+        label: "Products & Pricing",
+        done: hasPricing,
+        href: "/settings/pricing",
+        hint: "Create plans and packages (e.g. drop-in, class packs, monthly) for members to buy.",
+      },
+    ];
+  }
 
   // stripe_subscription_idがなく、かつplan_statusがactiveでもtrialingでもない場合のみリダイレクト
   // （管理者がDBで直接activeに設定したケースや、無料トライアル開始時を考慮）
@@ -74,13 +140,6 @@ export default async function DashboardLayout({
   const showBanner =
     planStatus === "past_due" || planStatus === "grace";
 
-  const onboardingCompleted =
-    (profile as { onboarding_completed?: boolean })?.onboarding_completed ?? true;
-  const onboardingStep =
-    (profile as { onboarding_step?: number })?.onboarding_step ?? 0;
-  const onboardingStartedAt =
-    (profile as { onboarding_started_at?: string | null })?.onboarding_started_at ?? null;
-
   return (
     <DashboardShell
       currentRole={profile.role}
@@ -101,6 +160,7 @@ export default async function DashboardLayout({
           />
         ) : null
       }
+      setupTasks={setupTasks}
     >
       {children}
     </DashboardShell>

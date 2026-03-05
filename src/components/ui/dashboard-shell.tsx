@@ -3,9 +3,11 @@
 import { useState, useEffect } from "react";
 import Sidebar from "./sidebar";
 import Header from "./header";
+import SetupTaskList from "./setup-task-list";
 import { PlanAccessProvider } from "./plan-access-provider";
 import TourProvider from "@/components/tour/TourProvider";
 import type { PlanAccess } from "@/lib/plan-guard";
+import type { SetupTask } from "./setup-task-list";
 
 type DashboardShellProps = {
   children: React.ReactNode;
@@ -20,6 +22,7 @@ type DashboardShellProps = {
   onboardingStartedAt?: string | null;
   userId?: string;
   banner?: React.ReactNode;
+  setupTasks?: SetupTask[];
 };
 
 export default function DashboardShell({
@@ -35,6 +38,7 @@ export default function DashboardShell({
   onboardingStartedAt = null,
   userId,
   banner,
+  setupTasks = [],
 }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -77,7 +81,6 @@ export default function DashboardShell({
           userName={userName}
           userEmail={userEmail}
           onSidebarToggle={() => setSidebarOpen((o) => !o)}
-          showTourHelp={currentRole === "owner"}
         />
         <main className="flex-1 overflow-y-auto p-6">
           {banner && <div className="mb-6">{banner}</div>}
@@ -90,6 +93,11 @@ export default function DashboardShell({
           )}
         </main>
       </div>
+      {currentRole === "owner" &&
+        setupTasks.length > 0 &&
+        !setupTasks.every((t) => t.done) && (
+          <SetupTaskList tasks={setupTasks} title="Setup checklist" />
+        )}
     </div>
     </TourProvider>
   );

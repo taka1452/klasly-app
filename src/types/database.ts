@@ -27,10 +27,11 @@ export type Studio = {
   trial_reminder_sent: boolean;
   email_notifications_enabled: boolean;
   // スタジオ料金設定（会員向け）
-  drop_in_price: number | null;
-  pack_5_price: number | null;
-  pack_10_price: number | null;
-  monthly_price: number | null;
+  // @deprecated products テーブルに移行済み。互換のためDBには残すが新規コードでは products を参照すること。
+  drop_in_price?: number | null;
+  pack_5_price?: number | null;
+  pack_10_price?: number | null;
+  monthly_price?: number | null;
   // Admin
   admin_memo: string | null;
   created_at: string;
@@ -55,7 +56,7 @@ export type Member = {
   id: string;
   studio_id: string;
   profile_id: string;
-  plan_type: "monthly" | "pack" | "drop_in";
+  plan_type: "monthly" | "pack" | "drop_in" | "subscription";
   credits: number;
   status: "active" | "paused" | "cancelled";
   joined_at: string;
@@ -148,16 +149,34 @@ export type WaiverSignature = {
   created_at: string;
 };
 
+export type Product = {
+  id: string;
+  studio_id: string;
+  name: string;
+  type: "one_time" | "subscription";
+  credits: number;
+  price: number;
+  currency: string;
+  billing_interval: string | null;
+  description: string | null;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Payment = {
   id: string;
   studio_id: string;
-  member_id: string;
+  member_id: string | null;
+  product_id: string | null;
   amount: number; // セント単位
   currency: string;
-  type: "monthly" | "pack" | "drop_in";
+  type: "monthly" | "pack" | "drop_in" | "product_purchase";
   status: "pending" | "paid" | "failed" | "refunded";
   stripe_payment_intent_id: string | null;
   description: string | null;
+  payment_type: string | null;
   paid_at: string | null;
   due_date: string | null;
   created_at: string;

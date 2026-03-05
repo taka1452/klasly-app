@@ -77,9 +77,9 @@ export default function ResetPasswordPage() {
     setSuccess(true);
     setLoading(false);
 
-    // 3秒後にダッシュボードへ
+    // 3秒後にホームへ（ロールに応じてリダイレクト）
     setTimeout(() => {
-      router.push("/dashboard");
+      router.push("/");
       router.refresh();
     }, 3000);
   }
@@ -111,7 +111,7 @@ export default function ResetPasswordPage() {
             Password updated!
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Redirecting to your dashboard...
+            Redirecting...
           </p>
         </div>
       </div>

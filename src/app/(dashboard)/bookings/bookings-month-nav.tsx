@@ -24,14 +24,14 @@ type Props = {
 export default function BookingsMonthNav({ year, month }: Props) {
   const prev = getPrevMonth(year, month);
   const next = getNextMonth(year, month);
-  const label = `${year}年${month}月`;
+  const label = new Date(year, month - 1).toLocaleString("en-US", { month: "long", year: "numeric" });
 
   return (
     <nav className="flex items-center gap-3">
       <Link
         href={`/bookings?month=${toYYYYMM(prev.year, prev.month)}`}
         className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-300 bg-white text-gray-700 transition hover:bg-gray-50"
-        aria-label="前の月"
+        aria-label="Previous month"
       >
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -43,7 +43,7 @@ export default function BookingsMonthNav({ year, month }: Props) {
       <Link
         href={`/bookings?month=${toYYYYMM(next.year, next.month)}`}
         className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-300 bg-white text-gray-700 transition hover:bg-gray-50"
-        aria-label="次の月"
+        aria-label="Next month"
       >
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />

@@ -6,7 +6,6 @@ import Link from "next/link";
 
 type Props = {
   sessionId: string;
-  studioId: string;
   capacity: number;
   memberId: string | null;
   existingBooking: { id: string; status: string } | null;
@@ -28,6 +27,7 @@ export default function BookingButton({
 }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const isFull = confirmedCount >= capacity;
   const showWaitlist = isFull;
@@ -59,31 +59,28 @@ export default function BookingButton({
       memberCredits >= 0 &&
       memberCredits < 1
     ) {
-      alert("No credits remaining.");
+      setError("No credits remaining. Please purchase a plan.");
       return;
     }
 
     setLoading(true);
+    setError("");
     try {
       const res = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action,
-          sessionId,
-          memberId,
-        }),
+        body: JSON.stringify({ action, sessionId, memberId }),
       });
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.error || "Something went wrong");
+        setError(data.error || "Something went wrong");
         return;
       }
 
       router.refresh();
     } catch {
-      alert("Something went wrong");
+      setError("Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -93,7 +90,7 @@ export default function BookingButton({
     if (existingBooking.status === "cancelled") {
       if (hasNoCredits) {
         return (
-          <div className="flex flex-col items-end gap-2 text-right">
+          <div className="flex flex-col items-end gap-2 text-right" {...tourProps}>
             <span className="text-sm text-amber-600">
               No credits remaining. Please purchase a plan to book classes.
             </span>
@@ -107,41 +104,48 @@ export default function BookingButton({
         );
       }
       return (
-        <button
-          type="button"
-          onClick={() => handleBook("rebook")}
-          disabled={loading}
-          className="btn-primary text-sm"
-          {...tourProps}
-        >
-          {loading ? "..." : "Re-book"}
-        </button>
+        <div className="flex flex-col items-end gap-1" {...tourProps}>
+          {error && <p className="text-xs text-red-600 text-right">{error}</p>}
+          <button
+            type="button"
+            onClick={() => handleBook("rebook")}
+            disabled={loading}
+            className="btn-primary text-sm"
+          >
+            {loading ? "…" : "Re-book"}
+          </button>
+        </div>
       );
     }
     if (existingBooking.status === "waitlist") {
       return (
-        <button
-          type="button"
-          onClick={() => handleBook("leave_waitlist")}
-          disabled={loading}
-          className="btn-secondary text-sm"
-          {...tourProps}
-        >
-          {loading ? "..." : "Leave waitlist"}
-        </button>
+        <div className="flex flex-col items-end gap-1" {...tourProps}>
+          {error && <p className="text-xs text-red-600 text-right">{error}</p>}
+          <button
+            type="button"
+            onClick={() => handleBook("leave_waitlist")}
+            disabled={loading}
+            className="btn-secondary text-sm"
+          >
+            {loading ? "…" : "Leave waitlist"}
+          </button>
+        </div>
       );
     }
     return (
-      <div className="flex items-center gap-2" {...tourProps}>
-        <span className="text-sm font-medium text-green-600">Booked ✓</span>
-        <button
-          type="button"
-          onClick={() => handleBook("cancel")}
-          disabled={loading}
-          className="text-sm text-gray-500 underline hover:text-red-600"
-        >
-          Cancel
-        </button>
+      <div className="flex flex-col items-end gap-1" {...tourProps}>
+        {error && <p className="text-xs text-red-600 text-right">{error}</p>}
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-green-600">Booked ✓</span>
+          <button
+            type="button"
+            onClick={() => handleBook("cancel")}
+            disabled={loading}
+            className="text-sm text-gray-500 underline hover:text-red-600"
+          >
+            Cancel
+          </button>
+        </div>
       </div>
     );
   }
@@ -163,16 +167,16 @@ export default function BookingButton({
   }
 
   return (
-    <button
-      type="button"
-      onClick={() => handleBook("book")}
-      disabled={loading}
-      className={
-        showWaitlist ? "btn-secondary text-sm" : "btn-primary text-sm"
-      }
-      {...tourProps}
-    >
-      {loading ? "..." : showWaitlist ? "Waitlist" : "Book"}
-    </button>
+    <div className="flex flex-col items-end gap-1" {...tourProps}>
+      {error && <p className="text-xs text-red-600 text-right">{error}</p>}
+      <button
+        type="button"
+        onClick={() => handleBook("book")}
+        disabled={loading}
+        className={showWaitlist ? "btn-secondary text-sm" : "btn-primary text-sm"}
+      >
+        {loading ? "…" : showWaitlist ? "Waitlist" : "Book"}
+      </button>
+    </div>
   );
 }

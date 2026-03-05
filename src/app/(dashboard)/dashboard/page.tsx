@@ -143,7 +143,7 @@ export default async function DashboardPage() {
       created_at,
       member_id,
       members (
-        profiles (full_name)
+        profiles (full_name, email)
       )
     `)
     .eq("studio_id", profile.studio_id)
@@ -435,11 +435,13 @@ export default async function DashboardPage() {
           <div className="card overflow-hidden p-0">
             <div className="divide-y divide-gray-200">
               {failedPayments.map((p) => {
-                const m = p.members as { profiles?: { full_name?: string } } | null;
-                const pf = m?.profiles;
-                const name = p.member_id
-                  ? ((Array.isArray(pf) ? pf[0]?.full_name : pf?.full_name) ?? "Member")
+                const m = p.members as { profiles?: { full_name?: string; email?: string } | { full_name?: string; email?: string }[] } | null;
+                const pf = Array.isArray(m?.profiles) ? m?.profiles[0] : m?.profiles;
+                const isMemberPayment = !!p.member_id;
+                const name = isMemberPayment
+                  ? (pf?.full_name ?? "Member")
                   : "Studio plan";
+                const memberEmail = isMemberPayment ? (pf?.email ?? null) : null;
                 return (
                   <div
                     key={p.id}
@@ -451,14 +453,24 @@ export default async function DashboardPage() {
                         {formatCurrency(p.amount)} · {formatDate(p.created_at ?? "")}
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      className="btn-secondary text-sm"
-                      disabled
-                      title="Coming soon"
-                    >
-                      Retry
-                    </button>
+                    <div className="text-right text-xs text-gray-400">
+                      {isMemberPayment ? (
+                        memberEmail ? (
+                          <a
+                            href={`mailto:${memberEmail}`}
+                            className="underline hover:text-gray-600"
+                          >
+                            Contact member
+                          </a>
+                        ) : (
+                          <span>Contact member to update card</span>
+                        )
+                      ) : (
+                        <a href="/settings/billing" className="underline hover:text-gray-600">
+                          Update billing →
+                        </a>
+                      )}
+                    </div>
                   </div>
                 );
               })}

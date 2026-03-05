@@ -440,7 +440,7 @@ function AddDropInButton({
         onAdded();
       } else {
         const err = await res.json();
-        alert(err.error || "追加に失敗しました");
+        alert(err.error || "Failed to add.");
       }
     },
     [sessionId, onAdded]
@@ -494,8 +494,8 @@ function AddDropInButton({
 
   const emptyMessage =
     query.trim() === ""
-      ? "追加できるメンバーはいません（既に予約済み・ドロップイン済みの方は除きます）"
-      : `「${query}」に一致するメンバーはいません`;
+      ? "No members available to add (excluding those already booked or added as drop-in)."
+      : `No members match "${query}".`;
 
   return (
     <div className="relative">
@@ -505,7 +505,7 @@ function AddDropInButton({
         className="inline-flex items-center gap-1.5 rounded-md border border-brand-200 bg-white px-3 py-2 text-sm font-medium text-brand-700 shadow-sm hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-1"
       >
         <span className="text-base leading-none">+</span>
-        ドロップインを追加
+        Add drop-in
       </button>
       {open && (
         <>
@@ -517,15 +517,15 @@ function AddDropInButton({
           <div
             className="absolute right-0 top-full z-20 mt-2 w-80 rounded-xl border border-gray-200 bg-white py-3 shadow-xl"
             role="dialog"
-            aria-label="ドロップインを追加"
+            aria-label="Add drop-in"
           >
             <div className="px-3">
               <p className="mb-2 text-xs font-medium text-gray-500">
-                メンバーを選んで追加
+                Select a member to add
               </p>
               <input
                 type="text"
-                placeholder="メンバーを検索..."
+                placeholder="Search members..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm placeholder:text-gray-400 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
@@ -536,7 +536,7 @@ function AddDropInButton({
               {loading ? (
                 <div className="flex items-center justify-center gap-2 py-8 text-sm text-gray-500">
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
-                  検索中...
+                  Searching...
                 </div>
               ) : members.length === 0 ? (
                 <p className="px-3 py-6 text-center text-sm text-gray-500">
@@ -564,10 +564,10 @@ function AddDropInButton({
                             {getPlanLabel(m.plan_type)}
                           </span>
                           {adding === m.id ? (
-                            <span className="text-xs text-gray-400">追加中...</span>
+                            <span className="text-xs text-gray-400">Adding...</span>
                           ) : (
                             <span className="text-xs text-gray-400">
-                              {m.credits === -1 ? "∞" : m.credits}回
+                              {m.credits === -1 ? "∞" : m.credits} credits
                             </span>
                           )}
                         </span>

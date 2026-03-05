@@ -41,14 +41,14 @@ export default async function MemberLayout({
 
   const needsWaiverCheck =
     profile?.studio_id != null && profile.studio_id !== "";
-  let member: { id: string; waiver_signed: boolean } | null = null;
+  let member: { id: string; waiver_signed: boolean; credits: number } | null = null;
   let waiverTemplate: { id: string; title: string; content: string } | null = null;
 
   if (needsWaiverCheck && profile.studio_id) {
     const [memberRes, templateRes] = await Promise.all([
       supabase
         .from("members")
-        .select("id, waiver_signed")
+        .select("id, waiver_signed, credits")
         .eq("profile_id", user.id)
         .eq("studio_id", profile.studio_id)
         .maybeSingle(),
@@ -84,6 +84,7 @@ export default async function MemberLayout({
       onboardingStep={onboardingStep}
       onboardingStartedAt={onboardingStartedAt}
       userId={user.id}
+      memberCredits={member?.credits ?? null}
     >
       {children}
     </MemberLayoutClient>
