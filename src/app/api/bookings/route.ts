@@ -120,6 +120,24 @@ export async function POST(request: Request) {
         );
       }
 
+      if (action === "book") {
+        // 既存の非キャンセル予約チェック（重複防止）
+        const { data: existingActive } = await adminSupabase
+          .from("bookings")
+          .select("id, status")
+          .eq("session_id", sessionId)
+          .eq("member_id", memberId)
+          .neq("status", "cancelled")
+          .maybeSingle();
+
+        if (existingActive) {
+          return NextResponse.json(
+            { error: existingActive.status === "confirmed" ? "Already booked" : "Already on waitlist" },
+            { status: 409 }
+          );
+        }
+      }
+
       if (action === "rebook") {
         const { data: existing } = await adminSupabase
           .from("bookings")
@@ -188,7 +206,7 @@ export async function POST(request: Request) {
     } else if (action === "cancel") {
       const { data: existing } = await adminSupabase
         .from("bookings")
-        .select("id")
+        .select("id, status")
         .eq("session_id", sessionId)
         .eq("member_id", memberId)
         .single();
@@ -212,7 +230,8 @@ export async function POST(request: Request) {
         );
       }
 
-      if (member.credits >= 0) {
+      // ウェイトリスト予約はクレジット消費していないので返却しない
+      if (existing.status === "confirmed" && member.credits >= 0) {
         await adminSupabase
           .from("members")
           .update({ credits: member.credits + 1 })

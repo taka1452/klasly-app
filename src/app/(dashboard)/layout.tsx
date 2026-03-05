@@ -67,15 +67,14 @@ export default async function DashboardLayout({
 
   let setupTasks: SetupTask[] = [];
   if (profile.role === "owner" && profile.studio_id) {
-    const [{ count: classesCount }, { count: instructorsCount }, { count: membersCount }] =
+    const [{ count: classesCount }, { count: instructorsCount }, { count: membersCount }, { count: productsCount }] =
       await Promise.all([
         adminSupabase.from("classes").select("id", { count: "exact", head: true }).eq("studio_id", profile.studio_id),
         adminSupabase.from("instructors").select("id", { count: "exact", head: true }).eq("studio_id", profile.studio_id),
         adminSupabase.from("members").select("id", { count: "exact", head: true }).eq("studio_id", profile.studio_id),
+        adminSupabase.from("products").select("id", { count: "exact", head: true }).eq("studio_id", profile.studio_id).eq("is_active", true),
       ]);
-    const hasPricing =
-      (studio?.drop_in_price != null && studio.drop_in_price > 0) ||
-      (studio?.monthly_price != null && studio.monthly_price > 0);
+    const hasPricing = (productsCount ?? 0) > 0;
     setupTasks = [
       {
         id: "tutorial",

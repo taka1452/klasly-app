@@ -568,7 +568,8 @@ async function getStudioIdFromStripeEvent(
     }
     if (event.type === "invoice.paid" || event.type === "invoice.payment_failed") {
       const invoice = event.data.object as Stripe.Invoice;
-      const subId = typeof invoice.subscription === "string" ? invoice.subscription : invoice.subscription?.id ?? null;
+      const subRef = invoice.parent?.subscription_details?.subscription;
+      const subId = typeof subRef === "string" ? subRef : (subRef as { id?: string } | null | undefined)?.id ?? null;
       if (!subId) return null;
       const { data: studio } = await supabase
         .from("studios")
