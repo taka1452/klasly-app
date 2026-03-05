@@ -96,7 +96,7 @@ export default function DashboardShell({
       {currentRole === "owner" &&
         setupTasks.length > 0 &&
         !setupTasks.every((t) => t.done) && (
-          <SetupTaskList tasks={setupTasks} title="設定までのチェックリスト" />
+          <SetupTaskList tasks={setupTasks} title="Setup checklist" />
         )}
     </div>
     </TourProvider>

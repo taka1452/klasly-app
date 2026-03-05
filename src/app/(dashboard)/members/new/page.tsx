@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { usePlanAccess } from "@/components/ui/plan-access-provider";
+import FlowHintPanel from "@/components/ui/flow-hint-panel";
 
 export default function NewMemberPage() {
   const router = useRouter();
@@ -80,9 +81,12 @@ export default function NewMemberPage() {
         >
           ← Back to members
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-gray-900">
-          Add new member
-        </h1>
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <h1 className="text-2xl font-bold text-gray-900">
+            Add new member
+          </h1>
+          <FlowHintPanel flowType="members" />
+        </div>
       </div>
 
       <div className="card max-w-xl">

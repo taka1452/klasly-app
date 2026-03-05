@@ -67,34 +67,48 @@ export default async function DashboardLayout({
 
   let setupTasks: SetupTask[] = [];
   if (profile.role === "owner" && profile.studio_id) {
-    const { count: classesCount } = await adminSupabase
-      .from("classes")
-      .select("id", { count: "exact", head: true })
-      .eq("studio_id", profile.studio_id);
+    const [{ count: classesCount }, { count: instructorsCount }, { count: membersCount }] =
+      await Promise.all([
+        adminSupabase.from("classes").select("id", { count: "exact", head: true }).eq("studio_id", profile.studio_id),
+        adminSupabase.from("instructors").select("id", { count: "exact", head: true }).eq("studio_id", profile.studio_id),
+        adminSupabase.from("members").select("id", { count: "exact", head: true }).eq("studio_id", profile.studio_id),
+      ]);
     const hasPricing =
       (studio?.drop_in_price != null && studio.drop_in_price > 0) ||
       (studio?.monthly_price != null && studio.monthly_price > 0);
     setupTasks = [
       {
         id: "tutorial",
-        label: "チュートリアルを完了する",
+        label: "Complete the tutorial",
         done: onboardingCompleted,
       },
       {
         id: "stripe-connect",
-        label: "Stripe Connect を接続する",
+        label: "Connect Stripe Connect",
         done: studio?.stripe_connect_onboarding_complete ?? false,
         href: "/settings/connect",
       },
       {
         id: "create-class",
-        label: "クラスを1つ作成する",
+        label: "Create at least one class",
         done: (classesCount ?? 0) >= 1,
         href: "/classes/new",
       },
       {
+        id: "add-instructor",
+        label: "Add an instructor",
+        done: (instructorsCount ?? 0) >= 1,
+        href: "/instructors/new",
+      },
+      {
+        id: "add-member",
+        label: "Add a member",
+        done: (membersCount ?? 0) >= 1,
+        href: "/members/new",
+      },
+      {
         id: "pricing",
-        label: "料金を設定する",
+        label: "Set pricing",
         done: hasPricing,
         href: "/settings/pricing",
       },
