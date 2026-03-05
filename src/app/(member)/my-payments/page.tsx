@@ -50,8 +50,9 @@ export default async function MyPaymentsPage() {
   function typeLabel(
     pt: string | undefined,
     t: string,
-    productName?: { name: string } | null
+    productRef?: { name: string } | { name: string }[] | null
   ): string {
+    const productName = productRef == null ? null : Array.isArray(productRef) ? productRef[0] : productRef;
     if (productName?.name) return productName.name;
     const p = pt ?? t;
     if (p === "monthly") return "Monthly";
@@ -109,7 +110,7 @@ export default async function MyPaymentsPage() {
                       {typeLabel(
                         p.payment_type,
                         p.type,
-                        (p as { products?: { name: string } | null }).products
+                        (p as unknown as { products?: { name: string } | { name: string }[] | null }).products
                       )}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3">

@@ -70,7 +70,7 @@ export default function ProductManager({ initialProducts = [] }: ProductManagerP
       return;
     }
     fetchProducts();
-  }, [showInactive, fetchProducts, initialProducts.length]);
+  }, [showInactive, fetchProducts, initialProducts]);
 
   const openCreate = () => {
     setEditingId(null);
