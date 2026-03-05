@@ -2,15 +2,12 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import PricingForm from "@/components/settings/pricing-form";
+import ProductManager from "@/components/settings/product-manager";
+import type { Product } from "@/types/database";
 
 /*
- * オーナーが自分のスタジオの料金を設定
- * - Drop-in: 1回あたり
- * - 5-Class Pack: 5回分
- * - 10-Class Pack: 10回分
- * - Monthly: 月額無制限
- * Stripe Product は会員が購入時に動的に作成
+ * オーナーがスタジオの商品（料金プラン）を作成・編集・無効化する画面。
+ * 固定4プランは廃止し、products テーブルを利用する。
  */
 
 export default async function PricingPage() {
@@ -37,22 +34,14 @@ export default async function PricingPage() {
 
   if (!profile?.studio_id || profile.role !== "owner") redirect("/");
 
-  const { data: studio } = await supabase
-    .from("studios")
-    .select(
-      "id, drop_in_price, pack_5_price, pack_10_price, monthly_price"
-    )
-    .eq("id", profile.studio_id)
-    .single();
+  const { data: products } = await supabase
+    .from("products")
+    .select("*")
+    .eq("studio_id", profile.studio_id)
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
 
-  if (!studio) redirect("/");
-
-  const defaults = {
-    drop_in_price: studio.drop_in_price ?? 2000,
-    pack_5_price: studio.pack_5_price ?? 8000,
-    pack_10_price: studio.pack_10_price ?? 15000,
-    monthly_price: studio.monthly_price ?? 12000,
-  };
+  const initialProducts = (products ?? []) as Product[];
 
   return (
     <div>
@@ -63,12 +52,14 @@ export default async function PricingPage() {
         ← Back to Settings
       </Link>
 
-      <h1 className="mt-4 text-2xl font-bold text-gray-900">Class Pricing</h1>
+      <h1 className="mt-4 text-2xl font-bold text-gray-900">
+        Products &amp; Pricing
+      </h1>
       <p className="mt-1 text-sm text-gray-500">
-        Set prices for drop-in, class packs, and monthly membership.
+        Create and manage the plans and packages available to your members.
       </p>
 
-      <PricingForm studioId={studio.id} defaults={defaults} />
+      <ProductManager initialProducts={initialProducts} />
     </div>
   );
 }

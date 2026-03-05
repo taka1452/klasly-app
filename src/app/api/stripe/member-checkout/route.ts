@@ -3,13 +3,6 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { stripe } from "@/lib/stripe/server";
 import { NextResponse } from "next/server";
 
-const CREDITS: Record<string, number> = {
-  drop_in: 1,
-  pack_5: 5,
-  pack_10: 10,
-  monthly: -1, // unlimited
-};
-
 export async function POST(request: Request) {
   try {
     const serverSupabase = await createServerClient();
@@ -35,12 +28,11 @@ export async function POST(request: Request) {
     );
 
     const body = await request.json();
-    const { purchaseType, memberId } = body;
+    const { productId, memberId } = body;
 
-    const validTypes = ["drop_in", "pack_5", "pack_10", "monthly"];
-    if (!validTypes.includes(purchaseType) || !memberId) {
+    if (!productId || !memberId) {
       return NextResponse.json(
-        { error: "Invalid purchaseType or memberId" },
+        { error: "productId and memberId are required" },
         { status: 400 }
       );
     }
@@ -55,11 +47,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    const { data: product } = await adminSupabase
+      .from("products")
+      .select("id, studio_id, name, type, credits, price, currency, billing_interval, description")
+      .eq("id", productId)
+      .eq("is_active", true)
+      .single();
+
+    if (!product) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 });
+    }
+
+    if (product.studio_id !== member.studio_id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const { data: studio } = await adminSupabase
       .from("studios")
-      .select(
-        "id, drop_in_price, pack_5_price, pack_10_price, monthly_price, stripe_connect_account_id, stripe_connect_onboarding_complete"
-      )
+      .select("id, stripe_connect_account_id, stripe_connect_onboarding_complete")
       .eq("id", member.studio_id)
       .single();
 
@@ -84,9 +89,6 @@ export async function POST(request: Request) {
       .single();
     const platformFeePercent = feeRow?.value ?? "0";
 
-    // Connect 利用時は顧客は必ず Connected Account 側に作成する。
-    // 既存の stripe_customer_id はプラットフォーム時代の可能性があるため参照せず、
-    // Connect 用は stripe_connect_customer_id のみ使う。
     let customerId: string | null = null;
     const { data: memberForCustomer } = await adminSupabase
       .from("members")
@@ -96,15 +98,6 @@ export async function POST(request: Request) {
     if (memberForCustomer?.stripe_connect_customer_id) {
       customerId = memberForCustomer.stripe_connect_customer_id;
     }
-
-    const amounts: Record<string, number> = {
-      drop_in: studio.drop_in_price ?? 2000,
-      pack_5: studio.pack_5_price ?? 8000,
-      pack_10: studio.pack_10_price ?? 15000,
-      monthly: studio.monthly_price ?? 12000,
-    };
-    const amount = amounts[purchaseType] ?? 0;
-    const credits = CREDITS[purchaseType] ?? 0;
 
     const connectOptions = {
       stripeAccount: studio.stripe_connect_account_id,
@@ -135,14 +128,18 @@ export async function POST(request: Request) {
       "http://localhost:3000";
 
     const metadata = {
-      studio_id: studio.id,
+      studio_id: product.studio_id,
       member_id: memberId,
-      purchase_type: purchaseType,
-      credits: String(credits),
+      product_id: product.id,
+      credits: String(product.credits),
     };
 
-    if (purchaseType === "monthly") {
+    const currency = (product.currency ?? "usd").toLowerCase();
+    const amount = product.price;
+
+    if (product.type === "subscription") {
       const feePercent = parseFloat(platformFeePercent);
+      const interval = product.billing_interval === "year" ? "year" : "month";
       const session = await stripe.checkout.sessions.create(
         {
           mode: "subscription",
@@ -150,14 +147,14 @@ export async function POST(request: Request) {
           line_items: [
             {
               price_data: {
-                currency: "usd",
+                currency,
                 product_data: {
-                  name: "Monthly Unlimited",
-                  description: "Unlimited classes per month",
-                  metadata: { studio_id: studio.id },
+                  name: product.name,
+                  description: product.description ?? undefined,
+                  metadata: { studio_id: product.studio_id },
                 },
                 unit_amount: amount,
-                recurring: { interval: "month" },
+                recurring: { interval },
               },
               quantity: 1,
             },
@@ -173,12 +170,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ url: session.url });
     }
 
-    const productNames: Record<string, string> = {
-      drop_in: "Drop-in (1 session)",
-      pack_5: "5-Class Pack (5 sessions)",
-      pack_10: "10-Class Pack (10 sessions)",
-    };
-
     const feePercent = parseFloat(platformFeePercent) / 100;
     const applicationFee =
       feePercent > 0 ? Math.round(amount * feePercent) : undefined;
@@ -190,10 +181,11 @@ export async function POST(request: Request) {
         line_items: [
           {
             price_data: {
-              currency: "usd",
+              currency,
               product_data: {
-                name: productNames[purchaseType] ?? purchaseType,
-                metadata: { studio_id: studio.id },
+                name: product.name,
+                description: product.description ?? undefined,
+                metadata: { studio_id: product.studio_id },
               },
               unit_amount: amount,
             },
