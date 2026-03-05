@@ -77,7 +77,6 @@ export default function DashboardShell({
           userName={userName}
           userEmail={userEmail}
           onSidebarToggle={() => setSidebarOpen((o) => !o)}
-          showTourHelp={currentRole === "owner"}
         />
         <main className="flex-1 overflow-y-auto p-6">
           {banner && <div className="mb-6">{banner}</div>}

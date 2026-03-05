@@ -3,25 +3,21 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { useTourActions } from "@/components/tour/TourProvider";
 
 type InstructorHeaderProps = {
   userName: string;
   userEmail: string;
   onSidebarToggle?: () => void;
-  showTourHelp?: boolean;
 };
 
 export default function InstructorHeader({
   userName,
   userEmail,
   onSidebarToggle,
-  showTourHelp = false,
 }: InstructorHeaderProps) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const tourActions = useTourActions();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -50,15 +46,6 @@ export default function InstructorHeader({
   return (
     <header className="flex h-16 items-center justify-between gap-4 border-b border-gray-200 bg-white px-4 sm:px-6">
       <div className="flex min-w-0 flex-1 items-center gap-3">
-        {showTourHelp && (
-          <button
-            type="button"
-            onClick={() => tourActions?.restartTour()}
-            className="shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
-          >
-            Help
-          </button>
-        )}
         <button
           type="button"
           aria-label="Open menu"

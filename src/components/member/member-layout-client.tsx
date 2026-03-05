@@ -35,7 +35,6 @@ export default function MemberLayoutClient({
         <MemberHeader
           userName={userName}
           userEmail={userEmail}
-          showTourHelp
         />
         <nav className="border-b border-gray-200 bg-white">
           <div className="mx-auto flex max-w-4xl gap-6 px-4 py-3">
