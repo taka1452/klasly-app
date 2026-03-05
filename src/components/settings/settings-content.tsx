@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTourActions } from "@/components/tour/TourProvider";
 import Toast from "@/components/ui/toast";
+import FlowHintPanel from "@/components/ui/flow-hint-panel";
 
 type Props = {
   fullName: string;
@@ -95,10 +96,15 @@ export default function SettingsContent({ fullName, email }: Props) {
     <div className="mt-8 space-y-8">
       {/* Stripe Connect */}
       <div className="card">
-        <h2 className="text-lg font-semibold text-gray-900">Stripe Connect</h2>
-        <p className="mt-2 text-sm text-gray-600">
-          Connect your Stripe account to receive payments from members (drop-in, packs, monthly).
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Stripe Connect</h2>
+            <p className="mt-2 text-sm text-gray-600">
+              Connect your Stripe account to receive payments from members (drop-in, packs, monthly).
+            </p>
+          </div>
+          <FlowHintPanel flowType="stripe-connect" buttonLabel="Why Stripe Connect?" />
+        </div>
         <Link
           href="/settings/connect"
           className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"

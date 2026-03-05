@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import FlowHintPanel from "@/components/ui/flow-hint-panel";
 
 type Status = {
   connected: boolean;
@@ -99,10 +100,15 @@ export default function SettingsConnectPage() {
           ← Settings
         </Link>
       </div>
-      <h1 className="text-2xl font-bold text-gray-900">Stripe Connect</h1>
-      <p className="mt-1 text-sm text-gray-500">
-        Receive payments from your members
-      </p>
+      <div className="flex flex-wrap items-center gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Stripe Connect</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Receive payments from your members
+          </p>
+        </div>
+        <FlowHintPanel flowType="stripe-connect" buttonLabel="Why Stripe Connect?" />
+      </div>
 
       {!status.connected ? (
         <div className="mt-6 card">

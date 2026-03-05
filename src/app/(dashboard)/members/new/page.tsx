@@ -86,6 +86,7 @@ export default function NewMemberPage() {
             Add new member
           </h1>
           <FlowHintPanel flowType="members" />
+          <FlowHintPanel flowType="member-invite" buttonLabel="Where to send invite?" />
         </div>
       </div>
 

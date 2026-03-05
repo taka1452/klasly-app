@@ -80,6 +80,7 @@ export default async function MembersPage({
             </p>
           </div>
           <FlowHintPanel flowType="members" />
+          <FlowHintPanel flowType="member-invite" buttonLabel="Where to send invite?" />
         </div>
         <div className="flex items-center gap-2">
           <ExportCsvButton
