@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 type ProfileRow = { studio_id: string | null; role: string };
 
-/** Used only for type assertion to avoid SupabaseClient deep instantiation errors */
+/** Used only for internal type assertion to avoid SupabaseClient deep instantiation errors */
 type SupabaseLike = {
   from: (table: string) => {
     select: (...columns: string[]) => {
@@ -14,10 +14,11 @@ type SupabaseLike = {
 };
 
 async function getOwnerStudioId(
-  adminSupabase: SupabaseLike,
+  adminSupabase: unknown,
   userId: string
 ): Promise<string | null> {
-  const { data } = await adminSupabase
+  const db = adminSupabase as SupabaseLike;
+  const { data } = await db
     .from("profiles")
     .select("studio_id, role")
     .eq("id", userId)
@@ -55,7 +56,7 @@ export async function GET(
       serviceRoleKey
     );
 
-    const studioId = await getOwnerStudioId(adminSupabase as SupabaseLike, user.id);
+    const studioId = await getOwnerStudioId(adminSupabase, user.id);
     if (!studioId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -109,7 +110,7 @@ export async function PUT(
       serviceRoleKey
     );
 
-    const studioId = await getOwnerStudioId(adminSupabase as SupabaseLike, user.id);
+    const studioId = await getOwnerStudioId(adminSupabase, user.id);
     if (!studioId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -239,7 +240,7 @@ export async function DELETE(
       serviceRoleKey
     );
 
-    const studioId = await getOwnerStudioId(adminSupabase as SupabaseLike, user.id);
+    const studioId = await getOwnerStudioId(adminSupabase, user.id);
     if (!studioId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
