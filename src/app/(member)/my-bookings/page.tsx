@@ -82,13 +82,13 @@ export default async function MyBookingsPage() {
   (bookings || []).forEach((b) => {
     const raw = b.class_sessions as { session_date?: string } | { session_date?: string }[] | null;
     const session = Array.isArray(raw) ? raw[0] : raw;
-    const isUpcoming =
-      session &&
-      (session.session_date ?? "") >= today &&
-      b.status !== "cancelled";
-    if (isUpcoming) {
+    const sessionDate = session?.session_date ?? "";
+    const isFuture = sessionDate >= today;
+    // キャンセル済みの未来予約は表示しない（past にも入れない）
+    if (b.status === "cancelled" && isFuture) return;
+    if (isFuture && b.status !== "cancelled") {
       upcoming.push(b);
-    } else {
+    } else if (!isFuture) {
       past.push(b);
     }
   });
@@ -126,6 +126,7 @@ export default async function MyBookingsPage() {
                 session_date?: string;
                 start_time?: string;
                 capacity?: number;
+                is_cancelled?: boolean;
                 classes?: { name?: string };
               } | null | undefined;
               const classesRef = session?.classes;
@@ -147,19 +148,26 @@ export default async function MyBookingsPage() {
                       {session?.session_date && formatDate(session.session_date)} ·{" "}
                       {session?.start_time && formatTime(session.start_time)}
                     </p>
-                    <span
-                      className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                        booking.status === "confirmed"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}
-                    >
-                      {booking.status}
-                    </span>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {session?.is_cancelled ? (
+                        <span className="inline-flex rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+                          Class cancelled by studio
+                        </span>
+                      ) : (
+                        <span
+                          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                            booking.status === "confirmed"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-yellow-100 text-yellow-800"
+                          }`}
+                        >
+                          {booking.status}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <BookingButton
                     sessionId={booking.session_id}
-                    studioId=""
                     capacity={session?.capacity || 0}
                     memberId={booking.member_id}
                     existingBooking={{ id: booking.id, status: booking.status }}

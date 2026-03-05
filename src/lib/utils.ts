@@ -33,9 +33,11 @@ export function formatCurrency(cents: number, currency = "usd"): string {
 /**
  * 日付を読みやすい形式にフォーマット
  * 例: "2025-02-23" → "Feb 23, 2025"
+ * NOTE: "YYYY-MM-DD" 文字列を UTC として解釈させないためローカル日付として生成
  */
 export function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString("en-US", {
+  const [year, month, day] = dateString.split("-").map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",

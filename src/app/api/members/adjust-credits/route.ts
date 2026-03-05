@@ -52,9 +52,10 @@ export async function POST(request: Request) {
     }
 
     const creditsNum = Number(credits);
-    if (!Number.isInteger(creditsNum) || creditsNum < 0) {
+    // -1 = Unlimited, 0以上 = クレジット数
+    if (!Number.isInteger(creditsNum) || (creditsNum < 0 && creditsNum !== -1)) {
       return NextResponse.json(
-        { error: "credits must be a non-negative integer" },
+        { error: "credits must be a non-negative integer or -1 (unlimited)" },
         { status: 400 }
       );
     }

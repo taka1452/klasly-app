@@ -36,9 +36,11 @@ function formatCredits(credits: number): string {
 
 export default function PurchaseOptions({ products, memberId }: Props) {
   const [loading, setLoading] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleBuy(productId: string) {
     setLoading(productId);
+    setError(null);
     try {
       const res = await fetch("/api/stripe/member-checkout", {
         method: "POST",
@@ -53,7 +55,7 @@ export default function PurchaseOptions({ products, memberId }: Props) {
         window.location.href = data.url;
       }
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Checkout failed");
+      setError(err instanceof Error ? err.message : "Checkout failed");
     } finally {
       setLoading(null);
     }
@@ -68,6 +70,12 @@ export default function PurchaseOptions({ products, memberId }: Props) {
   }
 
   return (
+    <div>
+      {error && (
+        <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
     <div className="mt-8 grid gap-4 sm:grid-cols-2">
       {products.map((product) => (
         <div key={product.id} className="card flex flex-col">
@@ -91,6 +99,7 @@ export default function PurchaseOptions({ products, memberId }: Props) {
           </button>
         </div>
       ))}
+    </div>
     </div>
   );
 }

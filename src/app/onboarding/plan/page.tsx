@@ -9,6 +9,7 @@ export default function OnboardingPlanPage() {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
   const [checking, setChecking] = useState(true);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   const trialEndDate = new Date();
   trialEndDate.setDate(trialEndDate.getDate() + 30);
@@ -69,7 +70,7 @@ export default function OnboardingPlanPage() {
         window.location.href = data.url;
       }
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Checkout failed");
+      setCheckoutError(err instanceof Error ? err.message : "Checkout failed");
     } finally {
       setLoading(null);
     }
@@ -99,6 +100,12 @@ export default function OnboardingPlanPage() {
             trial ends on {trialEndStr}.
           </p>
         </div>
+
+        {checkoutError && (
+          <div className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+            {checkoutError}
+          </div>
+        )}
 
         <div className="mt-6 rounded-xl border-2 border-green-200 bg-green-50 px-5 py-4 text-center">
           <p className="text-base font-semibold text-green-800">

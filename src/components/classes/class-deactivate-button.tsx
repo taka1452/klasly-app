@@ -12,18 +12,20 @@ export default function ClassDeactivateButton({
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   async function handleDeactivate() {
     setLoading(true);
+    setError("");
     const supabase = createClient();
 
-    const { error } = await supabase
+    const { error: deactivateError } = await supabase
       .from("classes")
       .update({ is_active: false })
       .eq("id", classId);
 
-    if (error) {
-      alert("Failed to deactivate: " + error.message);
+    if (deactivateError) {
+      setError("Failed to deactivate: " + deactivateError.message);
       setLoading(false);
       return;
     }
@@ -49,6 +51,7 @@ export default function ClassDeactivateButton({
         Deactivating hides the class from the schedule. You can re-activate it
         later by editing.
       </p>
+      {error && <p className="text-xs text-red-600">{error}</p>}
       <div className="flex gap-2">
         <button
           onClick={handleDeactivate}

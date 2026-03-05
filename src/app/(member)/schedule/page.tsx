@@ -136,7 +136,6 @@ export default async function SchedulePage() {
                 </div>
                 <BookingButton
                   sessionId={session.id}
-                  studioId={session.studio_id}
                   capacity={session.capacity}
                   memberId={memberId}
                   existingBooking={existing || null}

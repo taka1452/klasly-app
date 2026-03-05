@@ -12,18 +12,20 @@ export default function MemberDeleteButton({
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   async function handleDelete() {
     setLoading(true);
+    setError("");
     const supabase = createClient();
 
-    const { error } = await supabase
+    const { error: deleteError } = await supabase
       .from("members")
       .delete()
       .eq("id", memberId);
 
-    if (error) {
-      alert("Failed to delete member: " + error.message);
+    if (deleteError) {
+      setError("Failed to delete member: " + deleteError.message);
       setLoading(false);
       return;
     }
@@ -48,6 +50,7 @@ export default function MemberDeleteButton({
       <p className="text-xs font-medium text-red-600">
         Are you sure? This cannot be undone.
       </p>
+      {error && <p className="text-xs text-red-600">{error}</p>}
       <div className="flex gap-2">
         <button
           onClick={handleDelete}

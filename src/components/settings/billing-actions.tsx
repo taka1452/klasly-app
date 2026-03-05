@@ -29,9 +29,16 @@ export default function BillingActions({
   paymentMethod = null,
 }: Props) {
   const [loading, setLoading] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [promoCode, setPromoCode] = useState("");
   const [promoError, setPromoError] = useState<string | null>(null);
   const [switchModal, setSwitchModal] = useState<"monthly" | "yearly" | null>(null);
+  const [cancelModal, setCancelModal] = useState(false);
+
+  function showError(msg: string) {
+    setError(msg);
+    setTimeout(() => setError(null), 6000);
+  }
 
   async function openBillingPortal() {
     setLoading("billing-portal");
@@ -41,7 +48,7 @@ export default function BillingActions({
       if (!res.ok) throw new Error(data.error || "Failed");
       if (data.url) window.location.href = data.url;
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to open billing portal");
+      showError(err instanceof Error ? err.message : "Failed to open billing portal");
     } finally {
       setLoading(null);
     }
@@ -61,21 +68,14 @@ export default function BillingActions({
       setSwitchModal(null);
       window.location.reload();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Update failed");
+      showError(err instanceof Error ? err.message : "Update failed");
     } finally {
       setLoading(null);
     }
   }
 
   async function handleCancel() {
-    const message =
-      planStatus === "trialing"
-        ? "Cancel your trial? You will lose access immediately. No charge will be made."
-        : isYearlyWithinRefundWindow
-          ? "Cancel and request a refund? You may be eligible for a refund within 14 days of purchase."
-          : "Cancel your subscription? You'll keep access until the end of the current billing period.";
-
-    if (!confirm(message)) return;
+    setCancelModal(false);
     setLoading("cancel");
     try {
       const res = await fetch("/api/stripe/cancel", {
@@ -90,7 +90,7 @@ export default function BillingActions({
       if (!res.ok) throw new Error(data.error || "Cancel failed");
       window.location.reload();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Cancel failed");
+      showError(err instanceof Error ? err.message : "Cancel failed");
     } finally {
       setLoading(null);
     }
@@ -104,7 +104,7 @@ export default function BillingActions({
       if (!res.ok) throw new Error(data.error || "Resume failed");
       window.location.reload();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Resume failed");
+      showError(err instanceof Error ? err.message : "Resume failed");
     } finally {
       setLoading(null);
     }
@@ -122,7 +122,7 @@ export default function BillingActions({
       if (!res.ok) throw new Error(data.error || "Checkout failed");
       if (data.url) window.location.href = data.url;
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Checkout failed");
+      showError(err instanceof Error ? err.message : "Checkout failed");
     } finally {
       setLoading(null);
     }
@@ -165,8 +165,22 @@ export default function BillingActions({
     paymentMethod &&
     `${String(paymentMethod.exp_month).padStart(2, "0")}/${paymentMethod.exp_year}`;
 
+  const cancelMessage =
+    planStatus === "trialing"
+      ? "Cancel your trial? You will lose access immediately. No charge will be made."
+      : isYearlyWithinRefundWindow
+        ? "Cancel and request a refund? You may be eligible for a refund within 14 days of purchase."
+        : "Cancel your subscription? You'll keep access until the end of the current billing period.";
+
   return (
     <>
+      {/* Global error banner */}
+      {error && (
+        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
       {/* Switch Plan — only when active, not trialing */}
       {showSwitchPlan && (
         <div className="card">
@@ -284,7 +298,7 @@ export default function BillingActions({
           {planStatus === "trialing" && (
             <button
               type="button"
-              onClick={handleCancel}
+              onClick={() => setCancelModal(true)}
               disabled={!!loading}
               className="mt-3 text-sm text-red-600 hover:underline"
             >
@@ -306,7 +320,7 @@ export default function BillingActions({
             ) : (
               <button
                 type="button"
-                onClick={handleCancel}
+                onClick={() => setCancelModal(true)}
                 disabled={!!loading}
                 className="mt-3 text-sm text-red-600 hover:underline"
               >
@@ -323,7 +337,7 @@ export default function BillingActions({
         {(planStatus === "past_due" || planStatus === "grace") && (
           <button
             type="button"
-            onClick={handleCancel}
+            onClick={() => setCancelModal(true)}
             disabled={!!loading}
             className="mt-3 text-sm text-red-600 hover:underline"
           >
@@ -355,6 +369,33 @@ export default function BillingActions({
             </button>
           </div>
         )}
+        </div>
+      )}
+
+      {/* Cancel confirmation modal */}
+      {cancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-gray-900">Confirm cancellation</h3>
+            <p className="mt-2 text-sm text-gray-600">{cancelMessage}</p>
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setCancelModal(false)}
+                className="btn-secondary"
+              >
+                Keep subscription
+              </button>
+              <button
+                type="button"
+                onClick={handleCancel}
+                disabled={!!loading}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {loading === "cancel" ? "Cancelling…" : "Yes, cancel"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
