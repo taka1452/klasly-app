@@ -1,8 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { formatCredits, formatDate, getPlanLabel, getStatusColor } from "@/lib/utils";
 import MemberSearch from "@/components/members/member-search";
+import MembersListClient from "@/components/members/members-list-client";
 import ExportCsvButton from "@/components/ui/export-csv-button";
 import FlowHintPanel from "@/components/ui/flow-hint-panel";
 import type { Metadata } from "next";
@@ -125,129 +125,7 @@ export default async function MembersPage({
             </div>
           )
         ) : (
-          <>
-            {/* モバイル: カードリスト */}
-            <div className="space-y-3 sm:hidden">
-              {filteredMembers.map((member: { id: string; profiles?: { full_name?: string; email?: string }; plan_type: string; credits: number; status: string; waiver_signed?: boolean; waiver_signed_at?: string }) => (
-                <Link
-                  key={member.id}
-                  href={`/members/${member.id}`}
-                  className="card block"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-gray-900">
-                        {member.profiles?.full_name || "—"}
-                      </p>
-                      <p className="mt-0.5 text-sm text-gray-500 truncate">
-                        {member.profiles?.email || "—"}
-                      </p>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${getStatusColor(
-                            member.status
-                          )}`}
-                        >
-                          {member.status}
-                        </span>
-                        {member.waiver_signed ? (
-                          <span className="inline-flex items-center gap-1 text-xs text-green-600">
-                            ✓ {formatDate(member.waiver_signed_at ?? "")}
-                          </span>
-                        ) : (
-                          <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
-                            Pending
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <span className="shrink-0 text-sm font-medium text-brand-600">
-                      View
-                    </span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-
-            {/* デスクトップ: テーブル */}
-            <div className="card hidden overflow-hidden p-0 sm:block">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Plan
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Credits
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Waiver
-                    </th>
-                    <th className="px-6 py-3" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredMembers.map((member: { id: string; profiles?: { full_name?: string; email?: string }; plan_type: string; credits: number; status: string; waiver_signed?: boolean; waiver_signed_at?: string }) => (
-                    <tr key={member.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4">
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">
-                            {member.profiles?.full_name || "—"}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {member.profiles?.email || "—"}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {getPlanLabel(member.plan_type)}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {formatCredits(member.credits)}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${getStatusColor(
-                            member.status
-                          )}`}
-                        >
-                          {member.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        {(member as { waiver_signed?: boolean; waiver_signed_at?: string }).waiver_signed ? (
-                          <span className="inline-flex items-center gap-1 text-sm text-green-600">
-                            <span>✓</span>
-                            {formatDate(
-                              (member as { waiver_signed_at: string }).waiver_signed_at ?? ""
-                            )}
-                          </span>
-                        ) : (
-                          <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
-                            Pending
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <Link
-                          href={`/members/${member.id}`}
-                          className="text-sm font-medium text-brand-600 hover:text-brand-700"
-                        >
-                          View
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
+          <MembersListClient members={filteredMembers} />
         )}
       </div>
     </div>
