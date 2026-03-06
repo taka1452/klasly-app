@@ -48,7 +48,11 @@ function LoginForm() {
       return;
     }
 
-    router.push("/dashboard");
+    // ロールに応じた適切なページへリダイレクト（Google SSOと同じ挙動）
+    const res = await fetch("/api/auth/redirect-destination");
+    const data = await res.json().catch(() => ({ url: "/" }));
+    const url: string = data?.url ?? "/";
+    router.push(url.startsWith("http") ? new URL(url).pathname : url);
     router.refresh();
   }
 

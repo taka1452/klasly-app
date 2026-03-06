@@ -43,9 +43,6 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/set-password") ||
     request.nextUrl.pathname.startsWith("/auth");
 
-  const isOnboardingPage =
-    request.nextUrl.pathname.startsWith("/onboarding");
-
   const isPublicPage =
     request.nextUrl.pathname.startsWith("/privacy") ||
     request.nextUrl.pathname.startsWith("/terms") ||

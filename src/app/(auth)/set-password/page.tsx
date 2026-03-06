@@ -20,8 +20,9 @@ function SetPasswordContent() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
+    // getUser() はサーバー側でトークンを検証するため getSession() より安全
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) {
         router.replace("/login");
       }
     });
