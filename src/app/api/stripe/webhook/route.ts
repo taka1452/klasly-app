@@ -187,6 +187,38 @@ export async function POST(request: Request) {
             cancel_at_period_end: subscription.cancel_at_period_end ?? false,
           })
           .eq("id", studioId);
+
+        // Stripe checkout でプロモコードが使用された場合に redemption を記録
+        const discounts = session.discounts as Array<{ promotion_code?: string | { id: string } | null }> | null;
+        if (discounts && discounts.length > 0) {
+          const stripePromoId =
+            typeof discounts[0].promotion_code === "string"
+              ? discounts[0].promotion_code
+              : discounts[0].promotion_code?.id ?? null;
+
+          if (stripePromoId) {
+            const { data: promoRow } = await adminSupabase
+              .from("promotion_codes")
+              .select("id, coupon_id, times_redeemed")
+              .eq("stripe_promo_id", stripePromoId)
+              .maybeSingle();
+
+            if (promoRow) {
+              await Promise.all([
+                adminSupabase.from("coupon_redemptions").insert({
+                  studio_id: studioId,
+                  coupon_id: promoRow.coupon_id,
+                  promotion_code_id: promoRow.id,
+                  stripe_subscription_id: subscriptionId,
+                }),
+                adminSupabase
+                  .from("promotion_codes")
+                  .update({ times_redeemed: (promoRow.times_redeemed ?? 0) + 1 })
+                  .eq("id", promoRow.id),
+              ]);
+            }
+          }
+        }
         break;
       }
 

@@ -59,7 +59,7 @@ export async function POST(request: Request) {
 
     const { data: promo } = await adminSupabase
       .from("promotion_codes")
-      .select("stripe_promo_id, is_active")
+      .select("id, coupon_id, stripe_promo_id, is_active, times_redeemed")
       .ilike("code", code)
       .single();
 
@@ -74,6 +74,20 @@ export async function POST(request: Request) {
     await stripe.subscriptions.update(studio.stripe_subscription_id as string, {
       discounts: [{ promotion_code: promo.stripe_promo_id }],
     });
+
+    // redemption を記録し利用回数カウンタをインクリメント
+    await Promise.all([
+      adminSupabase.from("coupon_redemptions").insert({
+        studio_id: profile.studio_id,
+        coupon_id: promo.coupon_id,
+        promotion_code_id: promo.id,
+        stripe_subscription_id: studio.stripe_subscription_id,
+      }),
+      adminSupabase
+        .from("promotion_codes")
+        .update({ times_redeemed: (promo.times_redeemed ?? 0) + 1 })
+        .eq("id", promo.id),
+    ]);
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {

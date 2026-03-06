@@ -159,6 +159,10 @@ export default function OnboardingPlanPage() {
           Cancel anytime during the trial. No charge until {trialEndStr}.
         </p>
 
+        <p className="mt-3 text-center text-sm text-brand-600">
+          🎟️ Have a promotion code? You can enter it on the next step.
+        </p>
+
         {/* DEV ONLY: Skip to dashboard without Stripe. Hidden in production. */}
         {process.env.NODE_ENV === "development" && (
           <button
