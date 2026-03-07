@@ -313,3 +313,33 @@ export type PlatformSetting = {
   value: string;
   updated_at: string;
 };
+
+// ============================================
+// メッセージング
+// ============================================
+
+export type Message = {
+  id: string;
+  studio_id: string;
+  sender_id: string;
+  recipient_id: string;
+  content: string;
+  read_at: string | null;
+  created_at: string;
+};
+
+/** 送受信者プロフィール付き */
+export type MessageWithProfiles = Message & {
+  sender: Pick<Profile, "id" | "full_name" | "email" | "role">;
+  recipient: Pick<Profile, "id" | "full_name" | "email" | "role">;
+};
+
+/** オーナー視点: メンバーごとの会話サマリ */
+export type ConversationSummary = {
+  memberId: string;    // profiles.id (メンバー)
+  memberName: string;
+  memberEmail: string;
+  lastMessage: string;
+  lastMessageAt: string;
+  unreadCount: number;
+};

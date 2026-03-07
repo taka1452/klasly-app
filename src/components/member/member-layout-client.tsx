@@ -66,6 +66,12 @@ export default function MemberLayoutClient({
               >
                 Payments
               </Link>
+              <Link
+                href="/messages"
+                className="text-sm font-medium text-gray-600 hover:text-gray-900"
+              >
+                Messages
+              </Link>
             </div>
             {memberCredits !== null && (
               <span className="text-sm text-gray-500">
