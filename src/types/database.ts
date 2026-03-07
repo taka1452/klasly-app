@@ -26,6 +26,13 @@ export type Studio = {
   grace_period_ends_at: string | null;
   trial_reminder_sent: boolean;
   email_notifications_enabled: boolean;
+  /**
+   * 予約時にクレジットを要求するか
+   * null = 自動判定（stripe_connect_onboarding_complete が true なら必須）
+   * true = 常に必須（手動 ON）
+   * false = 常に不要（現金スタジオなど）
+   */
+  booking_requires_credits: boolean | null;
   // スタジオ料金設定（会員向け）
   // @deprecated products テーブルに移行済み。互換のためDBには残すが新規コードでは products を参照すること。
   drop_in_price?: number | null;

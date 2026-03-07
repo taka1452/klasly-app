@@ -12,6 +12,8 @@ type Props = {
   memberCredits: number;
   confirmedCount: number;
   canBook?: boolean;
+  /** クレジット不要モード: false の場合クレジット0でも予約ボタンを表示 */
+  requiresCredits?: boolean;
   "data-tour"?: string;
 };
 
@@ -23,6 +25,7 @@ export default function BookingButton({
   memberCredits,
   confirmedCount,
   canBook = true,
+  requiresCredits = true,
   "data-tour": dataTour,
 }: Props) {
   const router = useRouter();
@@ -31,7 +34,8 @@ export default function BookingButton({
 
   const isFull = confirmedCount >= capacity;
   const showWaitlist = isFull;
-  const hasNoCredits = memberCredits === 0;
+  // クレジット必須モードのときのみ 0 クレジットをブロック
+  const hasNoCredits = requiresCredits && memberCredits === 0;
 
   const tourProps = dataTour ? { "data-tour": dataTour } : {};
 
@@ -54,6 +58,7 @@ export default function BookingButton({
   async function handleBook(action: "book" | "rebook" | "cancel" | "leave_waitlist") {
     const status = showWaitlist ? "waitlist" : "confirmed";
     if (
+      requiresCredits &&
       (action === "book" || action === "rebook") &&
       status === "confirmed" &&
       memberCredits >= 0 &&
