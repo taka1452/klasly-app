@@ -37,7 +37,7 @@ export async function GET(
 
     const { data: member } = await supabase
       .from("members")
-      .select("*, profiles(full_name, email, phone)")
+      .select("*, profiles(id, full_name, email, phone)")
       .eq("id", memberId)
       .single();
 
@@ -53,7 +53,7 @@ export async function GET(
     }
 
     const rawProfile = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles;
-    const p = rawProfile as { full_name?: string; email?: string; phone?: string } | null;
+    const p = rawProfile as { id?: string; full_name?: string; email?: string; phone?: string } | null;
 
     // Classes count: bookings + drop_ins with attended
     const { count: bookedCount } = await supabase
@@ -135,6 +135,7 @@ export async function GET(
     return NextResponse.json({
       member: {
         id: member.id,
+        profile_id: p?.id ?? null,
         full_name: p?.full_name ?? "—",
         email: p?.email ?? "—",
         phone: p?.phone ?? "—",

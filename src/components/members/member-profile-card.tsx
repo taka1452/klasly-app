@@ -14,6 +14,7 @@ import {
 type MemberProfileData = {
   member: {
     id: string;
+    profile_id: string | null;
     full_name: string;
     email: string;
     phone: string;
@@ -223,12 +224,17 @@ export default function MemberProfileCard({
             </dl>
 
             <div className="mt-6 flex gap-3">
-              <a
-                href={`mailto:${data.member.email}`}
+              <Link
+                href={
+                  data.member.profile_id
+                    ? `/messages?member=${data.member.profile_id}`
+                    : "/messages"
+                }
+                onClick={onClose}
                 className="flex-1 rounded-lg bg-brand-600 px-4 py-2.5 text-center text-sm font-medium text-white hover:bg-brand-700"
               >
                 Send Message
-              </a>
+              </Link>
               <Link
                 href={`/members/${data.member.id}`}
                 onClick={onClose}

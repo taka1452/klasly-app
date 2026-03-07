@@ -61,7 +61,15 @@ export default async function MessagesPage({
   let initialMemberId: string | null = null;
 
   if (profile.role === "owner") {
-    // 全メッセージ取得してメンバーごとにグループ化
+    // ① スタジオの全メンバー（プロフィール）を取得
+    const { data: allMembers } = await supabase
+      .from("members")
+      .select("id, profile_id, created_at, profiles(id, full_name, email)")
+      .eq("studio_id", profile.studio_id)
+      .eq("status", "active")
+      .order("created_at", { ascending: false });
+
+    // ② 既存メッセージを取得してスレッドごとに集計
     const { data: messages } = await supabase
       .from("messages")
       .select(
@@ -70,6 +78,7 @@ export default async function MessagesPage({
       .eq("studio_id", profile.studio_id)
       .order("created_at", { ascending: false });
 
+    // メッセージのある会話をMapで集計
     const convMap = new Map<
       string,
       {
@@ -112,7 +121,31 @@ export default async function MessagesPage({
         conv.unreadCount += 1;
       }
     }
-    conversations = Array.from(convMap.values());
+
+    // ③ メッセージのないメンバーも一覧に含める（末尾に追加）
+    for (const m of allMembers ?? []) {
+      const rawP = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;
+      const p = rawP as { id?: string; full_name?: string | null; email?: string | null } | null;
+      const profileId = p?.id ?? m.profile_id;
+      if (!profileId) continue;
+      if (!convMap.has(profileId)) {
+        convMap.set(profileId, {
+          memberId: profileId,
+          memberName: p?.full_name || p?.email || "Member",
+          memberEmail: p?.email || "",
+          lastMessage: "",
+          lastMessageAt: m.created_at ?? new Date().toISOString(),
+          unreadCount: 0,
+        });
+      }
+    }
+
+    // 最終メッセージ日時で降順ソート（メッセージありを上に）
+    conversations = Array.from(convMap.values()).sort((a, b) => {
+      if (a.lastMessage && !b.lastMessage) return -1;
+      if (!a.lastMessage && b.lastMessage) return 1;
+      return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime();
+    });
 
     // URLパラメータでメンバーが指定されていれば初期選択
     initialMemberId = params.member ?? null;

@@ -211,13 +211,17 @@ export default function MessagesClient({
                     <span className="truncate text-sm font-medium text-gray-900">
                       {conv.memberName}
                     </span>
-                    <span className="ml-2 shrink-0 text-xs text-gray-400">
-                      {formatTime(conv.lastMessageAt)}
-                    </span>
+                    {conv.lastMessage && (
+                      <span className="ml-2 shrink-0 text-xs text-gray-400">
+                        {formatTime(conv.lastMessageAt)}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center justify-between">
                     <p className="truncate text-xs text-gray-500">
-                      {conv.lastMessage}
+                      {conv.lastMessage || (
+                        <span className="italic text-gray-400">No messages yet</span>
+                      )}
                     </p>
                     {conv.unreadCount > 0 && (
                       <span className="ml-2 inline-flex h-4 min-w-[1rem] shrink-0 items-center justify-center rounded-full bg-brand-500 px-1 text-xs font-bold text-white">
