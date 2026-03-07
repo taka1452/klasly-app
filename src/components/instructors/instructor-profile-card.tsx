@@ -162,12 +162,6 @@ export default function InstructorProfileCard({
             )}
 
             <div className="mt-6 flex gap-3">
-              <a
-                href={`mailto:${data.instructor.email}`}
-                className="flex-1 rounded-lg bg-brand-600 px-4 py-2.5 text-center text-sm font-medium text-white hover:bg-brand-700"
-              >
-                Send Message
-              </a>
               <Link
                 href={`/instructors/${data.instructor.id}`}
                 onClick={onClose}
