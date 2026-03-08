@@ -58,9 +58,14 @@ export default async function ClassesPage() {
           </div>
           <FlowHintPanel flowType="instructor-assign" buttonLabel="How to assign instructor?" />
         </div>
-        <Link href="/classes/new" className="btn-primary">
-          + Add class
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/classes/import" className="btn-secondary">
+            Import CSV
+          </Link>
+          <Link href="/classes/new" className="btn-primary">
+            + Add class
+          </Link>
+        </div>
       </div>
 
       <div className="mt-6">

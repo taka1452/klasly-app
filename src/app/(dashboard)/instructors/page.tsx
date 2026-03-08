@@ -77,9 +77,14 @@ export default async function InstructorsPage() {
           </div>
           <FlowHintPanel flowType="instructors" />
         </div>
-        <Link href="/instructors/new" className="btn-primary">
-          + Add instructor
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/instructors/import" className="btn-secondary">
+            Import CSV
+          </Link>
+          <Link href="/instructors/new" className="btn-primary">
+            + Add instructor
+          </Link>
+        </div>
       </div>
 
       <div className="mt-6">

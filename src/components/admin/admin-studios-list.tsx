@@ -44,7 +44,6 @@ export default function AdminStudiosList({ statusCounts }: { statusCounts: Statu
   const [page, setPage] = useState(1);
   const [data, setData] = useState<{ studios: StudioRow[]; total: number }>({ studios: [], total: 0 });
   const [loading, setLoading] = useState(true);
-  const [showDemo, setShowDemo] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -54,7 +53,7 @@ export default function AdminStudiosList({ statusCounts }: { statusCounts: Statu
     params.set("sort", sort);
     params.set("page", String(page));
     params.set("limit", "20");
-    if (showDemo) params.set("show_demo", "true");
+    params.set("show_demo", "true"); // デモスタジオも常に表示（KPI集計からは除外済み）
     fetch(`/api/admin/studios?${params}`)
       .then((r) => r.json())
       .then((d) => {
@@ -62,7 +61,7 @@ export default function AdminStudiosList({ statusCounts }: { statusCounts: Statu
       })
       .catch(() => setData({ studios: [], total: 0 }))
       .finally(() => setLoading(false));
-  }, [search, status, sort, page, showDemo]);
+  }, [search, status, sort, page]);
 
   const totalPages = Math.ceil(data.total / 20) || 1;
   const formatDate = (d: string) => formatDateLocale(d);
@@ -115,17 +114,6 @@ export default function AdminStudiosList({ statusCounts }: { statusCounts: Statu
           <option value="members">{t("studios.mostMembers")}</option>
           <option value="name">{t("studios.nameAZ")}</option>
         </select>
-        <button
-          type="button"
-          onClick={() => { setShowDemo((v) => !v); setPage(1); }}
-          className={`rounded border px-3 py-2 text-sm font-medium transition-colors ${
-            showDemo
-              ? "border-amber-500 bg-amber-500/20 text-amber-300"
-              : "border-slate-600 bg-slate-800 text-slate-400 hover:text-white"
-          }`}
-        >
-          {showDemo ? "🧪 Showing demo" : "Show demo"}
-        </button>
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-slate-700 bg-slate-800">
@@ -150,7 +138,14 @@ export default function AdminStudiosList({ statusCounts }: { statusCounts: Statu
               {data.studios.map((s) => {
                 const days = s.plan_status === "trialing" ? trialDaysLeft(s.trial_ends_at) : null;
                 return (
-                  <tr key={s.id} className="border-b border-slate-700 hover:bg-slate-700/50">
+                  <tr
+                    key={s.id}
+                    className={`border-b border-slate-700 ${
+                      s.is_demo
+                        ? "bg-amber-900/10 hover:bg-amber-900/20"
+                        : "hover:bg-slate-700/50"
+                    }`}
+                  >
                     <td className="p-3">
                       <div className="flex items-center gap-2">
                         <Link href={`/admin/studios/${s.id}`} className="font-medium text-white hover:text-indigo-400">
