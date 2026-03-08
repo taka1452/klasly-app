@@ -18,9 +18,16 @@ export async function GET(request: Request) {
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || String(LIMIT), 10)));
     const offset = (page - 1) * limit;
 
+    // show_demo=true のときのみデモを表示（デフォルトは除外）
+    const showDemo = searchParams.get("show_demo") === "true";
+
     let query = supabase
       .from("studios")
-      .select("id, name, email, plan_status, subscription_period, trial_ends_at, created_at", { count: "exact" });
+      .select("id, name, email, plan_status, subscription_period, trial_ends_at, created_at, is_demo", { count: "exact" });
+
+    if (!showDemo) {
+      query = query.eq("is_demo", false);
+    }
 
     if (status !== "all") {
       query = query.eq("plan_status", status);

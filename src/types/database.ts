@@ -41,6 +41,8 @@ export type Studio = {
   monthly_price?: number | null;
   // Admin
   admin_memo: string | null;
+  /** true = デモ/テストスタジオ。KPI集計・スタジオ一覧からデフォルト除外 */
+  is_demo: boolean;
   created_at: string;
 };
 

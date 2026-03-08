@@ -9,8 +9,9 @@ export default async function AdminStudiosPage() {
   const statuses = ["all", "trialing", "active", "past_due", "grace", "canceled"] as const;
   const counts: Record<string, number> = {};
 
+  // デモスタジオを除外した件数を集計（デモ表示時は別途クライアント側で再取得）
   for (const s of statuses) {
-    let q = supabase.from("studios").select("id", { count: "exact", head: true });
+    let q = supabase.from("studios").select("id", { count: "exact", head: true }).eq("is_demo", false);
     if (s !== "all") q = q.eq("plan_status", s);
     const { count } = await q;
     counts[s] = count ?? 0;

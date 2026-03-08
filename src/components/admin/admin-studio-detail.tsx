@@ -23,6 +23,7 @@ type Studio = Record<string, unknown> & {
   cancel_at_period_end?: boolean | null;
   grace_period_ends_at?: string | null;
   admin_memo?: string | null;
+  is_demo?: boolean | null;
 };
 
 type Usage = {
@@ -92,6 +93,8 @@ export default function AdminStudioDetail({
   const [deleteConfirmName, setDeleteConfirmName] = useState("");
   const [applyCouponCode, setApplyCouponCode] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
+  const [isDemo, setIsDemo] = useState(!!studio.is_demo);
+  const [demoLoading, setDemoLoading] = useState(false);
 
   const studioId = studio.id as string;
   const hasSubscription = !!studio.stripe_subscription_id;
@@ -234,6 +237,27 @@ export default function AdminStudioDetail({
       } else setError(data.error ?? "Failed to apply coupon");
     } finally {
       setCouponLoading(false);
+    }
+  }
+
+  async function toggleIsDemo() {
+    setDemoLoading(true);
+    setError(null);
+    const next = !isDemo;
+    try {
+      const res = await fetch(`/api/admin/studios/${studioId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_demo: next }),
+      });
+      if (res.ok) {
+        setIsDemo(next);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "Failed to update demo flag");
+      }
+    } finally {
+      setDemoLoading(false);
     }
   }
 
@@ -437,6 +461,18 @@ export default function AdminStudioDetail({
             className="rounded border border-red-600 px-3 py-1.5 text-sm text-red-400 hover:bg-red-500/20 disabled:opacity-50"
           >
             {actionLoading === "delete" ? "…" : t("studioDetail.deleteStudio")}
+          </button>
+          <button
+            type="button"
+            onClick={toggleIsDemo}
+            disabled={demoLoading}
+            className={`rounded border px-3 py-1.5 text-sm transition-colors disabled:opacity-50 ${
+              isDemo
+                ? "border-amber-500 bg-amber-500/20 text-amber-300 hover:bg-amber-500/30"
+                : "border-slate-500 text-slate-300 hover:bg-slate-700"
+            }`}
+          >
+            {demoLoading ? "…" : isDemo ? "🧪 Remove Demo flag" : "Mark as Demo"}
           </button>
         </div>
       </div>
