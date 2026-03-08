@@ -133,9 +133,8 @@ export async function POST(request: Request) {
     const errors: RowResult[] = [];
     let imported = 0;
 
-    function getCell(row: Record<string, string>, col: string): string {
-      return col && columns.includes(col) ? (row[col] ?? "").trim() : "";
-    }
+    const getCell = (row: Record<string, string>, col: string): string =>
+      col && columns.includes(col) ? (row[col] ?? "").trim() : "";
 
     for (let i = 0; i < records.length; i++) {
       const row = records[i];
