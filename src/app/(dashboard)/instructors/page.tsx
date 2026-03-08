@@ -4,6 +4,7 @@ import Link from "next/link";
 import EmptyState from "@/components/ui/empty-state";
 import InstructorsListClient from "@/components/instructors/instructors-list-client";
 import FlowHintPanel from "@/components/ui/flow-hint-panel";
+import ExportCsvButton from "@/components/ui/export-csv-button";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -78,6 +79,11 @@ export default async function InstructorsPage() {
           <FlowHintPanel flowType="instructors" />
         </div>
         <div className="flex gap-2">
+          <ExportCsvButton
+            url="/api/export/instructors"
+            filename={`instructors-${new Date().toISOString().slice(0, 10)}.csv`}
+            label="Export CSV"
+          />
           <Link href="/instructors/import" className="btn-secondary">
             Import CSV
           </Link>
