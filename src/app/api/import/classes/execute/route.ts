@@ -97,9 +97,10 @@ export async function POST(request: Request) {
 
     const instructorEmailMap = new Map<string, string>();
     for (const instr of instructorRows ?? []) {
-      const prof = instr.profiles as { email: string | null } | null;
-      if (prof?.email) {
-        instructorEmailMap.set(prof.email.toLowerCase().trim(), instr.id);
+      const prof = Array.isArray(instr.profiles) ? instr.profiles[0] : instr.profiles;
+      const email = (prof as { email?: string | null })?.email;
+      if (email) {
+        instructorEmailMap.set(email.toLowerCase().trim(), instr.id);
       }
     }
 
