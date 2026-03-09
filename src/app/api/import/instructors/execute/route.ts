@@ -166,11 +166,13 @@ export async function POST(request: Request) {
         isNewAuthUser = true;
       }
 
-      // ② profile を UPDATE（trigger で自動作成済みのため INSERT ではなく UPDATE）
+      // ② profile を UPSERT（trigger 自動生成 + タイミング依存を排除）
       const { error: profileError } = await adminSupabase
         .from("profiles")
-        .update({ studio_id: studioId, role: "instructor", full_name: fullName, phone })
-        .eq("id", authUserId);
+        .upsert(
+          { id: authUserId, email, studio_id: studioId, role: "instructor", full_name: fullName, phone },
+          { onConflict: "id" }
+        );
 
       if (profileError) {
         if (isNewAuthUser) await adminSupabase.auth.admin.deleteUser(authUserId);
