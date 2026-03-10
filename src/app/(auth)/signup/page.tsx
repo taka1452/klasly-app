@@ -25,8 +25,17 @@ function SignupForm() {
 
   useEffect(() => {
     const err = searchParams.get("error");
+    const msg = searchParams.get("msg");
     if (err === "auth_callback_failed") {
-      setError("Sign up with Google failed. Please try again or use email/password.");
+      let displayMsg = "Sign up with Google failed. Please try again or use email/password.";
+      if (msg) {
+        try {
+          displayMsg = decodeURIComponent(msg);
+        } catch {
+          displayMsg = msg;
+        }
+      }
+      setError(displayMsg);
     }
   }, [searchParams]);
 

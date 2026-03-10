@@ -37,7 +37,7 @@ export default function AuthCallbackClient() {
           return;
         }
         setStatus("error");
-        window.location.replace("/login?error=auth_callback_failed");
+        window.location.replace("/login?error=auth_callback_failed&msg=" + encodeURIComponent("No session found. Please try signing in again."));
         return;
       }
 
@@ -49,7 +49,12 @@ export default function AuthCallbackClient() {
           access_token: accessToken,
           refresh_token: refreshToken,
         });
-        if (!setError) {
+        if (setError) {
+          setStatus("error");
+          window.location.replace("/login?error=auth_callback_failed&msg=" + encodeURIComponent(setError.message || "Failed to establish session."));
+          return;
+        }
+        {
           const { data: { session } } = await supabase.auth.getSession();
           if (session) {
             const nextPath = await redirectPathOrSetPassword(session);
@@ -75,7 +80,7 @@ export default function AuthCallbackClient() {
       }
       if (error) {
         setStatus("error");
-        window.location.replace("/login?error=auth_callback_failed");
+        window.location.replace("/login?error=auth_callback_failed&msg=" + encodeURIComponent(error.message || "Session validation failed. Please try again."));
         return;
       }
       if (session) {
@@ -91,7 +96,7 @@ export default function AuthCallbackClient() {
       }
       setStatus("error");
       setTimeout(() => {
-        window.location.replace("/login?error=auth_callback_failed");
+        window.location.replace("/login?error=auth_callback_failed&msg=" + encodeURIComponent("Could not complete sign in. Please try again."));
       }, 2000);
     }
 

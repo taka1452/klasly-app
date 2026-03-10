@@ -62,14 +62,15 @@ export default async function AuthCallbackPage({
   // OAuth provider returned an error (e.g. user denied, redirect_uri_mismatch)
   if (error) {
     const msg = errorDescription ?? error;
-    redirect(`${origin}/login?error=auth_callback_failed&msg=${encodeURIComponent(msg)}`);
+    const targetPage = params?.type === "signup" ? "signup" : "login";
+    redirect(`${origin}/${targetPage}?error=auth_callback_failed&msg=${encodeURIComponent(msg)}`);
   }
 
   if (code) {
     const supabase = await createServerClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
 
-    if (!error) {
+    if (!exchangeError) {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const email = (user.email ?? "").trim().toLowerCase();
@@ -98,7 +99,9 @@ export default async function AuthCallbackPage({
       }
       redirect(params?.next ? `${origin}${params.next}` : `${origin}/`);
     }
-    redirect(`${origin}/login?error=auth_callback_failed`);
+    const errMsg = exchangeError?.message ?? "Failed to complete sign in. Please try again.";
+    const targetPage = params?.type === "signup" ? "signup" : "login";
+    redirect(`${origin}/${targetPage}?error=auth_callback_failed&msg=${encodeURIComponent(errMsg)}`);
   }
 
   return <AuthCallbackClient />;
