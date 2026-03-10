@@ -2,6 +2,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
 import { parse } from "csv-parse/sync";
 import { NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import { validateEmail } from "@/lib/import/csv-utils";
 
 type RowResult = { row: number; email: string; reason: string };
@@ -135,61 +136,32 @@ export async function POST(request: Request) {
         ? specialtiesRaw.split(",").map((s) => s.trim()).filter(Boolean)
         : null;
 
-      // ① auth user を作成（Supabase trigger が profiles を自動生成する）
-      const { data: authData, error: authError } = await adminSupabase.auth.admin.createUser({
+      // ① profile を INSERT（auth user 不要 — メンバーインポートと同じパターン）
+      const profileId = randomUUID();
+
+      const { error: profileError } = await adminSupabase.from("profiles").insert({
+        id: profileId,
         email,
-        email_confirm: true,
-        user_metadata: { full_name: fullName, invited_without_password: true },
+        studio_id: studioId,
+        role: "instructor",
+        full_name: fullName,
+        phone: phone || null,
       });
 
-      let authUserId: string;
-      let isNewAuthUser = false;
-
-      if (authError) {
-        const isAlreadyExists = /already registered|already exists/i.test(authError.message);
-        if (!isAlreadyExists) {
-          errors.push({ row: rowNum, email, reason: authError.message });
-          continue;
-        }
-        // 既存の auth user を検索して再利用
-        const { data: listData } = await adminSupabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
-        const found = listData?.users?.find(
-          (u) => (u.email ?? "").trim().toLowerCase() === email.toLowerCase()
-        );
-        if (!found) {
-          errors.push({ row: rowNum, email, reason: "User lookup failed" });
-          continue;
-        }
-        authUserId = found.id;
-      } else {
-        authUserId = authData.user.id;
-        isNewAuthUser = true;
-      }
-
-      // ② profile を UPSERT（trigger 自動生成 + タイミング依存を排除）
-      const { error: profileError } = await adminSupabase
-        .from("profiles")
-        .upsert(
-          { id: authUserId, email, studio_id: studioId, role: "instructor", full_name: fullName, phone },
-          { onConflict: "id" }
-        );
-
       if (profileError) {
-        if (isNewAuthUser) await adminSupabase.auth.admin.deleteUser(authUserId);
         errors.push({ row: rowNum, email, reason: profileError.message });
         continue;
       }
 
-      // ③ instructors テーブルに INSERT
+      // ② instructors テーブルに INSERT
       const { error: instructorError } = await adminSupabase.from("instructors").insert({
         studio_id: studioId,
-        profile_id: authUserId,
+        profile_id: profileId,
         bio,
         specialties,
       });
 
       if (instructorError) {
-        if (isNewAuthUser) await adminSupabase.auth.admin.deleteUser(authUserId);
         errors.push({ row: rowNum, email, reason: instructorError.message });
         continue;
       }
