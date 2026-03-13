@@ -7,6 +7,7 @@ import PlanBanner from "@/components/ui/plan-banner";
 import { getPlanAccess } from "@/lib/plan-guard";
 import { isAdmin } from "@/lib/admin/auth";
 import type { SetupTask } from "@/components/ui/setup-task-list";
+import DevRoleSwitcher from "@/components/ui/dev-role-switcher";
 
 export default async function DashboardLayout({
   children,
@@ -172,6 +173,7 @@ export default async function DashboardLayout({
       setupTasks={setupTasks}
     >
       {children}
+      <DevRoleSwitcher />
     </DashboardShell>
   );
 }

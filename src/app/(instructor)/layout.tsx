@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import InstructorShell from "@/components/ui/instructor-shell";
+import DevRoleSwitcher from "@/components/ui/dev-role-switcher";
 
 export default async function InstructorLayout({
   children,
@@ -74,6 +75,7 @@ export default async function InstructorLayout({
       userId={user.id}
     >
       {children}
+      <DevRoleSwitcher />
     </InstructorShell>
   );
 }

@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import WaiverGate from "@/components/waiver/waiver-gate";
 import MemberLayoutClient from "@/components/member/member-layout-client";
+import DevRoleSwitcher from "@/components/ui/dev-role-switcher";
 
 export default async function MemberLayout({
   children,
@@ -87,6 +88,7 @@ export default async function MemberLayout({
       memberCredits={member?.credits ?? null}
     >
       {children}
+      <DevRoleSwitcher />
     </MemberLayoutClient>
   );
 }
