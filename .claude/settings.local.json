@@ -3,7 +3,20 @@
     "allow": [
       "Bash(npx next build)",
       "Bash(./node_modules/.bin/tsc --noEmit)",
-      "Bash(cmd.exe /c \"node_modules\\\\.bin\\\\tsc --noEmit 2>&1\")"
+      "Bash(cmd.exe /c \"node_modules\\\\.bin\\\\tsc --noEmit 2>&1\")",
+      "Bash(ls -la \"C:\\\\Users\\\\yuuda\\\\Desktop\\\\klasly-app\\\\src\\\\app\\\\\\(dashboard\\\\\\)\")",
+      "Bash(ls -la \"C:\\\\Users\\\\yuuda\\\\Desktop\\\\klasly-app\\\\src\\\\app\\\\\\(instructor\\\\\\)\")",
+      "Bash(ls -la 'C:\\\\Users\\\\yuuda\\\\Desktop\\\\klasly-app\\\\src\\\\app\\\\\\(dashboard\\\\\\)')",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(where npm)",
+      "Bash(where npx)",
+      "Bash(where node)",
+      "Bash(where supabase)",
+      "Bash(xargs grep -l \"instructor_direct\\\\|payout_model\")",
+      "Bash(ls -la src/app/\\\\\\(dashboard\\\\\\)/instructors/earnings/)",
+      "Bash(ls -la /c/Users/yuuda/Desktop/klasly-app/src/app/\\\\\\(dashboard\\\\\\)/settings/)",
+      "Bash(ls -la /c/Users/yuuda/Desktop/klasly-app/src/app/\\\\\\(dashboard\\\\\\)/settings/payout/)",
+      "Bash(cat /c/Users/yuuda/Desktop/klasly-app/src/app/\\\\\\(dashboard\\\\\\)/settings/payout/page.tsx)"
     ]
   }
 }
