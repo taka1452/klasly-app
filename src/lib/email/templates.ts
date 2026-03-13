@@ -257,6 +257,75 @@ export function messageNotification(params: {
   };
 }
 
+export function instructorPaymentNotification(params: {
+  instructorName: string;
+  className: string;
+  sessionDate: string;
+  grossAmount: number;
+  studioFee: number;
+  platformFee: number;
+  stripeFee: number;
+  instructorPayout: number;
+  studioName: string;
+}) {
+  const {
+    instructorName,
+    className,
+    sessionDate,
+    grossAmount,
+    studioFee,
+    platformFee,
+    stripeFee,
+    instructorPayout,
+    studioName,
+  } = params;
+
+  const fmt = (cents: number) => `$${(cents / 100).toFixed(2)}`;
+  const dateStr = sessionDate || new Date().toLocaleDateString("en-US");
+
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#059669;">Payment Received</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${instructorName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      You've received a payment for your class:
+    </p>
+    <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-weight:600;color:${BRAND_COLOR};">${className}</p>
+      <p style="margin:8px 0 0;font-size:14px;">${dateStr}</p>
+      <p style="margin:4px 0 0;font-size:14px;color:#6b7280;">${studioName}</p>
+    </div>
+    <table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;">
+      <tr style="border-bottom:1px solid #e5e7eb;">
+        <td style="padding:8px 0;color:#6b7280;">Class Price</td>
+        <td style="padding:8px 0;text-align:right;font-weight:600;">${fmt(grossAmount)}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #e5e7eb;">
+        <td style="padding:8px 0;color:#6b7280;">Studio Fee</td>
+        <td style="padding:8px 0;text-align:right;">-${fmt(studioFee)}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #e5e7eb;">
+        <td style="padding:8px 0;color:#6b7280;">Platform Fee</td>
+        <td style="padding:8px 0;text-align:right;">-${fmt(platformFee)}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #e5e7eb;">
+        <td style="padding:8px 0;color:#6b7280;">Processing Fee</td>
+        <td style="padding:8px 0;text-align:right;">-${fmt(stripeFee)}</td>
+      </tr>
+      <tr>
+        <td style="padding:12px 0;font-weight:700;color:#059669;">Your Payout</td>
+        <td style="padding:12px 0;text-align:right;font-weight:700;font-size:18px;color:#059669;">${fmt(instructorPayout)}</td>
+      </tr>
+    </table>
+    <p style="margin:0;font-size:13px;color:#9ca3af;">
+      Processing fees are estimated. Your payout will be deposited to your connected Stripe account.
+    </p>
+  `;
+  return {
+    subject: `Payment Received - ${className}`,
+    html: baseHtml(content),
+  };
+}
+
 export function welcomeMember(params: {
   memberName: string;
   studioName: string;

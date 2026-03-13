@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { stripe } from "@/lib/stripe/server";
 import { NextResponse } from "next/server";
+import { resolveStudioFee, calculateStudioFee } from "@/lib/fee/resolve-fee";
 
 export const runtime = "nodejs";
 
@@ -78,7 +79,7 @@ export async function POST(request: Request) {
     const { data: studio } = await adminSupabase
       .from("studios")
       .select(
-        "id, payout_model, studio_fee_percentage, stripe_connect_account_id, stripe_connect_onboarding_complete"
+        "id, payout_model, studio_fee_percentage, studio_fee_type, stripe_connect_account_id, stripe_connect_onboarding_complete"
       )
       .eq("id", member.studio_id)
       .single();
@@ -128,6 +129,9 @@ export async function POST(request: Request) {
     let applicationFee = platformFee;
     let instructorId: string | null = null;
     let payoutModel = "studio";
+    let resolvedFeeType = "percentage";
+    let resolvedFeeSource = "studio_default";
+    let resolvedFeeValue = Number(studio.studio_fee_percentage);
 
     if (
       studio.payout_model === "instructor_direct" &&
@@ -145,10 +149,28 @@ export async function POST(request: Request) {
         instructorId = instructor.id;
         payoutModel = "instructor_direct";
 
-        // Add studio fee to application_fee
-        const studioFee = Math.round(
-          amount * (Number(studio.studio_fee_percentage) / 100)
+        // Resolve fee using priority hierarchy
+        const { data: feeOverride } = await adminSupabase
+          .from("instructor_fee_overrides")
+          .select("fee_type, fee_value")
+          .eq("studio_id", studio.id)
+          .eq("instructor_id", instructor.id)
+          .maybeSingle();
+
+        const resolved = resolveStudioFee(
+          {
+            studio_fee_type: studio.studio_fee_type ?? "percentage",
+            studio_fee_percentage: Number(studio.studio_fee_percentage),
+          },
+          feeOverride ?? undefined
         );
+
+        resolvedFeeType = resolved.feeType;
+        resolvedFeeSource = resolved.feeSource;
+        resolvedFeeValue = resolved.feeValue;
+
+        // Calculate studio fee using resolved fee
+        const studioFee = calculateStudioFee(amount, resolved);
         applicationFee = platformFee + studioFee;
       }
     }
@@ -182,7 +204,9 @@ export async function POST(request: Request) {
       metadata.instructor_id = instructorId;
       metadata.studio_fee = String(applicationFee - platformFee);
       metadata.platform_fee = String(platformFee);
-      metadata.studio_fee_percentage = String(studio.studio_fee_percentage);
+      metadata.studio_fee_percentage = String(resolvedFeeValue);
+      metadata.fee_type = resolvedFeeType;
+      metadata.fee_source = resolvedFeeSource;
     }
 
     // At this point stripeAccountId is guaranteed to be non-null

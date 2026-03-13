@@ -44,6 +44,8 @@ export type Studio = {
   payout_model: "studio" | "instructor_direct";
   /** スタジオ取り分（%）: 例 20.0 = 20% */
   studio_fee_percentage: number;
+  /** スタジオ手数料タイプ: 'percentage' | 'fixed' */
+  studio_fee_type: "percentage" | "fixed";
   // Admin
   admin_memo: string | null;
   /** true = デモ/テストスタジオ。KPI集計・スタジオ一覧からデフォルト除外 */
@@ -377,8 +379,22 @@ export type InstructorEarning = {
   studio_fee: number;         // スタジオ取り分（cents）
   instructor_payout: number;  // インストラクター受取額（cents）
   studio_fee_percentage: number;
+  /** 手数料タイプ: 'percentage' | 'fixed' */
+  fee_type: "percentage" | "fixed";
+  /** 手数料ソース: どのルールで料金が決定されたか */
+  fee_source: "studio_default" | "instructor_override" | "class_override" | "fee_schedule";
   stripe_payment_intent_id: string | null;
   stripe_transfer_id: string | null;
   status: "pending" | "completed" | "failed";
   created_at: string;
+};
+
+export type InstructorFeeOverride = {
+  id: string;
+  studio_id: string;
+  instructor_id: string;
+  fee_type: "percentage" | "fixed";
+  fee_value: number;
+  created_at: string;
+  updated_at: string;
 };

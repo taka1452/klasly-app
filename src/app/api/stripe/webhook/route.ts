@@ -4,7 +4,7 @@ import { stripe } from "@/lib/stripe/server";
 import Stripe from "stripe";
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email/send";
-import { paymentReceipt, paymentFailed } from "@/lib/email/templates";
+import { paymentReceipt, paymentFailed, instructorPaymentNotification } from "@/lib/email/templates";
 import { insertWebhookLog } from "@/lib/admin/logs";
 
 /** session.subscription は string | Subscription (expand時) のため、必ずID文字列を返す */
@@ -633,6 +633,8 @@ async function handleInstructorDirectPayout(
   const instructorId = session.metadata?.instructor_id;
   const studioFee = parseInt(session.metadata?.studio_fee ?? "0", 10);
   const platformFee = parseInt(session.metadata?.platform_fee ?? "0", 10);
+  const feeType = session.metadata?.fee_type ?? "percentage";
+  const feeSource = session.metadata?.fee_source ?? "studio_default";
 
   if (!studioId || !memberId || !sessionId || !instructorId) return;
 
@@ -684,6 +686,8 @@ async function handleInstructorDirectPayout(
       studio_fee_percentage: parseFloat(
         session.metadata?.studio_fee_percentage ?? "0"
       ),
+      fee_type: feeType,
+      fee_source: feeSource,
       stripe_payment_intent_id: paymentIntentId,
       status: "pending",
     })
@@ -754,6 +758,65 @@ async function handleInstructorDirectPayout(
     description: `Instructor direct payout`,
     paid_at: new Date().toISOString(),
   });
+
+  // 6. Send email notification to instructor
+  try {
+    const { data: instructorData } = await adminSupabase
+      .from("instructors")
+      .select("profile_id")
+      .eq("id", instructorId)
+      .single();
+
+    if (instructorData) {
+      const { data: instProfile } = await adminSupabase
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", instructorData.profile_id)
+        .single();
+
+      const { data: classSession } = await adminSupabase
+        .from("class_sessions")
+        .select("session_date, start_time, classes(name)")
+        .eq("id", sessionId)
+        .single();
+
+      const { data: studioData } = await adminSupabase
+        .from("studios")
+        .select("name")
+        .eq("id", studioId)
+        .single();
+
+      if (instProfile?.email) {
+        const cls = classSession as { session_date?: string; start_time?: string; classes?: { name?: string } | null } | null;
+        const className = cls?.classes?.name ?? "Class";
+        const sessionDate = cls?.session_date ?? "";
+        const studioName = studioData?.name ?? "Studio";
+
+        const { subject, html } = instructorPaymentNotification({
+          instructorName: instProfile.full_name ?? "Instructor",
+          className,
+          sessionDate,
+          grossAmount: amount,
+          studioFee,
+          platformFee,
+          stripeFee: stripeFeeEstimate,
+          instructorPayout,
+          studioName,
+        });
+
+        await sendEmail({
+          to: instProfile.email,
+          subject,
+          html,
+          studioId,
+          templateName: "instructor_payment_notification",
+        });
+      }
+    }
+  } catch (emailErr) {
+    // Don't fail the webhook if email fails
+    console.error("Instructor payment notification email failed:", emailErr);
+  }
 }
 
 async function getStudioIdFromStripeEvent(
