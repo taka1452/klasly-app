@@ -9,7 +9,8 @@
       "Bash(ls C:/Users/ytaka/Desktop/klasly-app/next.config.*)",
       "Bash(npx tsc --noEmit)",
       "Bash(npx --package typescript tsc --noEmit)",
-      "Bash(node_modules/.bin/tsc --noEmit)"
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(grep -l \"studios\" supabase/migrations/*.sql)"
     ]
   }
 }
