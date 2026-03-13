@@ -4,6 +4,7 @@
       "Bash(npx next build)",
       "Bash(./node_modules/.bin/tsc --noEmit)",
       "Bash(cmd.exe /c \"node_modules\\\\.bin\\\\tsc --noEmit 2>&1\")",
+<<<<<<< HEAD
       "Bash(ls -la \"C:\\\\Users\\\\yuuda\\\\Desktop\\\\klasly-app\\\\src\\\\app\\\\\\(dashboard\\\\\\)\")",
       "Bash(ls -la \"C:\\\\Users\\\\yuuda\\\\Desktop\\\\klasly-app\\\\src\\\\app\\\\\\(instructor\\\\\\)\")",
       "Bash(ls -la 'C:\\\\Users\\\\yuuda\\\\Desktop\\\\klasly-app\\\\src\\\\app\\\\\\(dashboard\\\\\\)')",
@@ -17,6 +18,38 @@
       "Bash(ls -la /c/Users/yuuda/Desktop/klasly-app/src/app/\\\\\\(dashboard\\\\\\)/settings/)",
       "Bash(ls -la /c/Users/yuuda/Desktop/klasly-app/src/app/\\\\\\(dashboard\\\\\\)/settings/payout/)",
       "Bash(cat /c/Users/yuuda/Desktop/klasly-app/src/app/\\\\\\(dashboard\\\\\\)/settings/payout/page.tsx)"
+=======
+      "Bash(find /c/Users/ytaka/Desktop/klasly-app/src/app/'\\(auth\\)' -type f -name \"*.ts\" -o -name \"*.tsx\")",
+      "Bash(find /c/Users/ytaka/Desktop/klasly-app/src/app/'\\(public\\)' -type f)",
+      "Bash(ls C:/Users/ytaka/Desktop/klasly-app/next.config.*)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(npx --package typescript tsc --noEmit)",
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(grep -l \"studios\" supabase/migrations/*.sql)",
+      "Bash(xargs grep -l \"CREATE TABLE.*studios\")",
+      "Bash(curl -s http://localhost:3000/api/stripe/connect/status)",
+      "Bash(xargs grep -l \"calendar\\\\|Calendar\")",
+      "Bash(ls -la /c/Users/ytaka/Desktop/klasly-app/src/app/api/bookings/[bookingId]/)",
+      "Bash(xargs grep -l \"formatDate\\\\|formatTime\")",
+      "Bash(mkdir -p \"C:/Users/ytaka/Desktop/klasly-app/src/app/api/member/sessions\")",
+      "Bash(mkdir -p \"C:/Users/ytaka/Desktop/klasly-app/src/components/member/calendar\")",
+      "Bash(grep -v \"Cannot find name ''process''\")",
+      "Bash(npx --package typescript tsc --noEmit --pretty)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(where node)",
+      "Bash(where npm)",
+      "Bash(npm install)",
+      "Bash(grep -v \"Cannot find module ''react''\")",
+      "Bash(grep -v \"Cannot find module ''next\")",
+      "Bash(grep -v \"Cannot find namespace ''React''\")",
+      "WebFetch(domain:www.wellnessliving.com)",
+      "WebSearch",
+      "Bash(grep -r \"export default\" /c/Users/ytaka/Desktop/klasly-app/src/app \\\\\\( -path \"*/api/*\" -prune \\\\\\))",
+      "Bash(ls -la \"/c/Users/ytaka/Desktop/klasly-app/src/app/\\(dashboard\\)/settings/\")",
+      "Bash(ls -la /c/Users/ytaka/Desktop/klasly-app/src/app/\\\\\\(dashboard\\\\\\)/settings/billing/success/)",
+      "Bash(xargs grep -l \"CREATE TABLE instructors\")",
+      "Bash(xargs grep -l \"CREATE TABLE studios\")"
+>>>>>>> 2f19f980c5bc5e956ac8d25a004166d413e662f7
     ]
   }
 }

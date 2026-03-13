@@ -67,14 +67,16 @@ export default async function DashboardLayout({
 
   let setupTasks: SetupTask[] = [];
   if (profile.role === "owner" && profile.studio_id) {
-    const [{ count: classesCount }, { count: instructorsCount }, { count: membersCount }, { count: productsCount }] =
+    const [{ count: classesCount }, { count: instructorsCount }, { count: membersCount }, { count: productsCount }, { data: widgetSettings }] =
       await Promise.all([
         adminSupabase.from("classes").select("id", { count: "exact", head: true }).eq("studio_id", profile.studio_id),
         adminSupabase.from("instructors").select("id", { count: "exact", head: true }).eq("studio_id", profile.studio_id),
         adminSupabase.from("members").select("id", { count: "exact", head: true }).eq("studio_id", profile.studio_id),
         adminSupabase.from("products").select("id", { count: "exact", head: true }).eq("studio_id", profile.studio_id).eq("is_active", true),
+        adminSupabase.from("widget_settings").select("enabled").eq("studio_id", profile.studio_id).maybeSingle(),
       ]);
     const hasPricing = (productsCount ?? 0) > 0;
+    const widgetEnabled = (widgetSettings as { enabled?: boolean } | null)?.enabled ?? false;
     setupTasks = [
       {
         id: "tutorial",
@@ -116,6 +118,13 @@ export default async function DashboardLayout({
         done: hasPricing,
         href: "/settings/pricing",
         hint: "Create plans and packages (e.g. drop-in, class packs, monthly) for members to buy.",
+      },
+      {
+        id: "widget",
+        label: "Set up website widget",
+        done: widgetEnabled,
+        href: "/settings/widget",
+        hint: "Embed your class schedule on your website so visitors can browse and book.",
       },
     ];
   }

@@ -18,6 +18,8 @@ type Props = {
   payPerClass?: boolean;
   /** payPerClass 時に表示する料金（cents） */
   classPrice?: number;
+  /** Called after a successful booking action (instead of router.refresh) */
+  onSuccess?: () => void;
   "data-tour"?: string;
 };
 
@@ -32,6 +34,7 @@ export default function BookingButton({
   requiresCredits = true,
   payPerClass = false,
   classPrice,
+  onSuccess,
   "data-tour": dataTour,
 }: Props) {
   const router = useRouter();
@@ -115,7 +118,11 @@ export default function BookingButton({
         return;
       }
 
-      router.refresh();
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.refresh();
+      }
     } catch {
       setError("Something went wrong");
     } finally {

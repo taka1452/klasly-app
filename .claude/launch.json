@@ -2,9 +2,15 @@
   "version": "0.0.1",
   "configurations": [
     {
+<<<<<<< HEAD
       "name": "next-dev",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["next", "dev"],
+=======
+      "name": "dev",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["node_modules/next/dist/bin/next", "dev"],
+>>>>>>> 2f19f980c5bc5e956ac8d25a004166d413e662f7
       "port": 3000
     }
   ]

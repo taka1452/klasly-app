@@ -39,7 +39,7 @@ export default function MemberLayoutClient({
           userEmail={userEmail}
         />
         <nav className="border-b border-gray-200 bg-white">
-          <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
+          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
             <div className="flex gap-6">
               <Link
                 href="/schedule"
@@ -83,7 +83,7 @@ export default function MemberLayoutClient({
             )}
           </div>
         </nav>
-        <main className="mx-auto max-w-4xl px-4 py-6">{children}</main>
+        <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
       </div>
     </TourProvider>
   );

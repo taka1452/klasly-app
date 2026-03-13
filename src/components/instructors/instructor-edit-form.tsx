@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
+type RentalType = "none" | "flat_monthly" | "per_class";
+
 type Props = {
   instructorId: string;
   profileId: string;
@@ -12,6 +14,8 @@ type Props = {
     phone: string;
     bio: string;
     specialties: string;
+    rentalType: RentalType;
+    rentalAmount: number; // cents
   };
 };
 
@@ -25,6 +29,10 @@ export default function InstructorEditForm({
   const [phone, setPhone] = useState(initialData.phone);
   const [bio, setBio] = useState(initialData.bio);
   const [specialties, setSpecialties] = useState(initialData.specialties);
+  const [rentalType, setRentalType] = useState<RentalType>(initialData.rentalType);
+  const [rentalAmountDisplay, setRentalAmountDisplay] = useState(
+    initialData.rentalAmount > 0 ? String(initialData.rentalAmount / 100) : ""
+  );
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -56,12 +64,17 @@ export default function InstructorEditForm({
       return;
     }
 
+    const rentalAmountCents =
+      rentalType !== "none" ? Math.round((parseFloat(rentalAmountDisplay) || 0) * 100) : 0;
+
     const { error: instructorError } = await supabase
       .from("instructors")
       .update({
         bio: bio || null,
         specialties:
           specialtiesArray.length > 0 ? specialtiesArray : null,
+        rental_type: rentalType,
+        rental_amount: rentalAmountCents,
       })
       .eq("id", instructorId);
 
@@ -141,6 +154,70 @@ export default function InstructorEditForm({
             className="input-field mt-1"
           />
           <p className="mt-1 text-xs text-gray-400">Comma-separated list</p>
+        </div>
+
+        {/* Studio Rental */}
+        <div className="border-t border-gray-200 pt-5">
+          <h3 className="text-sm font-semibold text-gray-900">Studio Rental</h3>
+          <p className="mt-1 text-xs text-gray-500">
+            Set the studio usage fee this instructor pays. Settlement is tracked
+            in the monthly rental report.
+          </p>
+
+          <div className="mt-3 space-y-2">
+            {(
+              [
+                { value: "none" as RentalType, label: "None", desc: "No studio rental fee" },
+                { value: "flat_monthly" as RentalType, label: "Flat monthly", desc: "Fixed monthly studio usage fee" },
+                { value: "per_class" as RentalType, label: "Per class", desc: "Fee per class taught" },
+              ] as const
+            ).map((opt) => (
+              <label
+                key={opt.value}
+                className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm transition-colors ${
+                  rentalType === opt.value
+                    ? "border-brand-400 bg-brand-50"
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="rentalType"
+                  value={opt.value}
+                  checked={rentalType === opt.value}
+                  onChange={() => setRentalType(opt.value)}
+                  className="mt-0.5 accent-brand-500"
+                />
+                <div>
+                  <p className="font-medium text-gray-900">{opt.label}</p>
+                  <p className="text-xs text-gray-500">{opt.desc}</p>
+                </div>
+              </label>
+            ))}
+          </div>
+
+          {rentalType !== "none" && (
+            <div className="mt-3">
+              <label className="block text-sm font-medium text-gray-700">
+                Amount
+              </label>
+              <div className="mt-1 flex items-center gap-2">
+                <span className="text-sm text-gray-500">$</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={rentalAmountDisplay}
+                  onChange={(e) => setRentalAmountDisplay(e.target.value)}
+                  placeholder="0.00"
+                  className="input-field w-32"
+                />
+                <span className="text-sm text-gray-500">
+                  {rentalType === "flat_monthly" ? "/ month" : "/ class"}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         <button type="submit" disabled={loading} className="btn-primary">

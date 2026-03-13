@@ -7,7 +7,8 @@ export type FlowHintType =
   | "instructors"
   | "stripe-connect"
   | "member-invite"
-  | "instructor-assign";
+  | "instructor-assign"
+  | "widget-embed";
 
 const FLOWS: Record<
   FlowHintType,
@@ -55,6 +56,15 @@ const FLOWS: Record<
     steps: [
       { who: "Create or edit a class", what: "Go to Classes, then click + New class to create one, or click an existing class to edit it." },
       { who: "In the form", what: "Find the Instructor dropdown (optional). Select the instructor for this class and save. The instructor will then see this class in their schedule and can mark attendance." },
+    ],
+  },
+  "widget-embed": {
+    title: "How to embed on your website",
+    subtitle: "Add a live class schedule to your website in 3 simple steps.",
+    steps: [
+      { who: "You (owner)", what: "Enable the widget and choose a theme color on the Widget settings page." },
+      { who: "You (owner)", what: "Copy the embed code and paste it into your website's HTML where you want the schedule to appear. It works with any website builder — WordPress, Wix, Squarespace, or custom HTML." },
+      { who: "Visitor / Member", what: "Sees your live class schedule on your website. They can sign in and book classes directly from the embedded widget without leaving your site." },
     ],
   },
 };

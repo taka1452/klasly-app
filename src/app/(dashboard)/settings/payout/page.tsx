@@ -245,6 +245,27 @@ export default function PayoutSettingsPage() {
           </button>
         </div>
       )}
+
+      {/* Studio Rental */}
+      <div className="mt-6 card">
+        <h2 className="text-lg font-semibold text-gray-900">Studio Rental</h2>
+        <p className="mt-1 text-sm text-gray-600">
+          Charge instructors a studio usage fee — either a flat monthly rate or
+          per class taught. Rental terms are configured per instructor.
+        </p>
+        <div className="mt-4 space-y-3">
+          <Link
+            href="/instructors/rental"
+            className="inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+          >
+            View rental report →
+          </Link>
+          <p className="text-xs text-gray-400">
+            To set up a rental agreement, go to each instructor&apos;s edit page
+            and configure the &ldquo;Studio Rental&rdquo; section.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
