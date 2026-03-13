@@ -10,7 +10,28 @@
       "Bash(npx tsc --noEmit)",
       "Bash(npx --package typescript tsc --noEmit)",
       "Bash(node_modules/.bin/tsc --noEmit)",
-      "Bash(grep -l \"studios\" supabase/migrations/*.sql)"
+      "Bash(grep -l \"studios\" supabase/migrations/*.sql)",
+      "Bash(xargs grep -l \"CREATE TABLE.*studios\")",
+      "Bash(curl -s http://localhost:3000/api/stripe/connect/status)",
+      "Bash(xargs grep -l \"calendar\\\\|Calendar\")",
+      "Bash(ls -la /c/Users/ytaka/Desktop/klasly-app/src/app/api/bookings/[bookingId]/)",
+      "Bash(xargs grep -l \"formatDate\\\\|formatTime\")",
+      "Bash(mkdir -p \"C:/Users/ytaka/Desktop/klasly-app/src/app/api/member/sessions\")",
+      "Bash(mkdir -p \"C:/Users/ytaka/Desktop/klasly-app/src/components/member/calendar\")",
+      "Bash(grep -v \"Cannot find name ''process''\")",
+      "Bash(npx --package typescript tsc --noEmit --pretty)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(where node)",
+      "Bash(where npm)",
+      "Bash(npm install)",
+      "Bash(grep -v \"Cannot find module ''react''\")",
+      "Bash(grep -v \"Cannot find module ''next\")",
+      "Bash(grep -v \"Cannot find namespace ''React''\")",
+      "WebFetch(domain:www.wellnessliving.com)",
+      "WebSearch",
+      "Bash(grep -r \"export default\" /c/Users/ytaka/Desktop/klasly-app/src/app \\\\\\( -path \"*/api/*\" -prune \\\\\\))",
+      "Bash(ls -la \"/c/Users/ytaka/Desktop/klasly-app/src/app/\\(dashboard\\)/settings/\")",
+      "Bash(ls -la /c/Users/ytaka/Desktop/klasly-app/src/app/\\\\\\(dashboard\\\\\\)/settings/billing/success/)"
     ]
   }
 }

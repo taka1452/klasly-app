@@ -3,7 +3,6 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import SettingsContent from "@/components/settings/settings-content";
-import BookingSettingsCard from "@/components/settings/booking-settings-card";
 
 export const metadata: Metadata = {
   title: "Settings - Klasly",
@@ -55,20 +54,15 @@ export default async function SettingsPage() {
     <div>
       <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
       <p className="mt-1 text-sm text-gray-500">
-        Manage your account and data
+        Manage your studio, payments, and account
       </p>
 
       <SettingsContent
-        fullName={profile.full_name || user.email || "—"}
-        email={profile.email || user.email || "—"}
+        fullName={profile.full_name || user.email || "\u2014"}
+        email={profile.email || user.email || "\u2014"}
+        bookingRequiresCredits={bookingRequiresCredits}
+        stripeConnectComplete={stripeConnectComplete}
       />
-
-      <div className="mt-6">
-        <BookingSettingsCard
-          bookingRequiresCredits={bookingRequiresCredits}
-          stripeConnectComplete={stripeConnectComplete}
-        />
-      </div>
     </div>
   );
 }
