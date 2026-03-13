@@ -4,6 +4,7 @@ import Link from "next/link";
 import WeeklySchedule from "@/components/classes/weekly-schedule";
 import EmptyState from "@/components/ui/empty-state";
 import FlowHintPanel from "@/components/ui/flow-hint-panel";
+import ExportCsvButton from "@/components/ui/export-csv-button";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -58,9 +59,19 @@ export default async function ClassesPage() {
           </div>
           <FlowHintPanel flowType="instructor-assign" buttonLabel="How to assign instructor?" />
         </div>
-        <Link href="/classes/new" className="btn-primary">
-          + Add class
-        </Link>
+        <div className="flex gap-2">
+          <ExportCsvButton
+            url="/api/export/classes"
+            filename={`classes-${new Date().toISOString().slice(0, 10)}.csv`}
+            label="Export CSV"
+          />
+          <Link href="/classes/import" className="btn-secondary">
+            Import CSV
+          </Link>
+          <Link href="/classes/new" className="btn-primary">
+            + Add class
+          </Link>
+        </div>
       </div>
 
       <div className="mt-6">

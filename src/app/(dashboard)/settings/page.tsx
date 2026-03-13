@@ -3,6 +3,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import SettingsContent from "@/components/settings/settings-content";
+import BookingSettingsCard from "@/components/settings/booking-settings-card";
 
 export const metadata: Metadata = {
   title: "Settings - Klasly",
@@ -36,6 +37,20 @@ export default async function SettingsPage() {
     redirect("/");
   }
 
+  // スタジオ設定を取得
+  const { data: studio } = await supabase
+    .from("studios")
+    .select("booking_requires_credits, stripe_connect_onboarding_complete")
+    .eq("id", profile.studio_id)
+    .single();
+
+  const bookingRequiresCredits =
+    (studio as { booking_requires_credits?: boolean | null } | null)
+      ?.booking_requires_credits ?? null;
+  const stripeConnectComplete =
+    (studio as { stripe_connect_onboarding_complete?: boolean } | null)
+      ?.stripe_connect_onboarding_complete ?? false;
+
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
@@ -47,6 +62,13 @@ export default async function SettingsPage() {
         fullName={profile.full_name || user.email || "—"}
         email={profile.email || user.email || "—"}
       />
+
+      <div className="mt-6">
+        <BookingSettingsCard
+          bookingRequiresCredits={bookingRequiresCredits}
+          stripeConnectComplete={stripeConnectComplete}
+        />
+      </div>
     </div>
   );
 }

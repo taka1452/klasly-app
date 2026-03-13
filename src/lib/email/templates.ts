@@ -226,6 +226,37 @@ export function instructorInvite(params: {
   };
 }
 
+export function messageNotification(params: {
+  recipientName: string;
+  senderName: string;
+  preview: string; // 最大150文字
+  studioName: string;
+}) {
+  const { recipientName, senderName, preview, studioName } = params;
+  const truncated =
+    preview.length > 150 ? preview.slice(0, 147) + "…" : preview;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">New message from ${senderName}</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${recipientName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      You have a new message from <strong>${senderName}</strong>:
+    </p>
+    <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;border-left:3px solid ${BRAND_COLOR};">
+      <p style="margin:0;font-size:14px;line-height:1.6;color:#374151;">${truncated}</p>
+    </div>
+    <p style="margin:0 0 16px;">
+      <a href="https://app.klasly.app/messages" style="display:inline-block;background:${BRAND_COLOR};color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">
+        View Message
+      </a>
+    </p>
+    <p style="margin:0;font-size:14px;color:#6b7280;">${studioName}</p>
+  `;
+  return {
+    subject: `New message from ${senderName} — Klasly`,
+    html: baseHtml(content),
+  };
+}
+
 export function welcomeMember(params: {
   memberName: string;
   studioName: string;

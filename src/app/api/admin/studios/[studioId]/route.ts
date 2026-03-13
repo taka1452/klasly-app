@@ -132,6 +132,7 @@ export async function PATCH(
     if (body.trial_ends_at !== undefined) updates.trial_ends_at = body.trial_ends_at;
     if (body.cancel_at_period_end !== undefined) updates.cancel_at_period_end = body.cancel_at_period_end;
     if (body.admin_memo !== undefined) updates.admin_memo = body.admin_memo;
+    if (body.is_demo !== undefined) updates.is_demo = Boolean(body.is_demo);
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ error: "No fields to update" }, { status: 400 });

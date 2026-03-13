@@ -15,6 +15,7 @@ type StudioRow = {
   owner_name: string | null;
   owner_email: string | null;
   members_count: number;
+  is_demo?: boolean;
 };
 
 type StatusCounts = Record<string, number>;
@@ -52,6 +53,7 @@ export default function AdminStudiosList({ statusCounts }: { statusCounts: Statu
     params.set("sort", sort);
     params.set("page", String(page));
     params.set("limit", "20");
+    params.set("show_demo", "true"); // デモスタジオも常に表示（KPI集計からは除外済み）
     fetch(`/api/admin/studios?${params}`)
       .then((r) => r.json())
       .then((d) => {
@@ -136,11 +138,25 @@ export default function AdminStudiosList({ statusCounts }: { statusCounts: Statu
               {data.studios.map((s) => {
                 const days = s.plan_status === "trialing" ? trialDaysLeft(s.trial_ends_at) : null;
                 return (
-                  <tr key={s.id} className="border-b border-slate-700 hover:bg-slate-700/50">
+                  <tr
+                    key={s.id}
+                    className={`border-b border-slate-700 ${
+                      s.is_demo
+                        ? "bg-amber-900/10 hover:bg-amber-900/20"
+                        : "hover:bg-slate-700/50"
+                    }`}
+                  >
                     <td className="p-3">
-                      <Link href={`/admin/studios/${s.id}`} className="font-medium text-white hover:text-indigo-400">
-                        {s.name}
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <Link href={`/admin/studios/${s.id}`} className="font-medium text-white hover:text-indigo-400">
+                          {s.name}
+                        </Link>
+                        {s.is_demo && (
+                          <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-xs font-medium text-amber-400">
+                            Demo
+                          </span>
+                        )}
+                      </div>
                       {s.owner_name && (
                         <p className="text-xs text-slate-500">{s.owner_name}</p>
                       )}

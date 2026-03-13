@@ -18,10 +18,24 @@ function SignupForm() {
   const [success, setSuccess] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
+  // 再送信用
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSent, setResendSent] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
   useEffect(() => {
     const err = searchParams.get("error");
+    const msg = searchParams.get("msg");
     if (err === "auth_callback_failed") {
-      setError("Sign up with Google failed. Please try again or use email/password.");
+      let displayMsg = "Sign up with Google failed. Please try again or use email/password.";
+      if (msg) {
+        try {
+          displayMsg = decodeURIComponent(msg);
+        } catch {
+          displayMsg = msg;
+        }
+      }
+      setError(displayMsg);
     }
   }, [searchParams]);
 
@@ -64,6 +78,32 @@ function SignupForm() {
     setLoading(false);
   }
 
+  async function handleResend() {
+    setResendLoading(true);
+    setResendSent(false);
+    const supabase = createClient();
+    await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    setResendSent(true);
+    setResendLoading(false);
+    // 60秒クールダウン
+    setResendCooldown(60);
+    const timer = setInterval(() => {
+      setResendCooldown((c) => {
+        if (c <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return c - 1;
+      });
+    }, 1000);
+  }
+
   // メール確認待ち画面
   if (success) {
     return (
@@ -95,6 +135,27 @@ function SignupForm() {
             <br />
             Click the link to activate your account.
           </p>
+
+          {/* 再送信ボタン */}
+          <div className="mt-6 flex flex-col items-center gap-2">
+            <p className="text-xs text-gray-500">Didn&apos;t receive the email?</p>
+            <button
+              type="button"
+              onClick={handleResend}
+              disabled={resendLoading || resendCooldown > 0}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {resendLoading
+                ? "Sending…"
+                : resendCooldown > 0
+                ? `Resend in ${resendCooldown}s`
+                : "Resend confirmation email"}
+            </button>
+            {resendSent && (
+              <p className="text-xs font-medium text-green-600">Email sent ✓</p>
+            )}
+          </div>
+
           <Link
             href="/login"
             className="mt-6 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"

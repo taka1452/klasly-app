@@ -48,7 +48,7 @@
 - 支払い履歴・未払いアラート
 
 ### Phase 3: メール・CSV・ウェイトリスト ✅
-- Resendメール送信（7テンプレート）
+- Resendメール送信（8テンプレート）
 - CSVエクスポート（会員・予約・支払い）
 - キャンセル待ち自動繰り上げ
 
@@ -56,6 +56,16 @@
 - Waiver（電子同意書・署名管理）
 - 出席管理（Attendance・ドロップイン対応・回数券手動消費）
 - Instructorポータル（スケジュール・予約者一覧・プロフィール編集）
+
+### Phase 5: コミュニケーション強化 ✅
+- **アプリ内メッセージング**: オーナー↔メンバー間の1対1チャット
+  - 未読バッジ・既読管理
+  - メンバー一覧表示（メッセージなしのメンバーも含む）
+  - メッセージ受信時にメール通知（`messageNotification`）
+- **予約クレジット自動判定**: Stripe Connect 状況に応じてクレジット要否を自動判定
+  - `null`（Auto）: Stripe Connect 完了 → 必須 / 未完了 → 不要（現金スタジオ）
+  - `true`（常に必須）/ `false`（常に不要）でオーナーが手動オーバーライド可能
+  - Settings ページから設定変更（Booking Credit Requirement）
 
 ### System Admin Dashboard ✅
 - KPIダッシュボード（MRR・ARR・Churn Rate・アラート）
@@ -73,7 +83,7 @@
 | Admin | Klaslyシステム管理者（ADMIN_EMAILS環境変数で制御） | /admin |
 | Owner | スタジオオーナー。全機能にアクセス可能 | / |
 | Instructor | 自分のクラス・予約者一覧のみ（閲覧中心） | /instructor |
-| Member | 自分の予約・残回数・支払い履歴のみ | /schedule |
+| Member | 自分の予約・残回数・支払い履歴・メッセージ | /schedule |
 
 ## フォルダ構成
 
@@ -101,9 +111,13 @@ src/
 │   │   ├── classes/         クラス管理
 │   │   │   └── [classId]/sessions/[sessionId]/  出席管理
 │   │   ├── bookings/        予約管理
-│   │   ├── settings/        設定
-│   │   │   └── waiver/      Waiver設定
-│   │   ├── billing/         料金管理
+│   │   ├── payments/        支払い管理
+│   │   ├── settings/        設定（Booking Credit Requirement含む）
+│   │   │   ├── billing/     料金・サブスクリプション管理
+│   │   │   ├── connect/     Stripe Connect設定
+│   │   │   ├── pricing/     料金プラン設定
+│   │   │   ├── waiver/      Waiver設定
+│   │   │   └── support/     サポートチケット
 │   │   └── layout.tsx
 │   ├── (instructor)/        ← Instructor用
 │   │   ├── page.tsx         Instructorダッシュボード
@@ -114,6 +128,12 @@ src/
 │   ├── (member)/            ← 会員用
 │   │   ├── schedule/        スケジュール・予約
 │   │   ├── my-bookings/     予約履歴
+│   │   ├── my-payments/     支払い履歴
+│   │   ├── purchase/        クレジット・プラン購入
+│   │   ├── waiver/          Waiver確認・署名
+│   │   └── layout.tsx
+│   ├── messages/            ← アプリ内メッセージ（ルートグループ外・Owner/Member共用）
+│   │   ├── page.tsx         メッセージ一覧・スレッド表示
 │   │   └── layout.tsx
 │   ├── waiver/sign/[token]/ ← Waiver署名（公開ページ）
 │   ├── privacy/             ← Privacy Policy
@@ -127,6 +147,10 @@ src/
 │       ├── stripe/webhook/
 │       ├── attendance/
 │       ├── bookings/
+│       ├── messages/        アプリ内メッセージAPI
+│       │   └── [memberId]/  スレッド取得・既読更新
+│       ├── studio/
+│       │   └── booking-settings/  予約クレジット設定（PATCH）
 │       ├── waiver/
 │       ├── coupons/         ユーザー向けクーポンAPI
 │       ├── cron/            Cronジョブ
@@ -135,6 +159,12 @@ src/
 │       │   └── grace-check/
 │       └── export/          CSVエクスポート
 ├── components/
+│   ├── bookings/
+│   │   └── booking-button.tsx    予約ボタン（requiresCredits対応）
+│   ├── messages/
+│   │   └── messages-client.tsx   メッセージUI（会話リスト・バブルスレッド）
+│   └── settings/
+│       └── booking-settings-card.tsx  予約クレジット設定カード
 ├── lib/
 │   ├── admin/
 │   │   ├── auth.ts          Admin認証（ADMIN_EMAILS判定）
@@ -144,10 +174,11 @@ src/
 │   │   └── server.ts        サーバー用
 │   ├── stripe/
 │   │   └── config.ts        Stripe設定
-│   └── email/
-│       ├── client.ts
-│       ├── templates.ts
-│       └── send.ts
+│   ├── email/
+│   │   ├── client.ts
+│   │   ├── templates.ts
+│   │   └── send.ts
+│   └── booking-utils.ts     予約クレジット判定ヘルパー
 └── types/
     └── database.ts
 ```
@@ -157,7 +188,7 @@ src/
 ### コア
 | テーブル | 説明 |
 |---|---|
-| studios | スタジオ情報・課金状態 |
+| studios | スタジオ情報・課金状態・`booking_requires_credits`（予約設定） |
 | profiles | ユーザープロフィール（auth.usersと1:1） |
 | members | 会員詳細（プラン・回数券・ステータス） |
 | instructors | インストラクター詳細 |
@@ -165,6 +196,11 @@ src/
 | class_sessions | クラスの各回（日付ごと） |
 | bookings | 予約 |
 | payments | 支払い履歴 |
+
+### メッセージ
+| テーブル | 説明 |
+|---|---|
+| messages | オーナー↔メンバー間メッセージ（スタジオ・送信者・受信者・既読） |
 
 ### 出席管理
 | テーブル | 説明 |
@@ -262,7 +298,7 @@ GitHub にプッシュ後、Vercel で Import。
 | /api/cron/past-due-check | 6時間ごと | past_due → 7日超過でgrace移行 |
 | /api/cron/grace-check | 毎日 0AM UTC | grace → 7日超過でcanceled移行 |
 
-## メールテンプレート
+## メールテンプレート（計8種）
 
 | テンプレート | トリガー |
 |---|---|
@@ -274,3 +310,19 @@ GitHub にプッシュ後、Vercel で Import。
 | welcomeMember | 会員作成時 |
 | waiverInvite | Waiver署名依頼 |
 | instructorInvite | Instructor招待 |
+| messageNotification | アプリ内メッセージ受信時 |
+
+## 予約クレジット判定ロジック
+
+```
+studios.booking_requires_credits
+  ├── null（Auto・デフォルト）
+  │     stripe_connect_onboarding_complete = true  → クレジット必須
+  │     stripe_connect_onboarding_complete = false → クレジット不要（現金スタジオ）
+  ├── true  → 常にクレジット必須（Stripe の有無に関わらず）
+  └── false → 常にクレジット不要（手動出席管理スタジオ向け）
+```
+
+Helper: `src/lib/booking-utils.ts` `getRequiresCredits()`
+
+設定場所: Settings → **Booking Credit Requirement**（Auto / Always require / Never require）

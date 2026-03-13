@@ -26,14 +26,28 @@ export type Studio = {
   grace_period_ends_at: string | null;
   trial_reminder_sent: boolean;
   email_notifications_enabled: boolean;
+  /**
+   * 予約時にクレジットを要求するか
+   * null = 自動判定（stripe_connect_onboarding_complete が true なら必須）
+   * true = 常に必須（手動 ON）
+   * false = 常に不要（現金スタジオなど）
+   */
+  booking_requires_credits: boolean | null;
   // スタジオ料金設定（会員向け）
   // @deprecated products テーブルに移行済み。互換のためDBには残すが新規コードでは products を参照すること。
   drop_in_price?: number | null;
   pack_5_price?: number | null;
   pack_10_price?: number | null;
   monthly_price?: number | null;
+  // Instructor Direct Payout
+  /** 支払いモデル: 'studio'（既存）/ 'instructor_direct'（インストラクター直接支払い） */
+  payout_model: "studio" | "instructor_direct";
+  /** スタジオ取り分（%）: 例 20.0 = 20% */
+  studio_fee_percentage: number;
   // Admin
   admin_memo: string | null;
+  /** true = デモ/テストスタジオ。KPI集計・スタジオ一覧からデフォルト除外 */
+  is_demo: boolean;
   created_at: string;
 };
 
@@ -78,6 +92,9 @@ export type Instructor = {
   profile_id: string;
   bio: string | null;
   specialties: string[] | null;
+  /** Stripe Connect アカウントID（インストラクター直接支払い用） */
+  stripe_account_id: string | null;
+  stripe_onboarding_complete: boolean;
   created_at: string;
 };
 
@@ -312,4 +329,56 @@ export type PlatformSetting = {
   key: string;
   value: string;
   updated_at: string;
+};
+
+// ============================================
+// メッセージング
+// ============================================
+
+export type Message = {
+  id: string;
+  studio_id: string;
+  sender_id: string;
+  recipient_id: string;
+  content: string;
+  read_at: string | null;
+  created_at: string;
+};
+
+/** 送受信者プロフィール付き */
+export type MessageWithProfiles = Message & {
+  sender: Pick<Profile, "id" | "full_name" | "email" | "role">;
+  recipient: Pick<Profile, "id" | "full_name" | "email" | "role">;
+};
+
+/** オーナー視点: メンバーごとの会話サマリ */
+export type ConversationSummary = {
+  memberId: string;    // profiles.id (メンバー)
+  memberName: string;
+  memberEmail: string;
+  lastMessage: string;
+  lastMessageAt: string;
+  unreadCount: number;
+};
+
+// ============================================
+// インストラクター収益
+// ============================================
+
+export type InstructorEarning = {
+  id: string;
+  studio_id: string;
+  instructor_id: string;
+  session_id: string | null;
+  booking_id: string | null;
+  gross_amount: number;       // 生徒の支払い額（cents）
+  stripe_fee: number;         // Stripe手数料（cents）
+  platform_fee: number;       // Klasly手数料（cents）
+  studio_fee: number;         // スタジオ取り分（cents）
+  instructor_payout: number;  // インストラクター受取額（cents）
+  studio_fee_percentage: number;
+  stripe_payment_intent_id: string | null;
+  stripe_transfer_id: string | null;
+  status: "pending" | "completed" | "failed";
+  created_at: string;
 };

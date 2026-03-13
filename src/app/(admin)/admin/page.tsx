@@ -6,19 +6,23 @@ export default async function AdminDashboardPage() {
   await requireAdmin();
   const supabase = createAdminClient();
 
+  // is_demo = false のみ集計（デモ・テストスタジオを KPI から除外）
   const { count: totalStudios } = await supabase
     .from("studios")
-    .select("id", { count: "exact", head: true });
+    .select("id", { count: "exact", head: true })
+    .eq("is_demo", false);
 
   const { count: activeCount } = await supabase
     .from("studios")
     .select("id", { count: "exact", head: true })
-    .in("plan_status", ["trialing", "active"]);
+    .in("plan_status", ["trialing", "active"])
+    .eq("is_demo", false);
 
   const { data: activeStudios } = await supabase
     .from("studios")
     .select("id, plan_status, subscription_period")
-    .in("plan_status", ["trialing", "active"]);
+    .in("plan_status", ["trialing", "active"])
+    .eq("is_demo", false);
 
   const monthlyActive = (activeStudios || []).filter(
     (s) => (s as { subscription_period?: string }).subscription_period === "monthly"
@@ -32,12 +36,14 @@ export default async function AdminDashboardPage() {
   const { count: pastDueCount } = await supabase
     .from("studios")
     .select("id", { count: "exact", head: true })
-    .eq("plan_status", "past_due");
+    .eq("plan_status", "past_due")
+    .eq("is_demo", false);
 
   const { count: trialingCount } = await supabase
     .from("studios")
     .select("id", { count: "exact", head: true })
-    .eq("plan_status", "trialing");
+    .eq("plan_status", "trialing")
+    .eq("is_demo", false);
 
   const now = new Date();
   const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
@@ -45,7 +51,8 @@ export default async function AdminDashboardPage() {
     .from("studios")
     .select("id", { count: "exact", head: true })
     .eq("plan_status", "trialing")
-    .lte("trial_ends_at", in7Days);
+    .lte("trial_ends_at", in7Days)
+    .eq("is_demo", false);
 
   const ARR = MRR * 12;
 
@@ -57,30 +64,35 @@ export default async function AdminDashboardPage() {
   const { data: alertsPastDue } = await supabase
     .from("studios")
     .select("id, name")
-    .eq("plan_status", "past_due");
+    .eq("plan_status", "past_due")
+    .eq("is_demo", false);
 
   const { data: alertsGrace } = await supabase
     .from("studios")
     .select("id, name, grace_period_ends_at")
-    .eq("plan_status", "grace");
+    .eq("plan_status", "grace")
+    .eq("is_demo", false);
 
   const in3Days = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
   const { data: alertsTrialEnding } = await supabase
     .from("studios")
     .select("id, name, trial_ends_at")
     .eq("plan_status", "trialing")
-    .lte("trial_ends_at", in3Days);
+    .lte("trial_ends_at", in3Days)
+    .eq("is_demo", false);
 
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const { data: recentlyCanceled } = await supabase
     .from("studios")
     .select("id, name, created_at")
     .eq("plan_status", "canceled")
-    .gte("created_at", sevenDaysAgo);
+    .gte("created_at", sevenDaysAgo)
+    .eq("is_demo", false);
 
   const { data: recentStudios } = await supabase
     .from("studios")
     .select("id, name, created_at")
+    .eq("is_demo", false)
     .order("created_at", { ascending: false })
     .limit(10);
 
