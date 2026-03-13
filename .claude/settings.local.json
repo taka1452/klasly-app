@@ -3,7 +3,13 @@
     "allow": [
       "Bash(npx next build)",
       "Bash(./node_modules/.bin/tsc --noEmit)",
-      "Bash(cmd.exe /c \"node_modules\\\\.bin\\\\tsc --noEmit 2>&1\")"
+      "Bash(cmd.exe /c \"node_modules\\\\.bin\\\\tsc --noEmit 2>&1\")",
+      "Bash(find /c/Users/ytaka/Desktop/klasly-app/src/app/'\\(auth\\)' -type f -name \"*.ts\" -o -name \"*.tsx\")",
+      "Bash(find /c/Users/ytaka/Desktop/klasly-app/src/app/'\\(public\\)' -type f)",
+      "Bash(ls C:/Users/ytaka/Desktop/klasly-app/next.config.*)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(npx --package typescript tsc --noEmit)",
+      "Bash(node_modules/.bin/tsc --noEmit)"
     ]
   }
 }
