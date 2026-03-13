@@ -34,6 +34,8 @@ export default async function SchedulePage() {
 
   let planStatus = "trialing";
   let requiresCredits = true; // default: クレジット必須（安全側）
+  let payoutModel = "studio";
+  let dropInPrice: number | null = null;
   let member: { id: string; credits: number; waiver_signed?: boolean } | null = null;
   if (profile?.studio_id) {
     const { data: memberData } = await supabase
@@ -51,15 +53,30 @@ export default async function SchedulePage() {
 
     const { data: studio } = await supabase
       .from("studios")
-      .select("plan_status, booking_requires_credits, stripe_connect_onboarding_complete")
+      .select("plan_status, booking_requires_credits, stripe_connect_onboarding_complete, payout_model")
       .eq("id", profile.studio_id)
       .single();
     planStatus = studio?.plan_status ?? "trialing";
+    payoutModel = (studio as { payout_model?: string })?.payout_model ?? "studio";
 
     requiresCredits = getRequiresCredits({
       booking_requires_credits: (studio as { booking_requires_credits?: boolean | null })?.booking_requires_credits ?? null,
       stripe_connect_onboarding_complete: (studio as { stripe_connect_onboarding_complete?: boolean })?.stripe_connect_onboarding_complete ?? false,
     });
+
+    // Get drop-in price for pay-per-class mode
+    if (payoutModel === "instructor_direct") {
+      const { data: dropInProduct } = await supabase
+        .from("products")
+        .select("price")
+        .eq("studio_id", profile.studio_id)
+        .eq("is_active", true)
+        .eq("type", "one_time")
+        .order("sort_order", { ascending: true })
+        .limit(1)
+        .single();
+      dropInPrice = dropInProduct?.price ?? null;
+    }
   }
 
   const planAccess = getPlanAccess(planStatus);
@@ -150,6 +167,8 @@ export default async function SchedulePage() {
                   confirmedCount={confirmed}
                   canBook={planAccess.canBook}
                   requiresCredits={requiresCredits}
+                  payPerClass={payoutModel === "instructor_direct"}
+                  classPrice={dropInPrice ?? undefined}
                   data-tour={idx === 0 ? "booking-button" : undefined}
                 />
               </div>

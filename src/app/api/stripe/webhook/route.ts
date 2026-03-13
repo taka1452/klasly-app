@@ -59,6 +59,17 @@ export async function POST(request: Request) {
         let studioId = session.metadata?.studio_id as string | undefined;
 
         if (connectedAccountId) {
+          // Check if this is an instructor direct payout
+          const payoutModel = session.metadata?.payout_model as string | undefined;
+          if (payoutModel === "instructor_direct") {
+            await handleInstructorDirectPayout(
+              session,
+              connectedAccountId,
+              adminSupabase
+            );
+            break;
+          }
+
           const { data: studio } = await adminSupabase
             .from("studios")
             .select("id")
@@ -540,6 +551,48 @@ export async function POST(request: Request) {
         break;
       }
 
+      case "account.updated": {
+        const account = event.data.object as Stripe.Account;
+        const accountId = account.id;
+        const chargesEnabled = account.charges_enabled ?? false;
+        const payoutsEnabled = account.payouts_enabled ?? false;
+        const onboardingComplete = chargesEnabled && payoutsEnabled;
+
+        // Check if this is an instructor account
+        const { data: inst } = await adminSupabase
+          .from("instructors")
+          .select("id, stripe_onboarding_complete")
+          .eq("stripe_account_id", accountId)
+          .maybeSingle();
+
+        if (inst) {
+          if (onboardingComplete !== inst.stripe_onboarding_complete) {
+            await adminSupabase
+              .from("instructors")
+              .update({ stripe_onboarding_complete: onboardingComplete })
+              .eq("id", inst.id);
+          }
+          break;
+        }
+
+        // Check if this is a studio account
+        const { data: studioAcct } = await adminSupabase
+          .from("studios")
+          .select("id, stripe_connect_onboarding_complete")
+          .eq("stripe_connect_account_id", accountId)
+          .maybeSingle();
+
+        if (studioAcct) {
+          if (onboardingComplete !== studioAcct.stripe_connect_onboarding_complete) {
+            await adminSupabase
+              .from("studios")
+              .update({ stripe_connect_onboarding_complete: onboardingComplete })
+              .eq("id", studioAcct.id);
+          }
+        }
+        break;
+      }
+
       default:
         break;
     }
@@ -569,6 +622,140 @@ export async function POST(request: Request) {
   }
 }
 
+async function handleInstructorDirectPayout(
+  session: Stripe.Checkout.Session,
+  connectedAccountId: string,
+  adminSupabase: ReturnType<typeof createClient>
+) {
+  const studioId = session.metadata?.studio_id;
+  const memberId = session.metadata?.member_id;
+  const sessionId = session.metadata?.session_id;
+  const instructorId = session.metadata?.instructor_id;
+  const studioFee = parseInt(session.metadata?.studio_fee ?? "0", 10);
+  const platformFee = parseInt(session.metadata?.platform_fee ?? "0", 10);
+
+  if (!studioId || !memberId || !sessionId || !instructorId) return;
+
+  const amount = session.amount_total ?? 0;
+  const paymentIntentId = session.payment_intent as string | null;
+
+  // Estimate Stripe fee (2.9% + $0.30 for standard US cards)
+  const stripeFeeEstimate = Math.round(amount * 0.029 + 30);
+  const instructorPayout = amount - studioFee - platformFee - stripeFeeEstimate;
+
+  // 1. Create booking for the session
+  const { data: existingBooking } = await adminSupabase
+    .from("bookings")
+    .select("id")
+    .eq("session_id", sessionId)
+    .eq("member_id", memberId)
+    .maybeSingle();
+
+  let bookingId: string | null = existingBooking?.id ?? null;
+
+  if (!existingBooking) {
+    const { data: newBooking } = await adminSupabase
+      .from("bookings")
+      .insert({
+        studio_id: studioId,
+        session_id: sessionId,
+        member_id: memberId,
+        status: "confirmed",
+        attended: false,
+      })
+      .select("id")
+      .single();
+    bookingId = newBooking?.id ?? null;
+  }
+
+  // 2. Insert instructor_earnings record
+  const { data: earningRecord } = await adminSupabase
+    .from("instructor_earnings")
+    .insert({
+      studio_id: studioId,
+      instructor_id: instructorId,
+      session_id: sessionId,
+      booking_id: bookingId,
+      gross_amount: amount,
+      stripe_fee: stripeFeeEstimate,
+      platform_fee: platformFee,
+      studio_fee: studioFee,
+      instructor_payout: instructorPayout,
+      studio_fee_percentage: parseFloat(
+        session.metadata?.studio_fee_percentage ?? "0"
+      ),
+      stripe_payment_intent_id: paymentIntentId,
+      status: "pending",
+    })
+    .select("id")
+    .single();
+
+  // 3. Transfer studio fee to studio's Connected Account
+  if (studioFee > 0) {
+    const { data: studio } = await adminSupabase
+      .from("studios")
+      .select("stripe_connect_account_id")
+      .eq("id", studioId)
+      .single();
+
+    if (studio?.stripe_connect_account_id) {
+      try {
+        const transfer = await stripe.transfers.create({
+          amount: studioFee,
+          currency: session.currency ?? "usd",
+          destination: studio.stripe_connect_account_id,
+          metadata: {
+            studio_id: studioId,
+            instructor_id: instructorId,
+            session_id: sessionId,
+            type: "studio_fee",
+          },
+        });
+
+        // 4. Update earnings record with transfer id and status
+        if (earningRecord) {
+          await adminSupabase
+            .from("instructor_earnings")
+            .update({
+              stripe_transfer_id: transfer.id,
+              status: "completed",
+            })
+            .eq("id", earningRecord.id);
+        }
+      } catch (transferErr) {
+        // Log error but don't fail the webhook
+        console.error("Studio fee transfer failed:", transferErr);
+        if (earningRecord) {
+          await adminSupabase
+            .from("instructor_earnings")
+            .update({ status: "failed" })
+            .eq("id", earningRecord.id);
+        }
+      }
+    }
+  } else if (earningRecord) {
+    // No studio fee to transfer, mark as completed
+    await adminSupabase
+      .from("instructor_earnings")
+      .update({ status: "completed" })
+      .eq("id", earningRecord.id);
+  }
+
+  // 5. Create payment record
+  await adminSupabase.from("payments").insert({
+    studio_id: studioId,
+    member_id: memberId,
+    amount,
+    currency: session.currency ?? "usd",
+    type: "drop_in",
+    status: "paid",
+    stripe_payment_intent_id: paymentIntentId,
+    payment_type: "drop_in",
+    description: `Instructor direct payout`,
+    paid_at: new Date().toISOString(),
+  });
+}
+
 async function getStudioIdFromStripeEvent(
   event: Stripe.Event,
   supabase: ReturnType<typeof createClient>
@@ -578,16 +765,44 @@ async function getStudioIdFromStripeEvent(
       .account;
 
     if (event.type === "checkout.session.completed") {
+      const session = event.data.object as Stripe.Checkout.Session;
+      // Check metadata first (covers instructor_direct case)
+      if (session.metadata?.studio_id) {
+        return session.metadata.studio_id;
+      }
       if (connectedAccountId) {
         const { data: studio } = await supabase
           .from("studios")
           .select("id")
           .eq("stripe_connect_account_id", connectedAccountId)
           .single();
-        return studio?.id ?? null;
+        if (studio) return studio.id;
+        // Check if it's an instructor account
+        const { data: inst } = await supabase
+          .from("instructors")
+          .select("studio_id")
+          .eq("stripe_account_id", connectedAccountId)
+          .maybeSingle();
+        return inst?.studio_id ?? null;
       }
-      const session = event.data.object as Stripe.Checkout.Session;
-      return (session.metadata?.studio_id as string) ?? null;
+      return null;
+    }
+    if (event.type === "account.updated") {
+      if (connectedAccountId) {
+        const { data: studio } = await supabase
+          .from("studios")
+          .select("id")
+          .eq("stripe_connect_account_id", connectedAccountId)
+          .maybeSingle();
+        if (studio) return studio.id;
+        const { data: inst } = await supabase
+          .from("instructors")
+          .select("studio_id")
+          .eq("stripe_account_id", connectedAccountId)
+          .maybeSingle();
+        return inst?.studio_id ?? null;
+      }
+      return null;
     }
     if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
       const sub = event.data.object as Stripe.Subscription;

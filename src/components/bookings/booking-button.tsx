@@ -14,6 +14,10 @@ type Props = {
   canBook?: boolean;
   /** クレジット不要モード: false の場合クレジット0でも予約ボタンを表示 */
   requiresCredits?: boolean;
+  /** instructor_direct モードの場合 true → "Book & Pay" フローを使用 */
+  payPerClass?: boolean;
+  /** payPerClass 時に表示する料金（cents） */
+  classPrice?: number;
   "data-tour"?: string;
 };
 
@@ -26,6 +30,8 @@ export default function BookingButton({
   confirmedCount,
   canBook = true,
   requiresCredits = true,
+  payPerClass = false,
+  classPrice,
   "data-tour": dataTour,
 }: Props) {
   const router = useRouter();
@@ -35,7 +41,8 @@ export default function BookingButton({
   const isFull = confirmedCount >= capacity;
   const showWaitlist = isFull;
   // クレジット必須モードのときのみ 0 クレジットをブロック
-  const hasNoCredits = requiresCredits && memberCredits === 0;
+  // payPerClass モードではクレジットチェックを無効化（決済で代替）
+  const hasNoCredits = !payPerClass && requiresCredits && memberCredits === 0;
 
   const tourProps = dataTour ? { "data-tour": dataTour } : {};
 
@@ -53,6 +60,31 @@ export default function BookingButton({
         Bookings are temporarily unavailable
       </span>
     );
+  }
+
+  async function handlePayAndBook() {
+    if (!memberId) return;
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/stripe/class-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId, memberId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Something went wrong");
+        return;
+      }
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch {
+      setError("Something went wrong");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleBook(action: "book" | "rebook" | "cancel" | "leave_waitlist") {
@@ -167,6 +199,24 @@ export default function BookingButton({
         >
           Purchase
         </Link>
+      </div>
+    );
+  }
+
+  // Pay-per-class mode: show "Book & Pay" when member has no credits
+  if (payPerClass && !existingBooking && memberCredits <= 0 && !showWaitlist) {
+    const priceLabel = classPrice ? `$${(classPrice / 100).toFixed(2)}` : "";
+    return (
+      <div className="flex flex-col items-end gap-1" {...tourProps}>
+        {error && <p className="text-xs text-red-600 text-right">{error}</p>}
+        <button
+          type="button"
+          onClick={handlePayAndBook}
+          disabled={loading}
+          className="btn-primary text-sm"
+        >
+          {loading ? "…" : `Book & Pay${priceLabel ? ` ${priceLabel}` : ""}`}
+        </button>
       </div>
     );
   }

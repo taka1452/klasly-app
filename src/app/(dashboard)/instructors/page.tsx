@@ -84,6 +84,9 @@ export default async function InstructorsPage() {
             filename={`instructors-${new Date().toISOString().slice(0, 10)}.csv`}
             label="Export CSV"
           />
+          <Link href="/instructors/earnings" className="btn-secondary">
+            Earnings Report
+          </Link>
           <Link href="/instructors/import" className="btn-secondary">
             Import CSV
           </Link>
