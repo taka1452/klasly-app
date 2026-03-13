@@ -31,7 +31,9 @@
       "WebSearch",
       "Bash(grep -r \"export default\" /c/Users/ytaka/Desktop/klasly-app/src/app \\\\\\( -path \"*/api/*\" -prune \\\\\\))",
       "Bash(ls -la \"/c/Users/ytaka/Desktop/klasly-app/src/app/\\(dashboard\\)/settings/\")",
-      "Bash(ls -la /c/Users/ytaka/Desktop/klasly-app/src/app/\\\\\\(dashboard\\\\\\)/settings/billing/success/)"
+      "Bash(ls -la /c/Users/ytaka/Desktop/klasly-app/src/app/\\\\\\(dashboard\\\\\\)/settings/billing/success/)",
+      "Bash(xargs grep -l \"CREATE TABLE instructors\")",
+      "Bash(xargs grep -l \"CREATE TABLE studios\")"
     ]
   }
 }

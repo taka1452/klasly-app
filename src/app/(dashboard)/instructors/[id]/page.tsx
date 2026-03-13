@@ -96,6 +96,8 @@ export default async function InstructorDetailPage({
               phone: rawProfile?.phone || "",
               bio: instructor.bio || "",
               specialties: (specialties || []).join(", "),
+              rentalType: (instructor as { rental_type?: string }).rental_type as "none" | "flat_monthly" | "per_class" ?? "none",
+              rentalAmount: (instructor as { rental_amount?: number }).rental_amount ?? 0,
             }}
           />
         </div>
