@@ -6,6 +6,7 @@ import {
   waitlistPromoted,
 } from "@/lib/email/templates";
 import { formatDate, formatTime } from "@/lib/utils";
+import { getRequiresCredits } from "@/lib/booking-utils";
 
 type BookingAction = "book" | "rebook" | "cancel" | "leave_waitlist";
 
@@ -67,7 +68,7 @@ export async function executeBookingAction({
 
   const { data: studio } = await adminSupabase
     .from("studios")
-    .select("name")
+    .select("name, booking_requires_credits, stripe_connect_onboarding_complete")
     .eq("id", member.studio_id)
     .single();
 
@@ -97,6 +98,12 @@ export async function executeBookingAction({
     studioName,
   };
 
+  // スタジオ設定に基づきクレジット要否を判定
+  const requiresCredits = getRequiresCredits({
+    booking_requires_credits: (studio as { booking_requires_credits?: boolean | null })?.booking_requires_credits ?? null,
+    stripe_connect_onboarding_complete: (studio as { stripe_connect_onboarding_complete?: boolean })?.stripe_connect_onboarding_complete ?? false,
+  });
+
   let promotedMemberEmail: string | null = null;
   let promotedMemberName: string | null = null;
 
@@ -110,7 +117,7 @@ export async function executeBookingAction({
     const isFull = (confirmedCount ?? 0) >= session.capacity;
     const status = isFull ? "waitlist" : "confirmed";
 
-    if (status === "confirmed" && member.credits >= 0 && member.credits < 1) {
+    if (requiresCredits && status === "confirmed" && member.credits >= 0 && member.credits < 1) {
       return { success: false, error: "No credits remaining", status: 400 };
     }
 
@@ -251,8 +258,8 @@ export async function executeBookingAction({
 
         if (!waitlistMember) continue;
 
-        // credits === 0 のメンバーはスキップ
-        if (waitlistMember.credits === 0) continue;
+        // クレジット必須モードで credits === 0 のメンバーはスキップ
+        if (requiresCredits && waitlistMember.credits === 0) continue;
 
         const { data: promoted } = await adminSupabase
           .from("profiles")
