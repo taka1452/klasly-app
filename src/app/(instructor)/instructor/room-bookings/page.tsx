@@ -3,6 +3,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { formatDate, formatTime } from "@/lib/utils";
 import RoomBookingCancelButton from "@/components/instructor/room-booking-cancel-button";
+import RoomBookingQuota from "@/components/instructor/room-booking-quota";
 
 export default async function InstructorRoomBookingsPage() {
   const serverSupabase = await createServerClient();
@@ -48,6 +49,10 @@ export default async function InstructorRoomBookingsPage() {
         <Link href="/instructor/room-bookings/new" className="btn-primary">
           + Book a room
         </Link>
+      </div>
+
+      <div className="mt-4">
+        <RoomBookingQuota />
       </div>
 
       <div className="mt-6">

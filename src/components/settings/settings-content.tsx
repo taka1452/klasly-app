@@ -178,6 +178,22 @@ export default function SettingsContent({
           Studio Features
         </h2>
         <div className="space-y-6">
+          {/* Instructor Tiers */}
+          <div className="card">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Instructor Membership Tiers
+            </h3>
+            <p className="mt-2 text-sm text-gray-600">
+              Define tiers with monthly hour limits for instructor room bookings.
+            </p>
+            <Link
+              href="/settings/tiers"
+              className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+            >
+              Manage Tiers →
+            </Link>
+          </div>
+
           {/* Waiver */}
           <div className="card">
             <h3 className="text-lg font-semibold text-gray-900">Waiver</h3>

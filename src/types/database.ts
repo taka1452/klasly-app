@@ -425,3 +425,24 @@ export type InstructorRoomBooking = {
   notes: string | null;
   created_at: string;
 };
+
+export type InstructorMembershipTier = {
+  id: string;
+  studio_id: string;
+  name: string;
+  monthly_minutes: number; // -1 = unlimited
+  monthly_price: number;   // cents
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+};
+
+export type InstructorMembership = {
+  id: string;
+  studio_id: string;
+  instructor_id: string;
+  tier_id: string;
+  status: "active" | "cancelled";
+  started_at: string;
+  created_at: string;
+};

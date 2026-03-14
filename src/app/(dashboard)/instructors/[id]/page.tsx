@@ -49,6 +49,21 @@ export default async function InstructorDetailPage({
     notFound();
   }
 
+  // Fetch tiers and current membership for this instructor
+  const { data: tiers } = await supabase
+    .from("instructor_membership_tiers")
+    .select("id, name, monthly_minutes")
+    .eq("studio_id", instructor.studio_id)
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
+
+  const { data: membership } = await supabase
+    .from("instructor_memberships")
+    .select("tier_id")
+    .eq("instructor_id", id)
+    .eq("status", "active")
+    .maybeSingle();
+
   const { data: assignedClasses } = await supabase
     .from("classes")
     .select("id, name, day_of_week, start_time")
@@ -91,6 +106,7 @@ export default async function InstructorDetailPage({
           <InstructorEditForm
             instructorId={instructor.id}
             profileId={instructor.profile_id}
+            tiers={tiers || []}
             initialData={{
               fullName: rawProfile?.full_name || "",
               phone: rawProfile?.phone || "",
@@ -98,6 +114,7 @@ export default async function InstructorDetailPage({
               specialties: (specialties || []).join(", "),
               rentalType: (instructor as { rental_type?: string }).rental_type as "none" | "flat_monthly" | "per_class" ?? "none",
               rentalAmount: (instructor as { rental_amount?: number }).rental_amount ?? 0,
+              tierId: membership?.tier_id || "",
             }}
           />
         </div>

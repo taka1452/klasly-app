@@ -6,9 +6,12 @@ import { createClient } from "@/lib/supabase/client";
 
 type RentalType = "none" | "flat_monthly" | "per_class";
 
+type TierOption = { id: string; name: string; monthly_minutes: number };
+
 type Props = {
   instructorId: string;
   profileId: string;
+  tiers: TierOption[];
   initialData: {
     fullName: string;
     phone: string;
@@ -16,12 +19,14 @@ type Props = {
     specialties: string;
     rentalType: RentalType;
     rentalAmount: number; // cents
+    tierId: string; // current tier assignment ("" = none)
   };
 };
 
 export default function InstructorEditForm({
   instructorId,
   profileId,
+  tiers,
   initialData,
 }: Props) {
   const router = useRouter();
@@ -29,6 +34,7 @@ export default function InstructorEditForm({
   const [phone, setPhone] = useState(initialData.phone);
   const [bio, setBio] = useState(initialData.bio);
   const [specialties, setSpecialties] = useState(initialData.specialties);
+  const [tierId, setTierId] = useState(initialData.tierId);
   const [rentalType, setRentalType] = useState<RentalType>(initialData.rentalType);
   const [rentalAmountDisplay, setRentalAmountDisplay] = useState(
     initialData.rentalAmount > 0 ? String(initialData.rentalAmount / 100) : ""
@@ -82,6 +88,26 @@ export default function InstructorEditForm({
       setError(instructorError.message);
       setLoading(false);
       return;
+    }
+
+    // Update tier assignment
+    if (tierId) {
+      const tierRes = await fetch("/api/instructor-memberships", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ instructor_id: instructorId, tier_id: tierId }),
+      });
+      if (!tierRes.ok) {
+        const tierData = await tierRes.json();
+        setError(tierData.error || "Failed to assign tier");
+        setLoading(false);
+        return;
+      }
+    } else if (initialData.tierId) {
+      // Had a tier before, now removed
+      await fetch(`/api/instructor-memberships?instructor_id=${instructorId}`, {
+        method: "DELETE",
+      });
     }
 
     setSaved(true);
@@ -155,6 +181,28 @@ export default function InstructorEditForm({
           />
           <p className="mt-1 text-xs text-gray-400">Comma-separated list</p>
         </div>
+
+        {/* Membership Tier */}
+        {tiers.length > 0 && (
+          <div className="border-t border-gray-200 pt-5">
+            <h3 className="text-sm font-semibold text-gray-900">Room Booking Tier</h3>
+            <p className="mt-1 text-xs text-gray-500">
+              Assign a membership tier to set monthly room booking hour limits.
+            </p>
+            <select
+              value={tierId}
+              onChange={(e) => setTierId(e.target.value)}
+              className="input-field mt-3"
+            >
+              <option value="">No tier (no limit)</option>
+              {tiers.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name} — {t.monthly_minutes === -1 ? "Unlimited" : `${Math.floor(t.monthly_minutes / 60)}h ${t.monthly_minutes % 60}min/mo`}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Studio Rental */}
         <div className="border-t border-gray-200 pt-5">

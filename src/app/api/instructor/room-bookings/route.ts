@@ -132,6 +132,54 @@ export async function POST(request: Request) {
       );
     }
 
+    // Time quota enforcement: check instructor's membership tier
+    const { data: membership } = await ctx.supabase
+      .from("instructor_memberships")
+      .select("tier_id, instructor_membership_tiers(monthly_minutes)")
+      .eq("instructor_id", ctx.instructorId)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (membership) {
+      const rawTier = membership.instructor_membership_tiers as unknown;
+      const tierData = (Array.isArray(rawTier) ? rawTier[0] : rawTier) as { monthly_minutes: number } | null;
+      const monthlyMinutes = tierData?.monthly_minutes ?? -1;
+
+      if (monthlyMinutes !== -1) {
+        // Calculate requested duration
+        const [sh, sm] = start_time.split(":").map(Number);
+        const [eh, em] = end_time.split(":").map(Number);
+        const requestedMinutes = (eh * 60 + em) - (sh * 60 + sm);
+
+        // Get used minutes for the booking month
+        const bookingMonth = new Date(booking_date);
+        const year = bookingMonth.getFullYear();
+        const month = bookingMonth.getMonth() + 1;
+
+        const { data: usedData } = await ctx.supabase.rpc("get_instructor_used_minutes", {
+          p_instructor_id: ctx.instructorId,
+          p_year: year,
+          p_month: month,
+        });
+
+        const usedMinutes = typeof usedData === "number" ? usedData : 0;
+        const remainingMinutes = monthlyMinutes - usedMinutes;
+
+        if (requestedMinutes > remainingMinutes) {
+          const usedH = Math.floor(usedMinutes / 60);
+          const usedM = usedMinutes % 60;
+          const limitH = Math.floor(monthlyMinutes / 60);
+          const limitM = monthlyMinutes % 60;
+          return NextResponse.json(
+            {
+              error: `Monthly time limit exceeded. Used: ${usedH}h${usedM > 0 ? ` ${usedM}m` : ""} / Limit: ${limitH}h${limitM > 0 ? ` ${limitM}m` : ""}. Remaining: ${Math.floor(remainingMinutes / 60)}h${remainingMinutes % 60 > 0 ? ` ${remainingMinutes % 60}m` : ""}.`,
+            },
+            { status: 403 }
+          );
+        }
+      }
+    }
+
     const { data: booking, error: insertError } = await ctx.supabase
       .from("instructor_room_bookings")
       .insert({
