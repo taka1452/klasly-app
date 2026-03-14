@@ -42,6 +42,13 @@ export default async function ClassDetailPage({
     .eq("studio_id", cls?.studio_id || "")
     .order("created_at", { ascending: false });
 
+  const { data: rooms } = await supabase
+    .from("rooms")
+    .select("id, name, capacity")
+    .eq("studio_id", cls?.studio_id || "")
+    .eq("is_active", true)
+    .order("name", { ascending: true });
+
   if (!cls) {
     notFound();
   }
@@ -119,6 +126,11 @@ export default async function ClassDetailPage({
                 full_name: raw?.full_name || "—",
               };
             })}
+            rooms={(rooms || []).map((r) => ({
+              id: r.id,
+              name: r.name,
+              capacity: r.capacity ?? null,
+            }))}
             initialData={{
               name: cls.name,
               description: cls.description || "",
@@ -128,6 +140,8 @@ export default async function ClassDetailPage({
               capacity: cls.capacity,
               location: cls.location || "",
               instructorId: cls.instructor_id || "",
+              roomId: cls.room_id || "",
+              isPublic: cls.is_public ?? true,
             }}
           />
         </div>

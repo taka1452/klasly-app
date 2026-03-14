@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { usePlanAccess } from "@/components/ui/plan-access-provider";
 
 type InstructorOption = { id: string; full_name: string };
+type RoomOption = { id: string; name: string; capacity: number | null };
 
 const DAY_OPTIONS = [
   { value: 0, label: "Sunday" },
@@ -30,7 +31,10 @@ export default function NewClassPage() {
   const [capacity, setCapacity] = useState(15);
   const [location, setLocation] = useState("");
   const [instructorId, setInstructorId] = useState<string>("");
+  const [roomId, setRoomId] = useState<string>("");
+  const [isPublic, setIsPublic] = useState(true);
   const [instructors, setInstructors] = useState<InstructorOption[]>([]);
+  const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -57,6 +61,25 @@ export default function NewClassPage() {
       setInstructors(list);
     }
     fetchInstructors();
+
+    async function fetchRooms() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("studio_id")
+        .eq("id", user?.id)
+        .single();
+      if (!profile?.studio_id) return;
+      const { data } = await supabase
+        .from("rooms")
+        .select("id, name, capacity")
+        .eq("studio_id", profile.studio_id)
+        .eq("is_active", true)
+        .order("name", { ascending: true });
+      setRooms(data || []);
+    }
+    fetchRooms();
   }, []);
 
   if (planAccess && !planAccess.canCreate) {
@@ -115,6 +138,8 @@ export default function NewClassPage() {
         duration_minutes: durationMinutes,
         capacity,
         location: location || null,
+        room_id: roomId || null,
+        is_public: isPublic,
         is_active: true,
       })
       .select("id, start_time, capacity")
@@ -290,6 +315,33 @@ export default function NewClassPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700">
+              Room (optional)
+            </label>
+            <select
+              value={roomId}
+              onChange={(e) => setRoomId(e.target.value)}
+              className="input-field mt-1"
+            >
+              <option value="">No room assigned</option>
+              {rooms.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}{r.capacity ? ` (cap. ${r.capacity})` : ""}
+                </option>
+              ))}
+            </select>
+            {rooms.length === 0 && (
+              <p className="mt-1 text-xs text-gray-400">
+                No rooms yet.{" "}
+                <a href="/rooms/new" className="text-brand-600 hover:underline">
+                  Add a room
+                </a>{" "}
+                first, or use the Location field below.
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
               Location (optional)
             </label>
             <input
@@ -299,6 +351,22 @@ export default function NewClassPage() {
               placeholder="Main studio"
               className="input-field mt-1"
             />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="isPublic"
+              checked={isPublic}
+              onChange={(e) => setIsPublic(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-brand-600"
+            />
+            <label htmlFor="isPublic" className="text-sm font-medium text-gray-700">
+              Public{" "}
+              <span className="font-normal text-gray-500">
+                (visible to members on the schedule)
+              </span>
+            </label>
           </div>
 
           <div className="flex gap-3 pt-2">

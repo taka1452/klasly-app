@@ -49,7 +49,14 @@ export default function WeeklySchedule({ classes }: Props) {
                     href={`/classes/${cls.id}`}
                     className="card block cursor-pointer p-3 transition-colors hover:border-brand-300 hover:bg-brand-50/50"
                   >
-                    <p className="font-medium text-gray-900">{cls.name}</p>
+                    <div className="flex items-start justify-between gap-1">
+                      <p className="font-medium text-gray-900">{cls.name}</p>
+                      {cls.is_public === false && (
+                        <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium bg-amber-100 text-amber-700">
+                          Private
+                        </span>
+                      )}
+                    </div>
                     <p className="mt-1 text-xs text-gray-600">
                       {formatTime(cls.start_time)}
                     </p>
@@ -87,7 +94,14 @@ export default function WeeklySchedule({ classes }: Props) {
                     onClick={() => router.push(`/classes/${cls.id}`)}
                     className="card w-full p-3 text-left transition-colors hover:border-brand-300 hover:bg-brand-50/50"
                   >
-                    <p className="font-medium text-gray-900">{cls.name}</p>
+                    <div className="flex items-start justify-between gap-1">
+                      <p className="font-medium text-gray-900">{cls.name}</p>
+                      {cls.is_public === false && (
+                        <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium bg-amber-100 text-amber-700">
+                          Private
+                        </span>
+                      )}
+                    </div>
                     <p className="mt-1 text-xs text-gray-600">
                       {formatTime(cls.start_time)}
                     </p>

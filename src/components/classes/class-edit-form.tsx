@@ -15,10 +15,12 @@ const DAY_OPTIONS = [
 ];
 
 type InstructorOption = { id: string; full_name: string };
+type RoomOption = { id: string; name: string; capacity: number | null };
 
 type Props = {
   classId: string;
   instructors: InstructorOption[];
+  rooms: RoomOption[];
   initialData: {
     name: string;
     description: string;
@@ -28,12 +30,15 @@ type Props = {
     capacity: number;
     location: string;
     instructorId: string;
+    roomId: string;
+    isPublic: boolean;
   };
 };
 
 export default function ClassEditForm({
   classId,
   instructors,
+  rooms,
   initialData,
 }: Props) {
   const router = useRouter();
@@ -47,6 +52,8 @@ export default function ClassEditForm({
   const [capacity, setCapacity] = useState(initialData.capacity);
   const [location, setLocation] = useState(initialData.location);
   const [instructorId, setInstructorId] = useState(initialData.instructorId);
+  const [roomId, setRoomId] = useState(initialData.roomId);
+  const [isPublic, setIsPublic] = useState(initialData.isPublic);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -72,6 +79,8 @@ export default function ClassEditForm({
         capacity,
         location: location || null,
         instructor_id: instructorId || null,
+        room_id: roomId || null,
+        is_public: isPublic,
       })
       .eq("id", classId);
 
@@ -206,6 +215,24 @@ export default function ClassEditForm({
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
+            Room
+          </label>
+          <select
+            value={roomId}
+            onChange={(e) => setRoomId(e.target.value)}
+            className="input-field mt-1"
+          >
+            <option value="">No room assigned</option>
+            {rooms.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}{r.capacity ? ` (cap. ${r.capacity})` : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
             Location
           </label>
           <input
@@ -214,6 +241,22 @@ export default function ClassEditForm({
             onChange={(e) => setLocation(e.target.value)}
             className="input-field mt-1"
           />
+        </div>
+
+        <div className="flex items-center gap-3">
+          <input
+            type="checkbox"
+            id="isPublicEdit"
+            checked={isPublic}
+            onChange={(e) => setIsPublic(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-brand-600"
+          />
+          <label htmlFor="isPublicEdit" className="text-sm font-medium text-gray-700">
+            Public{" "}
+            <span className="font-normal text-gray-500">
+              (visible to members on the schedule)
+            </span>
+          </label>
         </div>
 
         <button type="submit" disabled={loading} className="btn-primary">

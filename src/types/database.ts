@@ -100,10 +100,21 @@ export type Instructor = {
   created_at: string;
 };
 
+export type Room = {
+  id: string;
+  studio_id: string;
+  name: string;
+  description: string | null;
+  capacity: number | null;
+  is_active: boolean;
+  created_at: string;
+};
+
 export type Class = {
   id: string;
   studio_id: string;
   instructor_id: string | null;
+  room_id: string | null;
   name: string;
   description: string | null;
   day_of_week: number; // 0=日 1=月 2=火 3=水 4=木 5=金 6=土
@@ -112,6 +123,7 @@ export type Class = {
   capacity: number;
   location: string | null;
   is_active: boolean;
+  is_public: boolean;
   created_at: string;
 };
 
