@@ -70,6 +70,16 @@ export async function POST(request: Request) {
             break;
           }
 
+          // インストラクターメンバーシップ課金
+          const metaType = session.metadata?.type as string | undefined;
+          if (metaType === "instructor_membership") {
+            await handleInstructorMembershipCheckout(
+              session,
+              adminSupabase
+            );
+            break;
+          }
+
           const { data: studio } = await adminSupabase
             .from("studios")
             .select("id")
@@ -236,6 +246,26 @@ export async function POST(request: Request) {
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
         const subscriptionId = subscription.id;
+
+        // インストラクターメンバーシップのサブスク更新チェック
+        const { data: instrMembership } = await adminSupabase
+          .from("instructor_memberships")
+          .select("id")
+          .eq("stripe_subscription_id", subscriptionId)
+          .maybeSingle();
+
+        if (instrMembership) {
+          const periodEnd = subscription.items.data[0]?.current_period_end;
+          await adminSupabase
+            .from("instructor_memberships")
+            .update({
+              status: subscription.status === "active" || subscription.status === "trialing" ? "active" : "cancelled",
+              current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+              cancel_at_period_end: subscription.cancel_at_period_end ?? false,
+            })
+            .eq("id", instrMembership.id);
+          break;
+        }
 
         const { data: studio } = await adminSupabase
           .from("studios")
@@ -513,6 +543,25 @@ export async function POST(request: Request) {
         const subscription = event.data.object as Stripe.Subscription;
         const subscriptionId = subscription.id;
 
+        // インストラクターメンバーシップのサブスク削除チェック
+        const { data: deletedInstrMembership } = await adminSupabase
+          .from("instructor_memberships")
+          .select("id")
+          .eq("stripe_subscription_id", subscriptionId)
+          .maybeSingle();
+
+        if (deletedInstrMembership) {
+          await adminSupabase
+            .from("instructor_memberships")
+            .update({
+              status: "cancelled",
+              stripe_subscription_id: null,
+              cancel_at_period_end: false,
+            })
+            .eq("id", deletedInstrMembership.id);
+          break;
+        }
+
         const { data: studio } = await adminSupabase
           .from("studios")
           .select("id")
@@ -620,6 +669,38 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ error: message }, { status: 500 });
   }
+}
+
+/**
+ * インストラクターメンバーシップの checkout.session.completed を処理。
+ * サブスクリプションIDを instructor_memberships に保存。
+ */
+async function handleInstructorMembershipCheckout(
+  session: Stripe.Checkout.Session,
+  adminSupabase: ReturnType<typeof createClient>
+) {
+  const membershipId = session.metadata?.membership_id;
+  if (!membershipId) return;
+
+  const subscriptionId = getSubscriptionId(
+    session.subscription as string | Stripe.Subscription | null
+  );
+
+  const periodEnd = session.subscription
+    ? (() => {
+        // subscription は expand されていないので retrieve が必要
+        // ただし checkout.session では通常IDのみなのでここでは null
+        return null;
+      })()
+    : null;
+
+  await adminSupabase
+    .from("instructor_memberships")
+    .update({
+      stripe_subscription_id: subscriptionId,
+      status: "active",
+    })
+    .eq("id", membershipId);
 }
 
 async function handleInstructorDirectPayout(

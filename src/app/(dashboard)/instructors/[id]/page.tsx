@@ -59,7 +59,7 @@ export default async function InstructorDetailPage({
 
   const { data: membership } = await supabase
     .from("instructor_memberships")
-    .select("tier_id")
+    .select("tier_id, stripe_subscription_id, cancel_at_period_end, current_period_end, instructor_membership_tiers(name, monthly_price)")
     .eq("instructor_id", id)
     .eq("status", "active")
     .maybeSingle();
@@ -145,6 +145,50 @@ export default async function InstructorDetailPage({
               </div>
             </dl>
           </div>
+
+          {membership && (() => {
+            const rawTier = membership.instructor_membership_tiers as unknown;
+            const tierInfo = (Array.isArray(rawTier) ? rawTier[0] : rawTier) as { name: string; monthly_price: number } | null;
+            if (!tierInfo) return null;
+            const hasSubscription = !!membership.stripe_subscription_id;
+            const isPaid = tierInfo.monthly_price <= 0;
+            return (
+              <div className="card">
+                <h3 className="text-sm font-medium text-gray-500">
+                  Membership Tier
+                </h3>
+                <dl className="mt-4 space-y-3">
+                  <div>
+                    <dt className="text-xs text-gray-400">Tier</dt>
+                    <dd className="text-sm font-medium text-gray-900">{tierInfo.name}</dd>
+                  </div>
+                  {tierInfo.monthly_price > 0 && (
+                    <div>
+                      <dt className="text-xs text-gray-400">Monthly Price</dt>
+                      <dd className="text-sm font-medium text-gray-900">
+                        ${(tierInfo.monthly_price / 100).toFixed(2)}/mo
+                      </dd>
+                    </div>
+                  )}
+                  <div>
+                    <dt className="text-xs text-gray-400">Payment Status</dt>
+                    <dd className="mt-0.5">
+                      {isPaid ? (
+                        <span className="inline-flex items-center rounded-full bg-gray-50 px-2.5 py-0.5 text-xs font-medium text-gray-500">Free</span>
+                      ) : hasSubscription ? (
+                        <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">Active</span>
+                      ) : (
+                        <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700">Not subscribed</span>
+                      )}
+                      {membership.cancel_at_period_end && (
+                        <span className="ml-1 inline-flex items-center rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-600">Cancelling</span>
+                      )}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            );
+          })()}
 
           <div className="card">
             <h3 className="text-sm font-medium text-gray-500">

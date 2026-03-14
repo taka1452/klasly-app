@@ -30,7 +30,7 @@ export default async function Home() {
     }
 
     // Role 判定（studio_id がある場合のみ）
-    if (profile?.role === "owner") {
+    if (profile?.role === "owner" || profile?.role === "manager") {
       redirect("/dashboard");
     }
     if (profile?.role === "instructor") {

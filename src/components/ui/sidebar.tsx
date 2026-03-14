@@ -93,6 +93,16 @@ const ownerNavItems = [
     ),
   },
   {
+    label: "Managers",
+    href: "/managers",
+    dataTour: undefined as string | undefined,
+    icon: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+      </svg>
+    ),
+  },
+  {
     label: "Settings",
     href: "/settings",
     dataTour: undefined as string | undefined,
@@ -105,6 +115,11 @@ const ownerNavItems = [
   },
 ];
 
+// マネージャーは Settings と Managers を除外（Stripe・プラン管理・マネージャー管理はオーナーのみ）
+const managerNavItems = ownerNavItems.filter(
+  (item) => item.href !== "/settings" && item.href !== "/managers"
+);
+
 export default function Sidebar({
   currentRole,
   studioName,
@@ -114,7 +129,7 @@ export default function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
 
-  const navItems = currentRole === "owner" ? ownerNavItems : ownerNavItems;
+  const navItems = currentRole === "manager" ? managerNavItems : ownerNavItems;
 
   return (
     <>

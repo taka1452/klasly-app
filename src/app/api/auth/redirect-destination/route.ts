@@ -38,7 +38,7 @@ export async function GET() {
     if (!profile?.studio_id) {
       return NextResponse.json({ url: "/onboarding" });
     }
-    if (profile.role === "owner") {
+    if (profile.role === "owner" || profile.role === "manager") {
       return NextResponse.json({ url: "/" });
     }
     if (profile.role === "instructor") {

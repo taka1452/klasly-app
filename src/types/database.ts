@@ -56,7 +56,7 @@ export type Studio = {
 export type Profile = {
   id: string;
   studio_id: string | null;
-  role: "owner" | "instructor" | "member";
+  role: "owner" | "instructor" | "member" | "manager";
   full_name: string | null;
   email: string | null;
   phone: string | null;
@@ -97,6 +97,20 @@ export type Instructor = {
   /** Stripe Connect アカウントID（インストラクター直接支払い用） */
   stripe_account_id: string | null;
   stripe_onboarding_complete: boolean;
+  created_at: string;
+};
+
+export type Manager = {
+  id: string;
+  studio_id: string;
+  profile_id: string;
+  can_manage_members: boolean;
+  can_manage_classes: boolean;
+  can_manage_instructors: boolean;
+  can_manage_bookings: boolean;
+  can_manage_rooms: boolean;
+  can_view_payments: boolean;
+  can_send_messages: boolean;
   created_at: string;
 };
 
@@ -443,6 +457,10 @@ export type InstructorMembership = {
   instructor_id: string;
   tier_id: string;
   status: "active" | "cancelled";
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
   started_at: string;
   created_at: string;
 };

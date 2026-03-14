@@ -28,7 +28,7 @@ async function getRedirectUrl(
     .single();
 
   if (!profile?.studio_id) return `${origin}/onboarding`;
-  if (profile.role === "owner") return `${origin}/`;
+  if (profile.role === "owner" || profile.role === "manager") return `${origin}/`;
   if (profile.role === "instructor") return `${origin}/instructor`;
   if (profile.role === "member") {
     const { data: member } = await adminSupabase

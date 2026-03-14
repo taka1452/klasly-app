@@ -47,6 +47,10 @@ export default async function DashboardLayout({
   if (profile?.role === "member") {
     redirect("/schedule");
   }
+  // owner と manager のみダッシュボードにアクセス可
+  if (profile?.role !== "owner" && profile?.role !== "manager") {
+    redirect("/login");
+  }
 
   const showAdminLink = await isAdmin();
 
