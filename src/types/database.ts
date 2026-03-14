@@ -410,3 +410,18 @@ export type InstructorFeeOverride = {
   created_at: string;
   updated_at: string;
 };
+
+export type InstructorRoomBooking = {
+  id: string;
+  studio_id: string;
+  instructor_id: string;
+  room_id: string;
+  title: string;
+  booking_date: string;
+  start_time: string;
+  end_time: string;
+  status: "confirmed" | "cancelled";
+  is_public: boolean;
+  notes: string | null;
+  created_at: string;
+};

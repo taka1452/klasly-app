@@ -43,9 +43,14 @@ export default async function RoomsPage() {
             Manage studio spaces and rooms
           </p>
         </div>
-        <Link href="/rooms/new" className="btn-primary">
-          + Add room
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/rooms/bookings" className="btn-secondary">
+            View Bookings
+          </Link>
+          <Link href="/rooms/new" className="btn-primary">
+            + Add room
+          </Link>
+        </div>
       </div>
 
       <div className="mt-6">
