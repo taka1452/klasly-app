@@ -1,10 +1,9 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import type { Manager } from "@/types/database";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type DashboardContext = {
-  supabase: any;
+  supabase: SupabaseClient;
   userId: string;
   studioId: string;
   role: "owner" | "manager";

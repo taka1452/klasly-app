@@ -1,6 +1,13 @@
 "use client";
 
+import { DM_Sans } from "next/font/google";
 import { useState } from "react";
+
+const dmSans = DM_Sans({
+  weight: ["400", "500", "600", "700"],
+  subsets: ["latin"],
+  display: "swap",
+});
 
 const SECTIONS = {
   owner: [
@@ -348,17 +355,12 @@ export default function KlaslyHelp() {
 
   return (
     <div
+      className={dmSans.className}
       style={{
         minHeight: "100vh",
         background: "#f7f7fa",
-        fontFamily: "'DM Sans', sans-serif",
       }}
     >
-      <link
-        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap"
-        rel="stylesheet"
-      />
-
       {/* Header */}
       <div
         style={{
