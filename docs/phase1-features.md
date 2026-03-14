@@ -29,8 +29,8 @@ Sidebar → **Rooms**
 - **View bookings**: Click "View Bookings" to see all instructor room reservations
 - **Assign to classes**: Associate a room with each class
 
-### Screenshot
-![Rooms management](images/rooms.png)
+### Live page
+🔗 [app.klasly.app/rooms](https://app.klasly.app/rooms)
 
 ---
 
@@ -51,8 +51,8 @@ Instructor Portal → Sidebar → **Room Bookings**
 - **Overlap detection**: Prevents double-booking the same room at the same time
 - **Quota display**: If a membership tier is assigned, a progress bar shows monthly hours used vs. remaining
 
-### Screenshot
-![Instructor Room Bookings](images/instructor-room-bookings.png)
+### Live page
+🔗 [app.klasly.app/instructor/room-bookings](https://app.klasly.app/instructor/room-bookings) *(requires instructor login)*
 
 ---
 
@@ -74,8 +74,8 @@ Sidebar → **Settings** → **Instructor Membership Tiers** → "Manage Tiers"
 - **Activate / deactivate**: Toggle tier availability
 - **Assign to instructors**: Select a tier from the instructor edit page
 
-### Screenshot
-![Instructor Membership Tiers](images/tiers.png)
+### Live page
+🔗 [app.klasly.app/settings/tiers](https://app.klasly.app/settings/tiers)
 
 ### How quota enforcement works
 1. Owner creates tiers (e.g., "Basic" = 20h/month, "Pro" = 40h/month)
@@ -109,8 +109,8 @@ Instructor Portal → Sidebar → **Membership**
   - Monthly price
   - Payment status badge (Free / Active / Not subscribed / Cancelling)
 
-### Screenshot
-![Instructor Membership](images/instructor-membership.png)
+### Live page
+🔗 [app.klasly.app/instructor/membership](https://app.klasly.app/instructor/membership) *(requires instructor login)*
 
 ### Billing flow
 1. Owner creates a tier and sets a monthly price
@@ -138,8 +138,8 @@ Sidebar → **Managers**
 - **Toggle permissions**: 7 permission flags, each independently on/off
 - **Remove a manager**: Click "Remove" to revoke manager role (user becomes a member)
 
-### Screenshot
-![Managers page](images/managers.png)
+### Live page
+🔗 [app.klasly.app/managers](https://app.klasly.app/managers)
 
 ### Permission flags
 
