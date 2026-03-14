@@ -3,6 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import InstructorShell from "@/components/ui/instructor-shell";
 import DevRoleSwitcher from "@/components/ui/dev-role-switcher";
+import { getStudioFeatures } from "@/lib/features/check-feature";
+import { FeatureProvider } from "@/lib/features/feature-context";
 
 export default async function InstructorLayout({
   children,
@@ -64,18 +66,22 @@ export default async function InstructorLayout({
   const onboardingStartedAt =
     (profile as { onboarding_started_at?: string | null })?.onboarding_started_at ?? null;
 
+  const features = await getStudioFeatures(profile.studio_id);
+
   return (
-    <InstructorShell
-      studioName={studioName}
-      userName={userName}
-      userEmail={userEmail}
-      onboardingCompleted={onboardingCompleted}
-      onboardingStep={onboardingStep}
-      onboardingStartedAt={onboardingStartedAt}
-      userId={user.id}
-    >
-      {children}
-      <DevRoleSwitcher />
-    </InstructorShell>
+    <FeatureProvider features={features}>
+      <InstructorShell
+        studioName={studioName}
+        userName={userName}
+        userEmail={userEmail}
+        onboardingCompleted={onboardingCompleted}
+        onboardingStep={onboardingStep}
+        onboardingStartedAt={onboardingStartedAt}
+        userId={user.id}
+      >
+        {children}
+        <DevRoleSwitcher />
+      </InstructorShell>
+    </FeatureProvider>
   );
 }

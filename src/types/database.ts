@@ -464,3 +464,13 @@ export type InstructorMembership = {
   started_at: string;
   created_at: string;
 };
+
+export type StudioFeature = {
+  id: string;
+  studio_id: string;
+  feature_key: string;
+  enabled: boolean;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+};

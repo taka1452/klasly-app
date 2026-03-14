@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/admin/supabase";
 import { getStripe } from "@/lib/stripe/server";
 import Link from "next/link";
 import AdminStudioDetail from "@/components/admin/admin-studio-detail";
+import AdminStudioFeatures from "@/components/admin/admin-studio-features";
 
 const STRIPE_DASHBOARD = "https://dashboard.stripe.com";
 
@@ -119,6 +120,8 @@ export default async function AdminStudioDetailPage({
         stripeSubscriptionUrl={stripeSubscriptionId ? `${STRIPE_DASHBOARD}/subscriptions/${stripeSubscriptionId}` : null}
         appliedCoupon={appliedCoupon}
       />
+
+      <AdminStudioFeatures studioId={studioId} />
     </div>
   );
 }

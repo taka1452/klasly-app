@@ -8,6 +8,8 @@ import { getPlanAccess } from "@/lib/plan-guard";
 import { isAdmin } from "@/lib/admin/auth";
 import type { SetupTask } from "@/components/ui/setup-task-list";
 import DevRoleSwitcher from "@/components/ui/dev-role-switcher";
+import { getStudioFeatures } from "@/lib/features/check-feature";
+import { FeatureProvider } from "@/lib/features/feature-context";
 
 export default async function DashboardLayout({
   children,
@@ -154,7 +156,10 @@ export default async function DashboardLayout({
   const showBanner =
     planStatus === "past_due" || planStatus === "grace";
 
+  const features = await getStudioFeatures(profile.studio_id);
+
   return (
+    <FeatureProvider features={features}>
     <DashboardShell
       currentRole={profile.role}
       studioName={(profile.studios as { name?: string })?.name || "My Studio"}
@@ -179,5 +184,6 @@ export default async function DashboardLayout({
       {children}
       <DevRoleSwitcher />
     </DashboardShell>
+    </FeatureProvider>
   );
 }

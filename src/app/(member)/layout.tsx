@@ -4,6 +4,8 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import WaiverGate from "@/components/waiver/waiver-gate";
 import MemberLayoutClient from "@/components/member/member-layout-client";
 import DevRoleSwitcher from "@/components/ui/dev-role-switcher";
+import { getStudioFeatures } from "@/lib/features/check-feature";
+import { FeatureProvider } from "@/lib/features/feature-context";
 
 export default async function MemberLayout({
   children,
@@ -77,18 +79,24 @@ export default async function MemberLayout({
   const onboardingStartedAt =
     (profile as { onboarding_started_at?: string | null })?.onboarding_started_at ?? null;
 
+  const features = profile?.studio_id
+    ? await getStudioFeatures(profile.studio_id)
+    : {};
+
   return (
-    <MemberLayoutClient
-      userName={profile?.full_name || user.email || "User"}
-      userEmail={user.email || ""}
-      onboardingCompleted={onboardingCompleted}
-      onboardingStep={onboardingStep}
-      onboardingStartedAt={onboardingStartedAt}
-      userId={user.id}
-      memberCredits={member?.credits ?? null}
-    >
-      {children}
-      <DevRoleSwitcher />
-    </MemberLayoutClient>
+    <FeatureProvider features={features}>
+      <MemberLayoutClient
+        userName={profile?.full_name || user.email || "User"}
+        userEmail={user.email || ""}
+        onboardingCompleted={onboardingCompleted}
+        onboardingStep={onboardingStep}
+        onboardingStartedAt={onboardingStartedAt}
+        userId={user.id}
+        memberCredits={member?.credits ?? null}
+      >
+        {children}
+        <DevRoleSwitcher />
+      </MemberLayoutClient>
+    </FeatureProvider>
   );
 }
