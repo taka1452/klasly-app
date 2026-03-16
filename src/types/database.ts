@@ -138,6 +138,8 @@ export type Class = {
   location: string | null;
   is_active: boolean;
   is_public: boolean;
+  /** Per-class price in cents. NULL = use studio product pricing (Studio Mode). */
+  price_cents: number | null;
   created_at: string;
 };
 

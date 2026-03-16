@@ -70,6 +70,10 @@ export async function GET(request: NextRequest) {
         name?: string;
         duration_minutes?: number;
         location?: string;
+        is_public?: boolean;
+        price_cents?: number | null;
+        room_id?: string | null;
+        rooms?: { name?: string } | null;
         instructors?: {
           profiles?: { full_name?: string };
         };
@@ -82,7 +86,8 @@ export async function GET(request: NextRequest) {
         `
         id, session_date, start_time, capacity, is_cancelled,
         classes (
-          name, duration_minutes, location,
+          name, duration_minutes, location, is_public, price_cents, room_id,
+          rooms (name),
           instructors (
             profiles (full_name)
           )
@@ -96,7 +101,10 @@ export async function GET(request: NextRequest) {
       .order("session_date", { ascending: true })
       .order("start_time", { ascending: true });
 
-    const typedSessions = (sessions ?? []) as SessionRow[];
+    // Filter out non-public classes (private sessions should not appear on member schedule)
+    const typedSessions = ((sessions ?? []) as SessionRow[]).filter(
+      (s) => s.classes?.is_public !== false
+    );
     const sessionIds = typedSessions.map((s) => s.id);
 
     // Fetch member bookings
@@ -150,6 +158,8 @@ export async function GET(request: NextRequest) {
       duration_minutes: s.classes?.duration_minutes ?? 60,
       instructor_name: s.classes?.instructors?.profiles?.full_name ?? "",
       location: s.classes?.location ?? null,
+      price_cents: s.classes?.price_cents ?? null,
+      room_name: s.classes?.rooms?.name ?? null,
     }));
 
     return NextResponse.json({

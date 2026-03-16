@@ -28,7 +28,7 @@ export default async function InstructorSchedulePage() {
 
   const { data: myClasses } = await supabase
     .from("classes")
-    .select("id, name")
+    .select("id, name, price_cents, is_public")
     .eq("instructor_id", instructor.id);
 
   const classIds = (myClasses || []).map((c) => c.id);
@@ -60,9 +60,9 @@ export default async function InstructorSchedulePage() {
   }, {} as Record<string, number>);
 
   const classMap = (myClasses || []).reduce((acc, c) => {
-    acc[c.id] = c.name;
+    acc[c.id] = { name: c.name, price_cents: c.price_cents, is_public: c.is_public };
     return acc;
-  }, {} as Record<string, string>);
+  }, {} as Record<string, { name: string; price_cents: number | null; is_public: boolean }>);
 
   const sessionsWithData = (sessions || []).map((s) => {
     const cls = s.classes as { name?: string; location?: string } | null;
@@ -74,9 +74,11 @@ export default async function InstructorSchedulePage() {
       capacity: s.capacity,
       is_cancelled: s.is_cancelled,
       class_id: s.class_id,
-      class_name: raw?.name || classMap[s.class_id] || "—",
+      class_name: raw?.name || classMap[s.class_id]?.name || "—",
       location: raw?.location,
       booked: bookedBySession[s.id] || 0,
+      price_cents: classMap[s.class_id]?.price_cents ?? null,
+      is_public: classMap[s.class_id]?.is_public ?? true,
     };
   });
 

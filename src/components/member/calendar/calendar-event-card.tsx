@@ -165,7 +165,14 @@ export default function CalendarEventCard({
             {session.instructor_name && (
               <p>Instructor: {session.instructor_name}</p>
             )}
-            {session.location && <p>Location: {session.location}</p>}
+            {(session.room_name || session.location) && (
+              <p>{session.room_name || session.location}</p>
+            )}
+            {payPerClass && (session.price_cents ?? classPrice) != null && (
+              <p className="font-medium text-gray-900">
+                ${(((session.price_cents ?? classPrice)!) / 100).toFixed(2)}
+              </p>
+            )}
             <p>
               {confirmedCount}/{session.capacity} booked
               {confirmedCount >= session.capacity && (
@@ -185,7 +192,7 @@ export default function CalendarEventCard({
               canBook={canBook}
               requiresCredits={requiresCredits}
               payPerClass={payPerClass}
-              classPrice={classPrice}
+              classPrice={session.price_cents ?? classPrice}
               onSuccess={() => {
                 onBookingComplete();
                 setShowPopover(false);

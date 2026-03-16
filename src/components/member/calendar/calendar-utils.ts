@@ -12,6 +12,8 @@ export type SessionData = {
   duration_minutes: number;
   instructor_name: string;
   location: string | null;
+  price_cents: number | null;
+  room_name: string | null;
 };
 
 export type CalendarView = "day" | "week" | "month";

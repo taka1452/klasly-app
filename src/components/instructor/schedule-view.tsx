@@ -15,6 +15,8 @@ type SessionItem = {
   class_name: string;
   location?: string | null;
   booked: number;
+  price_cents?: number | null;
+  is_public?: boolean;
 };
 
 export default function ScheduleView({
@@ -131,8 +133,16 @@ export default function ScheduleView({
                           }`}
                         >
                           <span className="font-medium">{s.class_name}</span>
+                          {s.is_public === false && (
+                            <span className="ml-1 text-gray-400" title="Private">&#128274;</span>
+                          )}
                           <br />
                           {formatTime(s.start_time)}
+                          {s.price_cents != null && (
+                            <span className="ml-1 text-emerald-700">
+                              ${(s.price_cents / 100).toFixed(0)}
+                            </span>
+                          )}
                           <br />
                           <span className="text-gray-500">
                             {s.booked}/{s.capacity}
@@ -167,7 +177,19 @@ export default function ScheduleView({
                 >
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
-                      <p className="font-medium text-gray-900">{s.class_name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-gray-900">{s.class_name}</p>
+                        {s.is_public === false && (
+                          <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500">
+                            Private
+                          </span>
+                        )}
+                        {s.price_cents != null && (
+                          <span className="text-sm font-medium text-emerald-700">
+                            ${(s.price_cents / 100).toFixed(2)}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-gray-500">
                         {formatDate(s.session_date)} · {formatTime(s.start_time)}
                         {s.location && ` · ${s.location}`}

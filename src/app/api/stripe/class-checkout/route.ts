@@ -67,7 +67,7 @@ export async function POST(request: Request) {
 
     const { data: classData } = await adminSupabase
       .from("classes")
-      .select("id, name, instructor_id")
+      .select("id, name, instructor_id, price_cents")
       .eq("id", session.class_id)
       .single();
 
@@ -88,22 +88,42 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Studio not found" }, { status: 404 });
     }
 
-    // Get drop-in product price
-    const { data: dropInProduct } = await adminSupabase
-      .from("products")
-      .select("id, name, price, currency, description")
-      .eq("studio_id", studio.id)
-      .eq("is_active", true)
-      .eq("type", "one_time")
-      .order("sort_order", { ascending: true })
-      .limit(1)
-      .single();
+    // Determine price: use class-level price_cents (Collective Mode) or fall back to drop-in product
+    let amount: number;
+    let currency = "usd";
+    let productId: string | null = null;
+    let productDescription: string | null = null;
 
-    if (!dropInProduct) {
-      return NextResponse.json(
-        { error: "No drop-in product configured for this studio" },
-        { status: 400 }
-      );
+    if (
+      classData.price_cents !== null &&
+      classData.price_cents !== undefined &&
+      studio.payout_model === "instructor_direct"
+    ) {
+      // Collective Mode: use per-class pricing set by instructor
+      amount = classData.price_cents;
+    } else {
+      // Studio Mode: use drop-in product price
+      const { data: dropInProduct } = await adminSupabase
+        .from("products")
+        .select("id, name, price, currency, description")
+        .eq("studio_id", studio.id)
+        .eq("is_active", true)
+        .eq("type", "one_time")
+        .order("sort_order", { ascending: true })
+        .limit(1)
+        .single();
+
+      if (!dropInProduct) {
+        return NextResponse.json(
+          { error: "No drop-in product configured for this studio" },
+          { status: 400 }
+        );
+      }
+
+      amount = dropInProduct.price;
+      currency = (dropInProduct.currency ?? "usd").toLowerCase();
+      productId = dropInProduct.id;
+      productDescription = dropInProduct.description ?? null;
     }
 
     // Get platform fee
@@ -114,8 +134,6 @@ export async function POST(request: Request) {
       .single();
     const platformFeePercent = parseFloat(feeRow?.value ?? "0") / 100;
 
-    const amount = dropInProduct.price;
-    const currency = (dropInProduct.currency ?? "usd").toLowerCase();
     const platformFee =
       platformFeePercent > 0 ? Math.round(amount * platformFeePercent) : 0;
 
@@ -217,8 +235,10 @@ export async function POST(request: Request) {
       session_id: sessionId,
       class_id: classData.id,
       payout_model: payoutModel,
-      product_id: dropInProduct.id,
     };
+    if (productId) {
+      metadata.product_id = productId;
+    }
     if (instructorId) {
       metadata.instructor_id = instructorId;
       metadata.studio_fee = String(applicationFee - platformFee);
@@ -241,7 +261,7 @@ export async function POST(request: Request) {
               currency,
               product_data: {
                 name: `${classData.name} — ${session.session_date}`,
-                description: dropInProduct.description ?? undefined,
+                description: productDescription ?? undefined,
               },
               unit_amount: amount,
             },
