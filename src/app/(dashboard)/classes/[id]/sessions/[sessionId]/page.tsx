@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { formatDate, formatTime } from "@/lib/utils";
 import SessionAttendance from "@/components/attendance/session-attendance";
+import SessionVisibilityToggle from "@/components/classes/session-visibility-toggle";
 
 export default async function SessionDetailPage({
   params,
@@ -30,7 +31,7 @@ export default async function SessionDetailPage({
 
   const { data: session } = await supabase
     .from("class_sessions")
-    .select("id, session_date, start_time, capacity, class_id, studio_id")
+    .select("id, session_date, start_time, capacity, class_id, studio_id, is_public")
     .eq("id", sessionId)
     .single();
 
@@ -84,6 +85,12 @@ export default async function SessionDetailPage({
           {formatDate(session.session_date)} · {formatTime(session.start_time)} ·{" "}
           {session.capacity} capacity
         </p>
+        <div className="mt-2">
+          <SessionVisibilityToggle
+            sessionId={sessionId}
+            initialIsPublic={session.is_public ?? true}
+          />
+        </div>
       </div>
 
       <SessionAttendance

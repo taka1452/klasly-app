@@ -17,6 +17,7 @@ type DashboardShellProps = {
   userEmail: string;
   planAccess?: PlanAccess;
   showAdminLink?: boolean;
+  isAlsoInstructor?: boolean;
   onboardingCompleted?: boolean;
   onboardingStep?: number;
   onboardingStartedAt?: string | null;
@@ -33,6 +34,7 @@ export default function DashboardShell({
   userEmail,
   planAccess,
   showAdminLink = false,
+  isAlsoInstructor = false,
   onboardingCompleted = true,
   onboardingStep = 0,
   onboardingStartedAt = null,
@@ -74,6 +76,7 @@ export default function DashboardShell({
         isMobileOpen={sidebarOpen}
         onMobileClose={() => setSidebarOpen(false)}
         showAdminLink={showAdminLink}
+        isAlsoInstructor={isAlsoInstructor}
       />
 
       <div className="flex flex-1 flex-col overflow-hidden">

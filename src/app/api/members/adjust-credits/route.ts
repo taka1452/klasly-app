@@ -1,43 +1,18 @@
-import { createClient } from "@supabase/supabase-js";
-import { createClient as createServerClient } from "@/lib/supabase/server";
+import { getDashboardContext } from "@/lib/auth/dashboard-access";
 import { NextResponse } from "next/server";
 
 /**
- * POST: オーナーがメンバーのクレジットを調整（絶対値で設定）
+ * POST: オーナーまたはマネージャー(can_manage_members)がメンバーのクレジットを調整（絶対値で設定）
  * body: { member_id: string, credits: number }
  * credits: 新しいクレジット数（0以上の整数。-1無制限は別途プラン変更で対応）
  */
 export async function POST(request: Request) {
   try {
-    const serverSupabase = await createServerClient();
-    const {
-      data: { user },
-    } = await serverSupabase.auth.getUser();
-
-    if (!user) {
+    const ctx = await getDashboardContext();
+    if (!ctx) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!serviceRoleKey) {
-      return NextResponse.json(
-        { error: "Server configuration error" },
-        { status: 500 }
-      );
-    }
-
-    const adminSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      serviceRoleKey
-    );
-
-    const { data: profile } = await adminSupabase
-      .from("profiles")
-      .select("studio_id, role")
-      .eq("id", user.id)
-      .single();
-
-    if (profile?.role !== "owner" || !profile.studio_id) {
+    if (ctx.role === "manager" && !ctx.permissions?.can_manage_members) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -60,20 +35,20 @@ export async function POST(request: Request) {
       );
     }
 
-    const { data: member } = await adminSupabase
+    const { data: member } = await ctx.supabase
       .from("members")
       .select("id, studio_id")
       .eq("id", memberId)
       .single();
 
-    if (!member || member.studio_id !== profile.studio_id) {
+    if (!member || member.studio_id !== ctx.studioId) {
       return NextResponse.json(
         { error: "Member not found" },
         { status: 404 }
       );
     }
 
-    const { error } = await adminSupabase
+    const { error } = await ctx.supabase
       .from("members")
       .update({ credits: creditsNum })
       .eq("id", memberId);

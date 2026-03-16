@@ -13,6 +13,7 @@ type Props = {
   email: string;
   bookingRequiresCredits: boolean | null;
   stripeConnectComplete: boolean;
+  isAlsoInstructor: boolean;
 };
 
 export default function SettingsContent({
@@ -20,6 +21,7 @@ export default function SettingsContent({
   email,
   bookingRequiresCredits,
   stripeConnectComplete,
+  isAlsoInstructor,
 }: Props) {
   const router = useRouter();
   const tourActions = useTourActions();
@@ -29,6 +31,8 @@ export default function SettingsContent({
   const [markCompleteLoading, setMarkCompleteLoading] = useState(false);
   const [replayLoading, setReplayLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [instructorEnabled, setInstructorEnabled] = useState(isAlsoInstructor);
+  const [instructorToggleLoading, setInstructorToggleLoading] = useState(false);
 
   function showToast(msg: string) {
     setToastMessage(msg);
@@ -43,6 +47,28 @@ export default function SettingsContent({
     a.download = "klasly-export.json";
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  async function handleInstructorToggle() {
+    setInstructorToggleLoading(true);
+    try {
+      const action = instructorEnabled ? "disable" : "enable";
+      const res = await fetch("/api/account/instructor-toggle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error ?? "Failed to update");
+        return;
+      }
+      setInstructorEnabled(data.enabled);
+      showToast(data.enabled ? "You are now also an instructor" : "Instructor mode disabled");
+      router.refresh();
+    } finally {
+      setInstructorToggleLoading(false);
+    }
   }
 
   async function handleReplayTutorial() {
@@ -178,6 +204,37 @@ export default function SettingsContent({
           Studio Features
         </h2>
         <div className="space-y-6">
+          {/* I Also Teach Classes */}
+          <div className="card">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  I Also Teach Classes
+                </h3>
+                <p className="mt-2 text-sm text-gray-600">
+                  Enable this to create and manage your own classes as an
+                  instructor. You&apos;ll see a &quot;My Classes&quot; section in the sidebar.
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={instructorEnabled}
+                disabled={instructorToggleLoading}
+                onClick={handleInstructorToggle}
+                className={`relative mt-1 inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50 ${
+                  instructorEnabled ? "bg-brand-600" : "bg-gray-200"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    instructorEnabled ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+
           {/* Instructor Tiers */}
           <div className="card">
             <h3 className="text-lg font-semibold text-gray-900">

@@ -1,38 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
-import { createClient as createServerClient } from "@/lib/supabase/server";
+import { getInstructorContext } from "@/lib/auth/instructor-access";
 import { NextResponse } from "next/server";
-
-async function getInstructorContext() {
-  const serverSupabase = await createServerClient();
-  const {
-    data: { user },
-  } = await serverSupabase.auth.getUser();
-
-  if (!user) return null;
-
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const supabase = serviceRoleKey
-    ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey)
-    : serverSupabase;
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("studio_id, role")
-    .eq("id", user.id)
-    .single();
-
-  if (!profile?.studio_id || profile.role !== "instructor") return null;
-
-  const { data: instructor } = await supabase
-    .from("instructors")
-    .select("id")
-    .eq("profile_id", user.id)
-    .single();
-
-  if (!instructor) return null;
-
-  return { supabase, studioId: profile.studio_id, instructorId: instructor.id };
-}
 
 // GET: list instructor's own classes
 export async function GET() {
@@ -70,18 +37,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Verify studio is in Collective Mode with self-scheduling enabled
-    const { data: studio } = await ctx.supabase
-      .from("studios")
-      .select("payout_model")
-      .eq("id", ctx.studioId)
-      .single();
+    // Verify studio is in Collective Mode (owners can always create classes)
+    if (ctx.role !== "owner") {
+      const { data: studio } = await ctx.supabase
+        .from("studios")
+        .select("payout_model")
+        .eq("id", ctx.studioId)
+        .single();
 
-    if (!studio || studio.payout_model !== "instructor_direct") {
-      return NextResponse.json(
-        { error: "Self-scheduling is only available in Collective Mode" },
-        { status: 403 }
-      );
+      if (!studio || studio.payout_model !== "instructor_direct") {
+        return NextResponse.json(
+          { error: "Self-scheduling is only available in Collective Mode" },
+          { status: 403 }
+        );
+      }
     }
 
     const body = await request.json();
@@ -140,7 +109,10 @@ export async function POST(request: Request) {
       ? `${start_time}:00`
       : start_time;
 
-    // Check time quota (instructor membership)
+    // Check time quota (instructor membership) — skip for owners
+    if (ctx.role === "owner") {
+      // Owners have no quota restrictions
+    } else {
     const { data: membership } = await ctx.supabase
       .from("instructor_memberships")
       .select("tier_id, instructor_membership_tiers(monthly_minutes)")
@@ -183,6 +155,7 @@ export async function POST(request: Request) {
         }
       }
     }
+    } // end else (non-owner quota check)
 
     // Create the class
     const { data: newClass, error: classError } = await ctx.supabase
@@ -228,6 +201,7 @@ export async function POST(request: Request) {
         start_time: startTimeFormatted,
         capacity: newClass.capacity,
         is_cancelled: false,
+        is_public: is_public ?? true,
       });
     }
 

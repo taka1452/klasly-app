@@ -50,6 +50,14 @@ export default async function SettingsPage() {
     (studio as { stripe_connect_onboarding_complete?: boolean } | null)
       ?.stripe_connect_onboarding_complete ?? false;
 
+  // オーナーが自分をインストラクターとして登録しているか
+  const { data: instructorRecord } = await supabase
+    .from("instructors")
+    .select("id")
+    .eq("profile_id", user.id)
+    .eq("studio_id", profile.studio_id)
+    .maybeSingle();
+
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
@@ -62,6 +70,7 @@ export default async function SettingsPage() {
         email={profile.email || user.email || "\u2014"}
         bookingRequiresCredits={bookingRequiresCredits}
         stripeConnectComplete={stripeConnectComplete}
+        isAlsoInstructor={!!instructorRecord}
       />
     </div>
   );

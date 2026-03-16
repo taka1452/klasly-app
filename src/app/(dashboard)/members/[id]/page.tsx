@@ -7,6 +7,7 @@ import MemberEditForm from "@/components/members/member-edit-form";
 import MemberDeleteButton from "@/components/members/member-delete-button";
 import MemberAdjustCredits from "@/components/members/member-adjust-credits";
 import MemberAttendanceHistory from "@/components/attendance/member-attendance-history";
+import SendGuardianInviteButton from "@/components/members/send-guardian-invite-button";
 
 export default async function MemberDetailPage({
   params,
@@ -63,9 +64,16 @@ export default async function MemberDetailPage({
         </Link>
         <div className="mt-2 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              {member.profiles?.full_name || "Unknown"}
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-gray-900">
+                {member.profiles?.full_name || "Unknown"}
+              </h1>
+              {member.is_minor && (
+                <span className="inline-flex rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-700">
+                  Minor
+                </span>
+              )}
+            </div>
             <p className="text-sm text-gray-500">
               {member.profiles?.email || "—"}
             </p>
@@ -92,6 +100,9 @@ export default async function MemberDetailPage({
               credits: member.credits,
               status: member.status,
               notes: member.notes || "",
+              dateOfBirth: member.date_of_birth || "",
+              isMinor: member.is_minor || false,
+              guardianEmail: member.guardian_email || "",
             }}
             profileId={member.profile_id}
           />
@@ -122,6 +133,32 @@ export default async function MemberDetailPage({
               </div>
             </dl>
           </div>
+
+          {member.is_minor && (
+            <div className="card">
+              <h3 className="text-sm font-medium text-gray-500">Guardian Waiver</h3>
+              <div className="mt-3">
+                {member.waiver_signed ? (
+                  <p className="text-sm text-green-600">
+                    Guardian waiver signed
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-sm text-amber-600">
+                      Guardian waiver required
+                    </p>
+                    {member.guardian_email ? (
+                      <SendGuardianInviteButton memberId={member.id} />
+                    ) : (
+                      <p className="mt-2 text-xs text-gray-400">
+                        Set a guardian email to send the invite.
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="card">
             <h3 className="text-sm font-medium text-red-600">Danger Zone</h3>

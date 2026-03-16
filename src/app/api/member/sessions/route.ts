@@ -96,6 +96,7 @@ export async function GET(request: NextRequest) {
       )
       .eq("studio_id", studioId)
       .eq("is_cancelled", false)
+      .eq("is_public", true)
       .gte("session_date", start)
       .lte("session_date", end)
       .order("session_date", { ascending: true })

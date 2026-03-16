@@ -6,7 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { usePlanAccess } from "@/components/ui/plan-access-provider";
 
-type InstructorOption = { id: string; full_name: string };
+type InstructorOption = { id: string; full_name: string; isMe?: boolean };
 type RoomOption = { id: string; name: string; capacity: number | null };
 
 const DAY_OPTIONS = [
@@ -50,14 +50,17 @@ export default function NewClassPage() {
       if (!profile?.studio_id) return;
       const { data } = await supabase
         .from("instructors")
-        .select("id, profiles(full_name)")
+        .select("id, profile_id, profiles(full_name)")
         .eq("studio_id", profile.studio_id)
         .order("created_at", { ascending: false });
       const list = (data || []).map((i) => {
         const p = i.profiles as { full_name?: string } | null;
         const raw = Array.isArray(p) ? p[0] : p;
-        return { id: i.id, full_name: raw?.full_name || "—" };
+        const isMe = i.profile_id === user?.id;
+        return { id: i.id, full_name: raw?.full_name || "—", isMe };
       });
+      // Sort so "Me" appears first
+      list.sort((a, b) => (a.isMe ? -1 : b.isMe ? 1 : 0));
       setInstructors(list);
     }
     fetchInstructors();
@@ -171,6 +174,7 @@ export default function NewClassPage() {
         start_time: startTimeFormatted,
         capacity: newClass.capacity,
         is_cancelled: false,
+        is_public: isPublic,
       });
     }
 
@@ -220,7 +224,7 @@ export default function NewClassPage() {
               <option value="">No instructor</option>
               {instructors.map((i) => (
                 <option key={i.id} value={i.id}>
-                  {i.full_name}
+                  {i.full_name}{i.isMe ? " (Me)" : ""}
                 </option>
               ))}
             </select>

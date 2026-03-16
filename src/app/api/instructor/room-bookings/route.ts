@@ -1,38 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
-import { createClient as createServerClient } from "@/lib/supabase/server";
+import { getInstructorContext } from "@/lib/auth/instructor-access";
 import { NextResponse } from "next/server";
-
-async function getInstructorContext() {
-  const serverSupabase = await createServerClient();
-  const {
-    data: { user },
-  } = await serverSupabase.auth.getUser();
-
-  if (!user) return null;
-
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const supabase = serviceRoleKey
-    ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey)
-    : serverSupabase;
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("studio_id, role")
-    .eq("id", user.id)
-    .single();
-
-  if (!profile?.studio_id || profile.role !== "instructor") return null;
-
-  const { data: instructor } = await supabase
-    .from("instructors")
-    .select("id")
-    .eq("profile_id", user.id)
-    .single();
-
-  if (!instructor) return null;
-
-  return { supabase, studioId: profile.studio_id, instructorId: instructor.id };
-}
 
 // GET: 自分のルームブッキング一覧
 export async function GET(request: Request) {

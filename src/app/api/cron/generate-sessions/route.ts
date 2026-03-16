@@ -55,7 +55,7 @@ export async function GET(request: Request) {
   try {
     const { data: classes } = await supabase
       .from("classes")
-      .select("id, studio_id, day_of_week, start_time, capacity")
+      .select("id, studio_id, day_of_week, start_time, capacity, is_public")
       .eq("is_active", true);
 
     if (!classes?.length) {
@@ -131,6 +131,7 @@ export async function GET(request: Request) {
           start_time: startTimeFormatted,
           capacity: cls.capacity,
           is_cancelled: false,
+          is_public: cls.is_public ?? true,
         }));
 
       if (missingSessions.length > 0) {

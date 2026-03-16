@@ -158,6 +158,18 @@ export default async function DashboardLayout({
 
   const features = await getStudioFeatures(profile.studio_id);
 
+  // オーナーがインストラクターとしても登録されているか
+  let isAlsoInstructor = false;
+  if (profile.role === "owner") {
+    const { data: instrRec } = await adminSupabase
+      .from("instructors")
+      .select("id")
+      .eq("profile_id", user.id)
+      .eq("studio_id", profile.studio_id)
+      .maybeSingle();
+    isAlsoInstructor = !!instrRec;
+  }
+
   return (
     <FeatureProvider features={features}>
     <DashboardShell
@@ -167,6 +179,7 @@ export default async function DashboardLayout({
       userEmail={user.email || ""}
       planAccess={planAccess}
       showAdminLink={showAdminLink}
+      isAlsoInstructor={isAlsoInstructor}
       onboardingCompleted={onboardingCompleted}
       onboardingStep={onboardingStep}
       onboardingStartedAt={onboardingStartedAt}

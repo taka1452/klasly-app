@@ -14,6 +14,9 @@ type Props = {
     credits: number;
     status: string;
     notes: string;
+    dateOfBirth: string;
+    isMinor: boolean;
+    guardianEmail: string;
   };
 };
 
@@ -29,9 +32,24 @@ export default function MemberEditForm({
   const [credits, setCredits] = useState(initialData.credits);
   const [status, setStatus] = useState(initialData.status);
   const [notes, setNotes] = useState(initialData.notes);
+  const [dateOfBirth, setDateOfBirth] = useState(initialData.dateOfBirth);
+  const [isMinor, setIsMinor] = useState(initialData.isMinor);
+  const [guardianEmail, setGuardianEmail] = useState(initialData.guardianEmail);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  function handleDateOfBirthChange(value: string) {
+    setDateOfBirth(value);
+    if (value) {
+      const birth = new Date(value);
+      const today = new Date();
+      let age = today.getFullYear() - birth.getFullYear();
+      const m = today.getMonth() - birth.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+      setIsMinor(age < 18);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -64,6 +82,9 @@ export default function MemberEditForm({
         credits: planType === "monthly" ? -1 : credits,
         status,
         notes: notes || null,
+        is_minor: isMinor,
+        date_of_birth: dateOfBirth || null,
+        guardian_email: isMinor ? (guardianEmail || null) : null,
       })
       .eq("id", memberId);
 
@@ -184,6 +205,48 @@ export default function MemberEditForm({
             className="input-field mt-1"
           />
         </div>
+
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Date of Birth
+            </label>
+            <input
+              type="date"
+              value={dateOfBirth}
+              onChange={(e) => handleDateOfBirthChange(e.target.value)}
+              className="input-field mt-1"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <input
+            type="checkbox"
+            id="isMinorEdit"
+            checked={isMinor}
+            onChange={(e) => setIsMinor(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-brand-600"
+          />
+          <label htmlFor="isMinorEdit" className="text-sm font-medium text-gray-700">
+            This member is a minor
+          </label>
+        </div>
+
+        {isMinor && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Guardian Email
+            </label>
+            <input
+              type="email"
+              value={guardianEmail}
+              onChange={(e) => setGuardianEmail(e.target.value)}
+              placeholder="parent@example.com"
+              className="input-field mt-1"
+            />
+          </div>
+        )}
 
         <button type="submit" disabled={loading} className="btn-primary">
           {loading ? "Saving..." : "Save changes"}

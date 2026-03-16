@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/send";
-import { waiverInvite } from "@/lib/email/templates";
+import { waiverInvite, guardianWaiverInvite } from "@/lib/email/templates";
 import { WAIVER_FROM_EMAIL } from "@/lib/email/client";
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
@@ -59,7 +59,7 @@ export async function POST() {
 
     const { data: unsignedMembers } = await adminSupabase
       .from("members")
-      .select("id, profile_id")
+      .select("id, profile_id, is_minor, guardian_email")
       .eq("studio_id", ownerProfile.studio_id)
       .eq("waiver_signed", false)
       .eq("status", "active");
@@ -79,8 +79,15 @@ export async function POST() {
       process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
     let sent = 0;
+    let skippedMinors = 0;
 
     for (const member of unsignedMembers) {
+      // For minors without guardian_email, skip and count
+      if (member.is_minor && !member.guardian_email) {
+        skippedMinors++;
+        continue;
+      }
+
       const { data: existing } = await adminSupabase
         .from("waiver_signatures")
         .select("id")
@@ -98,10 +105,6 @@ export async function POST() {
         .eq("id", member.profile_id)
         .single();
 
-      if (!profile?.email) {
-        continue; // Skip: no email
-      }
-
       const token = randomUUID();
 
       const { error: insertError } = await adminSupabase
@@ -114,30 +117,53 @@ export async function POST() {
           signed_name: "",
           signed_at: null,
           token_used: false,
+          is_minor: member.is_minor || false,
         });
 
       if (insertError) {
         continue; // Skip on insert error, don't fail entire batch
       }
 
-      const signUrl = `${baseUrl}/waiver/sign/${token}`;
-      const { subject, html } = waiverInvite({
-        memberName: profile?.full_name ?? "Member",
-        studioName,
-        signUrl,
-      });
+      if (member.is_minor && member.guardian_email) {
+        // Send guardian invite to guardian email
+        const signUrl = `${baseUrl}/waiver/guardian-sign?token=${token}`;
+        const { subject, html } = guardianWaiverInvite({
+          memberName: profile?.full_name ?? "Member",
+          studioName,
+          signUrl,
+        });
 
-      await sendEmail({
-        to: profile.email,
-        subject,
-        html,
-        from: WAIVER_FROM_EMAIL,
-      });
+        await sendEmail({
+          to: member.guardian_email,
+          subject,
+          html,
+          from: WAIVER_FROM_EMAIL,
+        });
+      } else {
+        // Standard member invite
+        if (!profile?.email) {
+          continue; // Skip: no email
+        }
+
+        const signUrl = `${baseUrl}/waiver/sign/${token}`;
+        const { subject, html } = waiverInvite({
+          memberName: profile?.full_name ?? "Member",
+          studioName,
+          signUrl,
+        });
+
+        await sendEmail({
+          to: profile.email,
+          subject,
+          html,
+          from: WAIVER_FROM_EMAIL,
+        });
+      }
 
       sent++;
     }
 
-    return NextResponse.json({ sent });
+    return NextResponse.json({ sent, skippedMinors });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal error";
     return NextResponse.json({ error: message }, { status: 500 });

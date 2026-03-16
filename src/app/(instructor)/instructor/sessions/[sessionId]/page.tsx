@@ -35,7 +35,7 @@ export default async function InstructorSessionDetailPage({
 
   const { data: session } = await supabase
     .from("class_sessions")
-    .select("id, session_date, start_time, capacity, is_cancelled, class_id, classes(name, location)")
+    .select("id, session_date, start_time, capacity, is_cancelled, is_public, class_id, classes(name, location)")
     .eq("id", sessionId)
     .single();
 
@@ -93,6 +93,11 @@ export default async function InstructorSessionDetailPage({
           {session.is_cancelled && (
             <span className="rounded-full bg-red-100 px-3 py-1 text-sm font-medium text-red-800">
               Cancelled
+            </span>
+          )}
+          {session.is_public === false && (
+            <span className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-600">
+              Private
             </span>
           )}
         </div>

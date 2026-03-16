@@ -79,6 +79,7 @@ export async function GET(
       )
       .eq("studio_id", studioId)
       .eq("is_cancelled", false)
+      .eq("is_public", true)
       .gte("session_date", startDate)
       .lte("session_date", endDate)
       .order("session_date", { ascending: true })

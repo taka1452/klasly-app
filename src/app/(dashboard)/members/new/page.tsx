@@ -15,8 +15,23 @@ export default function NewMemberPage() {
   const [phone, setPhone] = useState("");
   const [planType, setPlanType] = useState("drop_in");
   const [credits, setCredits] = useState(0);
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [isMinor, setIsMinor] = useState(false);
+  const [guardianEmail, setGuardianEmail] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  function handleDateOfBirthChange(value: string) {
+    setDateOfBirth(value);
+    if (value) {
+      const birth = new Date(value);
+      const today = new Date();
+      let age = today.getFullYear() - birth.getFullYear();
+      const m = today.getMonth() - birth.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+      setIsMinor(age < 18);
+    }
+  }
 
   if (planAccess && !planAccess.canCreate) {
     return (
@@ -50,6 +65,9 @@ export default function NewMemberPage() {
         phone,
         planType,
         credits: planType === "monthly" ? -1 : credits,
+        dateOfBirth: dateOfBirth || null,
+        isMinor,
+        guardianEmail: isMinor ? guardianEmail : null,
       }),
     });
 
@@ -178,6 +196,50 @@ export default function NewMemberPage() {
                 required
                 className="input-field mt-1"
               />
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Date of Birth (optional)
+            </label>
+            <input
+              type="date"
+              value={dateOfBirth}
+              onChange={(e) => handleDateOfBirthChange(e.target.value)}
+              className="input-field mt-1"
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="isMinor"
+              checked={isMinor}
+              onChange={(e) => setIsMinor(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-brand-600"
+            />
+            <label htmlFor="isMinor" className="text-sm font-medium text-gray-700">
+              This member is a minor
+            </label>
+          </div>
+
+          {isMinor && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Guardian Email *
+              </label>
+              <input
+                type="email"
+                value={guardianEmail}
+                onChange={(e) => setGuardianEmail(e.target.value)}
+                placeholder="parent@example.com"
+                required
+                className="input-field mt-1"
+              />
+              <p className="mt-1 text-xs text-gray-400">
+                The guardian will receive a waiver signing request at this email.
+              </p>
             </div>
           )}
 

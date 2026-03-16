@@ -52,7 +52,7 @@ export async function GET(request: Request) {
 
     const { data: member } = await supabase
       .from("members")
-      .select("studio_id")
+      .select("studio_id, profile_id")
       .eq("id", signature.member_id)
       .single();
 
@@ -82,10 +82,18 @@ export async function GET(request: Request) {
       );
     }
 
+    // Get member name for guardian signing page
+    const { data: memberProfile } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", member.profile_id)
+      .single();
+
     return NextResponse.json({
       title: template.title,
       content: template.content,
       studioName: studio?.name || "Studio",
+      memberName: memberProfile?.full_name || null,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal error";

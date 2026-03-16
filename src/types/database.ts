@@ -86,6 +86,10 @@ export type Member = {
   // Waiver
   waiver_signed: boolean;
   waiver_signed_at: string | null;
+  // Minor
+  is_minor: boolean;
+  date_of_birth: string | null;
+  guardian_email: string | null;
 };
 
 export type Instructor = {
@@ -151,6 +155,7 @@ export type ClassSession = {
   start_time: string;
   capacity: number;
   is_cancelled: boolean;
+  is_public: boolean;
   notes: string | null;
   created_at: string;
 };
@@ -189,10 +194,17 @@ export type WaiverTemplate = {
 export type WaiverSignature = {
   id: string;
   member_id: string;
+  studio_id: string;
+  template_id: string;
   sign_token: string;
   signed_name: string;
   signed_at: string | null;
   token_used: boolean;
+  // Minor Waiver
+  guardian_name: string | null;
+  guardian_email: string | null;
+  guardian_relationship: string | null; // 'parent' | 'legal_guardian'
+  is_minor: boolean;
   created_at: string;
 };
 

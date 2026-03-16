@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { fullName, email, phone, planType, credits, studioId } = body;
+    const { fullName, email, phone, planType, credits, studioId, dateOfBirth, isMinor, guardianEmail } = body;
 
     if (!fullName || !email) {
       return NextResponse.json(
@@ -124,6 +124,9 @@ export async function POST(request: Request) {
         plan_type: planType || "drop_in",
         credits: credits ?? 0,
         status: "active",
+        is_minor: isMinor || false,
+        date_of_birth: dateOfBirth || null,
+        guardian_email: isMinor ? (guardianEmail || null) : null,
       })
       .select("id")
       .single();

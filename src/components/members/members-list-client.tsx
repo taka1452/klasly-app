@@ -12,6 +12,7 @@ type Member = {
   status: string;
   waiver_signed?: boolean;
   waiver_signed_at?: string;
+  is_minor?: boolean;
 };
 
 type Props = {
@@ -36,6 +37,11 @@ export default function MembersListClient({ members }: Props) {
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-gray-900">
                   {member.profiles?.full_name || "—"}
+                  {member.is_minor && (
+                    <span className="ml-1.5 inline-flex rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+                      Minor
+                    </span>
+                  )}
                 </p>
                 <p className="mt-0.5 truncate text-sm text-gray-500">
                   {member.profiles?.email || "—"}
@@ -51,6 +57,10 @@ export default function MembersListClient({ members }: Props) {
                   {member.waiver_signed ? (
                     <span className="inline-flex items-center gap-1 text-xs text-green-600">
                       ✓ {formatDate(member.waiver_signed_at ?? "")}
+                    </span>
+                  ) : member.is_minor ? (
+                    <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+                      Guardian Waiver Required
                     </span>
                   ) : (
                     <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
@@ -108,6 +118,11 @@ export default function MembersListClient({ members }: Props) {
                   <div>
                     <p className="text-sm font-medium text-gray-900">
                       {member.profiles?.full_name || "—"}
+                      {member.is_minor && (
+                        <span className="ml-1.5 inline-flex rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+                          Minor
+                        </span>
+                      )}
                     </p>
                     <p className="text-xs text-gray-500">
                       {member.profiles?.email || "—"}
@@ -134,6 +149,10 @@ export default function MembersListClient({ members }: Props) {
                     <span className="inline-flex items-center gap-1 text-sm text-green-600">
                       <span>✓</span>
                       {formatDate(member.waiver_signed_at ?? "")}
+                    </span>
+                  ) : member.is_minor ? (
+                    <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+                      Guardian Waiver Required
                     </span>
                   ) : (
                     <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">

@@ -67,7 +67,7 @@ export default async function ClassDetailPage({
   const today = new Date().toISOString().split("T")[0];
   const { data: sessions } = await supabase
     .from("class_sessions")
-    .select("id, session_date, capacity, is_cancelled")
+    .select("id, session_date, capacity, is_cancelled, is_public")
     .eq("class_id", id)
     .gte("session_date", today)
     .order("session_date", { ascending: true })
@@ -198,6 +198,11 @@ export default async function ClassDetailPage({
                       >
                         {formatDate(session.session_date)}
                       </Link>
+                      {session.is_public === false && (
+                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                          Private
+                        </span>
+                      )}
                       <span
                         className={
                           session.is_cancelled

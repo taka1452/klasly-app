@@ -110,6 +110,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
                 <li>Each class booking uses <B>1 credit</B>. Cancelling a booking returns the credit.</li>
               </Steps>
               You can manually adjust a member&apos;s credits from their detail page: <B>Members → [Member Name] → Edit Credits</B>.
+              <Tip>Both owners and managers with member management permissions can adjust credits.</Tip>
             </>
           ),
         },
@@ -118,6 +119,22 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               Go to <B>Members</B> and click on a member&apos;s name. You&apos;ll see their profile, credit balance, booking history, and payment history. From here you can also adjust credits or cancel bookings.
+            </>
+          ),
+        },
+        {
+          q: "How do I handle minor members?",
+          a: (
+            <>
+              When adding or editing a member, you can mark them as a minor:
+              <Steps>
+                <li>Enter their <B>Date of Birth</B> (members under 18 are automatically flagged) or check the <B>&quot;This member is a minor&quot;</B> checkbox.</li>
+                <li>Provide a <B>Guardian Email</B> — the parent or legal guardian&apos;s email address.</li>
+                <li>When you send a waiver invite (individually or via bulk send), the guardian receives a signing link at their email instead of the member.</li>
+                <li>The guardian signs the waiver on behalf of the minor — no Klasly account needed.</li>
+              </Steps>
+              Minor members show a <B>Minor</B> badge in the members list. On the member detail page, you can send a guardian waiver invite directly.
+              <Tip>Bulk waiver invites automatically route to guardian emails for minors. Minors without a guardian email will be skipped.</Tip>
             </>
           ),
         },
@@ -183,6 +200,19 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               Open a class from the <B>Classes</B> page. Sessions are created automatically based on the class schedule. You can also manually add individual sessions with specific dates from the class detail page.
+            </>
+          ),
+        },
+        {
+          q: "How do I make a session private?",
+          a: (
+            <>
+              Each session can be toggled between <B>Public</B> and <B>Private</B>. Private sessions are hidden from the member schedule and public widget but remain visible to owners and instructors for room management.
+              <Steps>
+                <li>When creating a class, use the &quot;Public&quot; checkbox to set the default visibility for all generated sessions.</li>
+                <li>To change visibility for an individual session, go to <B>Classes → [Class] → [Session]</B> and click the visibility toggle.</li>
+              </Steps>
+              <Tip>Private sessions still count for room availability — they prevent double-booking even though members can&apos;t see them.</Tip>
             </>
           ),
         },
@@ -311,6 +341,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               Go to <B>Settings → Waiver</B> to create a digital waiver that members must sign before booking classes. You can customize the waiver text. Members will be prompted to sign when they first access the booking page.
+              <Tip>For minor members, the waiver is sent to their guardian&apos;s email address instead. See &quot;How do I handle minor members?&quot; below.</Tip>
             </>
           ),
         },
@@ -331,6 +362,15 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
                 <li><B>Studio Mode</B> — all payments go to the studio&apos;s Stripe account.</li>
                 <li><B>Collective Mode</B> — instructors receive payments directly via their own Stripe Connect, with studio fees deducted automatically.</li>
               </Steps>
+            </>
+          ),
+        },
+        {
+          q: "Can I also teach classes as an owner?",
+          a: (
+            <>
+              Yes. Go to <B>Settings → Studio Features</B> and enable <B>I Also Teach Classes</B>. This adds you as an instructor in your studio. A <B>My Classes</B> section will appear in your sidebar where you can create and manage classes you personally teach, including setting per-class pricing.
+              <Tip>When creating classes from the regular Classes page, your name will appear in the instructor dropdown with &quot;(Me)&quot; next to it.</Tip>
             </>
           ),
         },

@@ -362,3 +362,32 @@ export function welcomeMember(params: {
     html: baseHtml(content),
   };
 }
+
+export function guardianWaiverInvite(params: {
+  memberName: string;
+  studioName: string;
+  signUrl: string;
+}) {
+  const { memberName, studioName, signUrl } = params;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">Waiver Signature Required</h2>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">Hi,</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      <strong>${studioName}</strong> requires a guardian signature for <strong>${memberName}</strong> to participate in classes.
+    </p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      As ${memberName}'s parent or legal guardian, please review and sign the waiver:
+    </p>
+    <p style="margin:0 0 16px;">
+      <a href="${signUrl}" style="display:inline-block;background:${BRAND_COLOR};color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">Sign Waiver</a>
+    </p>
+    <p style="margin:0 0 16px;font-size:14px;color:#6b7280;">
+      If you have any questions, please contact the studio directly.
+    </p>
+    <p style="margin:0;font-size:14px;">Thank you,<br>${studioName}</p>
+  `;
+  return {
+    subject: `Waiver Signature Required for ${memberName} - ${studioName}`,
+    html: baseHtml(content),
+  };
+}

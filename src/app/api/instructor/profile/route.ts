@@ -76,7 +76,7 @@ export async function PATCH(request: Request) {
       .eq("id", user.id)
       .single();
 
-    if (profile?.role !== "instructor") {
+    if (profile?.role !== "instructor" && profile?.role !== "owner") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
