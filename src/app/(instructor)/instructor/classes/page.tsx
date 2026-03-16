@@ -108,7 +108,7 @@ export default function InstructorClassesPage() {
                 </p>
               </div>
               <div className="text-right">
-                {cls.price_cents !== null ? (
+                {cls.price_cents != null ? (
                   <span className="text-lg font-semibold text-gray-900">
                     ${(cls.price_cents / 100).toFixed(2)}
                   </span>

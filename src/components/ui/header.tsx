@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -79,7 +80,19 @@ export default function Header({ userName, userEmail, onSidebarToggle }: HeaderP
         </span>
       </div>
 
-      {/* ユーザーメニュー */}
+      {/* Help + ユーザーメニュー */}
+      <div className="flex items-center gap-2">
+      <Link
+        href="/help"
+        target="_blank"
+        className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+        title="Help"
+      >
+        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M12 18.75h.007v.008H12v-.008z" />
+          <circle cx="12" cy="12" r="10" />
+        </svg>
+      </Link>
       <div className="relative" ref={menuRef}>
         <button
           onClick={() => setMenuOpen(!menuOpen)}
@@ -133,6 +146,7 @@ export default function Header({ userName, userEmail, onSidebarToggle }: HeaderP
             </button>
           </div>
         )}
+      </div>
       </div>
     </header>
   );
