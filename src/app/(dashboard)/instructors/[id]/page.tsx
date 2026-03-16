@@ -5,6 +5,7 @@ import Link from "next/link";
 import { formatDate, getDayName, formatTime } from "@/lib/utils";
 import InstructorEditForm from "@/components/instructors/instructor-edit-form";
 import InstructorDeleteButton from "@/components/instructors/instructor-delete-button";
+import InstructorManagerToggle from "@/components/instructors/instructor-manager-toggle";
 
 export default async function InstructorDetailPage({
   params,
@@ -217,6 +218,8 @@ export default async function InstructorDetailPage({
               <p className="mt-4 text-sm text-gray-500">No classes assigned</p>
             )}
           </div>
+
+          <InstructorManagerToggle instructorId={instructor.id} />
 
           <div className="card">
             <h3 className="text-sm font-medium text-red-600">Danger Zone</h3>
