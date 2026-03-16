@@ -70,6 +70,20 @@ export const FEATURE_KEYS = {
   STUDIO_PASS: "extension.studio_pass",
   /** Enhanced PWA */
   PWA_ENHANCED: "extension.pwa_enhanced",
+
+  // ============================================
+  // Payout Phase 3 features
+  // Default: false (must be explicitly enabled)
+  // ============================================
+
+  /** Per-class fee override (Phase 3a) */
+  CLASS_FEE_OVERRIDE: "payout.class_fee_override",
+  /** Time-based fee schedules (Phase 3b) */
+  FEE_SCHEDULES: "payout.fee_schedules",
+  /** Instructor self-service invite link (Phase 3c) */
+  INSTRUCTOR_INVITE_LINK: "payout.instructor_invite_link",
+  /** Tax report / 1099 compliance (Phase 3d) */
+  TAX_REPORT: "payout.tax_report",
 } as const;
 
 export type FeatureKey = (typeof FEATURE_KEYS)[keyof typeof FEATURE_KEYS];
@@ -109,6 +123,12 @@ export const DEFAULT_FEATURES: Record<FeatureKey, boolean> = {
   [FEATURE_KEYS.RETREAT_BOOKING]: false,
   [FEATURE_KEYS.STUDIO_PASS]: false,
   [FEATURE_KEYS.PWA_ENHANCED]: false,
+
+  // Payout Phase 3: default OFF
+  [FEATURE_KEYS.CLASS_FEE_OVERRIDE]: false,
+  [FEATURE_KEYS.FEE_SCHEDULES]: false,
+  [FEATURE_KEYS.INSTRUCTOR_INVITE_LINK]: false,
+  [FEATURE_KEYS.TAX_REPORT]: false,
 };
 
 /**
@@ -140,6 +160,11 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   [FEATURE_KEYS.RETREAT_BOOKING]: "Retreat Booking",
   [FEATURE_KEYS.STUDIO_PASS]: "Studio Pass",
   [FEATURE_KEYS.PWA_ENHANCED]: "PWA Enhanced",
+
+  [FEATURE_KEYS.CLASS_FEE_OVERRIDE]: "Class Fee Override",
+  [FEATURE_KEYS.FEE_SCHEDULES]: "Fee Schedules",
+  [FEATURE_KEYS.INSTRUCTOR_INVITE_LINK]: "Instructor Invite Link",
+  [FEATURE_KEYS.TAX_REPORT]: "Tax Report",
 };
 
 /** Category groupings for the admin UI */
@@ -180,6 +205,15 @@ export const FEATURE_CATEGORIES = {
       FEATURE_KEYS.RETREAT_BOOKING,
       FEATURE_KEYS.STUDIO_PASS,
       FEATURE_KEYS.PWA_ENHANCED,
+    ],
+  },
+  payout: {
+    label: "Payout (Phase 3)",
+    keys: [
+      FEATURE_KEYS.CLASS_FEE_OVERRIDE,
+      FEATURE_KEYS.FEE_SCHEDULES,
+      FEATURE_KEYS.INSTRUCTOR_INVITE_LINK,
+      FEATURE_KEYS.TAX_REPORT,
     ],
   },
 } as const;

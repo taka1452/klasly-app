@@ -87,6 +87,9 @@ export default async function InstructorsPage() {
           <Link href="/instructors/earnings" className="btn-secondary">
             Earnings Report
           </Link>
+          <Link href="/instructors/tax-report" className="btn-secondary">
+            Tax Report
+          </Link>
           <Link href="/instructors/import" className="btn-secondary">
             Import CSV
           </Link>

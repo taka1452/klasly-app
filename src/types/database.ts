@@ -465,6 +465,44 @@ export type InstructorMembership = {
   created_at: string;
 };
 
+export type ClassFeeOverride = {
+  id: string;
+  studio_id: string;
+  class_id: string;
+  fee_type: "percentage" | "fixed";
+  fee_value: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type FeeSchedule = {
+  id: string;
+  studio_id: string;
+  name: string;
+  day_of_week: number[] | null;
+  start_time: string;
+  end_time: string;
+  fee_type: "percentage" | "fixed";
+  fee_value: number;
+  priority: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type InstructorInviteToken = {
+  id: string;
+  studio_id: string;
+  token: string;
+  invite_role: "instructor" | "manager";
+  expires_at: string;
+  max_uses: number | null;
+  use_count: number;
+  is_active: boolean;
+  created_by: string;
+  created_at: string;
+};
+
 export type StudioFeature = {
   id: string;
   studio_id: string;

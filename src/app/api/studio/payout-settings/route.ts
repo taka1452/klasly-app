@@ -77,11 +77,20 @@ export async function GET() {
       };
     });
 
+    // Get classes for class fee override UI
+    const { data: classes } = await adminSupabase
+      .from("classes")
+      .select("id, name")
+      .eq("studio_id", profile.studio_id)
+      .eq("is_active", true)
+      .order("name");
+
     return NextResponse.json({
       payout_model: studio.payout_model,
       studio_fee_percentage: Number(studio.studio_fee_percentage),
       studio_fee_type: (studio as { studio_fee_type?: string }).studio_fee_type ?? "percentage",
       instructors: instructorStatuses,
+      classes: (classes ?? []).map((c) => ({ id: c.id, name: c.name })),
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal error";

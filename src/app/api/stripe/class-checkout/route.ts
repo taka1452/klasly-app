@@ -149,7 +149,7 @@ export async function POST(request: Request) {
         instructorId = instructor.id;
         payoutModel = "instructor_direct";
 
-        // Resolve fee using priority hierarchy
+        // Resolve fee using priority hierarchy (Phase 3a/3b support)
         const { data: feeOverride } = await adminSupabase
           .from("instructor_fee_overrides")
           .select("fee_type, fee_value")
@@ -157,12 +157,31 @@ export async function POST(request: Request) {
           .eq("instructor_id", instructor.id)
           .maybeSingle();
 
+        // Phase 3a: Class fee override (if table exists)
+        const { data: classFeeOverride } = await adminSupabase
+          .from("class_fee_overrides")
+          .select("fee_type, fee_value")
+          .eq("studio_id", studio.id)
+          .eq("class_id", classData.id)
+          .maybeSingle();
+
+        // Phase 3b: Fee schedules
+        const { data: feeSchedules } = await adminSupabase
+          .from("fee_schedules")
+          .select("fee_type, fee_value, day_of_week, start_time, end_time, priority, is_active")
+          .eq("studio_id", studio.id)
+          .eq("is_active", true);
+
         const resolved = resolveStudioFee(
           {
             studio_fee_type: studio.studio_fee_type ?? "percentage",
             studio_fee_percentage: Number(studio.studio_fee_percentage),
           },
-          feeOverride ?? undefined
+          feeOverride ?? undefined,
+          classFeeOverride ?? undefined,
+          feeSchedules ?? undefined,
+          session.start_time,
+          new Date(session.session_date).getDay()
         );
 
         resolvedFeeType = resolved.feeType;
