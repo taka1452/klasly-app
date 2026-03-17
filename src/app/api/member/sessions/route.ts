@@ -1,6 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
+import { isFeatureEnabled } from "@/lib/features/check-feature";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -153,9 +155,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Format sessions
+    const onlineEnabled = await isFeatureEnabled(studioId, FEATURE_KEYS.ONLINE_CLASSES);
     const formattedSessions = typedSessions.map((s) => {
       // Session-level online overrides class-level
-      const isOnline = s.is_online ?? s.classes?.is_online ?? false;
+      const isOnline = onlineEnabled ? (s.is_online ?? s.classes?.is_online ?? false) : false;
       // Only include online_link if member has a confirmed booking
       const memberBooking = memberId ? bookingsMap[s.id] : null;
       const hasConfirmed = memberBooking?.status === "confirmed";

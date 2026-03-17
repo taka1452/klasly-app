@@ -158,7 +158,8 @@ export type ClassSession = {
   capacity: number;
   is_cancelled: boolean;
   is_public: boolean;
-  is_online: boolean;
+  /** NULL = inherit from parent class */
+  is_online: boolean | null;
   online_link: string | null;
   notes: string | null;
   created_at: string;
@@ -587,4 +588,87 @@ export type StudioFeature = {
   metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
+};
+
+// ============================================================
+// Events & Retreats
+// ============================================================
+
+export type CancellationPolicyTier = {
+  days_before: number;
+  refund_percent: number;
+  fee_cents: number;
+  note: string;
+};
+
+export type EventStatus = "draft" | "published" | "sold_out" | "completed" | "cancelled";
+export type EventPaymentType = "full" | "installment";
+export type EventBookingStatus = "pending_payment" | "confirmed" | "completed" | "cancelled";
+export type EventPaymentStatus = "unpaid" | "partial" | "fully_paid" | "refunded";
+export type InstallmentStatus = "pending" | "paid" | "failed" | "refunded";
+
+export type Event = {
+  id: string;
+  studio_id: string;
+  instructor_id: string | null;
+  name: string;
+  description: string | null;
+  location_name: string | null;
+  location_address: string | null;
+  start_date: string;
+  end_date: string;
+  image_url: string | null;
+  status: EventStatus;
+  is_public: boolean;
+  payment_type: EventPaymentType;
+  installment_count: number;
+  cancellation_policy: CancellationPolicyTier[];
+  cancellation_policy_text: string | null;
+  max_total_capacity: number | null;
+  custom_form_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type EventOption = {
+  id: string;
+  event_id: string;
+  name: string;
+  description: string | null;
+  price_cents: number;
+  capacity: number;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+};
+
+export type EventBooking = {
+  id: string;
+  event_id: string;
+  event_option_id: string | null;
+  member_id: string | null;
+  guest_name: string | null;
+  guest_email: string;
+  guest_phone: string | null;
+  booking_status: EventBookingStatus;
+  total_amount_cents: number;
+  payment_type: EventPaymentType;
+  payment_status: EventPaymentStatus;
+  form_response_id: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type EventPaymentSchedule = {
+  id: string;
+  event_booking_id: string;
+  installment_number: number;
+  amount_cents: number;
+  due_date: string;
+  stripe_payment_intent_id: string | null;
+  stripe_payment_method_id: string | null;
+  status: InstallmentStatus;
+  paid_at: string | null;
+  created_at: string;
 };

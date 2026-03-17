@@ -100,7 +100,7 @@ export default function OnboardingPage() {
       return;
     }
 
-    router.push("/onboarding/plan");
+    router.push("/onboarding/features");
     router.refresh();
   }
 
@@ -222,10 +222,10 @@ export default function OnboardingPage() {
 
             <div className="rounded-lg bg-brand-50 p-4">
               <p className="text-sm font-medium text-brand-800">
-                Next: Choose your plan and start your 30-day free trial
+                Next: Choose which features to enable for your studio
               </p>
               <p className="mt-1 text-xs text-brand-600">
-                Card required. No charge during trial.
+                You can always change these later in Settings.
               </p>
             </div>
 

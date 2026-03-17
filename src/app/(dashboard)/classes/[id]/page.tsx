@@ -6,6 +6,8 @@ import { getDayName, formatTime, formatDate } from "@/lib/utils";
 import ClassEditForm from "@/components/classes/class-edit-form";
 import ClassDeactivateButton from "@/components/classes/class-deactivate-button";
 import FlowHintPanel from "@/components/ui/flow-hint-panel";
+import { isFeatureEnabled } from "@/lib/features/check-feature";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 export default async function ClassDetailPage({
   params,
@@ -63,6 +65,8 @@ export default async function ClassDetailPage({
     notFound();
   }
 
+  const onlineEnabled = await isFeatureEnabled(cls.studio_id, FEATURE_KEYS.ONLINE_CLASSES);
+
   // 今後のセッションを取得（最大8件、日付順）
   const today = new Date().toISOString().split("T")[0];
   const { data: sessions } = await supabase
@@ -106,7 +110,7 @@ export default async function ClassDetailPage({
         </Link>
         <div className="mt-2 flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-bold text-gray-900">
-            {cls.is_online && <span title="Online">📹 </span>}
+            {onlineEnabled && cls.is_online && <span title="Online">📹 </span>}
             {cls.name}
           </h1>
           <FlowHintPanel flowType="instructor-assign" buttonLabel="How to assign instructor?" />
@@ -145,7 +149,7 @@ export default async function ClassDetailPage({
               instructorId: cls.instructor_id || "",
               roomId: cls.room_id || "",
               isPublic: cls.is_public ?? true,
-              isOnline: cls.is_online ?? false,
+              classType: cls.is_online ? "online" : cls.online_link ? "hybrid" : "in-person",
               onlineLink: cls.online_link || "",
             }}
           />
@@ -180,7 +184,7 @@ export default async function ClassDetailPage({
                   {cls.capacity} spots
                 </dd>
               </div>
-              {cls.is_online && (
+              {onlineEnabled && cls.is_online && (
                 <div>
                   <dt className="text-xs text-gray-400">Type</dt>
                   <dd className="text-sm font-medium text-gray-900">

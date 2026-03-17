@@ -4,6 +4,8 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { formatDate, formatTime } from "@/lib/utils";
 import { DAY_NAMES } from "@/lib/utils";
+import { useFeature } from "@/lib/features/feature-context";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 type SessionItem = {
   id: string;
@@ -17,6 +19,8 @@ type SessionItem = {
   booked: number;
   price_cents?: number | null;
   is_public?: boolean;
+  is_online?: boolean;
+  online_link?: string | null;
 };
 
 export default function ScheduleView({
@@ -24,6 +28,9 @@ export default function ScheduleView({
 }: {
   sessions: SessionItem[];
 }) {
+  const { isEnabled } = useFeature();
+  const onlineEnabled = isEnabled(FEATURE_KEYS.ONLINE_CLASSES);
+
   const [viewMode, setViewMode] = useState<"week" | "list">("week");
   const [weekOffset, setWeekOffset] = useState(0);
 
@@ -132,7 +139,10 @@ export default function ScheduleView({
                               : "border-emerald-200 bg-emerald-50/50"
                           }`}
                         >
-                          <span className="font-medium">{s.class_name}</span>
+                          <span className="font-medium">
+                            {onlineEnabled && s.is_online && <span title="Online">📹 </span>}
+                            {s.class_name}
+                          </span>
                           {s.is_public === false && (
                             <span className="ml-1 text-gray-400" title="Private">&#128274;</span>
                           )}
@@ -178,7 +188,15 @@ export default function ScheduleView({
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="font-medium text-gray-900">{s.class_name}</p>
+                        <p className="font-medium text-gray-900">
+                          {onlineEnabled && s.is_online && <span title="Online">📹 </span>}
+                          {s.class_name}
+                        </p>
+                        {onlineEnabled && s.is_online && (
+                          <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] text-blue-700">
+                            Online
+                          </span>
+                        )}
                         {s.is_public === false && (
                           <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500">
                             Private
@@ -194,6 +212,17 @@ export default function ScheduleView({
                         {formatDate(s.session_date)} · {formatTime(s.start_time)}
                         {s.location && ` · ${s.location}`}
                       </p>
+                      {onlineEnabled && s.is_online && s.online_link && (
+                        <a
+                          href={s.online_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-brand-600 hover:text-brand-700 font-medium"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Open link →
+                        </a>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-600">

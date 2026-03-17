@@ -47,7 +47,8 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/privacy") ||
     request.nextUrl.pathname.startsWith("/terms") ||
     request.nextUrl.pathname.startsWith("/cookies") ||
-    request.nextUrl.pathname.startsWith("/help");
+    request.nextUrl.pathname.startsWith("/help") ||
+    request.nextUrl.pathname.startsWith("/events");
 
   const isWaiverPage = request.nextUrl.pathname.startsWith("/waiver");
   const isWidgetPage = request.nextUrl.pathname.startsWith("/widget");

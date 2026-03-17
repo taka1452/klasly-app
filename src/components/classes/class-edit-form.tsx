@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useFeature } from "@/lib/features/feature-context";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 const DAY_OPTIONS = [
   { value: 0, label: "Sunday" },
@@ -32,7 +34,7 @@ type Props = {
     instructorId: string;
     roomId: string;
     isPublic: boolean;
-    isOnline: boolean;
+    classType: "in-person" | "online" | "hybrid";
     onlineLink: string;
   };
 };
@@ -44,6 +46,8 @@ export default function ClassEditForm({
   initialData,
 }: Props) {
   const router = useRouter();
+  const { isEnabled } = useFeature();
+  const onlineEnabled = isEnabled(FEATURE_KEYS.ONLINE_CLASSES);
   const [name, setName] = useState(initialData.name);
   const [description, setDescription] = useState(initialData.description);
   const [dayOfWeek, setDayOfWeek] = useState(initialData.dayOfWeek);
@@ -56,7 +60,7 @@ export default function ClassEditForm({
   const [instructorId, setInstructorId] = useState(initialData.instructorId);
   const [roomId, setRoomId] = useState(initialData.roomId);
   const [isPublic, setIsPublic] = useState(initialData.isPublic);
-  const [isOnline, setIsOnline] = useState(initialData.isOnline);
+  const [classType, setClassType] = useState<"in-person" | "online" | "hybrid">(initialData.classType);
   const [onlineLink, setOnlineLink] = useState(initialData.onlineLink);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -70,6 +74,15 @@ export default function ClassEditForm({
 
     const startTimeFormatted =
       startTime.length === 5 ? `${startTime}:00` : startTime;
+
+    const isOnline = classType === "online";
+    const showOnlineLink = classType === "online" || classType === "hybrid";
+
+    if (classType === "online" && !onlineLink.trim()) {
+      setError("Online link is required for online classes.");
+      setLoading(false);
+      return;
+    }
 
     const supabase = createClient();
     const { error: updateError } = await supabase
@@ -86,7 +99,7 @@ export default function ClassEditForm({
         room_id: isOnline ? null : roomId || null,
         is_public: isPublic,
         is_online: isOnline,
-        online_link: isOnline ? onlineLink || null : null,
+        online_link: showOnlineLink ? onlineLink || null : null,
       })
       .eq("id", classId);
 
@@ -159,47 +172,73 @@ export default function ClassEditForm({
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Class Type
-          </label>
-          <div className="mt-1 flex gap-4">
-            <label className="flex items-center gap-2 text-sm text-gray-700">
-              <input
-                type="radio"
-                name="classTypeEdit"
-                checked={!isOnline}
-                onChange={() => setIsOnline(false)}
-                className="text-brand-600"
-              />
-              In-person
-            </label>
-            <label className="flex items-center gap-2 text-sm text-gray-700">
-              <input
-                type="radio"
-                name="classTypeEdit"
-                checked={isOnline}
-                onChange={() => setIsOnline(true)}
-                className="text-brand-600"
-              />
-              Online
-            </label>
-          </div>
-        </div>
+        {onlineEnabled && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Class Type
+              </label>
+              <div className="mt-1 flex gap-4">
+                <label className="flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="radio"
+                    name="classTypeEdit"
+                    checked={classType === "in-person"}
+                    onChange={() => setClassType("in-person")}
+                    className="text-brand-600"
+                  />
+                  In-person
+                </label>
+                <label className="flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="radio"
+                    name="classTypeEdit"
+                    checked={classType === "online"}
+                    onChange={() => setClassType("online")}
+                    className="text-brand-600"
+                  />
+                  Online
+                </label>
+                <label className="flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="radio"
+                    name="classTypeEdit"
+                    checked={classType === "hybrid"}
+                    onChange={() => setClassType("hybrid")}
+                    className="text-brand-600"
+                  />
+                  Hybrid
+                </label>
+              </div>
+              {classType === "hybrid" && (
+                <p className="mt-1 text-xs text-gray-500">
+                  Default is in-person. You can switch individual sessions to online.
+                </p>
+              )}
+            </div>
 
-        {isOnline && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Online Link (Zoom, Google Meet, etc.)
-            </label>
-            <input
-              type="url"
-              value={onlineLink}
-              onChange={(e) => setOnlineLink(e.target.value)}
-              placeholder="https://zoom.us/j/123456789"
-              className="input-field mt-1"
-            />
-          </div>
+            {(classType === "online" || classType === "hybrid") && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Online Link (Zoom, Google Meet, etc.)
+                  {classType === "online" && <span className="text-red-500"> *</span>}
+                </label>
+                <input
+                  type="url"
+                  value={onlineLink}
+                  onChange={(e) => setOnlineLink(e.target.value)}
+                  placeholder="https://zoom.us/j/123456789"
+                  required={classType === "online"}
+                  className="input-field mt-1"
+                />
+                {classType === "hybrid" && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    Default link for online sessions. Can be overridden per session.
+                  </p>
+                )}
+              </div>
+            )}
+          </>
         )}
 
         <div className="grid gap-5 sm:grid-cols-2">
@@ -262,7 +301,7 @@ export default function ClassEditForm({
           </div>
         </div>
 
-        {!isOnline && (
+        {classType !== "online" && (
           <>
             <div>
               <label className="block text-sm font-medium text-gray-700">

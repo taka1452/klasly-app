@@ -548,10 +548,128 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
+          q: "Can I have hybrid classes?",
+          a: (
+            <>
+              Yes. When creating or editing a class, select <B>&quot;Hybrid&quot;</B> as the Class Type. Hybrid classes default to in-person but let you switch individual sessions to online.
+              <Steps>
+                <li>Set a default online link on the class (optional).</li>
+                <li>Go to each session&apos;s detail page to toggle it between In-person and Online.</li>
+                <li>Sessions set to Online will show the 📹 badge and link to members.</li>
+              </Steps>
+              <Tip>If a session has no link of its own, it uses the class&apos;s default link.</Tip>
+            </>
+          ),
+        },
+        {
           q: "Can I switch a class between in-person and online?",
           a: (
             <>
               Yes. Go to <B>Classes → [Class Name]</B> and change the Class Type in the edit form. Switching to online will clear the room and location, and switching to in-person will clear the online link.
+            </>
+          ),
+        },
+        {
+          q: "When do members see the Zoom link?",
+          a: (
+            <>
+              Members can only see the online link <B>after they have a confirmed booking</B>. Before booking, they will see the 📹 Online badge but the link is hidden. The link is also included in the booking confirmation email.
+              <Tip>The public widget never shows the link — members receive it via the schedule calendar and email only.</Tip>
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Feature Management",
+      items: [
+        {
+          q: "How do I enable or disable features?",
+          a: (
+            <>
+              Go to <B>Settings &rarr; Features</B> to toggle optional features on or off. Available features include Online Classes, Digital Waivers, SOAP Notes, UTM Tracking, Events &amp; Retreats, and more.
+              <Tip>You can also choose features during onboarding when you first create your studio.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "What are the core features?",
+          a: (
+            <>
+              Core features are always enabled and cannot be turned off:
+              <Steps>
+                <li>Member Management</li>
+                <li>Scheduling (classes, sessions, bookings)</li>
+                <li>Payments (Stripe integration)</li>
+                <li>Messaging</li>
+              </Steps>
+              Optional features can be toggled in <B>Settings &rarr; Features</B>.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Events & Retreats",
+      items: [
+        {
+          q: "How do I create an event or retreat?",
+          a: (
+            <>
+              Go to <B>Events</B> from the sidebar and click <B>&quot;Create Event.&quot;</B> The 5-step form guides you through:
+              <Steps>
+                <li><B>Basic Info</B> — name, description, location, dates, and visibility.</li>
+                <li><B>Room Options</B> — add room types or ticket tiers with individual prices and capacities.</li>
+                <li><B>Payment</B> — choose full payment or 3 installments.</li>
+                <li><B>Cancellation Policy</B> — define refund tiers and auto-generate policy text.</li>
+                <li><B>Application Form</B> — optionally attach a custom form (coming soon).</li>
+              </Steps>
+              You can save as draft and publish later, or publish immediately.
+            </>
+          ),
+        },
+        {
+          q: "What are event options?",
+          a: (
+            <>
+              Options are the different tiers or room types for your event. For example, a retreat might offer:
+              <Steps>
+                <li><B>Shared Room</B> — $1,500 (capacity: 10)</li>
+                <li><B>Private Room</B> — $2,500 (capacity: 5)</li>
+                <li><B>VIP Suite</B> — $4,000 (capacity: 2)</li>
+              </Steps>
+              Each option has its own price and capacity. Guests choose an option when booking.
+            </>
+          ),
+        },
+        {
+          q: "How does installment payment work?",
+          a: (
+            <>
+              When you select <B>&quot;3 Installments&quot;</B> as the payment type, guests pay the total in three equal payments:
+              <Steps>
+                <li>1st payment at booking.</li>
+                <li>2nd payment 30 days later.</li>
+                <li>3rd payment 60 days later.</li>
+              </Steps>
+              <Tip>Payment processing for events is coming soon. For now, you can manage bookings and track payments manually.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "How do I share my event publicly?",
+          a: (
+            <>
+              Set the event visibility to <B>&quot;Public&quot;</B> and publish it. Your event will have a public page at <B>/events/[event-id]</B> that you can share. The page shows all event details, options with remaining spots, and pricing.
+              <Tip>Private events are only visible to members of your studio.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "How do I manage event bookings?",
+          a: (
+            <>
+              Go to <B>Events &rarr; [Event Name]</B> to see the event detail page. You&apos;ll see all bookings with guest name, option, booking status, and payment status. You can also see how many spots are filled for each option.
             </>
           ),
         },

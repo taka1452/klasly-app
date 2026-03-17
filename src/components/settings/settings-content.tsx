@@ -204,6 +204,20 @@ export default function SettingsContent({
           Studio Features
         </h2>
         <div className="space-y-6">
+          {/* Features Toggle Page */}
+          <div className="card">
+            <h3 className="text-lg font-semibold text-gray-900">Features</h3>
+            <p className="mt-2 text-sm text-gray-600">
+              Enable or disable optional features like Online Classes, SOAP Notes, UTM Tracking, and more.
+            </p>
+            <Link
+              href="/settings/features"
+              className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+            >
+              Manage Features &rarr;
+            </Link>
+          </div>
+
           {/* I Also Teach Classes */}
           <div className="card">
             <div className="flex items-start justify-between gap-4">
