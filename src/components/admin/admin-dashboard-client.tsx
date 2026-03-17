@@ -5,7 +5,7 @@ import { useAdminLocale } from "@/lib/admin/locale-context";
 import OnboardingStatsCard from "./OnboardingStatsCard";
 
 type AlertItem = { type: string; studioName: string; studioId: string; extra?: string };
-type ActivityItem = { at: string; icon: string; textKey: string; textParams?: Record<string, string | number> };
+type ActivityItem = { at: string; type: "signed_up" | "paid" | "failed" | "canceled"; textKey: string; textParams?: Record<string, string | number> };
 
 export default function AdminDashboardClient({
   totalStudios,
@@ -116,7 +116,19 @@ export default function AdminDashboardClient({
             activities.map((a, i) => (
               <li key={`${a.at}-${i}`} className="flex items-center gap-3 text-sm text-slate-300">
                 <span className="text-slate-500">{formatDateTime(a.at)}</span>
-                <span>{a.icon}</span>
+                <span
+                  className={`inline-flex shrink-0 items-center rounded px-1.5 py-0.5 text-xs font-medium ${
+                    a.type === "signed_up"
+                      ? "bg-slate-600 text-slate-200"
+                      : a.type === "paid"
+                        ? "bg-green-900/50 text-green-300"
+                        : a.type === "failed"
+                          ? "bg-red-900/50 text-red-300"
+                          : "bg-slate-700 text-slate-400"
+                  }`}
+                >
+                  {a.type === "signed_up" ? "New" : a.type === "paid" ? "Paid" : a.type === "failed" ? "Failed" : "Canceled"}
+                </span>
                 <span>{t(a.textKey, a.textParams)}</span>
               </li>
             ))

@@ -149,12 +149,12 @@ export default async function AdminDashboardPage() {
     alerts.push({ type: "canceled", studioName: s.name, studioId: s.id })
   );
 
-  type ActivityItem = { at: string; icon: string; textKey: string; textParams?: Record<string, string | number> };
+  type ActivityItem = { at: string; type: "signed_up" | "paid" | "failed" | "canceled"; textKey: string; textParams?: Record<string, string | number> };
   const activities: ActivityItem[] = [];
   (recentStudios || []).forEach((s) => {
     activities.push({
       at: s.created_at,
-      icon: "🆕",
+      type: "signed_up",
       textKey: "dashboard.signedUp",
       textParams: { name: s.name },
     });
@@ -165,11 +165,11 @@ export default async function AdminDashboardPage() {
       const payload = w.payload as { data?: { object?: { amount_paid?: number } } } | null;
       const amount = payload?.data?.object?.amount_paid ?? 0;
       const dollars = (amount / 100).toFixed(0);
-      activities.push({ at: w.created_at, icon: "💳", textKey: "dashboard.paid", textParams: { name, amount: dollars } });
+      activities.push({ at: w.created_at, type: "paid", textKey: "dashboard.paid", textParams: { name, amount: dollars } });
     } else if (w.event_type?.includes("payment_failed")) {
-      activities.push({ at: w.created_at, icon: "❌", textKey: "dashboard.paymentFailed", textParams: { name } });
+      activities.push({ at: w.created_at, type: "failed", textKey: "dashboard.paymentFailed", textParams: { name } });
     } else if (w.event_type?.includes("subscription.deleted") || w.event_type?.includes("customer.subscription.deleted")) {
-      activities.push({ at: w.created_at, icon: "🚫", textKey: "dashboard.subscriptionCanceled", textParams: { name } });
+      activities.push({ at: w.created_at, type: "canceled", textKey: "dashboard.subscriptionCanceled", textParams: { name } });
     }
   });
   activities.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
