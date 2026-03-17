@@ -46,14 +46,19 @@ export async function GET(request: Request) {
 
     // 重複排除: 同じ ip_hash + studio_id + utm_source で1時間以内
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    const { data: existing } = await supabase
+    let dedupQuery = supabase
       .from("link_clicks")
       .select("id")
       .eq("studio_id", studio_id)
       .eq("ip_hash", ip_hash)
-      .eq("utm_source", utm_source || "")
-      .gte("created_at", oneHourAgo)
-      .limit(1);
+      .gte("created_at", oneHourAgo);
+
+    // utm_source が null の場合は is() を使い、値がある場合は eq() を使う
+    dedupQuery = utm_source
+      ? dedupQuery.eq("utm_source", utm_source)
+      : dedupQuery.is("utm_source", null);
+
+    const { data: existing } = await dedupQuery.limit(1);
 
     if (existing && existing.length > 0) {
       return NextResponse.json({ ok: true }); // 重複スキップ
