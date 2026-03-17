@@ -84,7 +84,7 @@ export default async function EventsListPage() {
               return (
                 <Link
                   key={event.id}
-                  href={`/events/${event.id}`}
+                  href={`/events/${event.id}/manage`}
                   className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 transition-colors hover:bg-gray-50"
                 >
                   <div className="min-w-0">

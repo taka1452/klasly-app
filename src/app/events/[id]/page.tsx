@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { formatDate } from "@/lib/utils";
 import type { Metadata } from "next";
 
@@ -42,18 +42,45 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function PublicEventPage({ params }: Props) {
+export default async function EventPage({ params }: Props) {
   const { id } = await params;
 
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!serviceRoleKey) notFound();
+
+  const serverSupabase = await createServerClient();
+  const {
+    data: { user },
+  } = await serverSupabase.auth.getUser();
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     serviceRoleKey,
   );
 
-  // First try public event
+  // Dashboard mode: logged-in user whose studio owns this event
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("studio_id")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.studio_id) {
+      const { data: event } = await supabase
+        .from("events")
+        .select("*")
+        .eq("id", id)
+        .eq("studio_id", profile.studio_id)
+        .single();
+
+      if (event) {
+        redirect(`/events/${id}/manage`);
+      }
+    }
+  }
+
+  // Public mode: published event, with is_public or same-studio auth
   const { data: event } = await supabase
     .from("events")
     .select("*")
@@ -63,31 +90,16 @@ export default async function PublicEventPage({ params }: Props) {
 
   if (!event) notFound();
 
-  // If not public, check auth
   if (!event.is_public) {
-    const serverSupabase = await createServerClient();
-    const {
-      data: { user },
-    } = await serverSupabase.auth.getUser();
-
-    if (!user) {
-      // Redirect to login — use notFound for now since we can't redirect from here easily
-      notFound();
-    }
-
-    // Check if user belongs to the same studio
+    if (!user) notFound();
     const { data: profile } = await supabase
       .from("profiles")
       .select("studio_id")
       .eq("id", user.id)
       .single();
-
-    if (!profile || profile.studio_id !== event.studio_id) {
-      notFound();
-    }
+    if (!profile || profile.studio_id !== event.studio_id) notFound();
   }
 
-  // Fetch options with booking counts
   const { data: options } = await supabase
     .from("event_options")
     .select("id, name, description, price_cents, capacity, is_active")
@@ -95,7 +107,6 @@ export default async function PublicEventPage({ params }: Props) {
     .eq("is_active", true)
     .order("sort_order");
 
-  // Get booking counts per option
   const optionIds = (options || []).map((o) => o.id);
   const { data: bookings } =
     optionIds.length > 0
@@ -119,7 +130,6 @@ export default async function PublicEventPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
-      {/* Hero Image */}
       {event.image_url && (
         <div className="mb-8 overflow-hidden rounded-2xl">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -130,8 +140,6 @@ export default async function PublicEventPage({ params }: Props) {
           />
         </div>
       )}
-
-      {/* Header */}
       <h1 className="text-3xl font-bold text-gray-900">{event.name}</h1>
       <p className="mt-2 text-lg text-gray-600">
         {formatDate(event.start_date)} – {formatDate(event.end_date)}
@@ -142,8 +150,6 @@ export default async function PublicEventPage({ params }: Props) {
           {event.location_address && ` · ${event.location_address}`}
         </p>
       )}
-
-      {/* Description */}
       {event.description && (
         <div className="mt-8">
           <p className="whitespace-pre-wrap text-gray-700 leading-relaxed">
@@ -151,8 +157,6 @@ export default async function PublicEventPage({ params }: Props) {
           </p>
         </div>
       )}
-
-      {/* Options */}
       {options && options.length > 0 && (
         <div className="mt-10">
           <h2 className="text-xl font-semibold text-gray-900">Options</h2>
@@ -214,8 +218,6 @@ export default async function PublicEventPage({ params }: Props) {
           </p>
         </div>
       )}
-
-      {/* Cancellation Policy */}
       {event.cancellation_policy_text && (
         <div className="mt-10">
           <h2 className="text-xl font-semibold text-gray-900">Cancellation Policy</h2>

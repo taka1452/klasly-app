@@ -148,7 +148,7 @@ export default function CreateEventPage() {
       await supabase.from("event_options").insert(optionsToInsert);
     }
 
-    router.push(`/events/${event.id}`);
+    router.push(`/events/${event.id}/manage`);
     router.refresh();
   }
 

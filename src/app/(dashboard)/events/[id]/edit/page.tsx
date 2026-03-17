@@ -197,7 +197,7 @@ export default function EditEventPage() {
       await supabase.from("event_options").insert(optionsToInsert);
     }
 
-    router.push(`/events/${id}`);
+    router.push(`/events/${id}/manage`);
     router.refresh();
   }
 
@@ -217,7 +217,7 @@ export default function EditEventPage() {
   return (
     <div>
       <div className="mb-6">
-        <Link href={`/events/${id}`} className="text-sm text-gray-500 hover:text-gray-700">
+        <Link href={`/events/${id}/manage`} className="text-sm text-gray-500 hover:text-gray-700">
           &larr; Back to event
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-gray-900">Edit Event</h1>
