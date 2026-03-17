@@ -3,6 +3,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { getPlanAccess } from "@/lib/plan-guard";
 import { getRequiresCredits } from "@/lib/booking-utils";
 import ScheduleCalendar from "@/components/member/calendar/schedule-calendar";
+import UTMTracker from "@/components/tracking/utm-tracker";
 
 export default async function SchedulePage() {
   const serverSupabase = await createServerClient();
@@ -88,6 +89,7 @@ export default async function SchedulePage() {
 
   return (
     <div>
+      <UTMTracker studioId={profile.studio_id} />
       <h1 className="text-2xl font-bold text-gray-900">Schedule</h1>
       <p className="mt-1 mb-4 text-sm text-gray-500">
         Book your classes

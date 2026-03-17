@@ -517,6 +517,64 @@ export type InstructorInviteToken = {
   created_at: string;
 };
 
+// ============================================
+// アップデート通知
+// ============================================
+
+export type Announcement = {
+  id: string;
+  title: string;
+  body: string;
+  target_roles: string[];
+  is_active: boolean;
+  published_at: string;
+  created_at: string;
+};
+
+export type AnnouncementRead = {
+  id: string;
+  announcement_id: string;
+  profile_id: string;
+  read_at: string;
+};
+
+// ============================================
+// リンクトラッキング（UTM）
+// ============================================
+
+export type LinkClick = {
+  id: string;
+  studio_id: string;
+  url: string;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  referrer: string | null;
+  user_agent: string | null;
+  ip_hash: string | null;
+  created_at: string;
+};
+
+// ============================================
+// SOAP Notes（施術記録）
+// ============================================
+
+export type SOAPNote = {
+  id: string;
+  studio_id: string;
+  instructor_id: string;
+  member_id: string;
+  session_id: string | null;
+  subjective: string | null;
+  objective: string | null;
+  assessment: string | null;
+  plan: string | null;
+  session_date: string;
+  is_confidential: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 export type StudioFeature = {
   id: string;
   studio_id: string;

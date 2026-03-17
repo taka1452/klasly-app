@@ -397,6 +397,111 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
         },
       ],
     },
+    {
+      title: "Schedule Visibility",
+      items: [
+        {
+          q: "How do I make a session private?",
+          a: (
+            <>
+              When creating or editing a session, change the Visibility setting from &quot;Public&quot; to &quot;Private.&quot; Private sessions won&apos;t appear in the member schedule but will still block room bookings and appear in your admin calendar.
+            </>
+          ),
+        },
+        {
+          q: "Can members see private sessions?",
+          a: (
+            <>
+              No. Private sessions are hidden from the member schedule. Only owners, managers, and the assigned instructor can see them. They appear with a 🔒 icon in the admin view.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Minor Waivers",
+      items: [
+        {
+          q: "How do I register a minor member?",
+          a: (
+            <>
+              When adding a member, check <B>&quot;This member is a minor&quot;</B> and enter the guardian&apos;s email address. You can also enter a date of birth — if the member is under 18, they&apos;ll automatically be flagged as a minor.
+            </>
+          ),
+        },
+        {
+          q: "How does the guardian waiver process work?",
+          a: (
+            <>
+              When you send a waiver invite to a minor member, the email goes to their guardian instead. The guardian can review and sign the waiver without needing a Klasly account. Once signed, the member&apos;s profile will show &quot;Guardian Waiver Signed.&quot;
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "SOAP Notes",
+      items: [
+        {
+          q: "What are SOAP Notes?",
+          a: (
+            <>
+              SOAP Notes are structured session records used by body therapists and practitioners. SOAP stands for <B>Subjective</B> (client&apos;s complaint), <B>Objective</B> (your findings), <B>Assessment</B> (your judgment), and <B>Plan</B> (next steps).
+            </>
+          ),
+        },
+        {
+          q: "Who can see SOAP Notes?",
+          a: (
+            <>
+              By default, SOAP Notes are confidential — only the instructor who created them can view them. If an instructor marks a note as &quot;not confidential,&quot; the studio owner can also view it. Members cannot see SOAP Notes.
+            </>
+          ),
+        },
+        {
+          q: "How do instructors access SOAP Notes?",
+          a: (
+            <>
+              Instructors can find SOAP Notes in their dashboard. Select a member, then navigate to the SOAP Notes section to view history or create a new note.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Traffic Sources (UTM Tracking)",
+      items: [
+        {
+          q: "How do I track where my members come from?",
+          a: (
+            <>
+              Add UTM parameters to your booking link when sharing it. For example: <B>klasly.app/s/yourstudio?utm_source=instagram</B>. Then check your Analytics page under &quot;Traffic Sources&quot; to see click data by source.
+            </>
+          ),
+        },
+        {
+          q: "What UTM parameters can I use?",
+          a: (
+            <>
+              You can use <B>utm_source</B> (e.g., instagram, facebook, email), <B>utm_medium</B> (e.g., social, cpc, newsletter), and <B>utm_campaign</B> (e.g., spring_promo, grand_opening) to organize your tracking.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Updates & Notifications",
+      items: [
+        {
+          q: "How do I know when new features are available?",
+          a: (
+            <>
+              When new features are released, you&apos;ll see a notification banner at the top of your dashboard. Click <B>&quot;View Updates&quot;</B> to see what&apos;s new. The banner will disappear once you&apos;ve viewed the updates.
+            </>
+          ),
+        },
+      ],
+    },
   ],
 
   instructor: [
@@ -746,6 +851,19 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               Each booking uses 1 credit, and cancelling returns it. If you believe there&apos;s an error, contact your studio owner or reach out to <B>support@klasly.app</B>.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Updates",
+      items: [
+        {
+          q: "What is the notification banner at the top of the page?",
+          a: (
+            <>
+              When your studio adds new features or makes changes, you may see a notification banner. Click <B>&quot;View Updates&quot;</B> to learn more, or dismiss it with the ✕ button.
             </>
           ),
         },

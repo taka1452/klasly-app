@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { WidgetThemeProvider } from "@/components/widget/widget-theme-provider";
 import { WidgetAuthProvider } from "@/components/widget/widget-auth-provider";
 import WidgetSchedule from "@/components/widget/widget-schedule";
+import UTMTrackerSimple from "@/components/tracking/utm-tracker-simple";
 
 function WidgetContent() {
   const params = useParams();
@@ -15,6 +16,7 @@ function WidgetContent() {
   return (
     <WidgetThemeProvider theme={theme}>
       <WidgetAuthProvider studioId={studioId}>
+        <UTMTrackerSimple studioId={studioId} />
         <WidgetSchedule studioId={studioId} />
       </WidgetAuthProvider>
     </WidgetThemeProvider>

@@ -5,6 +5,7 @@ import InstructorShell from "@/components/ui/instructor-shell";
 import DevRoleSwitcher from "@/components/ui/dev-role-switcher";
 import { getStudioFeatures } from "@/lib/features/check-feature";
 import { FeatureProvider } from "@/lib/features/feature-context";
+import AnnouncementBanner from "@/components/announcements/announcement-banner";
 
 export default async function InstructorLayout({
   children,
@@ -70,6 +71,7 @@ export default async function InstructorLayout({
 
   return (
     <FeatureProvider features={features}>
+      <AnnouncementBanner />
       <InstructorShell
         studioName={studioName}
         userName={userName}

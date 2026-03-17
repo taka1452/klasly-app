@@ -8,6 +8,7 @@ import MemberDeleteButton from "@/components/members/member-delete-button";
 import MemberAdjustCredits from "@/components/members/member-adjust-credits";
 import MemberAttendanceHistory from "@/components/attendance/member-attendance-history";
 import SendGuardianInviteButton from "@/components/members/send-guardian-invite-button";
+import MemberSOAPNotes from "@/components/members/member-soap-notes";
 
 export default async function MemberDetailPage({
   params,
@@ -172,6 +173,10 @@ export default async function MemberDetailPage({
 
       <div className="mt-8">
         <MemberAttendanceHistory memberId={member.id} />
+      </div>
+
+      <div className="mt-8">
+        <MemberSOAPNotes memberId={member.id} />
       </div>
     </div>
   );

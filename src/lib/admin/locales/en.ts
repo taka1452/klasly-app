@@ -10,6 +10,7 @@ export const en = {
     metrics: "Metrics",
     support: "Support",
     logs: "Logs",
+    announcements: "Announcements",
     settings: "Platform Settings",
     switchToOwner: "Switch to Owner View",
     systemAdmin: "System administration",

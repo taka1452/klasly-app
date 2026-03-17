@@ -6,6 +6,7 @@ import MemberLayoutClient from "@/components/member/member-layout-client";
 import DevRoleSwitcher from "@/components/ui/dev-role-switcher";
 import { getStudioFeatures } from "@/lib/features/check-feature";
 import { FeatureProvider } from "@/lib/features/feature-context";
+import AnnouncementBanner from "@/components/announcements/announcement-banner";
 
 export default async function MemberLayout({
   children,
@@ -85,6 +86,7 @@ export default async function MemberLayout({
 
   return (
     <FeatureProvider features={features}>
+      <AnnouncementBanner />
       <MemberLayoutClient
         userName={profile?.full_name || user.email || "User"}
         userEmail={user.email || ""}

@@ -70,6 +70,10 @@ export const FEATURE_KEYS = {
   STUDIO_PASS: "extension.studio_pass",
   /** Enhanced PWA */
   PWA_ENHANCED: "extension.pwa_enhanced",
+  /** UTM / link click tracking */
+  UTM_TRACKING: "extension.utm_tracking",
+  /** SOAP Notes for body therapists */
+  SOAP_NOTES: "extension.soap_notes",
 
   // ============================================
   // Payout Phase 3 features
@@ -123,6 +127,8 @@ export const DEFAULT_FEATURES: Record<FeatureKey, boolean> = {
   [FEATURE_KEYS.RETREAT_BOOKING]: false,
   [FEATURE_KEYS.STUDIO_PASS]: false,
   [FEATURE_KEYS.PWA_ENHANCED]: false,
+  [FEATURE_KEYS.UTM_TRACKING]: false,
+  [FEATURE_KEYS.SOAP_NOTES]: false,
 
   // Payout Phase 3: default OFF
   [FEATURE_KEYS.CLASS_FEE_OVERRIDE]: false,
@@ -160,6 +166,8 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   [FEATURE_KEYS.RETREAT_BOOKING]: "Retreat Booking",
   [FEATURE_KEYS.STUDIO_PASS]: "Studio Pass",
   [FEATURE_KEYS.PWA_ENHANCED]: "PWA Enhanced",
+  [FEATURE_KEYS.UTM_TRACKING]: "UTM Tracking",
+  [FEATURE_KEYS.SOAP_NOTES]: "SOAP Notes",
 
   [FEATURE_KEYS.CLASS_FEE_OVERRIDE]: "Class Fee Override",
   [FEATURE_KEYS.FEE_SCHEDULES]: "Fee Schedules",
@@ -205,6 +213,8 @@ export const FEATURE_CATEGORIES = {
       FEATURE_KEYS.RETREAT_BOOKING,
       FEATURE_KEYS.STUDIO_PASS,
       FEATURE_KEYS.PWA_ENHANCED,
+      FEATURE_KEYS.UTM_TRACKING,
+      FEATURE_KEYS.SOAP_NOTES,
     ],
   },
   payout: {
