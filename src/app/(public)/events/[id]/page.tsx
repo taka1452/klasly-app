@@ -2,6 +2,8 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import { formatDate } from "@/lib/utils";
+import { isFeatureEnabled } from "@/lib/features/check-feature";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 import type { Metadata } from "next";
 
 type Props = {
@@ -89,6 +91,10 @@ export default async function EventPage({ params }: Props) {
     .single();
 
   if (!event) notFound();
+
+  // Feature flag check
+  const retreatEnabled = await isFeatureEnabled(event.studio_id, FEATURE_KEYS.RETREAT_BOOKING);
+  if (!retreatEnabled) notFound();
 
   if (!event.is_public) {
     if (!user) notFound();

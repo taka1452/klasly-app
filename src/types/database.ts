@@ -605,7 +605,7 @@ export type EventStatus = "draft" | "published" | "sold_out" | "completed" | "ca
 export type EventPaymentType = "full" | "installment";
 export type EventBookingStatus = "pending_payment" | "confirmed" | "completed" | "cancelled";
 export type EventPaymentStatus = "unpaid" | "partial" | "fully_paid" | "refunded";
-export type InstallmentStatus = "pending" | "paid" | "failed" | "refunded";
+export type InstallmentStatus = "pending" | "paid" | "failed" | "refunded" | "cancelled";
 
 export type Event = {
   id: string;

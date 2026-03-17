@@ -1,5 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import { isFeatureEnabled } from "@/lib/features/check-feature";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 export const runtime = "nodejs";
 
@@ -25,7 +27,7 @@ export async function GET(
   const { data: event } = await supabase
     .from("events")
     .select(
-      "id, name, start_date, end_date, location_name, payment_type, installment_count, cancellation_policy_text",
+      "id, name, studio_id, start_date, end_date, location_name, payment_type, installment_count, cancellation_policy_text",
     )
     .eq("id", eventId)
     .eq("status", "published")
@@ -33,6 +35,12 @@ export async function GET(
 
   if (!event) {
     return NextResponse.json({ error: "Event not found" }, { status: 404 });
+  }
+
+  // Feature flag check
+  const retreatEnabled = await isFeatureEnabled(event.studio_id, FEATURE_KEYS.RETREAT_BOOKING);
+  if (!retreatEnabled) {
+    return NextResponse.json({ error: "Feature not available" }, { status: 404 });
   }
 
   const { data: options } = await supabase

@@ -519,6 +519,41 @@ export function installmentPaymentFailed(params: InstallmentFailedParams) {
   };
 }
 
+type EventBookingCancelledParams = {
+  guestName: string;
+  eventName: string;
+  startDate: string;
+  endDate: string;
+  locationName: string | null;
+  refundAmountCents: number;
+};
+
+export function eventBookingCancelled(params: EventBookingCancelledParams) {
+  const { guestName, eventName, startDate, endDate, locationName, refundAmountCents } = params;
+  const refundSection = refundAmountCents > 0
+    ? `<p style="margin:8px 0 0;font-size:14px;font-weight:600;color:#059669;">Refund: $${(refundAmountCents / 100).toFixed(2)}</p>
+       <p style="margin:4px 0 0;font-size:13px;color:#6b7280;">The refund will be processed to your original payment method. It may take 5–10 business days to appear.</p>`
+    : `<p style="margin:8px 0 0;font-size:14px;color:#6b7280;">No refund is applicable for this cancellation.</p>`;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#dc2626;">Booking Cancelled</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${guestName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      Your booking for the following event has been cancelled:
+    </p>
+    <div style="background:#fef2f2;border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-weight:600;color:#991b1b;">${eventName}</p>
+      <p style="margin:8px 0 0;font-size:14px;">${startDate} – ${endDate}</p>
+      ${locationName ? `<p style="margin:4px 0 0;font-size:14px;color:#6b7280;">${locationName}</p>` : ""}
+      ${refundSection}
+    </div>
+    <p style="margin:0;font-size:14px;">If you have any questions, please contact the studio.</p>
+  `;
+  return {
+    subject: `Booking Cancelled - ${eventName}`,
+    html: baseHtml(content),
+  };
+}
+
 type OwnerInstallmentFailedParams = {
   ownerName: string;
   guestName: string;
@@ -547,6 +582,151 @@ export function ownerInstallmentFailedNotification(params: OwnerInstallmentFaile
   `;
   return {
     subject: `⚠️ Payment Failed - ${guestName} - ${eventName}`,
+    html: baseHtml(content),
+  };
+}
+
+export function eventBookingConfirmedFull(params: {
+  guestName: string;
+  eventName: string;
+  startDate: string;
+  endDate: string;
+  locationName: string | null;
+  optionName: string;
+  amountCents: number;
+  cancellationPolicySummary: string;
+}) {
+  const { guestName, eventName, startDate, endDate, locationName, optionName, amountCents, cancellationPolicySummary } = params;
+  const formattedAmount = `$${(amountCents / 100).toFixed(2)}`;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#059669;">Booking Confirmed!</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${guestName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      Your booking has been confirmed. Here are the details:
+    </p>
+    <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-weight:600;color:${BRAND_COLOR};">${eventName}</p>
+      <p style="margin:8px 0 0;font-size:14px;">${startDate} – ${endDate}</p>
+      ${locationName ? `<p style="margin:4px 0 0;font-size:14px;color:#6b7280;">${locationName}</p>` : ""}
+      <p style="margin:8px 0 0;font-size:14px;">Option: <strong>${optionName}</strong></p>
+      <p style="margin:4px 0 0;font-size:14px;font-weight:600;">Paid: ${formattedAmount}</p>
+    </div>
+    ${cancellationPolicySummary ? `<p style="margin:0 0 16px;font-size:13px;color:#6b7280;">${cancellationPolicySummary}</p>` : ""}
+    <p style="margin:0;font-size:14px;">We look forward to seeing you there!</p>
+  `;
+  return {
+    subject: `Booking Confirmed — ${eventName}`,
+    html: baseHtml(content),
+  };
+}
+
+export function eventBookingConfirmedInstallment(params: {
+  guestName: string;
+  eventName: string;
+  startDate: string;
+  endDate: string;
+  locationName: string | null;
+  optionName: string;
+  totalAmountCents: number;
+  paidAmountCents: number;
+  nextPaymentDate: string;
+  nextPaymentAmountCents: number;
+  remainingInstallments: number;
+  cancellationPolicySummary: string;
+}) {
+  const {
+    guestName, eventName, startDate, endDate, locationName, optionName,
+    totalAmountCents, paidAmountCents, nextPaymentDate, nextPaymentAmountCents,
+    remainingInstallments, cancellationPolicySummary,
+  } = params;
+  const fmtTotal = `$${(totalAmountCents / 100).toFixed(2)}`;
+  const fmtPaid = `$${(paidAmountCents / 100).toFixed(2)}`;
+  const fmtNext = `$${(nextPaymentAmountCents / 100).toFixed(2)}`;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#059669;">Booking Confirmed!</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${guestName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      Your booking has been confirmed with an installment plan.
+    </p>
+    <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-weight:600;color:${BRAND_COLOR};">${eventName}</p>
+      <p style="margin:8px 0 0;font-size:14px;">${startDate} – ${endDate}</p>
+      ${locationName ? `<p style="margin:4px 0 0;font-size:14px;color:#6b7280;">${locationName}</p>` : ""}
+      <p style="margin:8px 0 0;font-size:14px;">Option: <strong>${optionName}</strong></p>
+      <p style="margin:4px 0 0;font-size:14px;">Total: ${fmtTotal} · Paid today: ${fmtPaid}</p>
+    </div>
+    <div style="background:#fffbeb;border-radius:8px;padding:16px;margin:16px 0;border-left:3px solid #f59e0b;">
+      <p style="margin:0;font-weight:600;color:#b45309;">📅 Next Payment</p>
+      <p style="margin:8px 0 0;font-size:14px;">${fmtNext} on ${nextPaymentDate}</p>
+      <p style="margin:4px 0 0;font-size:13px;color:#6b7280;">${remainingInstallments} payment(s) remaining</p>
+    </div>
+    ${cancellationPolicySummary ? `<p style="margin:0 0 16px;font-size:13px;color:#6b7280;">${cancellationPolicySummary}</p>` : ""}
+    <p style="margin:0;font-size:14px;">Future payments will be charged automatically to your card.</p>
+  `;
+  return {
+    subject: `Booking Confirmed — ${eventName}`,
+    html: baseHtml(content),
+  };
+}
+
+export function eventPaymentCompleted(params: {
+  guestName: string;
+  eventName: string;
+  startDate: string;
+  endDate: string;
+  locationName: string | null;
+  totalAmountCents: number;
+}) {
+  const { guestName, eventName, startDate, endDate, locationName, totalAmountCents } = params;
+  const fmtTotal = `$${(totalAmountCents / 100).toFixed(2)}`;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#059669;">Payment Complete!</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${guestName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      All payments for your booking have been completed. You're all set!
+    </p>
+    <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-weight:600;color:${BRAND_COLOR};">${eventName}</p>
+      <p style="margin:8px 0 0;font-size:14px;">${startDate} – ${endDate}</p>
+      ${locationName ? `<p style="margin:4px 0 0;font-size:14px;color:#6b7280;">${locationName}</p>` : ""}
+      <p style="margin:8px 0 0;font-size:16px;font-weight:700;color:#059669;">Total Paid: ${fmtTotal} ✓</p>
+    </div>
+    <p style="margin:0;font-size:14px;">We look forward to seeing you there!</p>
+  `;
+  return {
+    subject: `Payment Complete — ${eventName}`,
+    html: baseHtml(content),
+  };
+}
+
+export function ownerNewBookingNotification(params: {
+  ownerName: string;
+  guestName: string;
+  eventName: string;
+  optionName: string;
+  amountCents: number;
+  paymentType: string;
+}) {
+  const { ownerName, guestName, eventName, optionName, amountCents, paymentType } = params;
+  const fmtAmount = `$${(amountCents / 100).toFixed(2)}`;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:${BRAND_COLOR};">New Event Booking</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${ownerName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      A new booking has been received:
+    </p>
+    <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-weight:600;color:${BRAND_COLOR};">${eventName}</p>
+      <p style="margin:8px 0 0;font-size:14px;">Guest: <strong>${guestName}</strong></p>
+      <p style="margin:4px 0 0;font-size:14px;">Option: ${optionName}</p>
+      <p style="margin:4px 0 0;font-size:14px;">Amount: ${fmtAmount} (${paymentType})</p>
+    </div>
+    <p style="margin:0;">
+      <a href="https://app.klasly.app/events" style="color:${BRAND_COLOR};font-weight:600;font-size:14px;">View in Dashboard →</a>
+    </p>
+  `;
+  return {
+    subject: `New Booking: ${guestName} — ${eventName}`,
     html: baseHtml(content),
   };
 }

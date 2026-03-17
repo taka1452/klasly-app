@@ -4,7 +4,7 @@ import { stripe } from "@/lib/stripe/server";
 import Stripe from "stripe";
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email/send";
-import { paymentReceipt, paymentFailed, instructorPaymentNotification, eventBookingConfirmation } from "@/lib/email/templates";
+import { paymentReceipt, paymentFailed, instructorPaymentNotification, eventBookingConfirmation, eventBookingConfirmedFull, eventBookingConfirmedInstallment, ownerNewBookingNotification } from "@/lib/email/templates";
 import { insertWebhookLog } from "@/lib/admin/logs";
 
 /** session.subscription は string | Subscription (expand時) のため、必ずID文字列を返す */
@@ -1104,25 +1104,38 @@ async function handleEventBookingCheckout(
       .eq("id", bookingId);
   }
 
-  // Send confirmation email
+  // Send confirmation email + owner notification
   try {
     const { data: bookingData } = await supabase
       .from("event_bookings")
-      .select("guest_name, guest_email, total_amount_cents, payment_type")
+      .select("guest_name, guest_email, total_amount_cents, payment_type, event_option_id")
       .eq("id", bookingId)
       .single();
 
     const { data: eventData } = eventId
       ? await supabase
           .from("events")
-          .select("name, start_date, end_date, location_name, installment_count")
+          .select("name, start_date, end_date, location_name, installment_count, studio_id, cancellation_policy_text")
           .eq("id", eventId)
           .single()
       : { data: null };
 
     if (bookingData?.guest_email && eventData) {
-      let nextPaymentInfo: string | undefined;
+      // Get option name
+      let optionName = "—";
+      if (bookingData.event_option_id) {
+        const { data: opt } = await supabase
+          .from("event_options")
+          .select("name")
+          .eq("id", bookingData.event_option_id)
+          .single();
+        optionName = opt?.name ?? "—";
+      }
+
+      const policySummary = eventData.cancellation_policy_text || "";
+
       if (paymentType === "installment") {
+        // Get next pending schedule
         const { data: nextSchedule } = await supabase
           .from("event_payment_schedule")
           .select("amount_cents, due_date")
@@ -1132,29 +1145,93 @@ async function handleEventBookingCheckout(
           .limit(1)
           .single();
 
-        if (nextSchedule) {
-          nextPaymentInfo = `Next payment: $${(nextSchedule.amount_cents / 100).toFixed(2)} on ${nextSchedule.due_date}`;
-        }
+        const { count: remainingCount } = await supabase
+          .from("event_payment_schedule")
+          .select("id", { count: "exact", head: true })
+          .eq("event_booking_id", bookingId)
+          .eq("status", "pending");
+
+        // Get first installment amount (what was just paid)
+        const { data: firstSchedule } = await supabase
+          .from("event_payment_schedule")
+          .select("amount_cents")
+          .eq("event_booking_id", bookingId)
+          .eq("installment_number", 1)
+          .single();
+
+        const email = eventBookingConfirmedInstallment({
+          guestName: bookingData.guest_name || "Guest",
+          eventName: eventData.name,
+          startDate: eventData.start_date,
+          endDate: eventData.end_date,
+          locationName: eventData.location_name,
+          optionName,
+          totalAmountCents: bookingData.total_amount_cents,
+          paidAmountCents: firstSchedule?.amount_cents ?? 0,
+          nextPaymentDate: nextSchedule?.due_date ?? "TBD",
+          nextPaymentAmountCents: nextSchedule?.amount_cents ?? 0,
+          remainingInstallments: remainingCount ?? 0,
+          cancellationPolicySummary: policySummary,
+        });
+
+        await sendEmail({
+          to: bookingData.guest_email,
+          subject: email.subject,
+          html: email.html,
+          studioId: studioId ?? null,
+          templateName: "event_booking_confirmed_installment",
+        });
+      } else {
+        const email = eventBookingConfirmedFull({
+          guestName: bookingData.guest_name || "Guest",
+          eventName: eventData.name,
+          startDate: eventData.start_date,
+          endDate: eventData.end_date,
+          locationName: eventData.location_name,
+          optionName,
+          amountCents: bookingData.total_amount_cents,
+          cancellationPolicySummary: policySummary,
+        });
+
+        await sendEmail({
+          to: bookingData.guest_email,
+          subject: email.subject,
+          html: email.html,
+          studioId: studioId ?? null,
+          templateName: "event_booking_confirmed_full",
+        });
       }
 
-      const email = eventBookingConfirmation({
-        guestName: bookingData.guest_name || "Guest",
-        eventName: eventData.name,
-        startDate: eventData.start_date,
-        endDate: eventData.end_date,
-        locationName: eventData.location_name,
-        totalAmount: bookingData.total_amount_cents,
-        paymentType: bookingData.payment_type,
-        nextPaymentInfo,
-      });
+      // Owner notification
+      const targetStudioId = eventData.studio_id || studioId;
+      if (targetStudioId) {
+        const { data: ownerProfile } = await supabase
+          .from("profiles")
+          .select("full_name, email")
+          .eq("studio_id", targetStudioId)
+          .eq("role", "owner")
+          .limit(1)
+          .single();
 
-      await sendEmail({
-        to: bookingData.guest_email,
-        subject: email.subject,
-        html: email.html,
-        studioId: studioId ?? null,
-        templateName: "event_booking_confirmation",
-      });
+        if (ownerProfile?.email) {
+          const ownerEmail = ownerNewBookingNotification({
+            ownerName: ownerProfile.full_name || "Studio Owner",
+            guestName: bookingData.guest_name || "Guest",
+            eventName: eventData.name,
+            optionName,
+            amountCents: bookingData.total_amount_cents,
+            paymentType: bookingData.payment_type,
+          });
+
+          await sendEmail({
+            to: ownerProfile.email,
+            subject: ownerEmail.subject,
+            html: ownerEmail.html,
+            studioId: targetStudioId,
+            templateName: "owner_new_event_booking",
+          });
+        }
+      }
     }
   } catch (e) {
     console.error("[EventWebhook] Failed to send confirmation email:", e);

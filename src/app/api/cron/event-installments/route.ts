@@ -5,6 +5,7 @@ import { sendEmail } from "@/lib/email/send";
 import {
   installmentPaymentFailed,
   ownerInstallmentFailedNotification,
+  eventPaymentCompleted,
 } from "@/lib/email/templates";
 import { createAdminClient } from "@/lib/admin/supabase";
 
@@ -100,7 +101,7 @@ export async function GET(request: Request) {
 
         const { data: event } = await supabase
           .from("events")
-          .select("id, name, studio_id, instructor_id")
+          .select("id, name, studio_id, instructor_id, start_date, end_date, location_name")
           .eq("id", booking.event_id)
           .single();
 
@@ -207,6 +208,30 @@ export async function GET(request: Request) {
                 updated_at: new Date().toISOString(),
               })
               .eq("id", booking.id);
+
+            // Send payment completed email
+            try {
+              const completedMail = eventPaymentCompleted({
+                guestName: booking.guest_name || "Guest",
+                eventName: event.name,
+                startDate: event.start_date,
+                endDate: event.end_date,
+                locationName: event.location_name,
+                totalAmountCents: booking.total_amount_cents,
+              });
+
+              if (booking.guest_email) {
+                await sendEmail({
+                  to: booking.guest_email,
+                  subject: completedMail.subject,
+                  html: completedMail.html,
+                  studioId: event.studio_id,
+                  templateName: "event_payment_completed",
+                });
+              }
+            } catch (emailErr) {
+              console.error("[EventInstallments] Failed to send completion email:", emailErr);
+            }
           }
 
           processed++;

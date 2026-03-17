@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
 import { ScheduleDateEditor } from "@/components/events/schedule-date-editor";
+import EventCancelSection from "@/components/events/event-cancel-section";
 
 const PAYMENT_STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   unpaid: { label: "Unpaid", cls: "bg-gray-100 text-gray-600" },
@@ -20,6 +21,14 @@ const BOOKING_STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   confirmed: { label: "Confirmed", cls: "bg-green-100 text-green-700" },
   completed: { label: "Completed", cls: "bg-blue-100 text-blue-700" },
   cancelled: { label: "Cancelled", cls: "bg-red-100 text-red-700" },
+};
+
+const SCHEDULE_STATUS_BADGE: Record<string, string> = {
+  paid: "bg-green-100 text-green-700",
+  failed: "bg-red-100 text-red-700",
+  refunded: "bg-purple-100 text-purple-700",
+  cancelled: "bg-gray-100 text-gray-500",
+  pending: "bg-gray-100 text-gray-600",
 };
 
 export default async function BookingDetailPage({
@@ -50,7 +59,7 @@ export default async function BookingDetailPage({
   // Verify event belongs to studio
   const { data: event } = await supabase
     .from("events")
-    .select("id, name, studio_id, start_date, end_date")
+    .select("id, name, studio_id, start_date, end_date, cancellation_policy")
     .eq("id", eventId)
     .eq("studio_id", profile.studio_id)
     .single();
@@ -87,6 +96,8 @@ export default async function BookingDetailPage({
   const paymentBadge =
     PAYMENT_STATUS_BADGE[booking.payment_status] ??
     PAYMENT_STATUS_BADGE.unpaid;
+
+  const isCancelled = booking.booking_status === "cancelled";
 
   return (
     <div>
@@ -130,7 +141,7 @@ export default async function BookingDetailPage({
           <div>
             <p className="text-xs text-gray-500 uppercase">Name</p>
             <p className="mt-1 font-medium text-gray-900">
-              {booking.guest_name || "—"}
+              {booking.guest_name || "\u2014"}
             </p>
           </div>
           <div>
@@ -142,7 +153,7 @@ export default async function BookingDetailPage({
           <div>
             <p className="text-xs text-gray-500 uppercase">Phone</p>
             <p className="mt-1 font-medium text-gray-900">
-              {booking.guest_phone || "—"}
+              {booking.guest_phone || "\u2014"}
             </p>
           </div>
         </div>
@@ -157,7 +168,7 @@ export default async function BookingDetailPage({
           <div>
             <p className="text-xs text-gray-500 uppercase">Option</p>
             <p className="mt-1 font-medium text-gray-900">
-              {option?.name ?? "—"}
+              {option?.name ?? "\u2014"}
             </p>
             {option?.description && (
               <p className="text-xs text-gray-500">{option.description}</p>
@@ -224,13 +235,7 @@ export default async function BookingDetailPage({
                   )}
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      s.status === "paid"
-                        ? "bg-green-100 text-green-700"
-                        : s.status === "failed"
-                          ? "bg-red-100 text-red-700"
-                          : s.status === "refunded"
-                            ? "bg-purple-100 text-purple-700"
-                            : "bg-gray-100 text-gray-600"
+                      SCHEDULE_STATUS_BADGE[s.status] ?? SCHEDULE_STATUS_BADGE.pending
                     }`}
                   >
                     {s.status}
@@ -247,16 +252,26 @@ export default async function BookingDetailPage({
         </div>
       )}
 
-      {/* Cancel button (disabled — Phase 3) */}
-      <div className="flex justify-end">
-        <button
-          disabled
-          className="rounded-lg bg-red-100 px-4 py-2 text-sm font-medium text-red-400 cursor-not-allowed"
-          title="Cancellation will be available in a future update"
-        >
-          Cancel Booking
-        </button>
-      </div>
+      {/* Cancel Section */}
+      {!isCancelled && (
+        <EventCancelSection
+          bookingId={bookingId}
+          eventId={eventId}
+          guestName={booking.guest_name || "Guest"}
+          optionName={option?.name ?? "\u2014"}
+          totalAmountCents={booking.total_amount_cents}
+          schedules={(schedules ?? []).map((s) => ({
+            id: s.id,
+            installment_number: s.installment_number,
+            amount_cents: s.amount_cents,
+            due_date: s.due_date,
+            status: s.status,
+            paid_at: s.paid_at,
+          }))}
+          cancellationPolicy={event.cancellation_policy ?? []}
+          eventStartDate={event.start_date}
+        />
+      )}
     </div>
   );
 }

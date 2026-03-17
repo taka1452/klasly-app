@@ -4,6 +4,8 @@ import { getStripe } from "@/lib/stripe/server";
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email/send";
 import { eventBookingConfirmation } from "@/lib/email/templates";
+import { isFeatureEnabled } from "@/lib/features/check-feature";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 export const runtime = "nodejs";
 
@@ -60,6 +62,12 @@ export async function POST(request: Request) {
         { error: "Event not found or not published" },
         { status: 404 },
       );
+    }
+
+    // Feature flag check
+    const retreatEnabled = await isFeatureEnabled(event.studio_id, FEATURE_KEYS.RETREAT_BOOKING);
+    if (!retreatEnabled) {
+      return NextResponse.json({ error: "Feature not available" }, { status: 404 });
     }
 
     // 2. Fetch option

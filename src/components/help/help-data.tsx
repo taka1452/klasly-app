@@ -613,32 +613,17 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
       title: "Events & Retreats",
       items: [
         {
-          q: "How do I create an event or retreat?",
+          q: "How do I create a retreat?",
           a: (
             <>
-              Go to <B>Events</B> from the sidebar and click <B>&quot;Create Event.&quot;</B> The 5-step form guides you through:
+              Go to <B>Events &amp; Retreats</B> and click <B>&quot;Create Event.&quot;</B> Follow the 5-step form:
               <Steps>
-                <li><B>Basic Info</B> — name, description, location, dates, and visibility.</li>
-                <li><B>Room Options</B> — add room types or ticket tiers with individual prices and capacities.</li>
-                <li><B>Payment</B> — choose full payment or 3 installments.</li>
-                <li><B>Cancellation Policy</B> — define refund tiers and auto-generate policy text.</li>
-                <li><B>Application Form</B> — optionally attach a custom form (coming soon).</li>
+                <li><B>Basic Info</B> — name, dates, location.</li>
+                <li><B>Room Options</B> — tiers with pricing &amp; capacity.</li>
+                <li><B>Payment Settings</B> — full or installment.</li>
+                <li><B>Cancellation Policy</B>.</li>
+                <li><B>Custom Form</B> (optional).</li>
               </Steps>
-              You can save as draft and publish later, or publish immediately.
-            </>
-          ),
-        },
-        {
-          q: "What are event options?",
-          a: (
-            <>
-              Options are the different tiers or room types for your event. For example, a retreat might offer:
-              <Steps>
-                <li><B>Shared Room</B> — $1,500 (capacity: 10)</li>
-                <li><B>Private Room</B> — $2,500 (capacity: 5)</li>
-                <li><B>VIP Suite</B> — $4,000 (capacity: 2)</li>
-              </Steps>
-              Each option has its own price and capacity. Guests choose an option when booking.
             </>
           ),
         },
@@ -646,31 +631,31 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How does installment payment work?",
           a: (
             <>
-              When you select <B>&quot;3 Installments&quot;</B> as the payment type, guests can choose to pay in full or split the total into three payments:
-              <Steps>
-                <li>1st payment at booking (card is saved securely).</li>
-                <li>2nd payment is automatically charged 30 days later.</li>
-                <li>3rd payment is automatically charged 60 days later.</li>
-              </Steps>
-              Guests receive a reminder email 7 days before each automatic charge. If a payment fails, it will be retried automatically. After 3 failed attempts, both the guest and owner are notified.
-              <Tip>You can change individual due dates from the booking detail page if a guest requests a different schedule.</Tip>
+              When you enable installments, guests can choose to pay in 3 installments: 1/3 at booking, 1/3 after 30 days, 1/3 after 60 days &mdash; automatically charged to their card. You&apos;ll get reminders 7 days before each charge. You can edit individual due dates from the booking detail page under <B>Settings &rarr; Events</B>.
             </>
           ),
         },
         {
-          q: "How do I share my event publicly?",
+          q: "How do I handle cancellations?",
           a: (
             <>
-              Set the event visibility to <B>&quot;Public&quot;</B> and publish it. Your event will have a public page at <B>/events/[event-id]</B> that you can share. Guests can click <B>&quot;Book Now&quot;</B> to select an option, enter their details, and pay via Stripe. Both logged-in members and guests can book.
-              <Tip>Private events are only visible to members of your studio.</Tip>
+              Open the booking detail page and click <B>&quot;Cancel Booking.&quot;</B> The system auto-calculates the refund based on your cancellation policy (days before event start &times; refund percentage &minus; fee). You can adjust the refund amount manually before confirming. Choose <B>&quot;Process Refund &amp; Cancel&quot;</B> to issue a Stripe refund, or <B>&quot;Cancel without Refund&quot;</B> to cancel without refunding.
             </>
           ),
         },
         {
-          q: "How do I manage event bookings?",
+          q: "Can I create private events?",
           a: (
             <>
-              Go to <B>Events &rarr; [Event Name]</B> to see the event detail page. Filter bookings by status using the <B>All / Confirmed / Completed / Cancelled</B> tabs. Each booking shows guest info, option, amount, and payment progress (e.g., &quot;2/3 paid&quot; for installment plans). Click <B>&quot;View Details&quot;</B> to see the full payment schedule and guest information.
+              Yes. When creating an event, set <B>Public</B> to <B>No</B>. Only logged-in members of your studio will be able to view and book the event.
+            </>
+          ),
+        },
+        {
+          q: "Can guests (non-members) book retreats?",
+          a: (
+            <>
+              Yes. Guests enter their name, email, and phone number during checkout. No Klasly account is required. They&apos;ll receive booking confirmation and payment receipts by email.
             </>
           ),
         },
@@ -1052,6 +1037,27 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               Each booking uses 1 credit, and cancelling returns it. If you believe there&apos;s an error, contact your studio owner or reach out to <B>support@klasly.app</B>.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Events & Retreats",
+      items: [
+        {
+          q: "How do I book a retreat?",
+          a: (
+            <>
+              Visit the event page, select a room or option, then choose your payment method (full or 3 installments). Complete checkout with your card &mdash; you&apos;ll receive a confirmation email.
+            </>
+          ),
+        },
+        {
+          q: "When will I be charged for installments?",
+          a: (
+            <>
+              The first installment is charged at booking. The second is auto-charged 30 days later, and the third 60 days later. You&apos;ll receive a reminder email 7 days before each charge. No action is needed &mdash; payments are processed automatically.
             </>
           ),
         },
