@@ -646,13 +646,14 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How does installment payment work?",
           a: (
             <>
-              When you select <B>&quot;3 Installments&quot;</B> as the payment type, guests pay the total in three equal payments:
+              When you select <B>&quot;3 Installments&quot;</B> as the payment type, guests can choose to pay in full or split the total into three payments:
               <Steps>
-                <li>1st payment at booking.</li>
-                <li>2nd payment 30 days later.</li>
-                <li>3rd payment 60 days later.</li>
+                <li>1st payment at booking (card is saved securely).</li>
+                <li>2nd payment is automatically charged 30 days later.</li>
+                <li>3rd payment is automatically charged 60 days later.</li>
               </Steps>
-              <Tip>Payment processing for events is coming soon. For now, you can manage bookings and track payments manually.</Tip>
+              Guests receive a reminder email 7 days before each automatic charge. If a payment fails, it will be retried automatically. After 3 failed attempts, both the guest and owner are notified.
+              <Tip>You can change individual due dates from the booking detail page if a guest requests a different schedule.</Tip>
             </>
           ),
         },
@@ -660,7 +661,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I share my event publicly?",
           a: (
             <>
-              Set the event visibility to <B>&quot;Public&quot;</B> and publish it. Your event will have a public page at <B>/events/[event-id]</B> that you can share. The page shows all event details, options with remaining spots, and pricing.
+              Set the event visibility to <B>&quot;Public&quot;</B> and publish it. Your event will have a public page at <B>/events/[event-id]</B> that you can share. Guests can click <B>&quot;Book Now&quot;</B> to select an option, enter their details, and pay via Stripe. Both logged-in members and guests can book.
               <Tip>Private events are only visible to members of your studio.</Tip>
             </>
           ),
@@ -669,7 +670,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I manage event bookings?",
           a: (
             <>
-              Go to <B>Events &rarr; [Event Name]</B> to see the event detail page. You&apos;ll see all bookings with guest name, option, booking status, and payment status. You can also see how many spots are filled for each option.
+              Go to <B>Events &rarr; [Event Name]</B> to see the event detail page. Filter bookings by status using the <B>All / Confirmed / Completed / Cancelled</B> tabs. Each booking shows guest info, option, amount, and payment progress (e.g., &quot;2/3 paid&quot; for installment plans). Click <B>&quot;View Details&quot;</B> to see the full payment schedule and guest information.
             </>
           ),
         },

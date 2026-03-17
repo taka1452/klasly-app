@@ -201,21 +201,24 @@ export default async function EventPage({ params }: Props) {
                         `${remaining} spot${remaining !== 1 ? "s" : ""} remaining`
                       )}
                     </span>
-                    <button
-                      disabled
-                      className="rounded-lg bg-gray-200 px-5 py-2 text-sm font-medium text-gray-500 cursor-not-allowed"
-                      title="Online booking coming soon"
-                    >
-                      Book Now
-                    </button>
+                    {isSoldOut ? (
+                      <span className="rounded-lg bg-gray-200 px-5 py-2 text-sm font-medium text-gray-500 cursor-not-allowed">
+                        Sold Out
+                      </span>
+                    ) : (
+                      <a
+                        href={`/events/${id}/checkout?option=${opt.id}`}
+                        className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                      >
+                        Book Now →
+                      </a>
+                    )}
                   </div>
                 </div>
               );
             })}
           </div>
-          <p className="mt-4 text-center text-xs text-gray-400">
-            Online booking coming soon. Please contact the studio to reserve your spot.
-          </p>
+          {/* Reserved for future announcements */}
         </div>
       )}
       {event.cancellation_policy_text && (

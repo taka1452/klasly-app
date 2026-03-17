@@ -413,3 +413,140 @@ export function guardianWaiverInvite(params: {
     html: baseHtml(content),
   };
 }
+
+// ============================================================
+// Events & Retreats
+// ============================================================
+
+type EventBookingParams = {
+  guestName: string;
+  eventName: string;
+  startDate: string;
+  endDate: string;
+  locationName: string | null;
+  totalAmount: number; // cents
+  paymentType: "full" | "installment";
+  nextPaymentInfo?: string;
+};
+
+export function eventBookingConfirmation(params: EventBookingParams) {
+  const {
+    guestName,
+    eventName,
+    startDate,
+    endDate,
+    locationName,
+    totalAmount,
+    paymentType,
+    nextPaymentInfo,
+  } = params;
+  const formattedAmount = `$${(totalAmount / 100).toFixed(2)}`;
+  const nextPaymentSection = nextPaymentInfo
+    ? `<p style="margin:12px 0 0;font-size:14px;color:#b45309;font-weight:600;">📅 ${nextPaymentInfo}</p>`
+    : "";
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">Booking Confirmed!</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${guestName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      Your booking has been confirmed. Here are the details:
+    </p>
+    <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-weight:600;color:${BRAND_COLOR};">${eventName}</p>
+      <p style="margin:8px 0 0;font-size:14px;">${startDate} – ${endDate}</p>
+      ${locationName ? `<p style="margin:4px 0 0;font-size:14px;color:#6b7280;">${locationName}</p>` : ""}
+      <p style="margin:8px 0 0;font-size:14px;font-weight:600;">Total: ${formattedAmount}${paymentType === "installment" ? " (installment plan)" : ""}</p>
+      ${nextPaymentSection}
+    </div>
+    <p style="margin:0;font-size:14px;">We look forward to seeing you there!</p>
+  `;
+  return {
+    subject: `Booking Confirmed - ${eventName}`,
+    html: baseHtml(content),
+  };
+}
+
+type InstallmentReminderParams = {
+  guestName: string;
+  eventName: string;
+  amount: number; // cents
+  dueDate: string;
+};
+
+export function installmentReminder(params: InstallmentReminderParams) {
+  const { guestName, eventName, amount, dueDate } = params;
+  const formattedAmount = `$${(amount / 100).toFixed(2)}`;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">Payment Reminder</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${guestName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      This is a reminder that your next payment for <strong>${eventName}</strong> will be charged soon.
+    </p>
+    <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-weight:600;color:${BRAND_COLOR};">Amount: ${formattedAmount}</p>
+      <p style="margin:8px 0 0;font-size:14px;">Date: ${dueDate}</p>
+    </div>
+    <p style="margin:0;font-size:14px;">No action is needed — the payment will be processed automatically.</p>
+  `;
+  return {
+    subject: `Payment Reminder - ${eventName}`,
+    html: baseHtml(content),
+  };
+}
+
+type InstallmentFailedParams = {
+  guestName: string;
+  eventName: string;
+  amount: number; // cents
+};
+
+export function installmentPaymentFailed(params: InstallmentFailedParams) {
+  const { guestName, eventName, amount } = params;
+  const formattedAmount = `$${(amount / 100).toFixed(2)}`;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#dc2626;">Payment Failed</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${guestName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      We were unable to process your payment of <strong>${formattedAmount}</strong> for <strong>${eventName}</strong>.
+    </p>
+    <p style="margin:0 0 16px;font-size:14px;">
+      Please ensure your payment method is up to date. We will retry the payment automatically.
+    </p>
+    <p style="margin:0;font-size:14px;">If you have any questions, please contact the studio.</p>
+  `;
+  return {
+    subject: `Payment Failed - ${eventName}`,
+    html: baseHtml(content),
+  };
+}
+
+type OwnerInstallmentFailedParams = {
+  ownerName: string;
+  guestName: string;
+  guestEmail: string;
+  eventName: string;
+  amount: number; // cents
+  failCount: number;
+};
+
+export function ownerInstallmentFailedNotification(params: OwnerInstallmentFailedParams) {
+  const { ownerName, guestName, guestEmail, eventName, amount, failCount } = params;
+  const formattedAmount = `$${(amount / 100).toFixed(2)}`;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#dc2626;">Installment Payment Failed</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${ownerName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      An installment payment has failed ${failCount} time(s) for the following booking:
+    </p>
+    <div style="background:#fef2f2;border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-weight:600;color:#991b1b;">${eventName}</p>
+      <p style="margin:8px 0 0;font-size:14px;">Guest: ${guestName} (${guestEmail})</p>
+      <p style="margin:4px 0 0;font-size:14px;">Amount: ${formattedAmount}</p>
+      <p style="margin:4px 0 0;font-size:14px;">Failed attempts: ${failCount}</p>
+    </div>
+    <p style="margin:0;font-size:14px;">Please review this booking in your dashboard.</p>
+  `;
+  return {
+    subject: `⚠️ Payment Failed - ${guestName} - ${eventName}`,
+    html: baseHtml(content),
+  };
+}

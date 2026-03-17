@@ -3,6 +3,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
+import { EventBookingFilters } from "@/components/events/event-booking-filters";
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   draft: { label: "Draft", cls: "bg-gray-100 text-gray-700" },
@@ -53,13 +54,40 @@ export default async function EventManagePage({
 
   const { data: bookings } = await supabase
     .from("event_bookings")
-    .select("id, event_option_id, guest_name, guest_email, booking_status, total_amount_cents, payment_status, created_at")
+    .select(
+      "id, event_option_id, guest_name, guest_email, booking_status, total_amount_cents, payment_type, payment_status, created_at",
+    )
     .eq("event_id", id)
     .order("created_at", { ascending: false });
 
-  const activeBookings = (bookings || []).filter(
+  const allBookings = bookings || [];
+  const activeBookings = allBookings.filter(
     (b) => b.booking_status !== "cancelled",
   );
+
+  // Get installment progress for each booking
+  const bookingIds = allBookings.map((b) => b.id);
+  const { data: schedules } =
+    bookingIds.length > 0
+      ? await supabase
+          .from("event_payment_schedule")
+          .select("event_booking_id, status")
+          .in("event_booking_id", bookingIds)
+      : { data: [] };
+
+  const installmentProgress: Record<
+    string,
+    { paid: number; total: number }
+  > = {};
+  (schedules || []).forEach((s) => {
+    if (!installmentProgress[s.event_booking_id]) {
+      installmentProgress[s.event_booking_id] = { paid: 0, total: 0 };
+    }
+    installmentProgress[s.event_booking_id].total++;
+    if (s.status === "paid") {
+      installmentProgress[s.event_booking_id].paid++;
+    }
+  });
 
   const badge = STATUS_BADGE[event.status] ?? STATUS_BADGE.draft;
   const optionMap = new Map((options || []).map((o) => [o.id, o]));
@@ -73,10 +101,34 @@ export default async function EventManagePage({
     {} as Record<string, number>,
   );
 
+  // Prepare serializable booking data for client component
+  const bookingRows = allBookings.map((booking) => {
+    const opt = booking.event_option_id
+      ? optionMap.get(booking.event_option_id)
+      : null;
+    const progress = installmentProgress[booking.id];
+    return {
+      id: booking.id,
+      guest_name: booking.guest_name || "—",
+      guest_email: booking.guest_email,
+      option_name: opt?.name ?? "—",
+      booking_status: booking.booking_status,
+      payment_status: booking.payment_status,
+      payment_type: booking.payment_type,
+      total_amount_cents: booking.total_amount_cents,
+      created_at: booking.created_at,
+      installment_paid: progress?.paid ?? 0,
+      installment_total: progress?.total ?? 0,
+    };
+  });
+
   return (
     <div>
       <div className="mb-6">
-        <Link href="/events" className="text-sm text-gray-500 hover:text-gray-700">
+        <Link
+          href="/events"
+          className="text-sm text-gray-500 hover:text-gray-700"
+        >
           &larr; Back to events
         </Link>
       </div>
@@ -85,7 +137,9 @@ export default async function EventManagePage({
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-gray-900">{event.name}</h1>
-            <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${badge.cls}`}>
+            <span
+              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${badge.cls}`}
+            >
               {badge.label}
             </span>
           </div>
@@ -98,6 +152,15 @@ export default async function EventManagePage({
           )}
         </div>
         <div className="flex gap-3">
+          {event.is_public && event.status === "published" && (
+            <Link
+              href={`/events/${id}`}
+              target="_blank"
+              className="btn-secondary"
+            >
+              View Public Page ↗
+            </Link>
+          )}
           <Link href={`/events/${id}/edit`} className="btn-secondary">
             Edit
           </Link>
@@ -115,13 +178,17 @@ export default async function EventManagePage({
 
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <div className="card">
-          <p className="text-xs font-medium text-gray-500 uppercase">Visibility</p>
+          <p className="text-xs font-medium text-gray-500 uppercase">
+            Visibility
+          </p>
           <p className="mt-1 text-lg font-semibold text-gray-900">
             {event.is_public ? "Public" : "Members Only"}
           </p>
         </div>
         <div className="card">
-          <p className="text-xs font-medium text-gray-500 uppercase">Payment</p>
+          <p className="text-xs font-medium text-gray-500 uppercase">
+            Payment
+          </p>
           <p className="mt-1 text-lg font-semibold text-gray-900">
             {event.payment_type === "installment"
               ? `${event.installment_count} Installments`
@@ -129,10 +196,14 @@ export default async function EventManagePage({
           </p>
         </div>
         <div className="card">
-          <p className="text-xs font-medium text-gray-500 uppercase">Bookings</p>
+          <p className="text-xs font-medium text-gray-500 uppercase">
+            Bookings
+          </p>
           <p className="mt-1 text-lg font-semibold text-gray-900">
             {activeBookings.length}
-            {event.max_total_capacity ? ` / ${event.max_total_capacity}` : ""}
+            {event.max_total_capacity
+              ? ` / ${event.max_total_capacity}`
+              : ""}
           </p>
         </div>
       </div>
@@ -144,11 +215,16 @@ export default async function EventManagePage({
             {options.map((opt) => {
               const count = optionBookingCounts[opt.id] || 0;
               return (
-                <div key={opt.id} className="flex items-center justify-between py-3">
+                <div
+                  key={opt.id}
+                  className="flex items-center justify-between py-3"
+                >
                   <div>
                     <p className="font-medium text-gray-900">{opt.name}</p>
                     {opt.description && (
-                      <p className="text-sm text-gray-500">{opt.description}</p>
+                      <p className="text-sm text-gray-500">
+                        {opt.description}
+                      </p>
                     )}
                   </div>
                   <div className="flex items-center gap-4 text-sm text-gray-600">
@@ -166,87 +242,19 @@ export default async function EventManagePage({
 
       {event.cancellation_policy_text && (
         <div className="card mb-6">
-          <h2 className="mb-2 text-sm font-medium text-gray-700">Cancellation Policy</h2>
+          <h2 className="mb-2 text-sm font-medium text-gray-700">
+            Cancellation Policy
+          </h2>
           <p className="whitespace-pre-wrap text-sm text-gray-600">
             {event.cancellation_policy_text}
           </p>
         </div>
       )}
 
-      <div className="card">
-        <h2 className="mb-4 text-sm font-medium text-gray-700">Bookings</h2>
-        {activeBookings.length === 0 ? (
-          <div className="py-8 text-center">
-            <p className="text-sm text-gray-500">No bookings yet.</p>
-            <p className="mt-1 text-xs text-gray-400">
-              Bookings will appear here once guests register.
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 text-left text-xs font-medium text-gray-500 uppercase">
-                  <th className="pb-2 pr-4">Guest</th>
-                  <th className="pb-2 pr-4">Option</th>
-                  <th className="pb-2 pr-4">Status</th>
-                  <th className="pb-2 pr-4">Payment</th>
-                  <th className="pb-2">Date</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {activeBookings.map((booking) => {
-                  const opt = booking.event_option_id
-                    ? optionMap.get(booking.event_option_id)
-                    : null;
-                  return (
-                    <tr key={booking.id}>
-                      <td className="py-2 pr-4">
-                        <p className="font-medium text-gray-900">
-                          {booking.guest_name || "—"}
-                        </p>
-                        <p className="text-xs text-gray-500">{booking.guest_email}</p>
-                      </td>
-                      <td className="py-2 pr-4 text-gray-600">
-                        {opt ? opt.name : "—"}
-                      </td>
-                      <td className="py-2 pr-4">
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                            booking.booking_status === "confirmed"
-                              ? "bg-green-100 text-green-700"
-                              : booking.booking_status === "completed"
-                                ? "bg-blue-100 text-blue-700"
-                                : "bg-amber-100 text-amber-700"
-                          }`}
-                        >
-                          {booking.booking_status}
-                        </span>
-                      </td>
-                      <td className="py-2 pr-4">
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                            booking.payment_status === "fully_paid"
-                              ? "bg-green-100 text-green-700"
-                              : booking.payment_status === "partial"
-                                ? "bg-amber-100 text-amber-700"
-                                : "bg-gray-100 text-gray-600"
-                          }`}
-                        >
-                          {booking.payment_status}
-                        </span>
-                      </td>
-                      <td className="py-2 text-gray-500">
-                        {formatDate(booking.created_at)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      <EventBookingFilters
+        eventId={id}
+        bookings={bookingRows}
+      />
     </div>
   );
 }
