@@ -490,6 +490,74 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
       ],
     },
     {
+      title: "Studio Announcements",
+      items: [
+        {
+          q: "How do I create an announcement for my studio?",
+          a: (
+            <>
+              Go to <B>Announcements</B> from the sidebar. Fill in the title, body, and select target roles (instructors, members, or both). Click <B>&quot;Create Announcement&quot;</B> and it will immediately appear as a banner for the selected audience.
+            </>
+          ),
+        },
+        {
+          q: "Can I deactivate or delete an announcement?",
+          a: (
+            <>
+              Yes. On the <B>Announcements</B> page, you&apos;ll see a table of all your announcements. You can:
+              <Steps>
+                <li><B>Activate / Deactivate</B> — toggle visibility without deleting. Deactivated announcements won&apos;t be shown to anyone.</li>
+                <li><B>Delete</B> — permanently remove an announcement.</li>
+              </Steps>
+            </>
+          ),
+        },
+        {
+          q: "Who sees my studio announcements?",
+          a: (
+            <>
+              Studio announcements are shown only to the roles you selected (instructors and/or members) within your studio. They appear as a notification banner in the app. Platform-wide announcements from Klasly are separate.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Online Classes",
+      items: [
+        {
+          q: "How do I create an online class?",
+          a: (
+            <>
+              When creating or editing a class, select <B>&quot;Online&quot;</B> as the Class Type. Then enter the online meeting link (Zoom, Google Meet, etc.). The room and location fields are hidden for online classes.
+              <Tip>The online link is only visible to members who have a confirmed booking. It won&apos;t appear on the public widget.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "How do members join online classes?",
+          a: (
+            <>
+              After booking an online class, the member will see a <B>&quot;Join Online&quot;</B> link in:
+              <Steps>
+                <li>The class detail popup on the schedule calendar.</li>
+                <li>The booking confirmation email.</li>
+              </Steps>
+              The link is only shown to members with a confirmed booking — it&apos;s hidden from unbooked members and the public widget.
+            </>
+          ),
+        },
+        {
+          q: "Can I switch a class between in-person and online?",
+          a: (
+            <>
+              Yes. Go to <B>Classes → [Class Name]</B> and change the Class Type in the edit form. Switching to online will clear the room and location, and switching to in-person will clear the online link.
+            </>
+          ),
+        },
+      ],
+    },
+    {
       title: "Updates & Notifications",
       items: [
         {
@@ -497,6 +565,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               When new features are released, you&apos;ll see a notification banner at the top of your dashboard. Click <B>&quot;View Updates&quot;</B> to see what&apos;s new. The banner will disappear once you&apos;ve viewed the updates.
+              <Tip>You can also send your own announcements to instructors and members via the <B>Announcements</B> page in the sidebar.</Tip>
             </>
           ),
         },
@@ -754,6 +823,19 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             </>
           ),
         },
+        {
+          q: "How do I join an online class?",
+          a: (
+            <>
+              Online classes are marked with a 📹 badge on the schedule. After you book an online class:
+              <Steps>
+                <li>Click on the class in the schedule to open details — you&apos;ll see a <B>&quot;Join Online&quot;</B> link.</li>
+                <li>You&apos;ll also receive the link in your booking confirmation email.</li>
+              </Steps>
+              <Tip>The online link is only visible after you have a confirmed booking. If you&apos;re on the waitlist, you&apos;ll see the link once you&apos;re promoted.</Tip>
+            </>
+          ),
+        },
       ],
     },
     {
@@ -863,7 +945,12 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "What is the notification banner at the top of the page?",
           a: (
             <>
-              When your studio adds new features or makes changes, you may see a notification banner. Click <B>&quot;View Updates&quot;</B> to learn more, or dismiss it with the ✕ button.
+              You may see notification banners for two types of updates:
+              <Steps>
+                <li><B>Platform updates</B> — new features or changes from Klasly.</li>
+                <li><B>Studio announcements</B> — messages from your studio (e.g., schedule changes, events, reminders).</li>
+              </Steps>
+              Click <B>&quot;View Updates&quot;</B> to read the full message, or dismiss it with the ✕ button.
             </>
           ),
         },

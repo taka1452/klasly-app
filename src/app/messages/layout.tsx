@@ -3,6 +3,11 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
 import Link from "next/link";
 import MemberHeader from "@/components/member/member-header";
+import DashboardShell from "@/components/ui/dashboard-shell";
+import { getPlanAccess } from "@/lib/plan-guard";
+import { isAdmin } from "@/lib/admin/auth";
+import { getStudioFeatures } from "@/lib/features/check-feature";
+import { FeatureProvider } from "@/lib/features/feature-context";
 
 /**
  * /messages レイアウト
@@ -45,37 +50,46 @@ export default async function MessagesLayout({
     redirect("/instructor");
   }
 
-  if (profile.role === "owner") {
+  // オーナー / マネージャー: DashboardShell（サイドバー付き）
+  if (profile.role === "owner" || profile.role === "manager") {
+    const showAdminLink = await isAdmin();
+
+    const { data: studio } = await supabase
+      .from("studios")
+      .select("name, plan_status")
+      .eq("id", profile.studio_id)
+      .single();
+
+    const planStatus = (studio as { plan_status?: string })?.plan_status ?? "trialing";
+    const planAccess = getPlanAccess(planStatus);
+
+    let isAlsoInstructor = false;
+    if (profile.role === "owner") {
+      const { data: instrRec } = await supabase
+        .from("instructors")
+        .select("id")
+        .eq("profile_id", user.id)
+        .eq("studio_id", profile.studio_id)
+        .maybeSingle();
+      isAlsoInstructor = !!instrRec;
+    }
+
+    const features = await getStudioFeatures(profile.studio_id);
+
     return (
-      <div className="min-h-screen bg-gray-50">
-        {/* オーナー用ヘッダー: ダッシュボードに戻るリンク付き */}
-        <header className="border-b border-gray-200 bg-white">
-          <div className="flex h-14 items-center gap-4 px-4 sm:px-6">
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-800"
-            >
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"
-                />
-              </svg>
-              Dashboard
-            </Link>
-            <span className="text-gray-300">|</span>
-            <h1 className="text-sm font-semibold text-gray-900">Messages</h1>
-          </div>
-        </header>
-        <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6">{children}</main>
-      </div>
+      <FeatureProvider features={features}>
+        <DashboardShell
+          currentRole={profile.role}
+          studioName={(studio as { name?: string })?.name || "My Studio"}
+          userName={profile.full_name || user.email || "User"}
+          userEmail={user.email || ""}
+          planAccess={planAccess}
+          showAdminLink={showAdminLink}
+          isAlsoInstructor={isAlsoInstructor}
+        >
+          {children}
+        </DashboardShell>
+      </FeatureProvider>
     );
   }
 

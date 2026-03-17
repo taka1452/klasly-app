@@ -66,7 +66,7 @@ export default async function BookingsPage({
 
   const { data: sessions } = await supabase
     .from("class_sessions")
-    .select("id, session_date, start_time, capacity, is_cancelled, classes(name)")
+    .select("id, session_date, start_time, capacity, is_cancelled, is_online, classes(name)")
     .eq("studio_id", profile.studio_id)
     .gte("session_date", startDate)
     .lte("session_date", endDate)
@@ -131,7 +131,10 @@ export default async function BookingsPage({
                 >
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <p className="font-medium text-gray-900">{className}</p>
+                      <p className="font-medium text-gray-900">
+                        {(session as { is_online?: boolean }).is_online && <span title="Online">📹 </span>}
+                        {className}
+                      </p>
                       <p className="text-sm text-gray-500">
                         {formatDate(session.session_date)} · {formatTime(session.start_time)}
                       </p>

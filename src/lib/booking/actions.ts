@@ -74,7 +74,7 @@ export async function executeBookingAction({
 
   const { data: session } = await adminSupabase
     .from("class_sessions")
-    .select("id, session_date, start_time, capacity, classes(name)")
+    .select("id, session_date, start_time, capacity, is_online, online_link, classes(name, is_online, online_link)")
     .eq("id", sessionId)
     .single();
 
@@ -82,13 +82,20 @@ export async function executeBookingAction({
     return { success: false, error: "Session not found", status: 404 };
   }
 
-  const className =
-    (session as { classes?: { name?: string } }).classes?.name ?? "Class";
+  const sessionAny = session as {
+    classes?: { name?: string; is_online?: boolean; online_link?: string | null };
+    is_online?: boolean;
+    online_link?: string | null;
+  };
+  const className = sessionAny.classes?.name ?? "Class";
   const memberName = profile?.full_name ?? "Member";
   const memberEmail = profile?.email ?? "";
   const studioName = studio?.name ?? "Studio";
   const sessionDate = formatDate(session.session_date);
   const startTime = formatTime(session.start_time);
+  // Session-level online overrides class-level
+  const isOnline = sessionAny.is_online ?? sessionAny.classes?.is_online ?? false;
+  const onlineLink = sessionAny.online_link ?? sessionAny.classes?.online_link ?? null;
 
   const emailPayload = {
     memberName,
@@ -96,6 +103,8 @@ export async function executeBookingAction({
     sessionDate,
     startTime,
     studioName,
+    isOnline,
+    onlineLink,
   };
 
   // スタジオ設定に基づきクレジット要否を判定

@@ -35,10 +35,21 @@ type BookingParams = {
   sessionDate: string;
   startTime: string;
   studioName: string;
+  isOnline?: boolean;
+  onlineLink?: string | null;
 };
 
 export function bookingConfirmation(params: BookingParams) {
-  const { memberName, className, sessionDate, startTime, studioName } = params;
+  const { memberName, className, sessionDate, startTime, studioName, isOnline, onlineLink } = params;
+  const onlineSection = isOnline && onlineLink
+    ? `<p style="margin:12px 0 0;">
+        <a href="${onlineLink}" style="display:inline-block;background:${BRAND_COLOR};color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">
+          Join Online →
+        </a>
+      </p>`
+    : isOnline
+      ? `<p style="margin:8px 0 0;font-size:14px;color:#6b7280;">📹 Online class</p>`
+      : "";
   const content = `
     <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">Booking Confirmed</h2>
     <p style="margin:0 0 8px;font-size:15px;">Hi ${memberName},</p>
@@ -46,11 +57,12 @@ export function bookingConfirmation(params: BookingParams) {
       Your booking has been confirmed for:
     </p>
     <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
-      <p style="margin:0;font-weight:600;color:${BRAND_COLOR};">${className}</p>
+      <p style="margin:0;font-weight:600;color:${BRAND_COLOR};">${isOnline ? "📹 " : ""}${className}</p>
       <p style="margin:8px 0 0;font-size:14px;">${sessionDate} · ${startTime}</p>
       <p style="margin:4px 0 0;font-size:14px;color:#6b7280;">${studioName}</p>
+      ${onlineSection}
     </div>
-    <p style="margin:0;font-size:14px;">We look forward to seeing you!</p>
+    <p style="margin:0;font-size:14px;">${isOnline ? "See you online!" : "We look forward to seeing you!"}</p>
   `;
   return {
     subject: `Booking Confirmed - ${className}`,
@@ -80,7 +92,16 @@ export function bookingCancelled(params: BookingParams) {
 }
 
 export function waitlistPromoted(params: BookingParams) {
-  const { memberName, className, sessionDate, startTime, studioName } = params;
+  const { memberName, className, sessionDate, startTime, studioName, isOnline, onlineLink } = params;
+  const onlineSection = isOnline && onlineLink
+    ? `<p style="margin:12px 0 0;">
+        <a href="${onlineLink}" style="display:inline-block;background:${BRAND_COLOR};color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">
+          Join Online →
+        </a>
+      </p>`
+    : isOnline
+      ? `<p style="margin:8px 0 0;font-size:14px;color:#6b7280;">📹 Online class</p>`
+      : "";
   const content = `
     <h2 style="margin:0 0 16px;font-size:18px;color:#059669;">You're in!</h2>
     <p style="margin:0 0 8px;font-size:15px;">Hi ${memberName},</p>
@@ -88,11 +109,12 @@ export function waitlistPromoted(params: BookingParams) {
       Great news! A spot opened up and you've been moved from the waitlist:
     </p>
     <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
-      <p style="margin:0;font-weight:600;color:${BRAND_COLOR};">${className}</p>
+      <p style="margin:0;font-weight:600;color:${BRAND_COLOR};">${isOnline ? "📹 " : ""}${className}</p>
       <p style="margin:8px 0 0;font-size:14px;">${sessionDate} · ${startTime}</p>
       <p style="margin:4px 0 0;font-size:14px;color:#6b7280;">${studioName}</p>
+      ${onlineSection}
     </div>
-    <p style="margin:0;font-size:14px;">See you there!</p>
+    <p style="margin:0;font-size:14px;">${isOnline ? "See you online!" : "See you there!"}</p>
   `;
   return {
     subject: `You're in! - ${className}`,

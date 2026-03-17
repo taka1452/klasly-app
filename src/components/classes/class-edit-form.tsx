@@ -32,6 +32,8 @@ type Props = {
     instructorId: string;
     roomId: string;
     isPublic: boolean;
+    isOnline: boolean;
+    onlineLink: string;
   };
 };
 
@@ -54,6 +56,8 @@ export default function ClassEditForm({
   const [instructorId, setInstructorId] = useState(initialData.instructorId);
   const [roomId, setRoomId] = useState(initialData.roomId);
   const [isPublic, setIsPublic] = useState(initialData.isPublic);
+  const [isOnline, setIsOnline] = useState(initialData.isOnline);
+  const [onlineLink, setOnlineLink] = useState(initialData.onlineLink);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -77,10 +81,12 @@ export default function ClassEditForm({
         start_time: startTimeFormatted,
         duration_minutes: durationMinutes,
         capacity,
-        location: location || null,
+        location: isOnline ? null : location || null,
         instructor_id: instructorId || null,
-        room_id: roomId || null,
+        room_id: isOnline ? null : roomId || null,
         is_public: isPublic,
+        is_online: isOnline,
+        online_link: isOnline ? onlineLink || null : null,
       })
       .eq("id", classId);
 
@@ -153,6 +159,49 @@ export default function ClassEditForm({
           />
         </div>
 
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Class Type
+          </label>
+          <div className="mt-1 flex gap-4">
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="radio"
+                name="classTypeEdit"
+                checked={!isOnline}
+                onChange={() => setIsOnline(false)}
+                className="text-brand-600"
+              />
+              In-person
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="radio"
+                name="classTypeEdit"
+                checked={isOnline}
+                onChange={() => setIsOnline(true)}
+                className="text-brand-600"
+              />
+              Online
+            </label>
+          </div>
+        </div>
+
+        {isOnline && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Online Link (Zoom, Google Meet, etc.)
+            </label>
+            <input
+              type="url"
+              value={onlineLink}
+              onChange={(e) => setOnlineLink(e.target.value)}
+              placeholder="https://zoom.us/j/123456789"
+              className="input-field mt-1"
+            />
+          </div>
+        )}
+
         <div className="grid gap-5 sm:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-gray-700">
@@ -213,35 +262,39 @@ export default function ClassEditForm({
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Room
-          </label>
-          <select
-            value={roomId}
-            onChange={(e) => setRoomId(e.target.value)}
-            className="input-field mt-1"
-          >
-            <option value="">No room assigned</option>
-            {rooms.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}{r.capacity ? ` (cap. ${r.capacity})` : ""}
-              </option>
-            ))}
-          </select>
-        </div>
+        {!isOnline && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Room
+              </label>
+              <select
+                value={roomId}
+                onChange={(e) => setRoomId(e.target.value)}
+                className="input-field mt-1"
+              >
+                <option value="">No room assigned</option>
+                {rooms.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}{r.capacity ? ` (cap. ${r.capacity})` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Location
-          </label>
-          <input
-            type="text"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            className="input-field mt-1"
-          />
-        </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Location
+              </label>
+              <input
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className="input-field mt-1"
+              />
+            </div>
+          </>
+        )}
 
         <div className="flex items-center gap-3">
           <input

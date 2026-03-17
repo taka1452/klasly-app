@@ -144,6 +144,8 @@ export type Class = {
   is_public: boolean;
   /** Per-class price in cents. NULL = use studio product pricing (Studio Mode). */
   price_cents: number | null;
+  is_online: boolean;
+  online_link: string | null;
   created_at: string;
 };
 
@@ -156,6 +158,8 @@ export type ClassSession = {
   capacity: number;
   is_cancelled: boolean;
   is_public: boolean;
+  is_online: boolean;
+  online_link: string | null;
   notes: string | null;
   created_at: string;
 };

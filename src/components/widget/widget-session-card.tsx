@@ -12,6 +12,7 @@ type SessionData = {
   capacity: number;
   confirmedCount: number;
   location: string | null;
+  isOnline?: boolean;
 };
 
 type Props = {
@@ -144,6 +145,7 @@ export default function WidgetSessionCard({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <h4 className="truncate text-sm font-semibold text-gray-900">
+            {session.isOnline && <span title="Online">📹 </span>}
             {session.className}
           </h4>
           <span

@@ -66,6 +66,8 @@ export async function GET(request: NextRequest) {
       start_time: string;
       capacity: number;
       is_cancelled: boolean;
+      is_online?: boolean;
+      online_link?: string | null;
       classes?: {
         name?: string;
         duration_minutes?: number;
@@ -73,6 +75,8 @@ export async function GET(request: NextRequest) {
         is_public?: boolean;
         price_cents?: number | null;
         room_id?: string | null;
+        is_online?: boolean;
+        online_link?: string | null;
         rooms?: { name?: string } | null;
         instructors?: {
           profiles?: { full_name?: string };
@@ -84,9 +88,9 @@ export async function GET(request: NextRequest) {
       .from("class_sessions")
       .select(
         `
-        id, session_date, start_time, capacity, is_cancelled,
+        id, session_date, start_time, capacity, is_cancelled, is_online, online_link,
         classes (
-          name, duration_minutes, location, is_public, price_cents, room_id,
+          name, duration_minutes, location, is_public, price_cents, room_id, is_online, online_link,
           rooms (name),
           instructors (
             profiles (full_name)
@@ -149,19 +153,30 @@ export async function GET(request: NextRequest) {
     }
 
     // Format sessions
-    const formattedSessions = typedSessions.map((s) => ({
-      id: s.id,
-      session_date: s.session_date,
-      start_time: s.start_time,
-      capacity: s.capacity,
-      is_cancelled: s.is_cancelled,
-      class_name: s.classes?.name ?? "Class",
-      duration_minutes: s.classes?.duration_minutes ?? 60,
-      instructor_name: s.classes?.instructors?.profiles?.full_name ?? "",
-      location: s.classes?.location ?? null,
-      price_cents: s.classes?.price_cents ?? null,
-      room_name: s.classes?.rooms?.name ?? null,
-    }));
+    const formattedSessions = typedSessions.map((s) => {
+      // Session-level online overrides class-level
+      const isOnline = s.is_online ?? s.classes?.is_online ?? false;
+      // Only include online_link if member has a confirmed booking
+      const memberBooking = memberId ? bookingsMap[s.id] : null;
+      const hasConfirmed = memberBooking?.status === "confirmed";
+      const rawLink = s.online_link ?? s.classes?.online_link ?? null;
+
+      return {
+        id: s.id,
+        session_date: s.session_date,
+        start_time: s.start_time,
+        capacity: s.capacity,
+        is_cancelled: s.is_cancelled,
+        class_name: s.classes?.name ?? "Class",
+        duration_minutes: s.classes?.duration_minutes ?? 60,
+        instructor_name: s.classes?.instructors?.profiles?.full_name ?? "",
+        location: s.classes?.location ?? null,
+        price_cents: s.classes?.price_cents ?? null,
+        room_name: s.classes?.rooms?.name ?? null,
+        is_online: isOnline,
+        online_link: hasConfirmed ? rawLink : null,
+      };
+    });
 
     return NextResponse.json({
       sessions: formattedSessions,

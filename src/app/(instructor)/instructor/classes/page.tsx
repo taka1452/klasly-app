@@ -13,6 +13,7 @@ type InstructorClass = {
   capacity: number;
   is_active: boolean;
   is_public: boolean;
+  is_online: boolean;
   price_cents: number | null;
   rooms: { name: string } | null;
 };
@@ -88,7 +89,10 @@ export default function InstructorClassesPage() {
             >
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-gray-900">{cls.name}</h3>
+                  <h3 className="font-semibold text-gray-900">
+                    {cls.is_online && <span title="Online">📹 </span>}
+                    {cls.name}
+                  </h3>
                   {!cls.is_public && (
                     <span className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
                       Private

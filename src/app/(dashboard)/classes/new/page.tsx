@@ -33,6 +33,8 @@ export default function NewClassPage() {
   const [instructorId, setInstructorId] = useState<string>("");
   const [roomId, setRoomId] = useState<string>("");
   const [isPublic, setIsPublic] = useState(true);
+  const [isOnline, setIsOnline] = useState(false);
+  const [onlineLink, setOnlineLink] = useState("");
   const [instructors, setInstructors] = useState<InstructorOption[]>([]);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [error, setError] = useState("");
@@ -140,9 +142,11 @@ export default function NewClassPage() {
         start_time: startTimeFormatted,
         duration_minutes: durationMinutes,
         capacity,
-        location: location || null,
-        room_id: roomId || null,
+        location: isOnline ? null : location || null,
+        room_id: isOnline ? null : roomId || null,
         is_public: isPublic,
+        is_online: isOnline,
+        online_link: isOnline ? onlineLink || null : null,
         is_active: true,
       })
       .select("id, start_time, capacity")
@@ -175,6 +179,8 @@ export default function NewClassPage() {
         capacity: newClass.capacity,
         is_cancelled: false,
         is_public: isPublic,
+        is_online: isOnline,
+        online_link: isOnline ? onlineLink || null : null,
       });
     }
 
@@ -259,6 +265,49 @@ export default function NewClassPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700">
+              Class Type
+            </label>
+            <div className="mt-1 flex gap-4">
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="radio"
+                  name="classType"
+                  checked={!isOnline}
+                  onChange={() => setIsOnline(false)}
+                  className="text-brand-600"
+                />
+                In-person
+              </label>
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="radio"
+                  name="classType"
+                  checked={isOnline}
+                  onChange={() => setIsOnline(true)}
+                  className="text-brand-600"
+                />
+                Online
+              </label>
+            </div>
+          </div>
+
+          {isOnline && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Online Link (Zoom, Google Meet, etc.)
+              </label>
+              <input
+                type="url"
+                value={onlineLink}
+                onChange={(e) => setOnlineLink(e.target.value)}
+                placeholder="https://zoom.us/j/123456789"
+                className="input-field mt-1"
+              />
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
               Day of week *
             </label>
             <select
@@ -317,45 +366,49 @@ export default function NewClassPage() {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Room (optional)
-            </label>
-            <select
-              value={roomId}
-              onChange={(e) => setRoomId(e.target.value)}
-              className="input-field mt-1"
-            >
-              <option value="">No room assigned</option>
-              {rooms.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}{r.capacity ? ` (cap. ${r.capacity})` : ""}
-                </option>
-              ))}
-            </select>
-            {rooms.length === 0 && (
-              <p className="mt-1 text-xs text-gray-400">
-                No rooms yet.{" "}
-                <a href="/rooms/new" className="text-brand-600 hover:underline">
-                  Add a room
-                </a>{" "}
-                first, or use the Location field below.
-              </p>
-            )}
-          </div>
+          {!isOnline && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Room (optional)
+                </label>
+                <select
+                  value={roomId}
+                  onChange={(e) => setRoomId(e.target.value)}
+                  className="input-field mt-1"
+                >
+                  <option value="">No room assigned</option>
+                  {rooms.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}{r.capacity ? ` (cap. ${r.capacity})` : ""}
+                    </option>
+                  ))}
+                </select>
+                {rooms.length === 0 && (
+                  <p className="mt-1 text-xs text-gray-400">
+                    No rooms yet.{" "}
+                    <a href="/rooms/new" className="text-brand-600 hover:underline">
+                      Add a room
+                    </a>{" "}
+                    first, or use the Location field below.
+                  </p>
+                )}
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Location (optional)
-            </label>
-            <input
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Main studio"
-              className="input-field mt-1"
-            />
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Location (optional)
+                </label>
+                <input
+                  type="text"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="Main studio"
+                  className="input-field mt-1"
+                />
+              </div>
+            </>
+          )}
 
           <div className="flex items-center gap-3">
             <input

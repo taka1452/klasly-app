@@ -6,12 +6,14 @@ type Props = {
   eventName: string;
   startTime: string;
   bookingStatus: string | null;
+  isOnline?: boolean;
 };
 
 export default function CalendarMonthEvent({
   eventName,
   startTime,
   bookingStatus,
+  isOnline,
 }: Props) {
   let bg = "bg-brand-100 text-brand-800";
   if (bookingStatus === "confirmed") {
@@ -25,7 +27,7 @@ export default function CalendarMonthEvent({
       className={`truncate rounded px-1 py-0.5 text-[11px] leading-tight ${bg}`}
     >
       <span className="font-medium">{formatTimeShort(startTime)}</span>{" "}
-      {eventName}
+      {isOnline && "📹 "}{eventName}
     </div>
   );
 }

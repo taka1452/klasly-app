@@ -18,10 +18,10 @@ export async function GET() {
       ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey)
       : serverSupabase;
 
-    // ユーザーのロールを取得
+    // ユーザーのロールとスタジオIDを取得
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role")
+      .select("role, studio_id")
       .eq("id", user.id)
       .single();
 
@@ -29,12 +29,20 @@ export async function GET() {
       return NextResponse.json({ unread: [], count: 0 });
     }
 
-    // アクティブな通知を取得
-    const { data: announcements } = await supabase
+    // アクティブな通知を取得（グローバル + スタジオスコープ）
+    let query = supabase
       .from("announcements")
-      .select("id, title, body, target_roles, published_at")
+      .select("id, title, body, target_roles, published_at, studio_id")
       .eq("is_active", true)
       .order("published_at", { ascending: false });
+
+    if (profile.studio_id) {
+      query = query.or(`studio_id.is.null,studio_id.eq.${profile.studio_id}`);
+    } else {
+      query = query.is("studio_id", null);
+    }
+
+    const { data: announcements } = await query;
 
     if (!announcements || announcements.length === 0) {
       return NextResponse.json({ unread: [], count: 0 });

@@ -105,7 +105,10 @@ export default async function ClassDetailPage({
           ← Back to classes
         </Link>
         <div className="mt-2 flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-bold text-gray-900">{cls.name}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {cls.is_online && <span title="Online">📹 </span>}
+            {cls.name}
+          </h1>
           <FlowHintPanel flowType="instructor-assign" buttonLabel="How to assign instructor?" />
         </div>
         {cls.description && (
@@ -142,6 +145,8 @@ export default async function ClassDetailPage({
               instructorId: cls.instructor_id || "",
               roomId: cls.room_id || "",
               isPublic: cls.is_public ?? true,
+              isOnline: cls.is_online ?? false,
+              onlineLink: cls.online_link || "",
             }}
           />
         </div>
@@ -175,6 +180,24 @@ export default async function ClassDetailPage({
                   {cls.capacity} spots
                 </dd>
               </div>
+              {cls.is_online && (
+                <div>
+                  <dt className="text-xs text-gray-400">Type</dt>
+                  <dd className="text-sm font-medium text-gray-900">
+                    📹 Online
+                    {cls.online_link && (
+                      <a
+                        href={cls.online_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ml-2 text-brand-600 hover:text-brand-700"
+                      >
+                        Open link →
+                      </a>
+                    )}
+                  </dd>
+                </div>
+              )}
             </dl>
           </div>
 

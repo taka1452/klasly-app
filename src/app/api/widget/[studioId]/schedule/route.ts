@@ -63,12 +63,14 @@ export async function GET(
         start_time,
         capacity,
         is_cancelled,
+        is_online,
         classes (
           id,
           name,
           description,
           duration_minutes,
           location,
+          is_online,
           instructor_id,
           instructors (
             id,
@@ -126,12 +128,14 @@ export async function GET(
       start_time: string;
       capacity: number;
       is_cancelled: boolean;
+      is_online?: boolean;
       classes?: {
         id?: string;
         name?: string;
         description?: string;
         duration_minutes?: number;
         location?: string;
+        is_online?: boolean;
         instructor_id?: string;
         instructors?: {
           id?: string;
@@ -152,6 +156,7 @@ export async function GET(
       capacity: s.capacity,
       confirmedCount: availabilityMap[s.id] ?? 0,
       location: s.classes?.location ?? null,
+      isOnline: s.is_online ?? s.classes?.is_online ?? false,
     }));
 
     return NextResponse.json(

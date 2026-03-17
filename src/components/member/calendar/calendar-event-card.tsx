@@ -111,10 +111,16 @@ export default function CalendarEventCard({
         onClick={() => setShowPopover(!showPopover)}
       >
         {isCompact ? (
-          <span className="truncate font-medium">{session.class_name}</span>
+          <span className="truncate font-medium">
+            {session.is_online && <span title="Online">📹 </span>}
+            {session.class_name}
+          </span>
         ) : (
           <>
-            <div className="truncate font-medium">{session.class_name}</div>
+            <div className="truncate font-medium">
+              {session.is_online && <span title="Online">📹 </span>}
+              {session.class_name}
+            </div>
             <div className="truncate opacity-75">
               {formatTimeShort(session.start_time)}
               {session.instructor_name ? ` · ${session.instructor_name}` : ""}
@@ -156,6 +162,7 @@ export default function CalendarEventCard({
           </button>
 
           <h3 className="text-lg font-semibold text-gray-900 pr-6">
+            {session.is_online && <span title="Online">📹 </span>}
             {session.class_name}
           </h3>
           <div className="mt-2 space-y-1 text-sm text-gray-600">
@@ -165,9 +172,22 @@ export default function CalendarEventCard({
             {session.instructor_name && (
               <p>Instructor: {session.instructor_name}</p>
             )}
-            {(session.room_name || session.location) && (
+            {session.is_online ? (
+              session.online_link ? (
+                <a
+                  href={session.online_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-brand-600 hover:text-brand-700 font-medium"
+                >
+                  Join Online →
+                </a>
+              ) : (
+                <p className="text-gray-500">Online class (book to get the link)</p>
+              )
+            ) : (session.room_name || session.location) ? (
               <p>{session.room_name || session.location}</p>
-            )}
+            ) : null}
             {payPerClass && (session.price_cents ?? classPrice) != null && (
               <p className="font-medium text-gray-900">
                 ${(((session.price_cents ?? classPrice)!) / 100).toFixed(2)}

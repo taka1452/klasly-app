@@ -31,7 +31,7 @@ export default async function SessionDetailPage({
 
   const { data: session } = await supabase
     .from("class_sessions")
-    .select("id, session_date, start_time, capacity, class_id, studio_id, is_public")
+    .select("id, session_date, start_time, capacity, class_id, studio_id, is_public, is_online, online_link")
     .eq("id", sessionId)
     .single();
 
@@ -80,11 +80,25 @@ export default async function SessionDetailPage({
             {formatDate(session.session_date)}
           </span>
         </nav>
-        <h1 className="mt-2 text-2xl font-bold text-gray-900">{className}</h1>
+        <h1 className="mt-2 text-2xl font-bold text-gray-900">
+          {session.is_online && <span title="Online">📹 </span>}
+          {className}
+        </h1>
         <p className="text-sm text-gray-500">
           {formatDate(session.session_date)} · {formatTime(session.start_time)} ·{" "}
           {session.capacity} capacity
+          {session.is_online && " · Online"}
         </p>
+        {session.is_online && session.online_link && (
+          <a
+            href={session.online_link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-1 inline-flex items-center gap-1 text-sm text-brand-600 hover:text-brand-700 font-medium"
+          >
+            Open online link →
+          </a>
+        )}
         <div className="mt-2">
           <SessionVisibilityToggle
             sessionId={sessionId}

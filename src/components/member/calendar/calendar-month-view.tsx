@@ -123,6 +123,7 @@ export default function CalendarMonthView({
                         eventName={session.class_name}
                         startTime={session.start_time}
                         bookingStatus={bookings[session.id]?.status || null}
+                        isOnline={session.is_online}
                       />
                     ))}
                     {remaining > 0 && (

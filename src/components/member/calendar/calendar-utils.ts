@@ -14,6 +14,8 @@ export type SessionData = {
   location: string | null;
   price_cents: number | null;
   room_name: string | null;
+  is_online: boolean;
+  online_link: string | null;
 };
 
 export type CalendarView = "day" | "week" | "month";
