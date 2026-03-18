@@ -39,13 +39,16 @@ export async function GET(request: Request) {
   let totalDistributions = 0;
 
   try {
-    // Calculate previous month period
+    // Calculate previous month period using UTC to avoid timezone drift
     const now = new Date();
-    const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0); // last day of prev month
-    const prevMonthStart = new Date(prevMonthEnd.getFullYear(), prevMonthEnd.getMonth(), 1);
+    const utcYear = now.getUTCFullYear();
+    const utcMonth = now.getUTCMonth(); // 0-indexed, this is current month
+    // Previous month: utcMonth - 1 (handles Jan → Dec of prev year via Date)
+    const prevMonthStart = new Date(Date.UTC(utcYear, utcMonth - 1, 1));
+    const prevMonthEnd = new Date(Date.UTC(utcYear, utcMonth, 0)); // last day of prev month
     const periodStart = prevMonthStart.toISOString().slice(0, 10);
     const periodEnd = prevMonthEnd.toISOString().slice(0, 10);
-    const monthLabel = prevMonthStart.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+    const monthLabel = prevMonthStart.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
 
     // Get all active passes where studio has feature flag enabled
     const { data: featureRows } = await supabase
@@ -193,7 +196,7 @@ export async function GET(request: Request) {
             totalRevenue: grossRevenue,
             instructorCount: entries.length,
             distributableAmount,
-            dashboardUrl: "https://app.klasly.app/passes/distributions",
+            dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || "https://app.klasly.app"}/passes/distributions`,
           });
           await sendEmail({
             to: ownerProfile.email,

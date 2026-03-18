@@ -60,7 +60,13 @@ export default function DistributionsPage() {
   }, [fetchData]);
 
   async function handleApprove() {
-    if (!confirm("Approve all pending distributions? Payouts will be sent on the next payout cycle.")) return;
+    const pendingCount = distributions.filter((d) => d.status === "pending").length;
+    const pendingTotal = distributions
+      .filter((d) => d.status === "pending")
+      .reduce((sum, d) => sum + d.payout_amount, 0);
+    if (!confirm(
+      `Approve ${pendingCount} payout(s) totaling $${(pendingTotal / 100).toFixed(2)}?\n\nPayouts will be sent automatically to each instructor's Stripe account within 2 hours.`
+    )) return;
     setApproving(true);
     try {
       const res = await fetch("/api/passes/distributions", {
@@ -107,11 +113,25 @@ export default function DistributionsPage() {
   const distributions = data?.distributions ?? [];
   const hasPending = distributions.some((d) => d.status === "pending");
   const totalPayout = distributions.reduce((sum, d) => sum + d.payout_amount, 0);
-  const totalClasses = distributions.length > 0 ? distributions[0].total_pool_classes : 0;
-  const grossAmount = distributions.length > 0 ? distributions[0].gross_pool_amount : 0;
 
-  // Revenue breakdown
+  // Aggregate per-pass totals (each pass has its own pool)
   const passIds = Array.from(new Set(distributions.map((d) => d.studio_pass_id)));
+  const perPassTotals = new Map<string, { poolClasses: number; poolAmount: number }>();
+  for (const d of distributions) {
+    if (!perPassTotals.has(d.studio_pass_id)) {
+      perPassTotals.set(d.studio_pass_id, {
+        poolClasses: d.total_pool_classes,
+        poolAmount: d.gross_pool_amount,
+      });
+    }
+  }
+  let totalClasses = 0;
+  let grossAmount = 0;
+  for (const v of Array.from(perPassTotals.values())) {
+    totalClasses += v.poolClasses;
+    grossAmount += v.poolAmount;
+  }
+
   const firstPassInfo = passIds.length > 0 && data?.passInfo?.[passIds[0]]
     ? data.passInfo[passIds[0]]
     : null;
@@ -147,7 +167,14 @@ export default function DistributionsPage() {
         </div>
       ) : distributions.length === 0 ? (
         <div className="mt-6 card">
-          <p className="text-sm text-gray-500">No distributions for this period.</p>
+          <p className="text-sm text-gray-700 font-medium">No distributions for this period.</p>
+          <p className="mt-2 text-sm text-gray-500">
+            Distributions are calculated automatically on the 1st of each month based on pass usage from the previous month.
+            If members booked classes using a pass last month, distributions will appear here.
+          </p>
+          <p className="mt-2 text-sm text-gray-400">
+            Try selecting a different month, or check back after the 1st.
+          </p>
         </div>
       ) : (
         <>

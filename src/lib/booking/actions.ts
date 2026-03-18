@@ -84,17 +84,21 @@ async function recordPassUsage(
   instructorId: string,
   classesUsed: number
 ) {
-  await Promise.all([
-    adminSupabase.from("pass_class_usage").insert({
-      pass_subscription_id: passSubscriptionId,
-      session_id: sessionId,
-      instructor_id: instructorId,
-    }),
-    adminSupabase
-      .from("pass_subscriptions")
-      .update({ classes_used_this_period: classesUsed + 1 })
-      .eq("id", passSubscriptionId),
-  ]);
+  // Insert usage record first — if it fails (e.g. unique constraint), don't touch the counter
+  const { error } = await adminSupabase.from("pass_class_usage").insert({
+    pass_subscription_id: passSubscriptionId,
+    session_id: sessionId,
+    instructor_id: instructorId,
+  });
+  if (error) {
+    console.error("[recordPassUsage] insert failed:", error.message);
+    return;
+  }
+  // Only increment counter after successful insert
+  await adminSupabase
+    .from("pass_subscriptions")
+    .update({ classes_used_this_period: classesUsed + 1 })
+    .eq("id", passSubscriptionId);
 }
 
 /**
@@ -121,15 +125,21 @@ async function revertPassUsage(
     } | null;
     if (!sub || sub.member_id !== memberId) continue;
 
-    await Promise.all([
-      adminSupabase.from("pass_class_usage").delete().eq("id", usage.id),
-      adminSupabase
-        .from("pass_subscriptions")
-        .update({
-          classes_used_this_period: Math.max(0, sub.classes_used_this_period - 1),
-        })
-        .eq("id", sub.id),
-    ]);
+    // Delete usage record first, then decrement counter
+    const { error: delErr } = await adminSupabase
+      .from("pass_class_usage")
+      .delete()
+      .eq("id", usage.id);
+    if (delErr) {
+      console.error("[revertPassUsage] delete failed:", delErr.message);
+      break;
+    }
+    await adminSupabase
+      .from("pass_subscriptions")
+      .update({
+        classes_used_this_period: Math.max(0, sub.classes_used_this_period - 1),
+      })
+      .eq("id", sub.id);
     break;
   }
 }

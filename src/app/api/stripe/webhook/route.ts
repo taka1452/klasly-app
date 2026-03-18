@@ -86,6 +86,12 @@ export async function POST(request: Request) {
             break;
           }
 
+          // パスサブスクリプションの購入完了
+          if (metaType === "studio_pass") {
+            await handlePassSubscriptionCheckout(session, adminSupabase);
+            break;
+          }
+
           const { data: studio } = await adminSupabase
             .from("studios")
             .select("id")
@@ -744,6 +750,61 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ error: message }, { status: 500 });
   }
+}
+
+/**
+ * パスサブスクリプションの checkout.session.completed を処理。
+ * Checkout Sessionからサブスクリプション情報を取得し、pass_subscriptionsを作成。
+ */
+async function handlePassSubscriptionCheckout(
+  session: Stripe.Checkout.Session,
+  adminSupabase: ReturnType<typeof createClient>
+) {
+  const memberId = session.metadata?.member_id;
+  const studioPassId = session.metadata?.studio_pass_id;
+  const subscriptionId = getSubscriptionId(session.subscription as string | Stripe.Subscription | null);
+
+  if (!memberId || !studioPassId || !subscriptionId) return;
+
+  // Check if record already exists (idempotency)
+  const { data: existing } = await adminSupabase
+    .from("pass_subscriptions")
+    .select("id")
+    .eq("stripe_subscription_id", subscriptionId)
+    .maybeSingle();
+
+  if (existing) return;
+
+  // Get subscription details for period dates
+  const connectedAccountId = (session as Stripe.Checkout.Session & { account?: string }).account;
+  let periodStart: number | undefined;
+  let periodEnd: number | undefined;
+
+  if (connectedAccountId) {
+    try {
+      const sub = await stripe.subscriptions.retrieve(
+        subscriptionId,
+        { stripeAccount: connectedAccountId }
+      );
+      periodStart = sub.items.data[0]?.current_period_start;
+      periodEnd = sub.items.data[0]?.current_period_end;
+    } catch {
+      // Fall through — dates will be null
+    }
+  }
+
+  await adminSupabase.from("pass_subscriptions").insert({
+    studio_pass_id: studioPassId,
+    member_id: memberId,
+    stripe_subscription_id: subscriptionId,
+    status: "active",
+    current_period_start: periodStart
+      ? new Date(periodStart * 1000).toISOString().slice(0, 10)
+      : null,
+    current_period_end: periodEnd
+      ? new Date(periodEnd * 1000).toISOString().slice(0, 10)
+      : null,
+  });
 }
 
 /**

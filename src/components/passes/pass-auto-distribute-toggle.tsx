@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
 type Props = {
   passId: string;
@@ -10,9 +10,16 @@ type Props = {
 export default function PassAutoDistributeToggle({ passId, initialValue }: Props) {
   const [enabled, setEnabled] = useState(initialValue);
   const [loading, setLoading] = useState(false);
+  const [feedback, setFeedback] = useState<"saved" | "error" | null>(null);
+
+  const clearFeedback = useCallback(() => {
+    const timer = setTimeout(() => setFeedback(null), 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
   async function toggle() {
     setLoading(true);
+    setFeedback(null);
     try {
       const res = await fetch("/api/passes/update", {
         method: "PATCH",
@@ -21,7 +28,14 @@ export default function PassAutoDistributeToggle({ passId, initialValue }: Props
       });
       if (res.ok) {
         setEnabled(!enabled);
+        setFeedback("saved");
+      } else {
+        setFeedback("error");
       }
+      clearFeedback();
+    } catch {
+      setFeedback("error");
+      clearFeedback();
     } finally {
       setLoading(false);
     }
@@ -51,6 +65,12 @@ export default function PassAutoDistributeToggle({ passId, initialValue }: Props
           ? "Payouts are sent automatically on the 1st."
           : "You review and approve before sending."}
       </span>
+      {feedback === "saved" && (
+        <span className="text-xs font-medium text-green-600">Saved</span>
+      )}
+      {feedback === "error" && (
+        <span className="text-xs font-medium text-red-500">Failed to save</span>
+      )}
     </div>
   );
 }

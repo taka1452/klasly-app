@@ -101,7 +101,7 @@ export default async function MemberPassesPage() {
   // Fetch member's active subscriptions
   const { data: subscriptions } = await supabase
     .from("pass_subscriptions")
-    .select("id, studio_pass_id, status, current_period_start, current_period_end, classes_used_this_period")
+    .select("id, studio_pass_id, status, cancel_at_period_end, current_period_start, current_period_end, classes_used_this_period")
     .eq("member_id", member.id)
     .in("status", ["active", "cancelled"]);
 

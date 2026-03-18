@@ -696,6 +696,7 @@ export type PassSubscription = {
   member_id: string;
   stripe_subscription_id: string | null;
   status: "active" | "cancelled" | "past_due";
+  cancel_at_period_end: boolean;
   current_period_start: string | null;
   current_period_end: string | null;
   classes_used_this_period: number;
@@ -722,7 +723,7 @@ export type PassDistribution = {
   gross_pool_amount: number;
   payout_amount: number;
   stripe_transfer_id: string | null;
-  status: "pending" | "approved" | "completed" | "failed";
+  status: "pending" | "approved" | "processing" | "completed" | "failed";
   approved_at: string | null;
   approved_by: string | null;
   created_at: string;

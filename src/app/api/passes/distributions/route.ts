@@ -140,7 +140,7 @@ export async function PUT(request: Request) {
     // Verify distribution belongs to this studio and is still pending
     const { data: dist } = await adminSupabase
       .from("pass_distributions")
-      .select("id, status, studio_id")
+      .select("id, status, studio_id, studio_pass_id, gross_pool_amount")
       .eq("id", distributionId)
       .single();
 
@@ -151,9 +151,30 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "Can only adjust pending distributions" }, { status: 400 });
     }
 
+    // Validate total doesn't exceed distributable amount
+    const roundedAmount = Math.round(payout_amount);
+    const { data: siblings } = await adminSupabase
+      .from("pass_distributions")
+      .select("id, payout_amount")
+      .eq("studio_pass_id", dist.studio_pass_id)
+      .eq("period_start", (await adminSupabase
+        .from("pass_distributions")
+        .select("period_start")
+        .eq("id", distributionId)
+        .single()).data?.period_start ?? "")
+      .neq("id", distributionId);
+
+    const othersTotal = (siblings ?? []).reduce((sum, s) => sum + s.payout_amount, 0);
+    if (othersTotal + roundedAmount > dist.gross_pool_amount) {
+      return NextResponse.json(
+        { error: `Total payouts ($${((othersTotal + roundedAmount) / 100).toFixed(2)}) would exceed distributable amount ($${(dist.gross_pool_amount / 100).toFixed(2)}).` },
+        { status: 400 }
+      );
+    }
+
     const { error } = await adminSupabase
       .from("pass_distributions")
-      .update({ payout_amount: Math.round(payout_amount) })
+      .update({ payout_amount: roundedAmount })
       .eq("id", distributionId);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });

@@ -59,6 +59,20 @@ export async function GET(request: Request) {
 
     for (const dist of distributions) {
       try {
+        // Optimistic lock: claim this record by setting status to 'processing'.
+        // If another cron run already claimed it, the update won't match and we skip.
+        const { count: claimed } = await supabase
+          .from("pass_distributions")
+          .update({ status: "processing" })
+          .eq("id", dist.id)
+          .eq("status", "approved")
+          .is("stripe_transfer_id", null);
+
+        if (!claimed || claimed === 0) {
+          // Already being processed by another run — skip
+          continue;
+        }
+
         if (dist.payout_amount <= 0) {
           await supabase
             .from("pass_distributions")
@@ -87,19 +101,22 @@ export async function GET(request: Request) {
           continue;
         }
 
-        // Create Stripe Transfer
-        const monthLabel = new Date(dist.period_start).toLocaleDateString("en-US", { month: "long", year: "numeric" });
-        const transfer = await stripe.transfers.create({
-          amount: dist.payout_amount,
-          currency: "usd",
-          destination: instructor.stripe_account_id,
-          description: `Pass distribution — ${monthLabel}`,
-          metadata: {
-            pass_distribution_id: dist.id,
-            instructor_id: dist.instructor_id,
-            period: `${dist.period_start} to ${dist.period_end}`,
+        // Create Stripe Transfer with idempotency key
+        const monthLabel = new Date(dist.period_start + "T00:00:00Z").toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
+        const transfer = await stripe.transfers.create(
+          {
+            amount: dist.payout_amount,
+            currency: "usd",
+            destination: instructor.stripe_account_id,
+            description: `Pass distribution — ${monthLabel}`,
+            metadata: {
+              pass_distribution_id: dist.id,
+              instructor_id: dist.instructor_id,
+              period: `${dist.period_start} to ${dist.period_end}`,
+            },
           },
-        });
+          { idempotencyKey: `pass_dist_${dist.id}` }
+        );
 
         // Update status
         await supabase
@@ -179,7 +196,7 @@ async function notifyOwnerOfFailure(
   errorMessage: string
 ) {
   try {
-    const monthLabel = new Date(dist.period_start).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+    const monthLabel = new Date(dist.period_start + "T00:00:00Z").toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
 
     const { data: owner } = await supabase
       .from("profiles")

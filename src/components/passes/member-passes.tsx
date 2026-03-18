@@ -15,6 +15,7 @@ type Subscription = {
   id: string;
   studio_pass_id: string;
   status: "active" | "cancelled" | "past_due";
+  cancel_at_period_end: boolean;
   current_period_start: string | null;
   current_period_end: string | null;
   classes_used_this_period: number;
@@ -56,7 +57,12 @@ export default function MemberPasses({ memberId, passes, subscriptions }: Props)
         setError(data.error || "Failed to subscribe.");
         return;
       }
-      router.refresh();
+      // Redirect to Stripe Checkout
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        router.refresh();
+      }
     } catch {
       setError("An unexpected error occurred.");
     } finally {
@@ -107,9 +113,10 @@ export default function MemberPasses({ memberId, passes, subscriptions }: Props)
       <div className="grid gap-4 sm:grid-cols-2">
         {passes.map((pass) => {
           const sub = subByPass.get(pass.id);
-          const isActive = sub?.status === "active";
+          const isActive = sub?.status === "active" && !sub?.cancel_at_period_end;
+          const isPendingCancel = sub?.status === "active" && sub?.cancel_at_period_end;
           const isCancelled = sub?.status === "cancelled";
-          const hasSubscription = isActive || isCancelled;
+          const hasSubscription = isActive || isPendingCancel || isCancelled;
 
           return (
             <div key={pass.id} className="card flex flex-col justify-between">
@@ -123,9 +130,14 @@ export default function MemberPasses({ memberId, passes, subscriptions }: Props)
                       Current Plan
                     </span>
                   )}
+                  {isPendingCancel && (
+                    <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                      Cancels {formatPeriodDate(sub?.current_period_end ?? null)}
+                    </span>
+                  )}
                   {isCancelled && (
-                    <span className="inline-flex items-center rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700">
-                      Cancels {formatPeriodDate(sub.current_period_end)}
+                    <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
+                      Cancelled
                     </span>
                   )}
                 </div>
@@ -170,8 +182,10 @@ export default function MemberPasses({ memberId, passes, subscriptions }: Props)
                       <span>
                         {formatPeriodDate(sub.current_period_start)} — {formatPeriodDate(sub.current_period_end)}
                       </span>
-                      {isCancelled ? (
+                      {isPendingCancel ? (
                         <span className="text-amber-600">Cancels at period end</span>
+                      ) : isCancelled ? (
+                        <span className="text-gray-400">Expired</span>
                       ) : (
                         <span>Renews {formatPeriodDate(sub.current_period_end)}</span>
                       )}
@@ -199,7 +213,7 @@ export default function MemberPasses({ memberId, passes, subscriptions }: Props)
                   </span>
                 </p>
 
-                {isActive ? (
+                {isActive && sub ? (
                   <button
                     onClick={() => handleCancel(sub.id)}
                     disabled={loadingId === sub.id}
@@ -207,9 +221,13 @@ export default function MemberPasses({ memberId, passes, subscriptions }: Props)
                   >
                     {loadingId === sub.id ? "Cancelling..." : "Cancel Subscription"}
                   </button>
+                ) : isPendingCancel && sub ? (
+                  <p className="mt-3 text-center text-sm text-amber-600">
+                    Active until {formatPeriodDate(sub.current_period_end)}
+                  </p>
                 ) : isCancelled ? (
                   <p className="mt-3 text-center text-sm text-gray-400">
-                    Active until {formatPeriodDate(sub.current_period_end)}
+                    Subscription ended
                   </p>
                 ) : (
                   <button

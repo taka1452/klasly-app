@@ -340,7 +340,11 @@ export default function InstructorEarningsPage() {
           </div>
         ) : (
           <div className="card py-8 text-center">
-            <p className="text-sm text-gray-500">No earnings this month.</p>
+            <p className="text-sm text-gray-500">
+              {passDistributions.length > 0
+                ? "No per-class earnings this month. Pass distributions are shown above."
+                : "No earnings this month."}
+            </p>
           </div>
         )}
       </div>

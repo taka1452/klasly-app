@@ -125,12 +125,24 @@ export async function POST(request: Request) {
       .single();
     const feePercent = parseFloat(feeRow?.value ?? "0");
 
-    // Create Stripe Subscription on the Connected Account
-    const subscription = await stripe.subscriptions.create(
+    // Use Stripe Checkout Session for subscription (provides card input UI)
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.klasly.app";
+    const checkoutSession = await stripe.checkout.sessions.create(
       {
         customer: customerId,
-        items: [{ price: pass.stripe_price_id }],
-        application_fee_percent: feePercent > 0 ? feePercent : undefined,
+        mode: "subscription",
+        line_items: [{ price: pass.stripe_price_id, quantity: 1 }],
+        subscription_data: {
+          application_fee_percent: feePercent > 0 ? feePercent : undefined,
+          metadata: {
+            studio_id: studio.id,
+            member_id: memberId,
+            studio_pass_id: passId,
+            type: "studio_pass",
+          },
+        },
+        success_url: `${baseUrl}/my-passes?subscribed=true`,
+        cancel_url: `${baseUrl}/my-passes`,
         metadata: {
           studio_id: studio.id,
           member_id: memberId,
@@ -141,33 +153,7 @@ export async function POST(request: Request) {
       connectOptions
     );
 
-    // Extract period dates
-    const periodStart = subscription.items.data[0]?.current_period_start;
-    const periodEnd = subscription.items.data[0]?.current_period_end;
-
-    // Insert pass_subscriptions record
-    const { data: passSub, error } = await adminSupabase
-      .from("pass_subscriptions")
-      .insert({
-        studio_pass_id: passId,
-        member_id: memberId,
-        stripe_subscription_id: subscription.id,
-        status: "active",
-        current_period_start: periodStart
-          ? new Date(periodStart * 1000).toISOString().slice(0, 10)
-          : null,
-        current_period_end: periodEnd
-          ? new Date(periodEnd * 1000).toISOString().slice(0, 10)
-          : null,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-
-    return NextResponse.json(passSub);
+    return NextResponse.json({ url: checkoutSession.url });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal error";
     return NextResponse.json({ error: message }, { status: 500 });

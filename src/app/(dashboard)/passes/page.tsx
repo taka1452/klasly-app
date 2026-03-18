@@ -90,8 +90,30 @@ export default async function PassesPage() {
     }
   }
 
+  // Check for pending distributions awaiting approval
+  const { count: pendingDistCount } = await ctx.supabase
+    .from("pass_distributions")
+    .select("id", { count: "exact", head: true })
+    .eq("studio_id", ctx.studioId)
+    .eq("status", "pending");
+
   return (
     <div>
+      {/* Pending distribution alert */}
+      {(pendingDistCount ?? 0) > 0 && (
+        <div className="mb-4 flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+          <p className="text-sm text-amber-800">
+            <span className="font-semibold">{pendingDistCount} payout(s)</span> awaiting your approval.
+          </p>
+          <Link
+            href="/passes/distributions"
+            className="whitespace-nowrap text-sm font-medium text-amber-700 hover:text-amber-900"
+          >
+            Review →
+          </Link>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Passes</h1>

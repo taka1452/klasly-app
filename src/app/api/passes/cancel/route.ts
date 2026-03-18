@@ -81,10 +81,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // Update status to cancelled
+    // Keep status active — pass remains usable until period end.
+    // Stripe webhook (customer.subscription.deleted) will set status to 'cancelled'.
     await adminSupabase
       .from("pass_subscriptions")
-      .update({ status: "cancelled" })
+      .update({ cancel_at_period_end: true })
       .eq("id", passSub.id);
 
     return NextResponse.json({ success: true });
