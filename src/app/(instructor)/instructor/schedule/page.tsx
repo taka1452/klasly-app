@@ -37,7 +37,7 @@ export default async function InstructorSchedulePage() {
     classIds.length > 0
       ? await supabase
           .from("class_sessions")
-          .select("id, session_date, start_time, capacity, is_cancelled, class_id, classes(name, location)")
+          .select("id, session_date, start_time, capacity, is_cancelled, is_online, online_link, class_id, classes(name, location, is_online, online_link)")
           .in("class_id", classIds)
           .order("session_date", { ascending: true })
           .order("start_time", { ascending: true })
@@ -65,8 +65,11 @@ export default async function InstructorSchedulePage() {
   }, {} as Record<string, { name: string; price_cents: number | null; is_public: boolean }>);
 
   const sessionsWithData = (sessions || []).map((s) => {
-    const cls = s.classes as { name?: string; location?: string } | null;
+    const cls = s.classes as { name?: string; location?: string; is_online?: boolean; online_link?: string | null } | null;
     const raw = Array.isArray(cls) ? cls[0] : cls;
+    // Session-level online overrides class-level (null = inherit)
+    const isOnline = (s as { is_online?: boolean | null }).is_online ?? raw?.is_online ?? false;
+    const onlineLink = (s as { online_link?: string | null }).online_link ?? raw?.online_link ?? null;
     return {
       id: s.id,
       session_date: s.session_date,
@@ -79,6 +82,8 @@ export default async function InstructorSchedulePage() {
       booked: bookedBySession[s.id] || 0,
       price_cents: classMap[s.class_id]?.price_cents ?? null,
       is_public: classMap[s.class_id]?.is_public ?? true,
+      is_online: isOnline,
+      online_link: onlineLink,
     };
   });
 

@@ -548,10 +548,114 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
+          q: "Can I have hybrid classes?",
+          a: (
+            <>
+              Yes. When creating or editing a class, select <B>&quot;Hybrid&quot;</B> as the Class Type. Hybrid classes default to in-person but let you switch individual sessions to online.
+              <Steps>
+                <li>Set a default online link on the class (optional).</li>
+                <li>Go to each session&apos;s detail page to toggle it between In-person and Online.</li>
+                <li>Sessions set to Online will show the 📹 badge and link to members.</li>
+              </Steps>
+              <Tip>If a session has no link of its own, it uses the class&apos;s default link.</Tip>
+            </>
+          ),
+        },
+        {
           q: "Can I switch a class between in-person and online?",
           a: (
             <>
               Yes. Go to <B>Classes → [Class Name]</B> and change the Class Type in the edit form. Switching to online will clear the room and location, and switching to in-person will clear the online link.
+            </>
+          ),
+        },
+        {
+          q: "When do members see the Zoom link?",
+          a: (
+            <>
+              Members can only see the online link <B>after they have a confirmed booking</B>. Before booking, they will see the 📹 Online badge but the link is hidden. The link is also included in the booking confirmation email.
+              <Tip>The public widget never shows the link — members receive it via the schedule calendar and email only.</Tip>
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Feature Management",
+      items: [
+        {
+          q: "How do I enable or disable features?",
+          a: (
+            <>
+              Go to <B>Settings &rarr; Features</B> to toggle optional features on or off. Available features include Online Classes, Digital Waivers, SOAP Notes, UTM Tracking, Events &amp; Retreats, and more.
+              <Tip>You can also choose features during onboarding when you first create your studio.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "What are the core features?",
+          a: (
+            <>
+              Core features are always enabled and cannot be turned off:
+              <Steps>
+                <li>Member Management</li>
+                <li>Scheduling (classes, sessions, bookings)</li>
+                <li>Payments (Stripe integration)</li>
+                <li>Messaging</li>
+              </Steps>
+              Optional features can be toggled in <B>Settings &rarr; Features</B>.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Events & Retreats",
+      items: [
+        {
+          q: "How do I create a retreat?",
+          a: (
+            <>
+              Go to <B>Events &amp; Retreats</B> and click <B>&quot;Create Event.&quot;</B> Follow the 5-step form:
+              <Steps>
+                <li><B>Basic Info</B> — name, dates, location.</li>
+                <li><B>Room Options</B> — tiers with pricing &amp; capacity.</li>
+                <li><B>Payment Settings</B> — full or installment.</li>
+                <li><B>Cancellation Policy</B>.</li>
+                <li><B>Custom Form</B> (optional).</li>
+              </Steps>
+            </>
+          ),
+        },
+        {
+          q: "How does installment payment work?",
+          a: (
+            <>
+              When you enable installments, guests can choose to pay in 3 installments: 1/3 at booking, 1/3 after 30 days, 1/3 after 60 days &mdash; automatically charged to their card. You&apos;ll get reminders 7 days before each charge. You can edit individual due dates from the booking detail page under <B>Settings &rarr; Events</B>.
+            </>
+          ),
+        },
+        {
+          q: "How do I handle cancellations?",
+          a: (
+            <>
+              Open the booking detail page and click <B>&quot;Cancel Booking.&quot;</B> The system auto-calculates the refund based on your cancellation policy (days before event start &times; refund percentage &minus; fee). You can adjust the refund amount manually before confirming. Choose <B>&quot;Process Refund &amp; Cancel&quot;</B> to issue a Stripe refund, or <B>&quot;Cancel without Refund&quot;</B> to cancel without refunding.
+            </>
+          ),
+        },
+        {
+          q: "Can I create private events?",
+          a: (
+            <>
+              Yes. When creating an event, set <B>Public</B> to <B>No</B>. Only logged-in members of your studio will be able to view and book the event.
+            </>
+          ),
+        },
+        {
+          q: "Can guests (non-members) book retreats?",
+          a: (
+            <>
+              Yes. Guests enter their name, email, and phone number during checkout. No Klasly account is required. They&apos;ll receive booking confirmation and payment receipts by email.
             </>
           ),
         },
@@ -974,6 +1078,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
       ],
     },
     {
+<<<<<<< HEAD
       title: "Studio Passes",
       items: [
         {
@@ -981,10 +1086,20 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               Studio Passes are monthly membership plans offered by your studio. Each pass has a monthly price and may include unlimited or a set number of classes per month.
+=======
+      title: "Events & Retreats",
+      items: [
+        {
+          q: "How do I book a retreat?",
+          a: (
+            <>
+              Visit the event page, select a room or option, then choose your payment method (full or 3 installments). Complete checkout with your card &mdash; you&apos;ll receive a confirmation email.
+>>>>>>> fcd55c2b270b99843b7b2f7da7afdfa1757bc147
             </>
           ),
         },
         {
+<<<<<<< HEAD
           q: "How do I subscribe to a pass?",
           a: (
             <>
@@ -1002,6 +1117,12 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               Go to <B>Passes</B> and click <B>Cancel Subscription</B> on your active pass. Your subscription will remain active until the end of the current billing period — you won&apos;t be charged again after that.
+=======
+          q: "When will I be charged for installments?",
+          a: (
+            <>
+              The first installment is charged at booking. The second is auto-charged 30 days later, and the third 60 days later. You&apos;ll receive a reminder email 7 days before each charge. No action is needed &mdash; payments are processed automatically.
+>>>>>>> fcd55c2b270b99843b7b2f7da7afdfa1757bc147
             </>
           ),
         },

@@ -4,7 +4,7 @@ import { stripe } from "@/lib/stripe/server";
 import Stripe from "stripe";
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email/send";
-import { paymentReceipt, paymentFailed, instructorPaymentNotification } from "@/lib/email/templates";
+import { paymentReceipt, paymentFailed, instructorPaymentNotification, eventBookingConfirmation, eventBookingConfirmedFull, eventBookingConfirmedInstallment, ownerNewBookingNotification } from "@/lib/email/templates";
 import { insertWebhookLog } from "@/lib/admin/logs";
 
 /** session.subscription は string | Subscription (expand時) のため、必ずID文字列を返す */
@@ -77,6 +77,12 @@ export async function POST(request: Request) {
               session,
               adminSupabase
             );
+            break;
+          }
+
+          // イベント予約の決済完了
+          if (metaType === "event_booking") {
+            await handleEventBookingCheckout(session, adminSupabase);
             break;
           }
 
@@ -1048,4 +1054,255 @@ async function getStudioIdFromStripeEvent(
     // ignore
   }
   return null;
+}
+
+/**
+ * イベント予約の checkout.session.completed を処理。
+ * - booking_status を confirmed に更新
+ * - 分割払いの場合: 1回目のscheduleをpaidに、PaymentMethodを全scheduleに保存
+ * - 一括払いの場合: scheduleをpaidに、payment_statusをfully_paidに
+ * - 確認メール送信
+ */
+async function handleEventBookingCheckout(
+  session: Stripe.Checkout.Session,
+  supabase: ReturnType<typeof createClient>
+) {
+  const bookingId = session.metadata?.event_booking_id;
+  const paymentType = session.metadata?.payment_type; // 'full' | 'installment'
+  const studioId = session.metadata?.studio_id;
+  const eventId = session.metadata?.event_id;
+
+  if (!bookingId) {
+    console.error("[EventWebhook] Missing event_booking_id in metadata");
+    return;
+  }
+
+  const paymentIntentId =
+    typeof session.payment_intent === "string"
+      ? session.payment_intent
+      : session.payment_intent?.id ?? null;
+
+  // Get payment method from PaymentIntent for future off-session charges
+  let paymentMethodId: string | null = null;
+  if (paymentIntentId) {
+    try {
+      const stripeClient = stripe;
+      // Retrieve PI from connected account
+      const { data: booking } = await supabase
+        .from("event_bookings")
+        .select("event_id")
+        .eq("id", bookingId)
+        .single();
+
+      const { data: eventData } = booking
+        ? await supabase
+            .from("events")
+            .select("studio_id")
+            .eq("id", booking.event_id)
+            .single()
+        : { data: null };
+
+      let connAcct: string | undefined;
+      if (eventData?.studio_id) {
+        const { data: studioData } = await supabase
+          .from("studios")
+          .select("stripe_connect_account_id")
+          .eq("id", eventData.studio_id)
+          .single();
+        connAcct = studioData?.stripe_connect_account_id ?? undefined;
+      }
+
+      const pi = await stripeClient.paymentIntents.retrieve(paymentIntentId, {}, connAcct ? { stripeAccount: connAcct } : undefined);
+      paymentMethodId =
+        typeof pi.payment_method === "string"
+          ? pi.payment_method
+          : pi.payment_method?.id ?? null;
+    } catch (e) {
+      console.error("[EventWebhook] Failed to retrieve payment method:", e);
+    }
+  }
+
+  if (paymentType === "installment") {
+    // Update first installment as paid
+    await supabase
+      .from("event_payment_schedule")
+      .update({
+        status: "paid",
+        paid_at: new Date().toISOString(),
+        stripe_payment_intent_id: paymentIntentId,
+      })
+      .eq("event_booking_id", bookingId)
+      .eq("installment_number", 1);
+
+    // Save payment method to ALL schedule records for future off-session charges
+    if (paymentMethodId) {
+      await supabase
+        .from("event_payment_schedule")
+        .update({ stripe_payment_method_id: paymentMethodId })
+        .eq("event_booking_id", bookingId);
+    }
+
+    // Update booking: confirmed + partial
+    await supabase
+      .from("event_bookings")
+      .update({
+        booking_status: "confirmed",
+        payment_status: "partial",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", bookingId);
+  } else {
+    // Full payment
+    await supabase
+      .from("event_payment_schedule")
+      .update({
+        status: "paid",
+        paid_at: new Date().toISOString(),
+        stripe_payment_intent_id: paymentIntentId,
+      })
+      .eq("event_booking_id", bookingId)
+      .eq("installment_number", 1);
+
+    await supabase
+      .from("event_bookings")
+      .update({
+        booking_status: "confirmed",
+        payment_status: "fully_paid",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", bookingId);
+  }
+
+  // Send confirmation email + owner notification
+  try {
+    const { data: bookingData } = await supabase
+      .from("event_bookings")
+      .select("guest_name, guest_email, total_amount_cents, payment_type, event_option_id")
+      .eq("id", bookingId)
+      .single();
+
+    const { data: eventData } = eventId
+      ? await supabase
+          .from("events")
+          .select("name, start_date, end_date, location_name, installment_count, studio_id, cancellation_policy_text")
+          .eq("id", eventId)
+          .single()
+      : { data: null };
+
+    if (bookingData?.guest_email && eventData) {
+      // Get option name
+      let optionName = "—";
+      if (bookingData.event_option_id) {
+        const { data: opt } = await supabase
+          .from("event_options")
+          .select("name")
+          .eq("id", bookingData.event_option_id)
+          .single();
+        optionName = opt?.name ?? "—";
+      }
+
+      const policySummary = eventData.cancellation_policy_text || "";
+
+      if (paymentType === "installment") {
+        // Get next pending schedule
+        const { data: nextSchedule } = await supabase
+          .from("event_payment_schedule")
+          .select("amount_cents, due_date")
+          .eq("event_booking_id", bookingId)
+          .eq("status", "pending")
+          .order("installment_number")
+          .limit(1)
+          .single();
+
+        const { count: remainingCount } = await supabase
+          .from("event_payment_schedule")
+          .select("id", { count: "exact", head: true })
+          .eq("event_booking_id", bookingId)
+          .eq("status", "pending");
+
+        // Get first installment amount (what was just paid)
+        const { data: firstSchedule } = await supabase
+          .from("event_payment_schedule")
+          .select("amount_cents")
+          .eq("event_booking_id", bookingId)
+          .eq("installment_number", 1)
+          .single();
+
+        const email = eventBookingConfirmedInstallment({
+          guestName: bookingData.guest_name || "Guest",
+          eventName: eventData.name,
+          startDate: eventData.start_date,
+          endDate: eventData.end_date,
+          locationName: eventData.location_name,
+          optionName,
+          totalAmountCents: bookingData.total_amount_cents,
+          paidAmountCents: firstSchedule?.amount_cents ?? 0,
+          nextPaymentDate: nextSchedule?.due_date ?? "TBD",
+          nextPaymentAmountCents: nextSchedule?.amount_cents ?? 0,
+          remainingInstallments: remainingCount ?? 0,
+          cancellationPolicySummary: policySummary,
+        });
+
+        await sendEmail({
+          to: bookingData.guest_email,
+          subject: email.subject,
+          html: email.html,
+          studioId: studioId ?? null,
+          templateName: "event_booking_confirmed_installment",
+        });
+      } else {
+        const email = eventBookingConfirmedFull({
+          guestName: bookingData.guest_name || "Guest",
+          eventName: eventData.name,
+          startDate: eventData.start_date,
+          endDate: eventData.end_date,
+          locationName: eventData.location_name,
+          optionName,
+          amountCents: bookingData.total_amount_cents,
+          cancellationPolicySummary: policySummary,
+        });
+
+        await sendEmail({
+          to: bookingData.guest_email,
+          subject: email.subject,
+          html: email.html,
+          studioId: studioId ?? null,
+          templateName: "event_booking_confirmed_full",
+        });
+      }
+
+      // Owner notification
+      const targetStudioId = eventData.studio_id || studioId;
+      if (targetStudioId) {
+        const { data: ownerProfile } = await supabase
+          .from("profiles")
+          .select("full_name, email")
+          .eq("studio_id", targetStudioId)
+          .eq("role", "owner")
+          .limit(1)
+          .single();
+
+        if (ownerProfile?.email) {
+          const ownerEmail = ownerNewBookingNotification({
+            ownerName: ownerProfile.full_name || "Studio Owner",
+            guestName: bookingData.guest_name || "Guest",
+            eventName: eventData.name,
+            optionName,
+            amountCents: bookingData.total_amount_cents,
+            paymentType: bookingData.payment_type,
+          });
+
+          await sendEmail({
+            to: ownerProfile.email,
+            subject: ownerEmail.subject,
+            html: ownerEmail.html,
+            studioId: targetStudioId,
+            templateName: "owner_new_event_booking",
+          });
+        }
+      }
+    }
+  } catch (e) {
+    console.error("[EventWebhook] Failed to send confirmation email:", e);
+  }
 }

@@ -1,4 +1,6 @@
 import { createAdminClient } from "@/lib/admin/supabase";
+import { isFeatureEnabled } from "@/lib/features/check-feature";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 import {
   getWidgetCorsHeaders,
   corsPreflightResponse,
@@ -144,6 +146,8 @@ export async function GET(
       };
     };
 
+    const onlineEnabled = await isFeatureEnabled(studioId, FEATURE_KEYS.ONLINE_CLASSES);
+
     const formattedSessions = (sessions as SessionRow[] || []).map((s) => ({
       id: s.id,
       date: s.session_date,
@@ -156,7 +160,7 @@ export async function GET(
       capacity: s.capacity,
       confirmedCount: availabilityMap[s.id] ?? 0,
       location: s.classes?.location ?? null,
-      isOnline: s.is_online ?? s.classes?.is_online ?? false,
+      isOnline: onlineEnabled ? (s.is_online ?? s.classes?.is_online ?? false) : false,
     }));
 
     return NextResponse.json(

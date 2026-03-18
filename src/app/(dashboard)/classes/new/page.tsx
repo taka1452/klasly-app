@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { usePlanAccess } from "@/components/ui/plan-access-provider";
+import { useFeature } from "@/lib/features/feature-context";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 type InstructorOption = { id: string; full_name: string; isMe?: boolean };
 type RoomOption = { id: string; name: string; capacity: number | null };
@@ -22,6 +24,8 @@ const DAY_OPTIONS = [
 export default function NewClassPage() {
   const router = useRouter();
   const planAccess = usePlanAccess();
+  const { isEnabled } = useFeature();
+  const onlineEnabled = isEnabled(FEATURE_KEYS.ONLINE_CLASSES);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -33,7 +37,7 @@ export default function NewClassPage() {
   const [instructorId, setInstructorId] = useState<string>("");
   const [roomId, setRoomId] = useState<string>("");
   const [isPublic, setIsPublic] = useState(true);
-  const [isOnline, setIsOnline] = useState(false);
+  const [classType, setClassType] = useState<"in-person" | "online" | "hybrid">("in-person");
   const [onlineLink, setOnlineLink] = useState("");
   const [instructors, setInstructors] = useState<InstructorOption[]>([]);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
@@ -131,6 +135,15 @@ export default function NewClassPage() {
         : startTime
       : `${startTime}:00:00`;
 
+    const isOnline = classType === "online";
+    const showOnlineLink = classType === "online" || classType === "hybrid";
+
+    if (classType === "online" && !onlineLink.trim()) {
+      setError("Online link is required for online classes.");
+      setLoading(false);
+      return;
+    }
+
     const { data: newClass, error: classError } = await supabase
       .from("classes")
       .insert({
@@ -146,7 +159,7 @@ export default function NewClassPage() {
         room_id: isOnline ? null : roomId || null,
         is_public: isPublic,
         is_online: isOnline,
-        online_link: isOnline ? onlineLink || null : null,
+        online_link: showOnlineLink ? onlineLink || null : null,
         is_active: true,
       })
       .select("id, start_time, capacity")
@@ -179,8 +192,9 @@ export default function NewClassPage() {
         capacity: newClass.capacity,
         is_cancelled: false,
         is_public: isPublic,
-        is_online: isOnline,
-        online_link: isOnline ? onlineLink || null : null,
+        // NULL = inherit from class (Hybrid sessions inherit per-session)
+        is_online: null,
+        online_link: null,
       });
     }
 
@@ -263,47 +277,73 @@ export default function NewClassPage() {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Class Type
-            </label>
-            <div className="mt-1 flex gap-4">
-              <label className="flex items-center gap-2 text-sm text-gray-700">
-                <input
-                  type="radio"
-                  name="classType"
-                  checked={!isOnline}
-                  onChange={() => setIsOnline(false)}
-                  className="text-brand-600"
-                />
-                In-person
-              </label>
-              <label className="flex items-center gap-2 text-sm text-gray-700">
-                <input
-                  type="radio"
-                  name="classType"
-                  checked={isOnline}
-                  onChange={() => setIsOnline(true)}
-                  className="text-brand-600"
-                />
-                Online
-              </label>
-            </div>
-          </div>
+          {onlineEnabled && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Class Type
+                </label>
+                <div className="mt-1 flex gap-4">
+                  <label className="flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                      type="radio"
+                      name="classType"
+                      checked={classType === "in-person"}
+                      onChange={() => setClassType("in-person")}
+                      className="text-brand-600"
+                    />
+                    In-person
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                      type="radio"
+                      name="classType"
+                      checked={classType === "online"}
+                      onChange={() => setClassType("online")}
+                      className="text-brand-600"
+                    />
+                    Online
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                      type="radio"
+                      name="classType"
+                      checked={classType === "hybrid"}
+                      onChange={() => setClassType("hybrid")}
+                      className="text-brand-600"
+                    />
+                    Hybrid
+                  </label>
+                </div>
+                {classType === "hybrid" && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    Default is in-person. You can switch individual sessions to online.
+                  </p>
+                )}
+              </div>
 
-          {isOnline && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Online Link (Zoom, Google Meet, etc.)
-              </label>
-              <input
-                type="url"
-                value={onlineLink}
-                onChange={(e) => setOnlineLink(e.target.value)}
-                placeholder="https://zoom.us/j/123456789"
-                className="input-field mt-1"
-              />
-            </div>
+              {(classType === "online" || classType === "hybrid") && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Online Link (Zoom, Google Meet, etc.)
+                    {classType === "online" && <span className="text-red-500"> *</span>}
+                  </label>
+                  <input
+                    type="url"
+                    value={onlineLink}
+                    onChange={(e) => setOnlineLink(e.target.value)}
+                    placeholder="https://zoom.us/j/123456789"
+                    required={classType === "online"}
+                    className="input-field mt-1"
+                  />
+                  {classType === "hybrid" && (
+                    <p className="mt-1 text-xs text-gray-500">
+                      Default link for online sessions. Can be overridden per session.
+                    </p>
+                  )}
+                </div>
+              )}
+            </>
           )}
 
           <div>
@@ -366,7 +406,7 @@ export default function NewClassPage() {
             </div>
           </div>
 
-          {!isOnline && (
+          {classType !== "online" && (
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700">

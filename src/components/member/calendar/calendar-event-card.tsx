@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import BookingButton from "@/components/bookings/booking-button";
+import { useFeature } from "@/lib/features/feature-context";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 import {
   type SessionData,
   formatTimeShort,
@@ -44,6 +46,10 @@ export default function CalendarEventCard({
   classPrice,
   onBookingComplete,
 }: Props) {
+  const { isEnabled } = useFeature();
+  const onlineEnabled = isEnabled(FEATURE_KEYS.ONLINE_CLASSES);
+  const showOnline = onlineEnabled && session.is_online;
+
   const [showPopover, setShowPopover] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -112,13 +118,13 @@ export default function CalendarEventCard({
       >
         {isCompact ? (
           <span className="truncate font-medium">
-            {session.is_online && <span title="Online">📹 </span>}
+            {showOnline && <span title="Online">📹 </span>}
             {session.class_name}
           </span>
         ) : (
           <>
             <div className="truncate font-medium">
-              {session.is_online && <span title="Online">📹 </span>}
+              {showOnline && <span title="Online">📹 </span>}
               {session.class_name}
             </div>
             <div className="truncate opacity-75">
@@ -162,7 +168,7 @@ export default function CalendarEventCard({
           </button>
 
           <h3 className="text-lg font-semibold text-gray-900 pr-6">
-            {session.is_online && <span title="Online">📹 </span>}
+            {showOnline && <span title="Online">📹 </span>}
             {session.class_name}
           </h3>
           <div className="mt-2 space-y-1 text-sm text-gray-600">
@@ -172,7 +178,7 @@ export default function CalendarEventCard({
             {session.instructor_name && (
               <p>Instructor: {session.instructor_name}</p>
             )}
-            {session.is_online ? (
+            {showOnline ? (
               session.online_link ? (
                 <a
                   href={session.online_link}
