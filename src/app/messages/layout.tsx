@@ -93,6 +93,26 @@ export default async function MessagesLayout({
     );
   }
 
+  // メンバー: WaiverGate チェック
+  const { data: waiverTemplate } = await supabase
+    .from("waiver_templates")
+    .select("id")
+    .eq("studio_id", profile.studio_id)
+    .maybeSingle();
+
+  if (waiverTemplate) {
+    const { data: member } = await supabase
+      .from("members")
+      .select("waiver_signed")
+      .eq("profile_id", user.id)
+      .eq("studio_id", profile.studio_id)
+      .maybeSingle();
+
+    if (member && !member.waiver_signed) {
+      redirect("/waiver");
+    }
+  }
+
   // メンバー用レイアウト
   return (
     <div className="min-h-screen bg-gray-50">

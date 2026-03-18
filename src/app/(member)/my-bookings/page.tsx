@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 import { formatDate, formatTime } from "@/lib/utils";
 import { getPlanAccess } from "@/lib/plan-guard";
 import BookingButton from "@/components/bookings/booking-button";
@@ -11,7 +12,7 @@ export default async function MyBookingsPage() {
   } = await serverSupabase.auth.getUser();
 
   if (!user) {
-    return null;
+    redirect("/login");
   }
 
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

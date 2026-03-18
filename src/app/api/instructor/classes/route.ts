@@ -215,3 +215,57 @@ export async function POST(request: Request) {
     );
   }
 }
+
+// PATCH: update an existing class owned by the instructor
+export async function PATCH(request: Request) {
+  try {
+    const ctx = await getInstructorContext();
+    if (!ctx) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { id, name, description, capacity, is_active, price_cents } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: "Class id is required" }, { status: 400 });
+    }
+
+    // Verify class belongs to the instructor
+    const { data: existing } = await ctx.supabase
+      .from("classes")
+      .select("id, instructor_id, studio_id")
+      .eq("id", id)
+      .single();
+
+    if (!existing || existing.instructor_id !== ctx.instructorId || existing.studio_id !== ctx.studioId) {
+      return NextResponse.json({ error: "Class not found" }, { status: 404 });
+    }
+
+    const updates: Record<string, unknown> = {};
+    if (name !== undefined) updates.name = name;
+    if (description !== undefined) updates.description = description || null;
+    if (capacity !== undefined) updates.capacity = capacity;
+    if (is_active !== undefined) updates.is_active = is_active;
+    if (price_cents !== undefined) updates.price_cents = price_cents;
+
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json({ error: "No fields to update" }, { status: 400 });
+    }
+
+    const { data, error } = await ctx.supabase
+      .from("classes")
+      .update(updates)
+      .eq("id", id)
+      .select("id, name, is_active")
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(data);
+  } catch {
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}

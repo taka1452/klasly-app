@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { formatDate, formatTime } from "@/lib/utils";
 
@@ -9,7 +10,7 @@ export default async function InstructorDashboardPage() {
     data: { user },
   } = await serverSupabase.auth.getUser();
 
-  if (!user) return null;
+  if (!user) redirect("/login");
 
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const supabase = serviceRoleKey

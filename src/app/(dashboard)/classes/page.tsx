@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import WeeklySchedule from "@/components/classes/weekly-schedule";
 import EmptyState from "@/components/ui/empty-state";
@@ -18,7 +19,7 @@ export default async function ClassesPage() {
   } = await serverSupabase.auth.getUser();
 
   if (!user) {
-    return null;
+    redirect("/login");
   }
 
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -36,7 +37,7 @@ export default async function ClassesPage() {
     .single();
 
   if (!profile?.studio_id) {
-    return null;
+    redirect("/onboarding");
   }
 
   const { data: classes } = await supabase

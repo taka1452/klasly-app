@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import MemberHeader from "./member-header";
 import TourProvider from "@/components/tour/TourProvider";
 import { useFeature } from "@/lib/features/feature-context";
@@ -29,6 +30,14 @@ export default function MemberLayoutClient({
 }: MemberLayoutClientProps) {
   const { isEnabled } = useFeature();
   const showPasses = isEnabled(FEATURE_KEYS.STUDIO_PASS);
+  const pathname = usePathname();
+
+  const linkClass = (href: string) =>
+    `text-sm font-medium ${
+      pathname === href
+        ? "text-brand-700 font-semibold"
+        : "text-gray-600 hover:text-gray-900"
+    }`;
 
   return (
     <TourProvider
@@ -48,40 +57,40 @@ export default function MemberLayoutClient({
             <div className="flex gap-6">
               <Link
                 href="/schedule"
-                className="text-sm font-medium text-gray-600 hover:text-gray-900"
+                className={linkClass("/schedule")}
               >
                 Schedule
               </Link>
               <Link
                 href="/my-bookings"
-                className="text-sm font-medium text-gray-600 hover:text-gray-900"
+                className={linkClass("/my-bookings")}
                 data-tour="my-bookings"
               >
                 My Bookings
               </Link>
               <Link
                 href="/purchase"
-                className="text-sm font-medium text-gray-600 hover:text-gray-900"
+                className={linkClass("/purchase")}
               >
                 Purchase
               </Link>
               {showPasses && (
                 <Link
                   href="/my-passes"
-                  className="text-sm font-medium text-gray-600 hover:text-gray-900"
+                  className={linkClass("/my-passes")}
                 >
                   Passes
                 </Link>
               )}
               <Link
                 href="/my-payments"
-                className="text-sm font-medium text-gray-600 hover:text-gray-900"
+                className={linkClass("/my-payments")}
               >
                 Payments
               </Link>
               <Link
                 href="/messages"
-                className="text-sm font-medium text-gray-600 hover:text-gray-900"
+                className={linkClass("/messages")}
               >
                 Messages
               </Link>

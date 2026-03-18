@@ -1144,7 +1144,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I cancel a booking?",
           a: (
             <>
-              Go to <B>My Bookings</B> and click <B>Cancel</B> on the booking you want to remove. Your credit will be returned immediately if the booking was confirmed.
+              Go to <B>My Bookings</B> and click <B>Cancel</B> on the booking you want to remove. You&apos;ll be asked to confirm by clicking <B>Yes, Cancel</B> (or <B>Keep</B> to go back). Your credit will be returned immediately if the booking was confirmed.
               <Tip>If you&apos;re on the waitlist, you can leave the waitlist without losing any credits.</Tip>
             </>
           ),

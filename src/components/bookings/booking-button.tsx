@@ -50,6 +50,7 @@ export default function BookingButton({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [confirmCancel, setConfirmCancel] = useState(false);
 
   const isFull = confirmedCount >= capacity;
   const showWaitlist = isFull;
@@ -213,17 +214,42 @@ export default function BookingButton({
     return (
       <div className="flex flex-col items-end gap-1" {...tourProps}>
         {error && <p className="text-xs text-red-600 text-right">{error}</p>}
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-green-600">Booked ✓</span>
-          <button
-            type="button"
-            onClick={() => handleBook("cancel")}
-            disabled={loading}
-            className="text-sm text-gray-500 underline hover:text-red-600"
-          >
-            Cancel
-          </button>
-        </div>
+        {confirmCancel ? (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-700">Cancel booking?</span>
+            <button
+              type="button"
+              onClick={() => {
+                setConfirmCancel(false);
+                handleBook("cancel");
+              }}
+              disabled={loading}
+              className="text-sm font-medium text-red-600 hover:text-red-700"
+            >
+              {loading ? "…" : "Yes, Cancel"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmCancel(false)}
+              disabled={loading}
+              className="text-sm text-gray-500 hover:text-gray-700"
+            >
+              Keep
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-green-600">Booked ✓</span>
+            <button
+              type="button"
+              onClick={() => setConfirmCancel(true)}
+              disabled={loading}
+              className="text-sm text-gray-500 underline hover:text-red-600"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
       </div>
     );
   }

@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
   formatDate,
@@ -19,7 +20,7 @@ export default async function DashboardPage() {
   } = await serverSupabase.auth.getUser();
 
   if (!user) {
-    return null;
+    redirect("/login");
   }
 
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -37,7 +38,7 @@ export default async function DashboardPage() {
     .single();
 
   if (!profile?.studio_id) {
-    return null;
+    redirect("/onboarding");
   }
 
   const today = new Date().toISOString().split("T")[0];

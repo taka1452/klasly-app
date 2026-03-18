@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import DOMPurify from "dompurify";
 
 type Props = {
   memberId: string;
@@ -53,6 +54,10 @@ export default function InlineWaiverSign({
     }
   }
 
+  const sanitizedContent = useMemo(
+    () => DOMPurify.sanitize(waiverContent),
+    [waiverContent]
+  );
   const canSubmit = signedName.trim().length > 0 && agreed && !loading;
 
   return (
@@ -69,7 +74,7 @@ export default function InlineWaiverSign({
         <p className="text-sm text-gray-500">{studioName}</p>
         <div
           className="prose prose-sm mt-4 max-w-none text-gray-700"
-          dangerouslySetInnerHTML={{ __html: waiverContent }}
+          dangerouslySetInnerHTML={{ __html: sanitizedContent }}
         />
       </div>
 

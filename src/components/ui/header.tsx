@@ -11,8 +11,15 @@ const PAGE_NAMES: Record<string, string> = {
   "/instructors": "Instructors",
   "/classes": "Classes",
   "/bookings": "Bookings",
+  "/rooms": "Rooms",
+  "/events": "Events",
+  "/payments": "Payments",
+  "/passes": "Passes",
   "/messages": "Messages",
   "/studio-announcements": "Announcements",
+  "/managers": "Managers",
+  "/analytics": "Analytics",
+  "/my-classes": "My Classes",
   "/settings": "Settings",
 };
 

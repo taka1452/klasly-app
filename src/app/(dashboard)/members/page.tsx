@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import MemberSearch from "@/components/members/member-search";
 import MembersListClient from "@/components/members/members-list-client";
@@ -23,7 +24,7 @@ export default async function MembersPage({
   } = await serverSupabase.auth.getUser();
 
   if (!user) {
-    return null; // middleware でリダイレクトされる想定
+    redirect("/login");
   }
 
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -41,7 +42,7 @@ export default async function MembersPage({
     .single();
 
   if (!profile?.studio_id) {
-    return null; // オンボーディングへリダイレクトされる想定
+    redirect("/onboarding");
   }
 
   // 会員一覧を取得（profiles と JOIN、waiver_signed 含む）

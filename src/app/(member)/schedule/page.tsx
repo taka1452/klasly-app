@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 import { getPlanAccess } from "@/lib/plan-guard";
 import { getRequiresCredits } from "@/lib/booking-utils";
 import ScheduleCalendar from "@/components/member/calendar/schedule-calendar";
@@ -12,7 +13,7 @@ export default async function SchedulePage() {
   } = await serverSupabase.auth.getUser();
 
   if (!user) {
-    return null;
+    redirect("/login");
   }
 
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
