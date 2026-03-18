@@ -14,7 +14,10 @@ type Props = {
   bookingRequiresCredits: boolean | null;
   stripeConnectComplete: boolean;
   isAlsoInstructor: boolean;
+  sessionGenerationWeeks: number;
 };
+
+const WEEKS_OPTIONS = [4, 6, 8, 12];
 
 export default function SettingsContent({
   fullName,
@@ -22,6 +25,7 @@ export default function SettingsContent({
   bookingRequiresCredits,
   stripeConnectComplete,
   isAlsoInstructor,
+  sessionGenerationWeeks,
 }: Props) {
   const router = useRouter();
   const tourActions = useTourActions();
@@ -33,6 +37,8 @@ export default function SettingsContent({
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [instructorEnabled, setInstructorEnabled] = useState(isAlsoInstructor);
   const [instructorToggleLoading, setInstructorToggleLoading] = useState(false);
+  const [genWeeks, setGenWeeks] = useState(sessionGenerationWeeks);
+  const [genWeeksLoading, setGenWeeksLoading] = useState(false);
 
   function showToast(msg: string) {
     setToastMessage(msg);
@@ -68,6 +74,26 @@ export default function SettingsContent({
       router.refresh();
     } finally {
       setInstructorToggleLoading(false);
+    }
+  }
+
+  async function handleGenWeeksChange(weeks: number) {
+    setGenWeeksLoading(true);
+    try {
+      const res = await fetch("/api/studio/schedule-settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_generation_weeks: weeks }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error ?? "Failed to update");
+        return;
+      }
+      setGenWeeks(weeks);
+      showToast(`Sessions will be generated ${weeks} weeks ahead`);
+    } finally {
+      setGenWeeksLoading(false);
     }
   }
 
@@ -198,6 +224,45 @@ export default function SettingsContent({
         </div>
       </section>
 
+      {/* ── Scheduling ── */}
+      <section>
+        <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
+          Scheduling
+        </h2>
+        <div className="space-y-6">
+          {/* Schedule Generation */}
+          <div className="card">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Schedule Generation
+            </h3>
+            <p className="mt-2 text-sm text-gray-600">
+              Choose how far ahead sessions are automatically generated for your classes.
+            </p>
+            <div className="mt-4 flex items-center gap-3">
+              <label htmlFor="gen-weeks" className="text-sm font-medium text-gray-700">
+                Auto-generate sessions:
+              </label>
+              <select
+                id="gen-weeks"
+                value={genWeeks}
+                onChange={(e) => handleGenWeeksChange(Number(e.target.value))}
+                disabled={genWeeksLoading}
+                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:opacity-50"
+              >
+                {WEEKS_OPTIONS.map((w) => (
+                  <option key={w} value={w}>
+                    {w} weeks ahead
+                  </option>
+                ))}
+              </select>
+              {genWeeksLoading && (
+                <span className="text-xs text-gray-400">Saving…</span>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── Studio Features ── */}
       <section>
         <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
@@ -302,6 +367,35 @@ export default function SettingsContent({
             >
               Widget Settings →
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Referral ── */}
+      <section>
+        <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
+          Referral
+        </h2>
+        <div className="space-y-6">
+          <div className="card">
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 text-xl" aria-hidden>🎁</span>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Referral Program
+                </h3>
+                <p className="mt-2 text-sm text-gray-600">
+                  Refer another studio owner and you both get 1 month free.
+                  No limits — keep sharing, keep saving.
+                </p>
+                <Link
+                  href="/settings/referral"
+                  className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+                >
+                  View Referral Link →
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </section>

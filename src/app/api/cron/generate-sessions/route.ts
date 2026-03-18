@@ -13,7 +13,8 @@ function verifyCronSecret(request: Request): boolean {
 }
 
 /**
- * アクティブなクラスに対して今後8週分のセッションを自動生成する。
+ * アクティブなクラスに対してスタジオごとの設定週数分のセッションを自動生成する。
+ * studios.session_generation_weeks の値を使用（デフォルト8週）。
  * 既存セッションがある日付はスキップするため冪等に実行できる。
  */
 export async function GET(request: Request) {
@@ -53,6 +54,16 @@ export async function GET(request: Request) {
   }
 
   try {
+    // スタジオごとの session_generation_weeks を取得
+    const { data: studios } = await supabase
+      .from("studios")
+      .select("id, session_generation_weeks");
+
+    const studioWeeksMap = new Map<string, number>();
+    for (const s of studios ?? []) {
+      studioWeeksMap.set(s.id, s.session_generation_weeks ?? 8);
+    }
+
     const { data: classes } = await supabase
       .from("classes")
       .select("id, studio_id, day_of_week, start_time, capacity, is_public, is_online, online_link")
@@ -78,16 +89,18 @@ export async function GET(request: Request) {
       return NextResponse.json({ processed: 0, created: 0 });
     }
 
-    // 今日〜8週後の日付範囲
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const targetDate = new Date(today);
-    targetDate.setDate(today.getDate() + 56); // 8週 = 56日
 
     let totalCreated = 0;
 
     for (const cls of classes) {
-      // このクラスが今後8週内に開催されるべき全日付を計算
+      // スタジオごとの週数を取得（デフォルト8週）
+      const weeksAhead = studioWeeksMap.get(cls.studio_id) ?? 8;
+      const targetDate = new Date(today);
+      targetDate.setDate(today.getDate() + weeksAhead * 7);
+
+      // このクラスが指定週数内に開催されるべき全日付を計算
       const expectedDates: string[] = [];
       const currentDay = today.getDay();
       let daysUntilFirst = (cls.day_of_week - currentDay + 7) % 7;

@@ -39,7 +39,7 @@ export default async function SettingsPage() {
   // スタジオ設定を取得
   const { data: studio } = await supabase
     .from("studios")
-    .select("booking_requires_credits, stripe_connect_onboarding_complete")
+    .select("booking_requires_credits, stripe_connect_onboarding_complete, session_generation_weeks")
     .eq("id", profile.studio_id)
     .single();
 
@@ -49,6 +49,9 @@ export default async function SettingsPage() {
   const stripeConnectComplete =
     (studio as { stripe_connect_onboarding_complete?: boolean } | null)
       ?.stripe_connect_onboarding_complete ?? false;
+  const sessionGenerationWeeks =
+    (studio as { session_generation_weeks?: number } | null)
+      ?.session_generation_weeks ?? 8;
 
   // オーナーが自分をインストラクターとして登録しているか
   const { data: instructorRecord } = await supabase
@@ -71,6 +74,7 @@ export default async function SettingsPage() {
         bookingRequiresCredits={bookingRequiresCredits}
         stripeConnectComplete={stripeConnectComplete}
         isAlsoInstructor={!!instructorRecord}
+        sessionGenerationWeeks={sessionGenerationWeeks}
       />
     </div>
   );

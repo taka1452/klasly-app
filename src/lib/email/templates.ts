@@ -823,3 +823,79 @@ export function ownerNewBookingNotification(params: {
     html: baseHtml(content),
   };
 }
+
+// ============================================================
+// Referral Program
+// ============================================================
+
+/** ① 紹介サインアップ通知（紹介者宛） */
+export function referralSignup(params: {
+  referrerStudioName: string;
+  newStudioName: string;
+}) {
+  const { referrerStudioName, newStudioName } = params;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:${BRAND_COLOR};">Someone signed up with your referral!</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${referrerStudioName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      <strong>${newStudioName}</strong> just signed up through your referral link.
+      You'll both get 1 month free when they make their first payment.
+    </p>
+    <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-size:14px;color:#6b7280;">Keep sharing your link to earn more free months!</p>
+    </div>
+  `;
+  return {
+    subject: "Someone signed up with your referral!",
+    html: baseHtml(content),
+  };
+}
+
+/** ② 紹介成立 — 紹介者宛 */
+export function referralRewardReferrer(params: {
+  referrerStudioName: string;
+  newStudioName: string;
+}) {
+  const { referrerStudioName, newStudioName } = params;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#059669;">You earned 1 month free!</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${referrerStudioName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      <strong>${newStudioName}</strong> just made their first payment.
+      Your next month of Klasly is free!
+    </p>
+    <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-weight:600;font-size:24px;color:#059669;">$0</p>
+      <p style="margin:8px 0 0;font-size:14px;">Your next billing cycle</p>
+    </div>
+    <p style="margin:0;font-size:14px;color:#6b7280;">The discount will be applied to your next billing cycle automatically.</p>
+  `;
+  return {
+    subject: "You earned 1 month free!",
+    html: baseHtml(content),
+  };
+}
+
+/** ③ 紹介成立 — 被紹介者宛 */
+export function referralRewardReferred(params: {
+  referrerStudioName: string;
+  newStudioName: string;
+}) {
+  const { referrerStudioName, newStudioName } = params;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#059669;">Welcome! Your first month is free</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${newStudioName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      Thanks to <strong>${referrerStudioName}</strong>'s referral, your next month of Klasly is free!
+    </p>
+    <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-weight:600;font-size:24px;color:#059669;">$0</p>
+      <p style="margin:8px 0 0;font-size:14px;">Your next billing cycle</p>
+    </div>
+    <p style="margin:0;font-size:14px;color:#6b7280;">The discount will be applied to your next billing cycle automatically.</p>
+  `;
+  return {
+    subject: "Welcome! Your first month is free",
+    html: baseHtml(content),
+  };
+}

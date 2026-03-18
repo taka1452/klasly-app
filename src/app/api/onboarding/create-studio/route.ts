@@ -113,6 +113,95 @@ export async function POST(request: Request) {
       }
     }
 
+    // 3. リファーラルコードを自動生成
+    try {
+      let code = "";
+      for (let attempt = 0; attempt < 5; attempt++) {
+        code = Math.random().toString(36).substring(2, 10).toUpperCase();
+        const { error: codeError } = await adminSupabase
+          .from("referral_codes")
+          .insert({ studio_id: studio.id, code });
+        if (!codeError) break;
+        if (attempt === 4) console.error("[create-studio] Failed to generate unique referral code");
+      }
+    } catch {
+      // リファーラルコード生成失敗はスタジオ作成をブロックしない
+      console.error("[create-studio] Referral code generation failed");
+    }
+
+    // 4. リファーラルコード経由のサインアップ処理
+    const cookies = request.headers.get("cookie") ?? "";
+    const referralMatch = cookies.match(/klasly_referral=([A-Z0-9]+)/);
+    const referralCode = referralMatch?.[1] ?? null;
+
+    if (referralCode) {
+      try {
+        // リファーラルコードの有効性を確認
+        const { data: refCode } = await adminSupabase
+          .from("referral_codes")
+          .select("studio_id")
+          .eq("code", referralCode)
+          .single();
+
+        if (refCode) {
+          // 自分のコードで自分を紹介するのを防止
+          const { data: referrerOwner } = await adminSupabase
+            .from("profiles")
+            .select("id")
+            .eq("studio_id", refCode.studio_id)
+            .eq("role", "owner")
+            .single();
+
+          if (referrerOwner?.id !== user.id) {
+            // studios.referred_by_code に保存
+            await adminSupabase
+              .from("studios")
+              .update({ referred_by_code: referralCode })
+              .eq("id", studio.id);
+
+            // referral_rewards にpendingレコード作成
+            await adminSupabase.from("referral_rewards").insert({
+              referrer_studio_id: refCode.studio_id,
+              referred_studio_id: studio.id,
+              status: "pending",
+            });
+
+            // 紹介者にメール通知
+            const { data: referrerProfile } = await adminSupabase
+              .from("profiles")
+              .select("email")
+              .eq("studio_id", refCode.studio_id)
+              .eq("role", "owner")
+              .single();
+            const { data: referrerStudio } = await adminSupabase
+              .from("studios")
+              .select("name")
+              .eq("id", refCode.studio_id)
+              .single();
+
+            if (referrerProfile?.email) {
+              const { referralSignup } = await import("@/lib/email/templates");
+              const { sendEmail } = await import("@/lib/email/send");
+              const { subject, html } = referralSignup({
+                referrerStudioName: referrerStudio?.name ?? "Studio",
+                newStudioName: name,
+              });
+              await sendEmail({
+                to: referrerProfile.email,
+                subject,
+                html,
+                studioId: refCode.studio_id,
+                templateName: "referral_signup",
+              });
+            }
+          }
+        }
+      } catch {
+        // リファーラル処理失敗はスタジオ作成をブロックしない
+        console.error("[create-studio] Referral processing failed");
+      }
+    }
+
     return NextResponse.json({ success: true, studioId: studio.id });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal error";

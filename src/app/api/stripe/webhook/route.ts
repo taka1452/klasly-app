@@ -421,6 +421,130 @@ export async function POST(request: Request) {
               templateName: "payment_receipt",
             });
           }
+
+          // ── リファーラル特典処理 ──
+          try {
+            const { data: studioFull } = await adminSupabase
+              .from("studios")
+              .select("referred_by_code, stripe_subscription_id")
+              .eq("id", studio.id)
+              .single();
+
+            if (studioFull?.referred_by_code) {
+              // pendingのリファーラルレコードを取得
+              const { data: reward } = await adminSupabase
+                .from("referral_rewards")
+                .select("id, referrer_studio_id, status, referrer_reward_applied, referred_reward_applied")
+                .eq("referred_studio_id", studio.id)
+                .eq("status", "pending")
+                .single();
+
+              if (reward) {
+                const { referralRewardReferrer, referralRewardReferred } = await import("@/lib/email/templates");
+
+                // === 被紹介者への特典 ===
+                let referredCouponId: string | null = null;
+                try {
+                  const coupon = await stripe.coupons.create({
+                    percent_off: 100,
+                    duration: "once",
+                    name: "Referral Reward - 1 Month Free",
+                  });
+                  referredCouponId = coupon.id;
+
+                  if (studioFull.stripe_subscription_id) {
+                    await stripe.subscriptions.update(studioFull.stripe_subscription_id, {
+                      coupon: coupon.id,
+                    });
+                  }
+                } catch (couponErr) {
+                  console.error("[webhook] Failed to apply referred coupon:", couponErr);
+                }
+
+                // === 紹介者への特典 ===
+                let referrerCouponId: string | null = null;
+                let referrerRewardApplied = false;
+                const { data: referrerStudio } = await adminSupabase
+                  .from("studios")
+                  .select("id, name, stripe_subscription_id")
+                  .eq("id", reward.referrer_studio_id)
+                  .single();
+
+                if (referrerStudio?.stripe_subscription_id) {
+                  try {
+                    const coupon = await stripe.coupons.create({
+                      percent_off: 100,
+                      duration: "once",
+                      name: "Referral Reward - 1 Month Free",
+                    });
+                    referrerCouponId = coupon.id;
+
+                    await stripe.subscriptions.update(referrerStudio.stripe_subscription_id, {
+                      coupon: coupon.id,
+                    });
+                    referrerRewardApplied = true;
+                  } catch (couponErr) {
+                    // 紹介者のサブスクが無効な場合はスキップ（再開時に適用）
+                    console.error("[webhook] Failed to apply referrer coupon:", couponErr);
+                  }
+                }
+
+                // referral_rewards を更新
+                await adminSupabase
+                  .from("referral_rewards")
+                  .update({
+                    status: "completed",
+                    referrer_reward_applied: referrerRewardApplied,
+                    referred_reward_applied: !!referredCouponId,
+                    stripe_coupon_id_referrer: referrerCouponId,
+                    stripe_coupon_id_referred: referredCouponId,
+                    completed_at: new Date().toISOString(),
+                  })
+                  .eq("id", reward.id);
+
+                // メール通知 — 紹介者宛
+                const { data: referrerOwnerProfile } = await adminSupabase
+                  .from("profiles")
+                  .select("email")
+                  .eq("studio_id", reward.referrer_studio_id)
+                  .eq("role", "owner")
+                  .single();
+
+                if (referrerOwnerProfile?.email) {
+                  const email = referralRewardReferrer({
+                    referrerStudioName: referrerStudio?.name ?? "Studio",
+                    newStudioName: studioData?.name ?? "Studio",
+                  });
+                  await sendEmail({
+                    to: referrerOwnerProfile.email,
+                    subject: email.subject,
+                    html: email.html,
+                    studioId: reward.referrer_studio_id,
+                    templateName: "referral_reward_referrer",
+                  });
+                }
+
+                // メール通知 — 被紹介者宛
+                if (ownerProfile?.email) {
+                  const email = referralRewardReferred({
+                    referrerStudioName: referrerStudio?.name ?? "Studio",
+                    newStudioName: studioData?.name ?? "Studio",
+                  });
+                  await sendEmail({
+                    to: ownerProfile.email,
+                    subject: email.subject,
+                    html: email.html,
+                    studioId: studio.id,
+                    templateName: "referral_reward_referred",
+                  });
+                }
+              }
+            }
+          } catch (refErr) {
+            // リファーラル処理失敗はWebhook全体をブロックしない
+            console.error("[webhook] Referral reward processing failed:", refErr);
+          }
+
           break;
         }
 

@@ -224,6 +224,15 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             </>
           ),
         },
+        {
+          q: "How far ahead are sessions generated?",
+          a: (
+            <>
+              By default, Klasly generates sessions <B>8 weeks</B> ahead. You can change this in <B>Settings</B> under the <B>Scheduling</B> section — choose 4, 6, 8, or 12 weeks depending on how far in advance you want members to book.
+              <Tip>Reducing the number of weeks will not delete existing sessions. Increasing it will generate additional sessions on the next automatic run.</Tip>
+            </>
+          ),
+        },
       ],
     },
     {
@@ -604,6 +613,48 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
                 <li>Messaging</li>
               </Steps>
               Optional features can be toggled in <B>Settings &rarr; Features</B>.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Referral Program",
+      items: [
+        {
+          q: "How does the referral program work?",
+          a: (
+            <>
+              Share your unique referral link with other studio owners.
+              When they sign up and make their first payment, you both get <B>1 month of Klasly for free</B>.
+              There&apos;s no limit to how many people you can refer.
+            </>
+          ),
+        },
+        {
+          q: "Where do I find my referral link?",
+          a: (
+            <>
+              Go to <B>Settings → Referral</B>. Your unique link is displayed at the top of the page.
+              Click <B>&quot;Copy Link&quot;</B> to copy it to your clipboard.
+            </>
+          ),
+        },
+        {
+          q: "When do I receive my free month?",
+          a: (
+            <>
+              Your free month is applied automatically when the person you referred makes their first payment (after their trial ends).
+              You&apos;ll receive an email notification and the discount will appear on your next billing cycle.
+            </>
+          ),
+        },
+        {
+          q: "Is there a limit on referrals?",
+          a: (
+            <>
+              No. You can refer as many studio owners as you&apos;d like.
+              Each successful referral earns you <B>1 month free</B>.
             </>
           ),
         },

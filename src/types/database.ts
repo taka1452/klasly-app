@@ -50,6 +50,10 @@ export type Studio = {
   admin_memo: string | null;
   /** true = デモ/テストスタジオ。KPI集計・スタジオ一覧からデフォルト除外 */
   is_demo: boolean;
+  /** セッション自動生成の週数（デフォルト8） */
+  session_generation_weeks: number;
+  /** サインアップ時のリファーラルコード。NULLなら紹介なし */
+  referred_by_code: string | null;
   created_at: string;
 };
 
@@ -726,5 +730,29 @@ export type PassDistribution = {
   status: "pending" | "approved" | "processing" | "completed" | "failed";
   approved_at: string | null;
   approved_by: string | null;
+  created_at: string;
+};
+
+// ============================================
+// リファーラル
+// ============================================
+
+export type ReferralCode = {
+  id: string;
+  studio_id: string;
+  code: string;
+  created_at: string;
+};
+
+export type ReferralReward = {
+  id: string;
+  referrer_studio_id: string;
+  referred_studio_id: string;
+  status: 'pending' | 'completed' | 'expired';
+  referrer_reward_applied: boolean;
+  referred_reward_applied: boolean;
+  stripe_coupon_id_referrer: string | null;
+  stripe_coupon_id_referred: string | null;
+  completed_at: string | null;
   created_at: string;
 };

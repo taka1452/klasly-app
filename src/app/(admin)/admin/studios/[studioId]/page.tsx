@@ -103,6 +103,38 @@ export default async function AdminStudioDetailPage({
   const stripeSubscriptionId = studio.stripe_subscription_id as string | null;
   const appliedCoupon = await getAppliedCoupon(stripeSubscriptionId);
 
+  // リファーラル情報
+  const { data: referralCode } = await supabase
+    .from("referral_codes")
+    .select("code")
+    .eq("studio_id", studioId)
+    .maybeSingle();
+
+  const { count: referralCount } = await supabase
+    .from("referral_rewards")
+    .select("id", { count: "exact", head: true })
+    .eq("referrer_studio_id", studioId)
+    .eq("status", "completed");
+
+  // 紹介元（このスタジオを紹介したスタジオ）
+  let referredByStudioName: string | null = null;
+  const referredByCode = (studio as { referred_by_code?: string | null }).referred_by_code;
+  if (referredByCode) {
+    const { data: refCodeData } = await supabase
+      .from("referral_codes")
+      .select("studio_id")
+      .eq("code", referredByCode)
+      .single();
+    if (refCodeData) {
+      const { data: refStudio } = await supabase
+        .from("studios")
+        .select("name")
+        .eq("id", refCodeData.studio_id)
+        .single();
+      referredByStudioName = refStudio?.name ?? null;
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -122,6 +154,33 @@ export default async function AdminStudioDetailPage({
       />
 
       <AdminStudioFeatures studioId={studioId} />
+
+      {/* Referral Info */}
+      <div className="rounded-lg border border-slate-700 bg-slate-800 p-6">
+        <h2 className="mb-4 text-lg font-semibold text-white">Referral</h2>
+        <div className="space-y-2 text-sm">
+          {referredByCode && (
+            <p className="text-slate-300">
+              <span className="text-slate-500">Referred by:</span>{" "}
+              {referredByStudioName ?? "Unknown"}{" "}
+              <span className="text-slate-500">(code: {referredByCode})</span>
+            </p>
+          )}
+          {referralCode && (
+            <p className="text-slate-300">
+              <span className="text-slate-500">Referral code:</span>{" "}
+              <span className="font-mono">{referralCode.code}</span>
+            </p>
+          )}
+          <p className="text-slate-300">
+            <span className="text-slate-500">Successful referrals:</span>{" "}
+            {referralCount ?? 0}
+          </p>
+          {!referralCode && !referredByCode && (
+            <p className="text-slate-500">No referral activity</p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
