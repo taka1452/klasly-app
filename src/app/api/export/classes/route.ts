@@ -1,6 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
-import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { getDashboardContext } from "@/lib/auth/dashboard-access";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -12,29 +11,18 @@ function escapeCsvCell(value: string | number | boolean | null | undefined): str
 }
 
 export async function GET() {
-  const serverSupabase = await createServerClient();
-  const { data: { user } } = await serverSupabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
-
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey);
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("studio_id, role")
-    .eq("id", user.id)
-    .single();
-
-  if (!profile?.studio_id || profile.role !== "owner") {
+  const ctx = await getDashboardContext();
+  if (!ctx) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (ctx.role === "manager" && !ctx.permissions?.can_manage_classes) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+
+  const supabase = ctx.supabase;
 
   const { data: rows } = await supabase
     .from("classes")
     .select("name, day_of_week, start_time, duration_minutes, capacity, description, location, instructors(profiles(email))")
-    .eq("studio_id", profile.studio_id)
+    .eq("studio_id", ctx.studioId)
     .eq("is_active", true)
     .order("day_of_week", { ascending: true })
     .order("start_time", { ascending: true });

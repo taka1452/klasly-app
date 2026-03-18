@@ -34,7 +34,11 @@ export async function GET(request: Request) {
     }
 
     if (search) {
-      query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`);
+      // Sanitize search input to prevent PostgREST filter injection
+      const sanitized = search.replace(/[%_\\(),."']/g, "");
+      if (sanitized) {
+        query = query.or(`name.ilike.%${sanitized}%,email.ilike.%${sanitized}%`);
+      }
     }
 
     if (sort === "newest") {

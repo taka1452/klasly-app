@@ -984,7 +984,7 @@ async function handleInstructorDirectPayout(
 
   // Estimate Stripe fee (2.9% + $0.30 for standard US cards)
   const stripeFeeEstimate = Math.round(amount * 0.029 + 30);
-  const instructorPayout = amount - studioFee - platformFee - stripeFeeEstimate;
+  const instructorPayout = Math.max(0, amount - studioFee - platformFee - stripeFeeEstimate);
 
   // 1. Create booking for the session
   const { data: existingBooking } = await adminSupabase

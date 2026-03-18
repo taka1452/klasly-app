@@ -1,6 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
-import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { getDashboardContext } from "@/lib/auth/dashboard-access";
 
 function escapeCsvCell(value: string | number | boolean | null | undefined): string {
   if (value == null) return "";
@@ -12,20 +11,14 @@ function escapeCsvCell(value: string | number | boolean | null | undefined): str
 }
 
 export async function GET(request: Request) {
-  const serverSupabase = await createServerClient();
-  const { data: { user } } = await serverSupabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) {
-    return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
-  }
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey);
-  const { data: profile } = await supabase.from("profiles").select("studio_id, role").eq("id", user.id).single();
-  if (!profile?.studio_id || profile.role !== "owner") {
+  const ctx = await getDashboardContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+  if (ctx.role === "manager" && !ctx.permissions?.can_manage_bookings) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const supabase = ctx.supabase;
   const { searchParams } = new URL(request.url);
   const toParam = searchParams.get("to");
   const fromParam = searchParams.get("from");
@@ -37,7 +30,7 @@ export async function GET(request: Request) {
   const { data: bookings } = await supabase
     .from("bookings")
     .select("id, status, attended, credit_deducted, created_at, members(id, profiles(full_name, email)), class_sessions(id, session_date, start_time, classes(name))")
-    .eq("studio_id", profile.studio_id)
+    .eq("studio_id", ctx.studioId)
     .gte("created_at", from + "T00:00:00.000Z")
     .lte("created_at", to + "T23:59:59.999Z")
     .order("created_at", { ascending: false });

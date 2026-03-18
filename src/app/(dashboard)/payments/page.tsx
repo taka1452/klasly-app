@@ -30,7 +30,7 @@ export default async function PaymentsPage({
     .eq("id", user.id)
     .single();
 
-  if (!profile?.studio_id || profile.role !== "owner") redirect("/");
+  if (!profile?.studio_id || !["owner", "manager"].includes(profile.role)) redirect("/dashboard");
 
   const params = await searchParams;
   const typeFilter = params.type ?? "all";

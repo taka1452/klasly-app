@@ -1,49 +1,25 @@
-import { createClient } from "@supabase/supabase-js";
-import { createClient as createServerClient } from "@/lib/supabase/server";
 import { checkPlanLimit } from "@/lib/plan-limits";
 import { sendEmail } from "@/lib/email/send";
 import { welcomeMember } from "@/lib/email/templates";
 import { NextResponse } from "next/server";
 import { getAppUrl } from "@/lib/app-url";
+import { getDashboardContext } from "@/lib/auth/dashboard-access";
 
 export async function POST(request: Request) {
   try {
-    // 認証確認
-    const serverSupabase = await createServerClient();
-    const {
-      data: { user },
-    } = await serverSupabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // 認証確認（Owner または can_manage_members 権限を持つ Manager）
+    const ctx = await getDashboardContext();
+    if (!ctx) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!serviceRoleKey) {
-      return NextResponse.json(
-        { error: "Server configuration error: SUPABASE_SERVICE_ROLE_KEY is not set." },
-        { status: 500 }
-      );
-    }
-
-    // service_role で profiles を取得（RLS をバイパスして 500 を回避）
-    const adminSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      serviceRoleKey
-    );
-
-    const { data: ownerProfile } = await adminSupabase
-      .from("profiles")
-      .select("studio_id, role")
-      .eq("id", user.id)
-      .single();
-
-    if (ownerProfile?.role !== "owner") {
+    if (ctx.role === "manager" && !ctx.permissions?.can_manage_members) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    const adminSupabase = ctx.supabase;
+
     const body = await request.json();
-    const { fullName, email, phone, planType, credits, studioId, dateOfBirth, isMinor, guardianEmail } = body;
+    const { fullName, email, phone, planType, credits, dateOfBirth, isMinor, guardianEmail } = body;
 
     if (!fullName || !email) {
       return NextResponse.json(
@@ -52,7 +28,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const targetStudioId = studioId ?? ownerProfile.studio_id;
+    // Always use the authenticated user's studio (prevent cross-studio creation)
+    const targetStudioId = ctx.studioId;
     if (!targetStudioId) {
       return NextResponse.json(
         { error: "Studio not found. Please complete onboarding first." },

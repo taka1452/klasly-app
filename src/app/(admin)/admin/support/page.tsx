@@ -24,7 +24,12 @@ export default async function AdminSupportPage({
 
   if (status) query = query.eq("status", status);
   if (priority) query = query.eq("priority", priority);
-  if (search) query = query.or(`subject.ilike.%${search}%,description.ilike.%${search}%`);
+  if (search) {
+    const sanitized = search.replace(/[%_\\(),."']/g, "");
+    if (sanitized) {
+      query = query.or(`subject.ilike.%${sanitized}%,description.ilike.%${sanitized}%`);
+    }
+  }
 
   const { data: tickets, count: totalCount } = await query;
 

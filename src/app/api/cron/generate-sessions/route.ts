@@ -36,9 +36,9 @@ export async function GET(request: Request) {
   );
 
   const cronStartedAt = new Date().toISOString();
+  const adminDb = createAdminClient();
   let cronLogId: string | null = null;
   try {
-    const adminDb = createAdminClient();
     const { data: logRow } = await adminDb
       .from("cron_logs")
       .insert({
@@ -54,14 +54,18 @@ export async function GET(request: Request) {
   }
 
   try {
-    // スタジオごとの session_generation_weeks を取得
+    // スタジオごとの session_generation_weeks + timezone を取得
     const { data: studios } = await supabase
       .from("studios")
-      .select("id, session_generation_weeks");
+      .select("id, session_generation_weeks, timezone, plan_status");
 
     const studioWeeksMap = new Map<string, number>();
+    const studioTzMap = new Map<string, string>();
     for (const s of studios ?? []) {
+      // キャンセル済みスタジオはスキップ
+      if (s.plan_status === "canceled") continue;
       studioWeeksMap.set(s.id, s.session_generation_weeks ?? 8);
+      studioTzMap.set(s.id, s.timezone ?? "Asia/Tokyo");
     }
 
     const { data: classes } = await supabase
@@ -72,7 +76,6 @@ export async function GET(request: Request) {
     if (!classes?.length) {
       try {
         if (cronLogId) {
-          const adminDb = createAdminClient();
           await adminDb
             .from("cron_logs")
             .update({
@@ -89,20 +92,51 @@ export async function GET(request: Request) {
       return NextResponse.json({ processed: 0, created: 0 });
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    /**
+     * Get "today" in a specific timezone as a YYYY-MM-DD string
+     * and the corresponding day of week (0=Sun, 6=Sat).
+     */
+    const getTodayInTz = (tz: string): { dateStr: string; dayOfWeek: number } => {
+      const now = new Date();
+      // Format in the target timezone to get the local date components
+      const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: tz,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).formatToParts(now);
+      const year = parts.find(p => p.type === "year")!.value;
+      const month = parts.find(p => p.type === "month")!.value;
+      const day = parts.find(p => p.type === "day")!.value;
+      const dateStr = `${year}-${month}-${day}`;
+      // Get day of week in the target timezone
+      const weekdayStr = new Intl.DateTimeFormat("en-US", {
+        timeZone: tz,
+        weekday: "short",
+      }).format(now);
+      const dayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+      return { dateStr, dayOfWeek: dayMap[weekdayStr] ?? 0 };
+    };
 
     let totalCreated = 0;
 
     for (const cls of classes) {
+      // キャンセル済みスタジオのクラスはスキップ
+      if (!studioWeeksMap.has(cls.studio_id)) continue;
+
       // スタジオごとの週数を取得（デフォルト8週）
       const weeksAhead = studioWeeksMap.get(cls.studio_id) ?? 8;
+      const tz = studioTzMap.get(cls.studio_id) ?? "Asia/Tokyo";
+      const { dateStr: todayStr, dayOfWeek: currentDay } = getTodayInTz(tz);
+
+      // Parse today string to work with date arithmetic
+      const [tYear, tMonth, tDay] = todayStr.split("-").map(Number);
+      const today = new Date(tYear, tMonth - 1, tDay);
       const targetDate = new Date(today);
       targetDate.setDate(today.getDate() + weeksAhead * 7);
 
       // このクラスが指定週数内に開催されるべき全日付を計算
       const expectedDates: string[] = [];
-      const currentDay = today.getDay();
       let daysUntilFirst = (cls.day_of_week - currentDay + 7) % 7;
 
       const firstDate = new Date(today);
@@ -110,7 +144,10 @@ export async function GET(request: Request) {
 
       let d = new Date(firstDate);
       while (d <= targetDate) {
-        expectedDates.push(d.toISOString().split("T")[0]);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        expectedDates.push(`${yyyy}-${mm}-${dd}`);
         d.setDate(d.getDate() + 7);
       }
 

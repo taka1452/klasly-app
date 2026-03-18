@@ -77,14 +77,14 @@ async function getActivePass(adminSupabase: SupabaseClient, memberId: string) {
 }
 
 /**
- * Record pass usage: insert pass_class_usage and increment classes_used_this_period.
+ * Record pass usage: insert pass_class_usage and atomically increment classes_used_this_period.
  */
 async function recordPassUsage(
   adminSupabase: SupabaseClient,
   passSubscriptionId: string,
   sessionId: string,
   instructorId: string,
-  classesUsed: number
+  _classesUsed: number
 ) {
   // Insert usage record first — if it fails (e.g. unique constraint), don't touch the counter
   const { error } = await adminSupabase.from("pass_class_usage").insert({
@@ -96,11 +96,10 @@ async function recordPassUsage(
     console.error("[recordPassUsage] insert failed:", error.message);
     return;
   }
-  // Only increment counter after successful insert
-  await adminSupabase
-    .from("pass_subscriptions")
-    .update({ classes_used_this_period: classesUsed + 1 })
-    .eq("id", passSubscriptionId);
+  // Atomically increment counter after successful insert
+  await adminSupabase.rpc("increment_pass_usage", {
+    p_subscription_id: passSubscriptionId,
+  });
 }
 
 /**
@@ -127,7 +126,7 @@ async function revertPassUsage(
     } | null;
     if (!sub || sub.member_id !== memberId) continue;
 
-    // Delete usage record first, then decrement counter
+    // Delete usage record first, then atomically decrement counter
     const { error: delErr } = await adminSupabase
       .from("pass_class_usage")
       .delete()
@@ -136,12 +135,9 @@ async function revertPassUsage(
       console.error("[revertPassUsage] delete failed:", delErr.message);
       break;
     }
-    await adminSupabase
-      .from("pass_subscriptions")
-      .update({
-        classes_used_this_period: Math.max(0, sub.classes_used_this_period - 1),
-      })
-      .eq("id", sub.id);
+    await adminSupabase.rpc("decrement_pass_usage", {
+      p_subscription_id: sub.id,
+    });
     break;
   }
 }
@@ -279,7 +275,7 @@ export async function executeBookingAction({
       }
     }
 
-    // Credit check only when NOT using pass
+    // Credit check only when NOT using pass (preliminary check; atomic deduction below)
     if (!bookingViaPass && requiresCredits && status === "confirmed" && member.credits >= 0 && member.credits < 1) {
       return { success: false, error: "No credits remaining", status: 400 };
     }
@@ -327,12 +323,16 @@ export async function executeBookingAction({
         return { success: false, error: error.message, status: 400 };
       }
 
-      // Credit deduction: skip if booking via pass
+      // Atomic credit deduction: skip if booking via pass
       if (!bookingViaPass && status === "confirmed" && member.credits >= 0) {
-        await adminSupabase
-          .from("members")
-          .update({ credits: member.credits - 1 })
-          .eq("id", memberId);
+        const { data: creditResult } = await adminSupabase.rpc("decrement_member_credits", {
+          p_member_id: memberId,
+        });
+        if (creditResult === -99) {
+          // Undo the booking update — insufficient credits (race condition caught)
+          await adminSupabase.from("bookings").update({ status: "cancelled" }).eq("id", existing.id);
+          return { success: false, error: "No credits remaining", status: 400 };
+        }
       }
 
       // Record pass usage
@@ -367,12 +367,16 @@ export async function executeBookingAction({
         return { success: false, error: error.message, status: 400 };
       }
 
-      // Credit deduction: skip if booking via pass
+      // Atomic credit deduction: skip if booking via pass
       if (!bookingViaPass && status === "confirmed" && member.credits >= 0) {
-        await adminSupabase
-          .from("members")
-          .update({ credits: member.credits - 1 })
-          .eq("id", memberId);
+        const { data: creditResult } = await adminSupabase.rpc("decrement_member_credits", {
+          p_member_id: memberId,
+        });
+        if (creditResult === -99) {
+          // Undo the booking — insufficient credits (race condition caught)
+          await adminSupabase.from("bookings").delete().eq("session_id", sessionId).eq("member_id", memberId);
+          return { success: false, error: "No credits remaining", status: 400 };
+        }
       }
 
       // Record pass usage
@@ -421,10 +425,10 @@ export async function executeBookingAction({
         await revertPassUsage(adminSupabase, sessionId, memberId);
       } else if (member.credits >= 0) {
         // ウェイトリスト予約はクレジット消費していないので返却しない
-        await adminSupabase
-          .from("members")
-          .update({ credits: member.credits + 1 })
-          .eq("id", memberId);
+        // Atomic credit increment
+        await adminSupabase.rpc("increment_member_credits", {
+          p_member_id: memberId,
+        });
       }
     }
 
@@ -471,18 +475,19 @@ export async function executeBookingAction({
           promotedMemberName = promoted.full_name ?? "Member";
         }
 
+        // Atomically deduct credit before promoting
+        if (requiresCredits && waitlistMember.credits > 0) {
+          const { data: creditResult } = await adminSupabase.rpc("decrement_member_credits", {
+            p_member_id: waitlistItem.member_id,
+          });
+          if (creditResult === -99) continue; // insufficient credits, skip
+        }
+
         await adminSupabase
           .from("bookings")
           .update({ status: "confirmed" })
           .eq("session_id", sessionId)
           .eq("member_id", waitlistItem.member_id);
-
-        if (waitlistMember.credits > 0) {
-          await adminSupabase
-            .from("members")
-            .update({ credits: waitlistMember.credits - 1 })
-            .eq("id", waitlistItem.member_id);
-        }
 
         break;
       }
@@ -498,13 +503,18 @@ export async function executeBookingAction({
   } else if (action === "leave_waitlist") {
     const { data: existing } = await adminSupabase
       .from("bookings")
-      .select("id")
+      .select("id, status")
       .eq("session_id", sessionId)
       .eq("member_id", memberId)
       .single();
 
     if (!existing) {
       return { success: false, error: "Booking not found", status: 404 };
+    }
+
+    // Only allow leaving waitlist if actually on waitlist
+    if (existing.status !== "waitlist") {
+      return { success: false, error: "Booking is not on waitlist", status: 400 };
     }
 
     const { error } = await adminSupabase

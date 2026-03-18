@@ -1,40 +1,18 @@
-import { createClient } from "@supabase/supabase-js";
-import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { getDashboardContext } from "@/lib/auth/dashboard-access";
 
 export async function POST(request: Request) {
   try {
-    const serverSupabase = await createServerClient();
-    const {
-      data: { user },
-    } = await serverSupabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!serviceRoleKey) {
-      return NextResponse.json(
-        { error: "Server configuration error" },
-        { status: 500 }
-      );
-    }
-
-    const adminSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      serviceRoleKey
-    );
-
-    const { data: profile } = await adminSupabase
-      .from("profiles")
-      .select("studio_id, role")
-      .eq("id", user.id)
-      .single();
-
-    if (profile?.role !== "owner") {
+    // Owner または can_manage_bookings 権限を持つ Manager
+    const ctx = await getDashboardContext();
+    if (!ctx) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
+    if (ctx.role === "manager" && !ctx.permissions?.can_manage_bookings) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const adminSupabase = ctx.supabase;
 
     const body = await request.json();
     const { session_id, member_id } = body;
@@ -52,7 +30,7 @@ export async function POST(request: Request) {
       .eq("id", session_id)
       .single();
 
-    if (!session || session.studio_id !== profile.studio_id) {
+    if (!session || session.studio_id !== ctx.studioId) {
       return NextResponse.json(
         { error: "Session not found" },
         { status: 404 }
@@ -65,7 +43,7 @@ export async function POST(request: Request) {
       .eq("id", member_id)
       .single();
 
-    if (!member || member.studio_id !== profile.studio_id) {
+    if (!member || member.studio_id !== ctx.studioId) {
       return NextResponse.json(
         { error: "Member not found" },
         { status: 404 }
@@ -122,7 +100,7 @@ export async function POST(request: Request) {
     const { data: dropIn, error } = await adminSupabase
       .from("drop_in_attendances")
       .insert({
-        studio_id: profile.studio_id,
+        studio_id: ctx.studioId,
         session_id,
         member_id,
         credit_deducted: shouldDeductCredit,
@@ -151,37 +129,16 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const serverSupabase = await createServerClient();
-    const {
-      data: { user },
-    } = await serverSupabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!serviceRoleKey) {
-      return NextResponse.json(
-        { error: "Server configuration error" },
-        { status: 500 }
-      );
-    }
-
-    const adminSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      serviceRoleKey
-    );
-
-    const { data: profile } = await adminSupabase
-      .from("profiles")
-      .select("studio_id, role")
-      .eq("id", user.id)
-      .single();
-
-    if (profile?.role !== "owner") {
+    // Owner または can_manage_bookings 権限を持つ Manager
+    const ctx = await getDashboardContext();
+    if (!ctx) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
+    if (ctx.role === "manager" && !ctx.permissions?.can_manage_bookings) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const adminSupabase = ctx.supabase;
 
     const body = await request.json();
     const { drop_in_id } = body;
@@ -195,7 +152,7 @@ export async function DELETE(request: Request) {
 
     const { data: dropIn } = await adminSupabase
       .from("drop_in_attendances")
-      .select("id, member_id, credit_deducted")
+      .select("id, member_id, credit_deducted, studio_id")
       .eq("id", drop_in_id)
       .single();
 
@@ -206,13 +163,7 @@ export async function DELETE(request: Request) {
       );
     }
 
-    const { data: dropInFull } = await adminSupabase
-      .from("drop_in_attendances")
-      .select("studio_id")
-      .eq("id", drop_in_id)
-      .single();
-
-    if (!dropInFull || dropInFull.studio_id !== profile.studio_id) {
+    if (dropIn.studio_id !== ctx.studioId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
