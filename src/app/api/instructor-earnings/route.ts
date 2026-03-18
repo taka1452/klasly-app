@@ -87,7 +87,28 @@ export async function GET(request: Request) {
       classCount: items.length,
     };
 
-    return NextResponse.json({ earnings: items, summary });
+    // Fetch pass distributions for this month
+    const { data: passDistributions } = await adminSupabase
+      .from("pass_distributions")
+      .select("id, period_start, period_end, total_classes, total_pool_classes, gross_pool_amount, payout_amount, status, created_at")
+      .eq("instructor_id", instructor.id)
+      .gte("period_start", startDate)
+      .lt("period_start", endDate)
+      .order("created_at", { ascending: false });
+
+    const passItems = passDistributions ?? [];
+    const passSummary = {
+      totalPayout: passItems.reduce((s, d) => s + d.payout_amount, 0),
+      totalClasses: passItems.reduce((s, d) => s + d.total_classes, 0),
+      count: passItems.length,
+    };
+
+    return NextResponse.json({
+      earnings: items,
+      summary,
+      passDistributions: passItems,
+      passSummary,
+    });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal error";
     return NextResponse.json({ error: message }, { status: 500 });

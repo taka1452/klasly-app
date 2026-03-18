@@ -99,12 +99,20 @@ export default async function PassesPage() {
             Manage monthly membership passes for your studio
           </p>
         </div>
-        <Link
-          href="/passes/new"
-          className="btn-primary"
-        >
-          + Create Pass
-        </Link>
+        <div className="flex gap-3">
+          <Link
+            href="/passes/distributions"
+            className="btn-secondary"
+          >
+            Distributions
+          </Link>
+          <Link
+            href="/passes/new"
+            className="btn-primary"
+          >
+            + Create Pass
+          </Link>
+        </div>
       </div>
 
       {/* Stats Overview */}

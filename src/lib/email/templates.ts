@@ -699,6 +699,99 @@ export function eventPaymentCompleted(params: {
   };
 }
 
+// ============================================================
+// Pass Distribution
+// ============================================================
+
+export function passDistributionReview(params: {
+  ownerName: string;
+  month: string;
+  totalRevenue: number;
+  instructorCount: number;
+  distributableAmount: number;
+  dashboardUrl: string;
+}) {
+  const { ownerName, month, totalRevenue, instructorCount, distributableAmount, dashboardUrl } = params;
+  const fmt = (cents: number) => `$${(cents / 100).toFixed(2)}`;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:${BRAND_COLOR};">Pass Distribution Ready for Review</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${ownerName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      The pass distribution for <strong>${month}</strong> has been calculated and is ready for your review.
+    </p>
+    <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-size:14px;">Total Revenue: <strong>${fmt(totalRevenue)}</strong></p>
+      <p style="margin:8px 0 0;font-size:14px;">Instructors: <strong>${instructorCount}</strong></p>
+      <p style="margin:8px 0 0;font-size:14px;">Distributable Amount: <strong style="color:#059669;">${fmt(distributableAmount)}</strong></p>
+    </div>
+    <p style="margin:0 0 16px;">
+      <a href="${dashboardUrl}" style="display:inline-block;background:${BRAND_COLOR};color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">
+        Review &amp; Approve
+      </a>
+    </p>
+    <p style="margin:0;font-size:13px;color:#9ca3af;">Payouts will not be sent until you approve them.</p>
+  `;
+  return {
+    subject: `Pass Distribution Ready for Review — ${month}`,
+    html: baseHtml(content),
+  };
+}
+
+export function passDistributionPaid(params: {
+  instructorName: string;
+  month: string;
+  payoutAmount: number;
+  classCount: number;
+  sharePercent: string;
+}) {
+  const { instructorName, month, payoutAmount, classCount, sharePercent } = params;
+  const fmt = (cents: number) => `$${(cents / 100).toFixed(2)}`;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#059669;">Payout Received</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${instructorName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      Your payout of <strong style="color:#059669;">${fmt(payoutAmount)}</strong> has been sent to your Stripe account.
+    </p>
+    <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-weight:600;color:${BRAND_COLOR};">Pass Distribution — ${month}</p>
+      <p style="margin:8px 0 0;font-size:14px;">Classes taught to pass holders: <strong>${classCount}</strong></p>
+      <p style="margin:4px 0 0;font-size:14px;">Your share: <strong>${sharePercent}</strong></p>
+    </div>
+    <p style="margin:0;font-size:13px;color:#9ca3af;">The payout will appear in your connected Stripe account within 1-2 business days.</p>
+  `;
+  return {
+    subject: `Payout Received — ${month}`,
+    html: baseHtml(content),
+  };
+}
+
+export function passDistributionFailed(params: {
+  ownerName: string;
+  instructorName: string;
+  month: string;
+  payoutAmount: number;
+  errorMessage: string;
+}) {
+  const { ownerName, instructorName, month, payoutAmount, errorMessage } = params;
+  const fmt = (cents: number) => `$${(cents / 100).toFixed(2)}`;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#dc2626;">Payout Failed</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${ownerName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      The pass payout for <strong>${instructorName}</strong> (${month}) could not be processed.
+    </p>
+    <div style="background:#fef2f2;border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-weight:600;color:#991b1b;">Amount: ${fmt(payoutAmount)}</p>
+      <p style="margin:8px 0 0;font-size:14px;">Error: ${errorMessage}</p>
+    </div>
+    <p style="margin:0;font-size:14px;">Please check the instructor&apos;s Stripe Connect account status and retry.</p>
+  `;
+  return {
+    subject: `Payout Failed — ${instructorName} — ${month}`,
+    html: baseHtml(content),
+  };
+}
+
 export function ownerNewBookingNotification(params: {
   ownerName: string;
   guestName: string;

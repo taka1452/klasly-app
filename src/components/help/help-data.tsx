@@ -717,6 +717,44 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             </>
           ),
         },
+        {
+          q: "How is the payout calculated?",
+          a: (
+            <>
+              Pass revenue minus fees (Stripe, Klasly 0.5%, and your Studio Fee) is split among instructors by the number of classes they taught to pass members. If an instructor taught 4 out of 9 total pass-booked classes, they receive 4/9 of the distributable amount.
+            </>
+          ),
+        },
+        {
+          q: "Can I adjust individual payout amounts?",
+          a: (
+            <>
+              Yes. When Auto-distribute is OFF, you can edit each instructor&apos;s payout amount on the distribution review page before approving. The total cannot exceed the distributable amount.
+              <Tip>Go to <B>Passes → Distributions</B> to review and adjust payouts.</Tip>
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Mobile Access for Members",
+      items: [
+        {
+          q: "Do my members need to download an app?",
+          a: (
+            <>
+              No. Members can use Klasly in any web browser. For the best experience, they can add Klasly to their phone&apos;s home screen — it works like a native app with no download required.
+            </>
+          ),
+        },
+        {
+          q: "How do I tell my members to install the app?",
+          a: (
+            <>
+              Share this with your members: &quot;Open <B>app.klasly.app</B> in your phone&apos;s browser, then add it to your home screen. On iPhone, use Safari and tap the Share button → Add to Home Screen. On Android, use Chrome and tap the menu → Install App.&quot;
+            </>
+          ),
+        },
       ],
     },
     {
@@ -1167,6 +1205,63 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               If you cancel a booking that was made with your pass, the class usage is automatically returned to your monthly allowance. You&apos;ll see the updated count on the <B>Passes</B> page.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Install the App",
+      items: [
+        {
+          q: "Can I use Klasly like a regular app on my phone?",
+          a: (
+            <>
+              Yes! You can add Klasly to your home screen and use it just like a native app — no app store download needed.
+            </>
+          ),
+        },
+        {
+          q: "How do I add Klasly to my home screen on iPhone?",
+          a: (
+            <>
+              <Steps>
+                <li>Open Klasly in <B>Safari</B> (must be Safari).</li>
+                <li>Tap the <B>Share button</B> (square with arrow) at the bottom.</li>
+                <li>Scroll down and tap <B>&quot;Add to Home Screen&quot;</B>.</li>
+                <li>Tap <B>&quot;Add&quot;</B>.</li>
+              </Steps>
+              Klasly will appear as an app icon on your home screen.
+            </>
+          ),
+        },
+        {
+          q: "How do I add Klasly to my home screen on Android?",
+          a: (
+            <>
+              <Steps>
+                <li>Open Klasly in <B>Chrome</B>.</li>
+                <li>Tap the <B>three-dot menu</B> in the top right.</li>
+                <li>Tap <B>&quot;Add to Home Screen&quot;</B> or <B>&quot;Install App&quot;</B>.</li>
+                <li>Tap <B>&quot;Install&quot;</B>.</li>
+              </Steps>
+              Klasly will appear as an app icon on your home screen.
+            </>
+          ),
+        },
+        {
+          q: "How do I add Klasly to my computer?",
+          a: (
+            <>
+              In Chrome or Edge, look for the install icon in the address bar (a small monitor with a down arrow). Click it and confirm. Klasly will open in its own window like a desktop app.
+            </>
+          ),
+        },
+        {
+          q: "Is the app different from the website?",
+          a: (
+            <>
+              No. Same features, same data, always up to date. The home screen version just gives you a full-screen experience without the browser toolbar.
             </>
           ),
         },

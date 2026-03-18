@@ -1,0 +1,304 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+
+type Distribution = {
+  id: string;
+  studio_pass_id: string;
+  instructor_id: string;
+  period_start: string;
+  period_end: string;
+  total_classes: number;
+  total_pool_classes: number;
+  gross_pool_amount: number;
+  payout_amount: number;
+  stripe_transfer_id: string | null;
+  status: string;
+  approved_at: string | null;
+  created_at: string;
+};
+
+type DistributionData = {
+  distributions: Distribution[];
+  instructorNames: Record<string, string>;
+  passInfo: Record<string, { name: string; price_cents: number }>;
+  fees: { studioFeePercent: number; platformFeePercent: number };
+};
+
+function formatCents(cents: number): string {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
+export default function DistributionsPage() {
+  const now = new Date();
+  // Default to previous month
+  const defaultMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const [selectedPeriod, setSelectedPeriod] = useState(
+    `${defaultMonth.getFullYear()}-${String(defaultMonth.getMonth() + 1).padStart(2, "0")}`
+  );
+  const [data, setData] = useState<DistributionData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [approving, setApproving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/passes/distributions?period=${selectedPeriod}`);
+      if (res.ok) {
+        setData(await res.json());
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedPeriod]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  async function handleApprove() {
+    if (!confirm("Approve all pending distributions? Payouts will be sent on the next payout cycle.")) return;
+    setApproving(true);
+    try {
+      const res = await fetch("/api/passes/distributions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ period: selectedPeriod }),
+      });
+      if (res.ok) {
+        await fetchData();
+      } else {
+        const d = await res.json();
+        alert(d.error ?? "Failed to approve");
+      }
+    } finally {
+      setApproving(false);
+    }
+  }
+
+  async function handleSaveAmount(distId: string) {
+    const amount = parseFloat(editValue);
+    if (isNaN(amount) || amount < 0) {
+      alert("Please enter a valid amount.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch("/api/passes/distributions", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ distributionId: distId, payout_amount: Math.round(amount * 100) }),
+      });
+      if (res.ok) {
+        setEditingId(null);
+        await fetchData();
+      } else {
+        const d = await res.json();
+        alert(d.error ?? "Failed to update");
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const distributions = data?.distributions ?? [];
+  const hasPending = distributions.some((d) => d.status === "pending");
+  const totalPayout = distributions.reduce((sum, d) => sum + d.payout_amount, 0);
+  const totalClasses = distributions.length > 0 ? distributions[0].total_pool_classes : 0;
+  const grossAmount = distributions.length > 0 ? distributions[0].gross_pool_amount : 0;
+
+  // Revenue breakdown
+  const passIds = Array.from(new Set(distributions.map((d) => d.studio_pass_id)));
+  const firstPassInfo = passIds.length > 0 && data?.passInfo?.[passIds[0]]
+    ? data.passInfo[passIds[0]]
+    : null;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Pass Distributions</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Review and approve monthly instructor payouts from pass revenue
+          </p>
+        </div>
+        <a href="/passes" className="btn-secondary text-sm">
+          ← Back to Passes
+        </a>
+      </div>
+
+      {/* Period selector */}
+      <div className="mt-6 flex items-center gap-4">
+        <label className="text-sm font-medium text-gray-700">Period:</label>
+        <input
+          type="month"
+          value={selectedPeriod}
+          onChange={(e) => setSelectedPeriod(e.target.value)}
+          className="input-field w-auto"
+        />
+      </div>
+
+      {loading ? (
+        <div className="mt-6 card">
+          <p className="text-sm text-gray-500">Loading...</p>
+        </div>
+      ) : distributions.length === 0 ? (
+        <div className="mt-6 card">
+          <p className="text-sm text-gray-500">No distributions for this period.</p>
+        </div>
+      ) : (
+        <>
+          {/* Revenue Summary */}
+          <div className="mt-6 card">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Revenue Breakdown</h2>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-sm">
+              <div>
+                <p className="text-gray-500">Distributable Amount</p>
+                <p className="text-xl font-bold text-gray-900">{formatCents(grossAmount)}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Total Classes</p>
+                <p className="text-xl font-bold text-gray-900">{totalClasses}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Instructors</p>
+                <p className="text-xl font-bold text-gray-900">{distributions.length}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Total Payout</p>
+                <p className="text-xl font-bold text-green-600">{formatCents(totalPayout)}</p>
+              </div>
+            </div>
+            {data?.fees && (
+              <p className="mt-3 text-xs text-gray-400">
+                Fees applied: Stripe ~2.9%+30¢ · Klasly {data.fees.platformFeePercent}% · Studio {data.fees.studioFeePercent}%
+                {firstPassInfo && ` · Pass: ${firstPassInfo.name}`}
+              </p>
+            )}
+          </div>
+
+          {/* Distribution Table */}
+          <div className="mt-6 card overflow-hidden p-0">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Instructor</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Classes</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Share</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Payout</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {distributions.map((dist) => {
+                  const name = data?.instructorNames?.[dist.instructor_id] ?? "Unknown";
+                  const sharePercent = dist.total_pool_classes > 0
+                    ? ((dist.total_classes / dist.total_pool_classes) * 100).toFixed(1)
+                    : "0";
+                  const isEditing = editingId === dist.id;
+
+                  return (
+                    <tr key={dist.id}>
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900">{name}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600 text-right">{dist.total_classes}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600 text-right">{sharePercent}%</td>
+                      <td className="px-6 py-4 text-sm text-right">
+                        {isEditing ? (
+                          <span className="flex items-center justify-end gap-1">
+                            <span className="text-gray-400">$</span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              className="input-field w-24 text-right"
+                              autoFocus
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleSaveAmount(dist.id)}
+                              disabled={saving}
+                              className="ml-1 text-xs text-green-600 hover:text-green-700 font-medium"
+                            >
+                              {saving ? "..." : "Save"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingId(null)}
+                              className="text-xs text-gray-400 hover:text-gray-600"
+                            >
+                              Cancel
+                            </button>
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (dist.status === "pending") {
+                                setEditingId(dist.id);
+                                setEditValue((dist.payout_amount / 100).toFixed(2));
+                              }
+                            }}
+                            className={`font-semibold ${dist.status === "pending" ? "text-gray-900 hover:text-blue-600 cursor-pointer" : "text-gray-900 cursor-default"}`}
+                            title={dist.status === "pending" ? "Click to edit" : undefined}
+                          >
+                            {formatCents(dist.payout_amount)}
+                          </button>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                          dist.status === "completed"
+                            ? "bg-green-100 text-green-700"
+                            : dist.status === "approved"
+                            ? "bg-blue-100 text-blue-700"
+                            : dist.status === "failed"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-yellow-100 text-yellow-700"
+                        }`}>
+                          {dist.status === "completed" ? "✓ Completed" : dist.status.charAt(0).toUpperCase() + dist.status.slice(1)}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {/* Total row */}
+                <tr className="bg-gray-50">
+                  <td className="px-6 py-3 text-sm font-bold text-gray-900">Total</td>
+                  <td className="px-6 py-3 text-sm font-bold text-gray-900 text-right">{totalClasses}</td>
+                  <td className="px-6 py-3 text-sm font-bold text-gray-900 text-right">100%</td>
+                  <td className="px-6 py-3 text-sm font-bold text-green-600 text-right">{formatCents(totalPayout)}</td>
+                  <td className="px-6 py-3"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Approve button */}
+          {hasPending && (
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={handleApprove}
+                disabled={approving}
+                className="btn-primary"
+              >
+                {approving ? "Approving..." : "Approve & Send All"}
+              </button>
+            </div>
+          )}
+
+          {distributions.every((d) => d.status === "completed") && distributions[0]?.approved_at && (
+            <div className="mt-4 text-sm text-green-600 text-right">
+              ✓ All payouts completed
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
