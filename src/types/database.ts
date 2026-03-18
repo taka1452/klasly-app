@@ -173,6 +173,7 @@ export type Booking = {
   status: "confirmed" | "cancelled" | "waitlist";
   attended: boolean;
   credit_deducted?: boolean;
+  booked_via_pass: boolean;
   created_at: string;
 };
 
@@ -590,20 +591,6 @@ export type StudioFeature = {
   updated_at: string;
 };
 
-<<<<<<< HEAD
-// ---- Studio Pass ----
-
-export type StudioPass = {
-  id: string;
-  studio_id: string;
-  name: string;
-  description: string | null;
-  price_cents: number;
-  billing_interval: string;
-  max_classes_per_month: number | null;
-  auto_distribute: boolean;
-  stripe_price_id: string | null;
-=======
 // ============================================================
 // Events & Retreats
 // ============================================================
@@ -652,12 +639,57 @@ export type EventOption = {
   price_cents: number;
   capacity: number;
   sort_order: number;
->>>>>>> fcd55c2b270b99843b7b2f7da7afdfa1757bc147
   is_active: boolean;
   created_at: string;
 };
 
-<<<<<<< HEAD
+export type EventBooking = {
+  id: string;
+  event_id: string;
+  event_option_id: string | null;
+  member_id: string | null;
+  guest_name: string | null;
+  guest_email: string;
+  guest_phone: string | null;
+  booking_status: EventBookingStatus;
+  total_amount_cents: number;
+  payment_type: EventPaymentType;
+  payment_status: EventPaymentStatus;
+  form_response_id: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type EventPaymentSchedule = {
+  id: string;
+  event_booking_id: string;
+  installment_number: number;
+  amount_cents: number;
+  due_date: string;
+  stripe_payment_intent_id: string | null;
+  stripe_payment_method_id: string | null;
+  status: InstallmentStatus;
+  paid_at: string | null;
+  created_at: string;
+};
+
+// ---- Studio Pass ----
+
+export type StudioPass = {
+  id: string;
+  studio_id: string;
+  name: string;
+  description: string | null;
+  price_cents: number;
+  billing_interval: string;
+  max_classes_per_month: number | null;
+  auto_distribute: boolean;
+  stripe_price_id: string | null;
+  is_active: boolean;
+  created_at: string;
+};
+
 export type PassSubscription = {
   id: string;
   studio_pass_id: string;
@@ -693,35 +725,5 @@ export type PassDistribution = {
   status: "pending" | "approved" | "completed" | "failed";
   approved_at: string | null;
   approved_by: string | null;
-=======
-export type EventBooking = {
-  id: string;
-  event_id: string;
-  event_option_id: string | null;
-  member_id: string | null;
-  guest_name: string | null;
-  guest_email: string;
-  guest_phone: string | null;
-  booking_status: EventBookingStatus;
-  total_amount_cents: number;
-  payment_type: EventPaymentType;
-  payment_status: EventPaymentStatus;
-  form_response_id: string | null;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-};
-
-export type EventPaymentSchedule = {
-  id: string;
-  event_booking_id: string;
-  installment_number: number;
-  amount_cents: number;
-  due_date: string;
-  stripe_payment_intent_id: string | null;
-  stripe_payment_method_id: string | null;
-  status: InstallmentStatus;
-  paid_at: string | null;
->>>>>>> fcd55c2b270b99843b7b2f7da7afdfa1757bc147
   created_at: string;
 };

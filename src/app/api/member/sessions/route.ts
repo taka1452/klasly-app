@@ -181,10 +181,44 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    // Check for active pass subscription
+    let passInfo: {
+      hasPass: boolean;
+      hasCapacity: boolean;
+      classesUsed: number;
+      maxClasses: number | null;
+    } = { hasPass: false, hasCapacity: false, classesUsed: 0, maxClasses: null };
+
+    if (memberId) {
+      const today = new Date().toISOString().slice(0, 10);
+      const { data: passSubs } = await supabase
+        .from("pass_subscriptions")
+        .select("id, classes_used_this_period, studio_passes(max_classes_per_month)")
+        .eq("member_id", memberId)
+        .eq("status", "active")
+        .gte("current_period_end", today);
+
+      if (passSubs && passSubs.length > 0) {
+        const sub = passSubs[0];
+        const pass = sub.studio_passes as unknown as { max_classes_per_month: number | null } | null;
+        const maxClasses = pass?.max_classes_per_month ?? null;
+        const used = sub.classes_used_this_period ?? 0;
+        const hasCapacity = maxClasses === null || used < maxClasses;
+
+        passInfo = {
+          hasPass: true,
+          hasCapacity,
+          classesUsed: used,
+          maxClasses,
+        };
+      }
+    }
+
     return NextResponse.json({
       sessions: formattedSessions,
       bookings: bookingsMap,
       confirmedCounts: confirmedMap,
+      passInfo,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal error";

@@ -40,6 +40,12 @@ export default function ScheduleCalendar({
   const [confirmedCounts, setConfirmedCounts] = useState<
     Record<string, number>
   >({});
+  const [passInfo, setPassInfo] = useState<{
+    hasPass: boolean;
+    hasCapacity: boolean;
+    classesUsed: number;
+    maxClasses: number | null;
+  }>({ hasPass: false, hasCapacity: false, classesUsed: 0, maxClasses: null });
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -66,6 +72,7 @@ export default function ScheduleCalendar({
         setSessions(data.sessions ?? []);
         setBookings(data.bookings ?? {});
         setConfirmedCounts(data.confirmedCounts ?? {});
+        if (data.passInfo) setPassInfo(data.passInfo);
       } catch {
         // silently fail
       } finally {
@@ -125,6 +132,7 @@ export default function ScheduleCalendar({
     requiresCredits,
     payPerClass,
     classPrice,
+    passInfo,
     onBookingComplete: handleBookingComplete,
   };
 

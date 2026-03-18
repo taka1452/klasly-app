@@ -27,6 +27,7 @@ type Props = {
   requiresCredits: boolean;
   payPerClass: boolean;
   classPrice?: number;
+  passInfo?: { hasPass: boolean; hasCapacity: boolean; classesUsed: number; maxClasses: number | null };
   onBookingComplete: () => void;
 };
 
@@ -41,6 +42,7 @@ export default function CalendarWeekView({
   requiresCredits,
   payPerClass,
   classPrice,
+  passInfo,
   onBookingComplete,
 }: Props) {
   const weekDates = getWeekDates(currentDate);
@@ -221,6 +223,7 @@ export default function CalendarWeekView({
                     requiresCredits={requiresCredits}
                     payPerClass={payPerClass}
                     classPrice={classPrice}
+                    passInfo={passInfo}
                     onBookingComplete={onBookingComplete}
                   />
                 );

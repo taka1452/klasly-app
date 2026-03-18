@@ -15,6 +15,7 @@ type Subscription = {
   id: string;
   studio_pass_id: string;
   status: "active" | "cancelled" | "past_due";
+  current_period_start: string | null;
   current_period_end: string | null;
   classes_used_this_period: number;
 };
@@ -24,6 +25,12 @@ type Props = {
   passes: Pass[];
   subscriptions: Subscription[];
 };
+
+function formatPeriodDate(dateStr: string | null): string {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr + "T00:00:00");
+  return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+}
 
 export default function MemberPasses({ memberId, passes, subscriptions }: Props) {
   const router = useRouter();
@@ -102,6 +109,7 @@ export default function MemberPasses({ memberId, passes, subscriptions }: Props)
           const sub = subByPass.get(pass.id);
           const isActive = sub?.status === "active";
           const isCancelled = sub?.status === "cancelled";
+          const hasSubscription = isActive || isCancelled;
 
           return (
             <div key={pass.id} className="card flex flex-col justify-between">
@@ -117,7 +125,7 @@ export default function MemberPasses({ memberId, passes, subscriptions }: Props)
                   )}
                   {isCancelled && (
                     <span className="inline-flex items-center rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700">
-                      Cancels {sub.current_period_end ?? "soon"}
+                      Cancels {formatPeriodDate(sub.current_period_end)}
                     </span>
                   )}
                 </div>
@@ -126,20 +134,61 @@ export default function MemberPasses({ memberId, passes, subscriptions }: Props)
                     {pass.description}
                   </p>
                 )}
-                <div className="mt-3 space-y-1 text-sm text-gray-600">
-                  <p>
-                    <span className="font-medium">Classes/month:</span>{" "}
-                    {pass.max_classes_per_month === null
-                      ? "Unlimited"
-                      : pass.max_classes_per_month}
-                  </p>
-                  {isActive && pass.max_classes_per_month !== null && (
+
+                {/* Usage stats for active/cancelled subscriptions */}
+                {hasSubscription && sub && (
+                  <div className="mt-3 rounded-lg bg-gray-50 p-3 space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Classes used</span>
+                      <span className="font-semibold text-gray-900">
+                        {sub.classes_used_this_period}
+                        {pass.max_classes_per_month !== null
+                          ? ` / ${pass.max_classes_per_month}`
+                          : " classes"}
+                      </span>
+                    </div>
+
+                    {pass.max_classes_per_month !== null && (
+                      <div className="h-2 w-full rounded-full bg-gray-200">
+                        <div
+                          className={`h-2 rounded-full transition-all ${
+                            sub.classes_used_this_period >= pass.max_classes_per_month
+                              ? "bg-amber-500"
+                              : "bg-brand-500"
+                          }`}
+                          style={{
+                            width: `${Math.min(
+                              100,
+                              (sub.classes_used_this_period / pass.max_classes_per_month) * 100
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span>
+                        {formatPeriodDate(sub.current_period_start)} — {formatPeriodDate(sub.current_period_end)}
+                      </span>
+                      {isCancelled ? (
+                        <span className="text-amber-600">Cancels at period end</span>
+                      ) : (
+                        <span>Renews {formatPeriodDate(sub.current_period_end)}</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {!hasSubscription && (
+                  <div className="mt-3 text-sm text-gray-600">
                     <p>
-                      <span className="font-medium">Used this period:</span>{" "}
-                      {sub.classes_used_this_period} / {pass.max_classes_per_month}
+                      <span className="font-medium">Classes/month:</span>{" "}
+                      {pass.max_classes_per_month === null
+                        ? "Unlimited"
+                        : pass.max_classes_per_month}
                     </p>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
 
               <div className="mt-4">
@@ -160,7 +209,7 @@ export default function MemberPasses({ memberId, passes, subscriptions }: Props)
                   </button>
                 ) : isCancelled ? (
                   <p className="mt-3 text-center text-sm text-gray-400">
-                    Active until {sub.current_period_end ?? "end of period"}
+                    Active until {formatPeriodDate(sub.current_period_end)}
                   </p>
                 ) : (
                   <button

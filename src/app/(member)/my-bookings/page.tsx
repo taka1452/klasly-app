@@ -64,6 +64,7 @@ export default async function MyBookingsPage() {
       status,
       session_id,
       member_id,
+      booked_via_pass,
       class_sessions (
         session_date,
         start_time,
@@ -161,15 +162,22 @@ export default async function MyBookingsPage() {
                           )}
                         </>
                       ) : (
-                        <span
-                          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                            booking.status === "confirmed"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-yellow-100 text-yellow-800"
-                          }`}
-                        >
-                          {booking.status === "confirmed" ? "Confirmed" : "Waitlist"}
-                        </span>
+                        <>
+                          <span
+                            className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                              booking.status === "confirmed"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-yellow-100 text-yellow-800"
+                            }`}
+                          >
+                            {booking.status === "confirmed" ? "Confirmed" : "Waitlist"}
+                          </span>
+                          {(booking as { booked_via_pass?: boolean }).booked_via_pass && (
+                            <span className="inline-flex rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+                              Pass
+                            </span>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
@@ -218,9 +226,16 @@ export default async function MyBookingsPage() {
                       {session?.session_date && formatDate(session.session_date)} ·{" "}
                       {session?.start_time && formatTime(session.start_time)}
                     </p>
-                    <span className="mt-1 inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
-                      {booking.status === "confirmed" ? "Confirmed" : booking.status === "cancelled" ? "Cancelled" : "Waitlist"}
-                    </span>
+                    <div className="mt-1 flex gap-1">
+                      <span className="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                        {booking.status === "confirmed" ? "Confirmed" : booking.status === "cancelled" ? "Cancelled" : "Waitlist"}
+                      </span>
+                      {(booking as { booked_via_pass?: boolean }).booked_via_pass && (
+                        <span className="inline-flex rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+                          Pass
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               );

@@ -694,6 +694,29 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             </>
           ),
         },
+        {
+          q: "How do pass bookings work?",
+          a: (
+            <>
+              When a member with an active pass books a class, the booking is marked as <B>&quot;Pass&quot;</B> — no credits are deducted and no payment is charged. If the booking is cancelled (by the member or by you), the class usage is automatically returned to their monthly allowance.
+              <Tip>Pass bookings show a purple &quot;Pass&quot; badge in the attendee list.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "What statistics are shown on the Passes page?",
+          a: (
+            <>
+              The Passes page shows an overview with:
+              <Steps>
+                <li><B>Active Subscribers</B> — total members currently subscribed to any pass.</li>
+                <li><B>Pass Bookings (This Month)</B> — number of bookings made using a pass this month.</li>
+                <li><B>Monthly Recurring Revenue</B> — total MRR from active pass subscriptions.</li>
+                <li><B>Top Members</B> — members with the highest pass usage this month.</li>
+              </Steps>
+            </>
+          ),
+        },
       ],
     },
     {
@@ -1078,15 +1101,6 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
       ],
     },
     {
-<<<<<<< HEAD
-      title: "Studio Passes",
-      items: [
-        {
-          q: "What are Studio Passes?",
-          a: (
-            <>
-              Studio Passes are monthly membership plans offered by your studio. Each pass has a monthly price and may include unlimited or a set number of classes per month.
-=======
       title: "Events & Retreats",
       items: [
         {
@@ -1094,12 +1108,31 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               Visit the event page, select a room or option, then choose your payment method (full or 3 installments). Complete checkout with your card &mdash; you&apos;ll receive a confirmation email.
->>>>>>> fcd55c2b270b99843b7b2f7da7afdfa1757bc147
             </>
           ),
         },
         {
-<<<<<<< HEAD
+          q: "When will I be charged for installments?",
+          a: (
+            <>
+              The first installment is charged at booking. The second is auto-charged 30 days later, and the third 60 days later. You&apos;ll receive a reminder email 7 days before each charge. No action is needed &mdash; payments are processed automatically.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Studio Passes",
+      items: [
+        {
+          q: "What are Studio Passes?",
+          a: (
+            <>
+              Studio Passes are monthly membership plans offered by your studio. Each pass has a monthly price and may include unlimited or a set number of classes per month.
+            </>
+          ),
+        },
+        {
           q: "How do I subscribe to a pass?",
           a: (
             <>
@@ -1117,12 +1150,23 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               Go to <B>Passes</B> and click <B>Cancel Subscription</B> on your active pass. Your subscription will remain active until the end of the current billing period — you won&apos;t be charged again after that.
-=======
-          q: "When will I be charged for installments?",
+            </>
+          ),
+        },
+        {
+          q: "How does booking with a pass work?",
           a: (
             <>
-              The first installment is charged at booking. The second is auto-charged 30 days later, and the third 60 days later. You&apos;ll receive a reminder email 7 days before each charge. No action is needed &mdash; payments are processed automatically.
->>>>>>> fcd55c2b270b99843b7b2f7da7afdfa1757bc147
+              When you have an active pass with available class capacity, the booking button will show <B>&quot;Book with Pass&quot;</B> instead of the normal booking option. No credits or payment are required — the class is deducted from your monthly pass allowance.
+              <Tip>If your pass limit is reached, you can still book using credits or pay-per-class if available.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "What happens to my pass usage when I cancel a booking?",
+          a: (
+            <>
+              If you cancel a booking that was made with your pass, the class usage is automatically returned to your monthly allowance. You&apos;ll see the updated count on the <B>Passes</B> page.
             </>
           ),
         },

@@ -44,7 +44,7 @@ export async function POST(
     // 予約取得
     const { data: booking } = await adminSupabase
       .from("bookings")
-      .select("id, status, member_id, session_id, studio_id")
+      .select("id, status, member_id, session_id, studio_id, booked_via_pass")
       .eq("id", bookingId)
       .single();
 
@@ -73,18 +73,48 @@ export async function POST(
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    // 確認済み予約のみクレジット返却
+    // 確認済み予約のみクレジット返却（パス予約の場合はパス利用を戻す）
     const { data: member } = await adminSupabase
       .from("members")
       .select("credits, profile_id")
       .eq("id", booking.member_id)
       .single();
 
-    if (wasConfirmed && member && member.credits >= 0) {
-      await adminSupabase
-        .from("members")
-        .update({ credits: member.credits + 1 })
-        .eq("id", booking.member_id);
+    if (wasConfirmed) {
+      if (booking.booked_via_pass) {
+        // Revert pass usage: delete pass_class_usage and decrement counter
+        const { data: usageRows } = await adminSupabase
+          .from("pass_class_usage")
+          .select("id, pass_subscription_id, pass_subscriptions(id, member_id, classes_used_this_period)")
+          .eq("session_id", booking.session_id);
+
+        if (usageRows) {
+          for (const usage of usageRows) {
+            const sub = usage.pass_subscriptions as unknown as {
+              id: string;
+              member_id: string;
+              classes_used_this_period: number;
+            } | null;
+            if (!sub || sub.member_id !== booking.member_id) continue;
+
+            await Promise.all([
+              adminSupabase.from("pass_class_usage").delete().eq("id", usage.id),
+              adminSupabase
+                .from("pass_subscriptions")
+                .update({
+                  classes_used_this_period: Math.max(0, sub.classes_used_this_period - 1),
+                })
+                .eq("id", sub.id),
+            ]);
+            break;
+          }
+        }
+      } else if (member && member.credits >= 0) {
+        await adminSupabase
+          .from("members")
+          .update({ credits: member.credits + 1 })
+          .eq("id", booking.member_id);
+      }
     }
 
     // セッション情報取得（メール用）

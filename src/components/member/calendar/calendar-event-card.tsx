@@ -28,6 +28,7 @@ type Props = {
   requiresCredits: boolean;
   payPerClass: boolean;
   classPrice?: number;
+  passInfo?: { hasPass: boolean; hasCapacity: boolean; classesUsed: number; maxClasses: number | null };
   onBookingComplete: () => void;
 };
 
@@ -44,6 +45,7 @@ export default function CalendarEventCard({
   requiresCredits,
   payPerClass,
   classPrice,
+  passInfo,
   onBookingComplete,
 }: Props) {
   const { isEnabled } = useFeature();
@@ -219,6 +221,7 @@ export default function CalendarEventCard({
               requiresCredits={requiresCredits}
               payPerClass={payPerClass}
               classPrice={session.price_cents ?? classPrice}
+              passInfo={passInfo}
               onSuccess={() => {
                 onBookingComplete();
                 setShowPopover(false);

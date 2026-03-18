@@ -4,6 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+type PassInfo = {
+  hasPass: boolean;
+  hasCapacity: boolean;
+  classesUsed: number;
+  maxClasses: number | null;
+};
+
 type Props = {
   sessionId: string;
   capacity: number;
@@ -18,6 +25,8 @@ type Props = {
   payPerClass?: boolean;
   /** payPerClass 時に表示する料金（cents） */
   classPrice?: number;
+  /** Active pass information */
+  passInfo?: PassInfo;
   /** Called after a successful booking action (instead of router.refresh) */
   onSuccess?: () => void;
   "data-tour"?: string;
@@ -34,6 +43,7 @@ export default function BookingButton({
   requiresCredits = true,
   payPerClass = false,
   classPrice,
+  passInfo,
   onSuccess,
   "data-tour": dataTour,
 }: Props) {
@@ -43,9 +53,13 @@ export default function BookingButton({
 
   const isFull = confirmedCount >= capacity;
   const showWaitlist = isFull;
+  // Pass holders can always book (no credit check needed)
+  const hasActivePass = passInfo?.hasPass && passInfo?.hasCapacity;
+  const passLimitReached = passInfo?.hasPass && !passInfo?.hasCapacity;
   // クレジット必須モードのときのみ 0 クレジットをブロック
   // payPerClass モードではクレジットチェックを無効化（決済で代替）
-  const hasNoCredits = !payPerClass && requiresCredits && memberCredits === 0;
+  // Pass holders bypass credit check
+  const hasNoCredits = !hasActivePass && !payPerClass && requiresCredits && memberCredits === 0;
 
   const tourProps = dataTour ? { "data-tour": dataTour } : {};
 
@@ -90,9 +104,13 @@ export default function BookingButton({
     }
   }
 
-  async function handleBook(action: "book" | "rebook" | "cancel" | "leave_waitlist") {
+  async function handleBook(
+    action: "book" | "rebook" | "cancel" | "leave_waitlist",
+    usePass = false
+  ) {
     const status = showWaitlist ? "waitlist" : "confirmed";
     if (
+      !usePass &&
       requiresCredits &&
       (action === "book" || action === "rebook") &&
       status === "confirmed" &&
@@ -109,7 +127,7 @@ export default function BookingButton({
       const res = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, sessionId, memberId }),
+        body: JSON.stringify({ action, sessionId, memberId, usePass }),
       });
       const data = await res.json();
 
@@ -132,6 +150,22 @@ export default function BookingButton({
 
   if (existingBooking) {
     if (existingBooking.status === "cancelled") {
+      // Pass holder can rebook with pass
+      if (hasActivePass) {
+        return (
+          <div className="flex flex-col items-end gap-1" {...tourProps}>
+            {error && <p className="text-xs text-red-600 text-right">{error}</p>}
+            <button
+              type="button"
+              onClick={() => handleBook("rebook", true)}
+              disabled={loading}
+              className="btn-primary text-sm"
+            >
+              {loading ? "…" : "Re-book with Pass"}
+            </button>
+          </div>
+        );
+      }
       if (hasNoCredits) {
         return (
           <div className="flex flex-col items-end gap-2 text-right" {...tourProps}>
@@ -190,6 +224,51 @@ export default function BookingButton({
             Cancel
           </button>
         </div>
+      </div>
+    );
+  }
+
+  // Pass holder with capacity: show "Book with Pass" button
+  if (hasActivePass && !showWaitlist) {
+    return (
+      <div className="flex flex-col items-end gap-1" {...tourProps}>
+        {error && <p className="text-xs text-red-600 text-right">{error}</p>}
+        <button
+          type="button"
+          onClick={() => handleBook("book", true)}
+          disabled={loading}
+          className="btn-primary text-sm"
+        >
+          {loading ? "…" : "Book with Pass"}
+        </button>
+        <span className="text-xs text-gray-400">No payment required</span>
+      </div>
+    );
+  }
+
+  // Pass limit reached: show message + fallback to regular booking
+  if (passLimitReached && !showWaitlist) {
+    return (
+      <div className="flex flex-col items-end gap-1" {...tourProps}>
+        {error && <p className="text-xs text-red-600 text-right">{error}</p>}
+        <span className="text-xs text-amber-600">Pass limit reached</span>
+        {hasNoCredits ? (
+          <Link
+            href="/purchase"
+            className="text-sm font-medium text-brand-600 hover:text-brand-700"
+          >
+            Purchase credits
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={() => handleBook("book")}
+            disabled={loading}
+            className="btn-primary text-sm"
+          >
+            {loading ? "…" : "Book"}
+          </button>
+        )}
       </div>
     );
   }

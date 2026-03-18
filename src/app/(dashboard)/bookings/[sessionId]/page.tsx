@@ -51,7 +51,7 @@ export default async function SessionBookingsPage({
 
   const { data: bookings } = await supabase
     .from("bookings")
-    .select("id, member_id, status, attended, members(profiles(full_name))")
+    .select("id, member_id, status, attended, booked_via_pass, members(profiles(full_name))")
     .eq("session_id", sessionId)
     .neq("status", "cancelled")
     .order("created_at", { ascending: true });
@@ -92,15 +92,22 @@ export default async function SessionBookingsPage({
                     />
                     <div>
                       <p className="font-medium text-gray-900">{name}</p>
-                      <span
-                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                          booking.status === "confirmed"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-yellow-100 text-yellow-800"
-                        }`}
-                      >
-                        {booking.status}
-                      </span>
+                      <div className="flex gap-1">
+                        <span
+                          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                            booking.status === "confirmed"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-yellow-100 text-yellow-800"
+                          }`}
+                        >
+                          {booking.status}
+                        </span>
+                        {(booking as { booked_via_pass?: boolean }).booked_via_pass && (
+                          <span className="inline-flex rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+                            Pass
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <OwnerCancelButton bookingId={booking.id} />

@@ -22,6 +22,7 @@ type Props = {
   requiresCredits: boolean;
   payPerClass: boolean;
   classPrice?: number;
+  passInfo?: { hasPass: boolean; hasCapacity: boolean; classesUsed: number; maxClasses: number | null };
   onBookingComplete: () => void;
 };
 
@@ -36,6 +37,7 @@ export default function CalendarDayView({
   requiresCredits,
   payPerClass,
   classPrice,
+  passInfo,
   onBookingComplete,
 }: Props) {
   const { startHour, endHour } = getTimeRange(sessions);
@@ -159,6 +161,7 @@ export default function CalendarDayView({
                 requiresCredits={requiresCredits}
                 payPerClass={payPerClass}
                 classPrice={classPrice}
+                passInfo={passInfo}
                 onBookingComplete={onBookingComplete}
               />
             );
