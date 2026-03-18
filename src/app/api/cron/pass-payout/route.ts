@@ -191,7 +191,7 @@ export async function GET(request: Request) {
 }
 
 async function notifyOwnerOfFailure(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   dist: { studio_id: string; instructor_id: string; payout_amount: number; period_start: string },
   errorMessage: string
 ) {

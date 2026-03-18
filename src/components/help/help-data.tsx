@@ -734,6 +734,43 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             </>
           ),
         },
+        {
+          q: "When are distributions calculated?",
+          a: (
+            <>
+              Distributions are calculated automatically on the <B>1st of each month</B> based on the previous month&apos;s pass bookings. For example, on March 1st the system calculates distributions for all February pass usage.
+              <Tip>If no pass bookings were made during a month, no distributions are created for that period.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "What is the Distributable Amount?",
+          a: (
+            <>
+              The <B>Distributable Amount</B> is the total pass revenue for the month minus all fees:
+              <Steps>
+                <li><B>Stripe fees</B> — approximately 2.9% + 30¢ per subscription.</li>
+                <li><B>Klasly fee</B> — a small platform fee (typically 0.5%).</li>
+                <li><B>Studio fee</B> — your studio&apos;s fee percentage (set in Settings).</li>
+              </Steps>
+              The remaining amount is split among instructors based on how many classes each one taught to pass holders.
+            </>
+          ),
+        },
+        {
+          q: "What do the distribution statuses mean?",
+          a: (
+            <>
+              <Steps>
+                <li><B>Pending</B> — waiting for your review and approval (Auto-distribute OFF).</li>
+                <li><B>Approved</B> — you approved the payout; it will be sent within 2 hours.</li>
+                <li><B>Completed</B> — the payout has been sent to the instructor&apos;s Stripe account.</li>
+                <li><B>Failed</B> — the payout could not be sent (e.g., instructor&apos;s Stripe account is not connected or incomplete). You will receive an email notification.</li>
+              </Steps>
+              <Tip>Once approved, payouts cannot be undone. Review amounts carefully before approving.</Tip>
+            </>
+          ),
+        },
       ],
     },
     {
@@ -941,6 +978,44 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
                 <li><B>Monthly breakdown</B> — earnings grouped by month.</li>
                 <li><B>Per-class details</B> — how much you earned from each class.</li>
               </Steps>
+            </>
+          ),
+        },
+        {
+          q: "What are Pass Distributions?",
+          a: (
+            <>
+              If the studio offers monthly passes, revenue from pass subscriptions is distributed to instructors based on how many classes each instructor taught to pass holders. This is separate from your per-class earnings and appears in a dedicated <B>Pass Distributions</B> section on your earnings page.
+            </>
+          ),
+        },
+        {
+          q: "How is my pass distribution calculated?",
+          a: (
+            <>
+              The studio&apos;s pass revenue (minus fees) is split proportionally. For example, if you taught 4 out of 10 total pass-booked classes in a month, you receive 4/10 (40%) of the distributable amount.
+              <Tip>Your share percentage and class count are shown for each distribution period.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "What do the distribution statuses mean?",
+          a: (
+            <>
+              <Steps>
+                <li><B>Pending</B> — the studio owner is reviewing the distribution before sending.</li>
+                <li><B>Approved</B> — the payout has been approved and will be sent shortly.</li>
+                <li><B>Completed</B> — the payout has been sent to your Stripe account.</li>
+                <li><B>Failed</B> — there was an issue sending the payout. Please check that your Stripe Connect account is fully set up.</li>
+              </Steps>
+            </>
+          ),
+        },
+        {
+          q: "Why do I need Stripe Connect for pass payouts?",
+          a: (
+            <>
+              Pass distribution payouts are sent directly to your Stripe account. You must complete Stripe Connect onboarding to receive them. Go to <B>My Earnings</B> and follow the setup instructions if you see a &quot;Connect with Stripe&quot; prompt.
             </>
           ),
         },
@@ -1177,7 +1252,9 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
               <Steps>
                 <li>Go to the <B>Passes</B> tab in your navigation bar.</li>
                 <li>Browse available passes — you&apos;ll see the name, description, price, and class limit for each.</li>
-                <li>Click <B>Subscribe</B> on the pass you want. Your payment method on file will be charged monthly.</li>
+                <li>Click <B>Subscribe</B> on the pass you want.</li>
+                <li>You&apos;ll be taken to a secure Stripe checkout page to enter your payment details.</li>
+                <li>After completing payment, you&apos;ll be redirected back and your pass will be active immediately.</li>
               </Steps>
               <Tip>If you already have an active pass, it will show a &quot;Current Plan&quot; badge.</Tip>
             </>
@@ -1205,6 +1282,27 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               If you cancel a booking that was made with your pass, the class usage is automatically returned to your monthly allowance. You&apos;ll see the updated count on the <B>Passes</B> page.
+            </>
+          ),
+        },
+        {
+          q: "What happens when I reach my class limit?",
+          a: (
+            <>
+              If your pass has a monthly class limit and you&apos;ve used all your classes, the schedule will show <B>&quot;Pass limit reached&quot;</B>. You can still book classes using credits or pay-per-class if the studio offers those options.
+              <Tip>Your class usage resets at the start of each billing period, not the calendar month.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "What do the pass status badges mean?",
+          a: (
+            <>
+              <Steps>
+                <li><B>Current Plan</B> — your pass is active and you can book classes.</li>
+                <li><B>Cancels [date]</B> — you cancelled but the pass is still active until the shown date. You can keep booking until then.</li>
+                <li><B>Cancelled</B> — your pass has expired. You&apos;ll need to re-subscribe or use credits to book classes.</li>
+              </Steps>
             </>
           ),
         },
