@@ -39,9 +39,11 @@ export default function DistributionsPage() {
   const [data, setData] = useState<DistributionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [approving, setApproving] = useState(false);
+  const [showApproveConfirm, setShowApproveConfirm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [saving, setSaving] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -60,14 +62,8 @@ export default function DistributionsPage() {
   }, [fetchData]);
 
   async function handleApprove() {
-    const pendingCount = distributions.filter((d) => d.status === "pending").length;
-    const pendingTotal = distributions
-      .filter((d) => d.status === "pending")
-      .reduce((sum, d) => sum + d.payout_amount, 0);
-    if (!confirm(
-      `Approve ${pendingCount} payout(s) totaling $${(pendingTotal / 100).toFixed(2)}?\n\nPayouts will be sent automatically to each instructor's Stripe account within 2 hours.`
-    )) return;
     setApproving(true);
+    setStatusMessage(null);
     try {
       const res = await fetch("/api/passes/distributions", {
         method: "POST",
@@ -75,10 +71,12 @@ export default function DistributionsPage() {
         body: JSON.stringify({ period: selectedPeriod }),
       });
       if (res.ok) {
+        setShowApproveConfirm(false);
+        setStatusMessage({ type: "success", text: "Payouts approved! Transfers will be sent within 2 hours." });
         await fetchData();
       } else {
         const d = await res.json();
-        alert(d.error ?? "Failed to approve");
+        setStatusMessage({ type: "error", text: d.error ?? "Failed to approve" });
       }
     } finally {
       setApproving(false);
@@ -88,10 +86,11 @@ export default function DistributionsPage() {
   async function handleSaveAmount(distId: string) {
     const amount = parseFloat(editValue);
     if (isNaN(amount) || amount < 0) {
-      alert("Please enter a valid amount.");
+      setStatusMessage({ type: "error", text: "Please enter a valid amount." });
       return;
     }
     setSaving(true);
+    setStatusMessage(null);
     try {
       const res = await fetch("/api/passes/distributions", {
         method: "PUT",
@@ -100,10 +99,11 @@ export default function DistributionsPage() {
       });
       if (res.ok) {
         setEditingId(null);
+        setStatusMessage({ type: "success", text: "Payout amount updated." });
         await fetchData();
       } else {
         const d = await res.json();
-        alert(d.error ?? "Failed to update");
+        setStatusMessage({ type: "error", text: d.error ?? "Failed to update" });
       }
     } finally {
       setSaving(false);
@@ -305,19 +305,59 @@ export default function DistributionsPage() {
             </table>
           </div>
 
-          {/* Approve button */}
-          {hasPending && (
+          {/* Status message */}
+          {statusMessage && (
+            <div className={`mt-4 rounded-lg p-3 text-sm ${
+              statusMessage.type === "success" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
+            }`}>
+              {statusMessage.text}
+            </div>
+          )}
+
+          {/* Approve section */}
+          {hasPending && !showApproveConfirm && (
             <div className="mt-6 flex justify-end">
               <button
                 type="button"
-                onClick={handleApprove}
-                disabled={approving}
+                onClick={() => setShowApproveConfirm(true)}
                 className="btn-primary"
               >
-                {approving ? "Approving..." : "Approve & Send All"}
+                Approve &amp; Send All
               </button>
             </div>
           )}
+
+          {hasPending && showApproveConfirm && (() => {
+            const pendingCount = distributions.filter((d) => d.status === "pending").length;
+            const pendingTotal = distributions.filter((d) => d.status === "pending").reduce((sum, d) => sum + d.payout_amount, 0);
+            return (
+              <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
+                <p className="text-sm font-medium text-amber-800">
+                  Approve {pendingCount} payout{pendingCount !== 1 ? "s" : ""} totaling {formatCents(pendingTotal)}?
+                </p>
+                <p className="mt-1 text-xs text-amber-600">
+                  Payouts will be sent to each instructor&apos;s Stripe account within 2 hours. This cannot be undone.
+                </p>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleApprove}
+                    disabled={approving}
+                    className="btn-primary"
+                  >
+                    {approving ? "Approving..." : "Yes, Approve & Send"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowApproveConfirm(false)}
+                    className="btn-secondary"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
 
           {distributions.every((d) => d.status === "completed") && distributions[0]?.approved_at && (
             <div className="mt-4 text-sm text-green-600 text-right">

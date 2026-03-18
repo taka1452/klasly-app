@@ -37,6 +37,7 @@ export default function MemberPasses({ memberId, passes, subscriptions }: Props)
   const router = useRouter();
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
 
   const subByPass = new Map<string, Subscription>();
   for (const sub of subscriptions) {
@@ -214,13 +215,37 @@ export default function MemberPasses({ memberId, passes, subscriptions }: Props)
                 </p>
 
                 {isActive && sub ? (
-                  <button
-                    onClick={() => handleCancel(sub.id)}
-                    disabled={loadingId === sub.id}
-                    className="mt-3 w-full rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
-                  >
-                    {loadingId === sub.id ? "Cancelling..." : "Cancel Subscription"}
-                  </button>
+                  confirmCancelId === sub.id ? (
+                    <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3">
+                      <p className="text-sm text-red-700">
+                        Your pass will stay active until{" "}
+                        <span className="font-semibold">{formatPeriodDate(sub.current_period_end)}</span>.
+                        You won&apos;t be charged again after that.
+                      </p>
+                      <div className="mt-2 flex gap-2">
+                        <button
+                          onClick={() => { setConfirmCancelId(null); handleCancel(sub.id); }}
+                          disabled={loadingId === sub.id}
+                          className="flex-1 rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                        >
+                          {loadingId === sub.id ? "Cancelling..." : "Yes, Cancel"}
+                        </button>
+                        <button
+                          onClick={() => setConfirmCancelId(null)}
+                          className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        >
+                          Keep Pass
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmCancelId(sub.id)}
+                      className="mt-3 w-full rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                    >
+                      Cancel Subscription
+                    </button>
+                  )
                 ) : isPendingCancel && sub ? (
                   <p className="mt-3 text-center text-sm text-amber-600">
                     Active until {formatPeriodDate(sub.current_period_end)}
