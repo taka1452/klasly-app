@@ -1,6 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { isFeatureEnabled } from "@/lib/features/check-feature";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 /**
  * GET /api/passes/distributions?period=YYYY-MM
@@ -23,6 +25,12 @@ export async function GET(request: Request) {
       .single();
     if (!profile?.studio_id || !["owner", "manager"].includes(profile.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Feature flag check
+    const passEnabled = await isFeatureEnabled(profile.studio_id, FEATURE_KEYS.STUDIO_PASS);
+    if (!passEnabled) {
+      return NextResponse.json({ error: "Studio passes are not enabled" }, { status: 403 });
     }
 
     const url = new URL(request.url);
@@ -130,6 +138,12 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // Feature flag check
+    const passEnabledPut = await isFeatureEnabled(profile.studio_id, FEATURE_KEYS.STUDIO_PASS);
+    if (!passEnabledPut) {
+      return NextResponse.json({ error: "Studio passes are not enabled" }, { status: 403 });
+    }
+
     const body = await request.json();
     const { distributionId, payout_amount } = body;
 
@@ -208,6 +222,12 @@ export async function POST(request: Request) {
       .single();
     if (!profile?.studio_id || !["owner", "manager"].includes(profile.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Feature flag check
+    const passEnabledPost = await isFeatureEnabled(profile.studio_id, FEATURE_KEYS.STUDIO_PASS);
+    if (!passEnabledPost) {
+      return NextResponse.json({ error: "Studio passes are not enabled" }, { status: 403 });
     }
 
     const body = await request.json();

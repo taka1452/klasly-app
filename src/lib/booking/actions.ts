@@ -7,6 +7,8 @@ import {
 } from "@/lib/email/templates";
 import { formatDate, formatTime } from "@/lib/utils";
 import { getRequiresCredits } from "@/lib/booking-utils";
+import { isFeatureEnabled } from "@/lib/features/check-feature";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 type BookingAction = "book" | "rebook" | "cancel" | "leave_waitlist";
 
@@ -253,6 +255,12 @@ export async function executeBookingAction({
     let passInfo: Awaited<ReturnType<typeof getActivePass>> = null;
 
     if (usePass && status === "confirmed") {
+      // Verify feature flag is enabled before allowing pass usage
+      const passFeatureEnabled = await isFeatureEnabled(member.studio_id, FEATURE_KEYS.STUDIO_PASS);
+      if (!passFeatureEnabled) {
+        return { success: false, error: "Studio passes are not enabled", status: 403 };
+      }
+
       passInfo = await getActivePass(adminSupabase, memberId);
       if (passInfo && passInfo.hasCapacity) {
         bookingViaPass = true;

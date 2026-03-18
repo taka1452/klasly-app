@@ -2,6 +2,8 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { stripe } from "@/lib/stripe/server";
 import { NextResponse } from "next/server";
+import { isFeatureEnabled } from "@/lib/features/check-feature";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 export async function POST(request: Request) {
   try {
@@ -35,6 +37,12 @@ export async function POST(request: Request) {
 
     if (!profile?.studio_id || !["owner", "manager"].includes(profile.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Feature flag check
+    const passEnabled = await isFeatureEnabled(profile.studio_id, FEATURE_KEYS.STUDIO_PASS);
+    if (!passEnabled) {
+      return NextResponse.json({ error: "Studio passes are not enabled" }, { status: 403 });
     }
 
     const body = await request.json();
