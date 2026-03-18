@@ -189,9 +189,11 @@ export async function GET(request: Request) {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// Supabase client type forwarded from caller — avoids complex generic inference
+type SupabaseAdmin = ReturnType<typeof createClient>;
+
 async function notifyOwnerOfFailure(
-  supabase: any,
+  supabase: SupabaseAdmin,
   dist: { studio_id: string; instructor_id: string; payout_amount: number; period_start: string },
   errorMessage: string
 ) {
