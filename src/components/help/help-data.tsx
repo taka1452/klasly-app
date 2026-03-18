@@ -558,6 +558,41 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
       ],
     },
     {
+      title: "Studio Passes",
+      items: [
+        {
+          q: "What are Studio Passes?",
+          a: (
+            <>
+              Studio Passes are monthly membership plans you can offer to your members. Each pass has a set price and optionally a limit on how many classes a member can attend per month (or unlimited). Members subscribe and are billed automatically each month via Stripe.
+            </>
+          ),
+        },
+        {
+          q: "How do I create a pass?",
+          a: (
+            <>
+              <Steps>
+                <li>Go to <B>Passes</B> in the sidebar.</li>
+                <li>Click <B>+ Create Pass</B>.</li>
+                <li>Enter a name, description, monthly price, and choose unlimited or limited classes per month.</li>
+                <li>Click <B>Create</B>. A Stripe product and recurring price are created automatically.</li>
+              </Steps>
+              <Tip>Stripe Connect must be set up before you can create passes.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "What is Auto-distribute?",
+          a: (
+            <>
+              Each pass has an <B>Auto-distribute</B> toggle. When ON, instructor payouts from pass revenue are calculated and sent automatically on the 1st of each month. When OFF, you review and approve distributions before they are sent.
+            </>
+          ),
+        },
+      ],
+    },
+    {
       title: "Updates & Notifications",
       items: [
         {
@@ -933,6 +968,40 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               Each booking uses 1 credit, and cancelling returns it. If you believe there&apos;s an error, contact your studio owner or reach out to <B>support@klasly.app</B>.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Studio Passes",
+      items: [
+        {
+          q: "What are Studio Passes?",
+          a: (
+            <>
+              Studio Passes are monthly membership plans offered by your studio. Each pass has a monthly price and may include unlimited or a set number of classes per month.
+            </>
+          ),
+        },
+        {
+          q: "How do I subscribe to a pass?",
+          a: (
+            <>
+              <Steps>
+                <li>Go to the <B>Passes</B> tab in your navigation bar.</li>
+                <li>Browse available passes — you&apos;ll see the name, description, price, and class limit for each.</li>
+                <li>Click <B>Subscribe</B> on the pass you want. Your payment method on file will be charged monthly.</li>
+              </Steps>
+              <Tip>If you already have an active pass, it will show a &quot;Current Plan&quot; badge.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "How do I cancel a pass subscription?",
+          a: (
+            <>
+              Go to <B>Passes</B> and click <B>Cancel Subscription</B> on your active pass. Your subscription will remain active until the end of the current billing period — you won&apos;t be charged again after that.
             </>
           ),
         },

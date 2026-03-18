@@ -247,6 +247,45 @@ export async function POST(request: Request) {
         const subscription = event.data.object as Stripe.Subscription;
         const subscriptionId = subscription.id;
 
+        // パスサブスクリプションの更新チェック
+        const { data: passSubUpdate } = await adminSupabase
+          .from("pass_subscriptions")
+          .select("id")
+          .eq("stripe_subscription_id", subscriptionId)
+          .maybeSingle();
+
+        if (passSubUpdate) {
+          const periodStart = subscription.items.data[0]?.current_period_start;
+          const periodEnd = subscription.items.data[0]?.current_period_end;
+          const passStatus = subscription.status === "active" || subscription.status === "trialing"
+            ? "active"
+            : subscription.status === "past_due"
+              ? "past_due"
+              : "cancelled";
+          const updateData: Record<string, unknown> = {
+            status: passStatus,
+            current_period_start: periodStart ? new Date(periodStart * 1000).toISOString().slice(0, 10) : null,
+            current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString().slice(0, 10) : null,
+          };
+          // Reset classes_used_this_period on new billing period
+          if (periodStart) {
+            const newStart = new Date(periodStart * 1000).toISOString().slice(0, 10);
+            const { data: currentSub } = await adminSupabase
+              .from("pass_subscriptions")
+              .select("current_period_start")
+              .eq("id", passSubUpdate.id)
+              .single();
+            if (currentSub && currentSub.current_period_start !== newStart) {
+              updateData.classes_used_this_period = 0;
+            }
+          }
+          await adminSupabase
+            .from("pass_subscriptions")
+            .update(updateData)
+            .eq("id", passSubUpdate.id);
+          break;
+        }
+
         // インストラクターメンバーシップのサブスク更新チェック
         const { data: instrMembership } = await adminSupabase
           .from("instructor_memberships")
@@ -431,6 +470,21 @@ export async function POST(request: Request) {
 
         if (!subscriptionId) break;
 
+        // パスサブスクリプションの支払い失敗チェック
+        const { data: passSubFailed } = await adminSupabase
+          .from("pass_subscriptions")
+          .select("id")
+          .eq("stripe_subscription_id", subscriptionId)
+          .maybeSingle();
+
+        if (passSubFailed) {
+          await adminSupabase
+            .from("pass_subscriptions")
+            .update({ status: "past_due" })
+            .eq("id", passSubFailed.id);
+          break;
+        }
+
         const { data: studio } = await adminSupabase
           .from("studios")
           .select("id, plan_status")
@@ -542,6 +596,21 @@ export async function POST(request: Request) {
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
         const subscriptionId = subscription.id;
+
+        // パスサブスクリプションの削除チェック
+        const { data: passSubDeleted } = await adminSupabase
+          .from("pass_subscriptions")
+          .select("id")
+          .eq("stripe_subscription_id", subscriptionId)
+          .maybeSingle();
+
+        if (passSubDeleted) {
+          await adminSupabase
+            .from("pass_subscriptions")
+            .update({ status: "cancelled" })
+            .eq("id", passSubDeleted.id);
+          break;
+        }
 
         // インストラクターメンバーシップのサブスク削除チェック
         const { data: deletedInstrMembership } = await adminSupabase

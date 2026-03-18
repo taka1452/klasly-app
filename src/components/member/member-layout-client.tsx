@@ -3,6 +3,8 @@
 import Link from "next/link";
 import MemberHeader from "./member-header";
 import TourProvider from "@/components/tour/TourProvider";
+import { useFeature } from "@/lib/features/feature-context";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 type MemberLayoutClientProps = {
   userName: string;
@@ -25,6 +27,9 @@ export default function MemberLayoutClient({
   memberCredits,
   children,
 }: MemberLayoutClientProps) {
+  const { isEnabled } = useFeature();
+  const showPasses = isEnabled(FEATURE_KEYS.STUDIO_PASS);
+
   return (
     <TourProvider
       role="member"
@@ -60,6 +65,14 @@ export default function MemberLayoutClient({
               >
                 Purchase
               </Link>
+              {showPasses && (
+                <Link
+                  href="/my-passes"
+                  className="text-sm font-medium text-gray-600 hover:text-gray-900"
+                >
+                  Passes
+                </Link>
+              )}
               <Link
                 href="/my-payments"
                 className="text-sm font-medium text-gray-600 hover:text-gray-900"

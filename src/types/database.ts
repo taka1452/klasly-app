@@ -588,3 +588,57 @@ export type StudioFeature = {
   created_at: string;
   updated_at: string;
 };
+
+// ---- Studio Pass ----
+
+export type StudioPass = {
+  id: string;
+  studio_id: string;
+  name: string;
+  description: string | null;
+  price_cents: number;
+  billing_interval: string;
+  max_classes_per_month: number | null;
+  auto_distribute: boolean;
+  stripe_price_id: string | null;
+  is_active: boolean;
+  created_at: string;
+};
+
+export type PassSubscription = {
+  id: string;
+  studio_pass_id: string;
+  member_id: string;
+  stripe_subscription_id: string | null;
+  status: "active" | "cancelled" | "past_due";
+  current_period_start: string | null;
+  current_period_end: string | null;
+  classes_used_this_period: number;
+  created_at: string;
+};
+
+export type PassClassUsage = {
+  id: string;
+  pass_subscription_id: string;
+  session_id: string;
+  instructor_id: string;
+  used_at: string;
+};
+
+export type PassDistribution = {
+  id: string;
+  studio_id: string;
+  studio_pass_id: string;
+  instructor_id: string;
+  period_start: string;
+  period_end: string;
+  total_classes: number;
+  total_pool_classes: number;
+  gross_pool_amount: number;
+  payout_amount: number;
+  stripe_transfer_id: string | null;
+  status: "pending" | "approved" | "completed" | "failed";
+  approved_at: string | null;
+  approved_by: string | null;
+  created_at: string;
+};
