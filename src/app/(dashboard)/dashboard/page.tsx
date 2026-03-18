@@ -297,7 +297,7 @@ export default async function DashboardPage() {
       ? ((monthRevenue - prevMonthRevenue) / prevMonthRevenue) * 100
       : monthRevenue > 0
         ? 100
-        : 0;
+        : null;
 
   const maxBarValue = Math.max(
     revenueBreakdown.subscriptions,
@@ -358,7 +358,7 @@ export default async function DashboardPage() {
           <p className="mt-2 text-3xl font-bold text-gray-900">
             {formatCurrency(monthRevenue)}
           </p>
-          {prevMonthRevenue > 0 || monthRevenue > 0 ? (
+          {revenueChange !== null ? (
             <p
               className={`mt-1 text-sm ${revenueChange >= 0 ? "text-green-600" : "text-red-600"}`}
             >

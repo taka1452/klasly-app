@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useMemo } from "react";
 import Link from "next/link";
+import { usePlanAccess } from "@/components/ui/plan-access-provider";
 
 const SKIP = "— Skip —";
 
@@ -60,6 +61,7 @@ function autoMapColumns(columns: string[]): Record<string, string> {
 }
 
 export default function ImportClassesPage() {
+  const planAccess = usePlanAccess();
   const [step, setStep] = useState(1);
   const [file, setFile] = useState<File | null>(null);
   const [csvBase64, setCsvBase64] = useState<string>("");
@@ -199,6 +201,29 @@ export default function ImportClassesPage() {
     { key: "location", label: "Location", required: false },
     { key: "instructor_email", label: "Instructor Email", required: false },
   ];
+
+  if (planAccess && !planAccess.canCreate) {
+    return (
+      <div className="mx-auto max-w-3xl">
+        <div className="mb-6">
+          <Link href="/classes" className="text-sm text-gray-500 hover:text-gray-700">
+            ← Back to classes
+          </Link>
+        </div>
+        <div className="card">
+          <p className="text-gray-600">
+            Your plan doesn&apos;t allow importing classes. Please update your billing to continue.
+          </p>
+          <Link
+            href="/settings/billing"
+            className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+          >
+            Update billing →
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-3xl">

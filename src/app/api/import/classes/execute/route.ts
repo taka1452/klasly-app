@@ -240,8 +240,15 @@ export async function POST(request: Request) {
         .insert(sessions);
 
       if (sessionsError) {
-        // Log but don't fail the class import
         console.error(`Sessions insert failed for row ${rowNum}:`, sessionsError.message);
+        // Roll back the class since it has no sessions
+        await adminSupabase.from("classes").delete().eq("id", newClass.id);
+        errors.push({
+          row: rowNum,
+          name,
+          reason: `Class created but session generation failed: ${sessionsError.message}. Class was rolled back.`,
+        });
+        continue;
       }
 
       imported++;

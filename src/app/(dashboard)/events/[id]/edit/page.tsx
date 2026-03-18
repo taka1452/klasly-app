@@ -123,7 +123,31 @@ export default function EditEventPage() {
   function addOption() {
     setOptions((o) => [...o, { name: "", description: "", priceDollars: "", capacity: "10" }]);
   }
+  const [optionsWithBookings, setOptionsWithBookings] = useState<Set<string>>(new Set());
+
+  // Load booking counts for existing options
+  useEffect(() => {
+    async function loadOptionBookings() {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("event_bookings")
+        .select("option_id")
+        .eq("event_id", id)
+        .not("status", "eq", "cancelled");
+      if (data) {
+        const ids = new Set(data.map((b) => b.option_id).filter(Boolean) as string[]);
+        setOptionsWithBookings(ids);
+      }
+    }
+    if (id) loadOptionBookings();
+  }, [id]);
+
   function removeOption(i: number) {
+    const opt = options[i];
+    if (opt.id && optionsWithBookings.has(opt.id)) {
+      setError("This option has active bookings and cannot be removed. Cancel the bookings first.");
+      return;
+    }
     setOptions((o) => o.filter((_, idx) => idx !== i));
   }
   function updateOption(i: number, field: keyof OptionDraft, value: string) {
@@ -180,21 +204,41 @@ export default function EditEventPage() {
       return;
     }
 
-    // Delete existing options and re-insert
-    await supabase.from("event_options").delete().eq("event_id", id);
-
+    // Update existing options and insert new ones (preserve options with bookings)
     const validOptions = options.filter((o) => o.name.trim());
-    if (validOptions.length > 0) {
-      const optionsToInsert = validOptions.map((o, idx) => ({
+    const existingOptionIds = validOptions.filter((o) => o.id).map((o) => o.id!);
+
+    // Only delete options that have no bookings and are no longer in the list
+    const { data: currentOptions } = await supabase
+      .from("event_options")
+      .select("id")
+      .eq("event_id", id);
+
+    const idsToKeep = new Set(existingOptionIds);
+    const idsToDelete = (currentOptions || [])
+      .map((o) => o.id)
+      .filter((oid) => !idsToKeep.has(oid) && !optionsWithBookings.has(oid));
+
+    if (idsToDelete.length > 0) {
+      await supabase.from("event_options").delete().in("id", idsToDelete);
+    }
+
+    // Upsert options: update existing, insert new
+    for (let idx = 0; idx < validOptions.length; idx++) {
+      const o = validOptions[idx];
+      const optionData = {
         event_id: id,
         name: o.name.trim(),
         description: o.description.trim() || null,
         price_cents: Math.round(parseFloat(o.priceDollars || "0") * 100),
         capacity: parseInt(o.capacity || "10", 10),
         sort_order: idx,
-      }));
-
-      await supabase.from("event_options").insert(optionsToInsert);
+      };
+      if (o.id) {
+        await supabase.from("event_options").update(optionData).eq("id", o.id);
+      } else {
+        await supabase.from("event_options").insert(optionData);
+      }
     }
 
     router.push(`/events/${id}/manage`);
@@ -309,9 +353,21 @@ export default function EditEventPage() {
             {options.map((opt, i) => (
               <div key={i} className="rounded-lg border border-gray-200 p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">Option {i + 1}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-700">Option {i + 1}</span>
+                    {opt.id && optionsWithBookings.has(opt.id) && (
+                      <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700">
+                        Has bookings
+                      </span>
+                    )}
+                  </div>
                   {options.length > 1 && (
-                    <button type="button" onClick={() => removeOption(i)} className="text-xs text-red-500 hover:text-red-700">
+                    <button
+                      type="button"
+                      onClick={() => removeOption(i)}
+                      disabled={!!(opt.id && optionsWithBookings.has(opt.id))}
+                      className={`text-xs ${opt.id && optionsWithBookings.has(opt.id) ? "cursor-not-allowed text-gray-300" : "text-red-500 hover:text-red-700"}`}
+                    >
                       Remove
                     </button>
                   )}

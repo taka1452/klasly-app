@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useFeature } from "@/lib/features/feature-context";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
+import { usePlanAccess } from "@/components/ui/plan-access-provider";
+import Link from "next/link";
 
 const DAY_OPTIONS = [
   { value: 0, label: "Sunday" },
@@ -46,6 +48,7 @@ export default function ClassEditForm({
   initialData,
 }: Props) {
   const router = useRouter();
+  const planAccess = usePlanAccess();
   const { isEnabled } = useFeature();
   const onlineEnabled = isEnabled(FEATURE_KEYS.ONLINE_CLASSES);
   const [name, setName] = useState(initialData.name);
@@ -65,6 +68,22 @@ export default function ClassEditForm({
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  if (planAccess && !planAccess.canEdit) {
+    return (
+      <div className="card">
+        <p className="text-gray-600">
+          Your plan doesn&apos;t allow editing classes. Please update your billing to continue.
+        </p>
+        <Link
+          href="/settings/billing"
+          className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+        >
+          Update billing →
+        </Link>
+      </div>
+    );
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
