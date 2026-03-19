@@ -84,15 +84,14 @@ export async function POST(request: Request) {
     const shouldDeductCredit = !isUnlimited && credits >= 1;
 
     if (shouldDeductCredit) {
-      const { error: updateErr } = await adminSupabase
-        .from("members")
-        .update({ credits: credits - 1 })
-        .eq("id", member_id);
-
-      if (updateErr) {
+      // Atomic credit deduction
+      const { data: creditResult } = await adminSupabase.rpc("decrement_member_credits", {
+        p_member_id: member_id,
+      });
+      if (creditResult === -99) {
         return NextResponse.json(
-          { error: updateErr.message },
-          { status: 500 }
+          { error: "No credits remaining" },
+          { status: 400 }
         );
       }
     }
@@ -168,18 +167,10 @@ export async function DELETE(request: Request) {
     }
 
     if (dropIn.credit_deducted) {
-      const { data: member } = await adminSupabase
-        .from("members")
-        .select("credits")
-        .eq("id", dropIn.member_id)
-        .single();
-
-      if (member && member.credits !== -1) {
-        await adminSupabase
-          .from("members")
-          .update({ credits: member.credits + 1 })
-          .eq("id", dropIn.member_id);
-      }
+      // Atomic credit increment
+      await adminSupabase.rpc("increment_member_credits", {
+        p_member_id: dropIn.member_id,
+      });
     }
 
     const { error } = await adminSupabase

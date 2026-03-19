@@ -110,10 +110,10 @@ export async function POST(
           }
         }
       } else if (member && member.credits >= 0) {
-        await adminSupabase
-          .from("members")
-          .update({ credits: member.credits + 1 })
-          .eq("id", booking.member_id);
+        // Atomic credit increment
+        await adminSupabase.rpc("increment_member_credits", {
+          p_member_id: booking.member_id,
+        });
       }
     }
 
@@ -184,10 +184,10 @@ export async function POST(
             .single();
 
           if (promotedMember && promotedMember.credits >= 0) {
-            await adminSupabase
-              .from("members")
-              .update({ credits: promotedMember.credits - 1 })
-              .eq("id", firstWaitlist.member_id);
+            // Atomic credit deduction for promoted member
+            await adminSupabase.rpc("decrement_member_credits", {
+              p_member_id: firstWaitlist.member_id,
+            });
           }
 
           if (promotedMember) {

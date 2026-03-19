@@ -86,10 +86,13 @@ export async function POST(request: Request) {
         );
       }
 
-      await adminSupabase
-        .from("members")
-        .update({ credits: member.credits - 1 })
-        .eq("id", member_id);
+      // Atomic credit deduction
+      const { data: creditResult } = await adminSupabase.rpc("decrement_member_credits", {
+        p_member_id: member_id,
+      });
+      if (creditResult === -99) {
+        return NextResponse.json({ error: "No credits remaining" }, { status: 400 });
+      }
 
       await adminSupabase
         .from("bookings")
@@ -116,10 +119,13 @@ export async function POST(request: Request) {
         );
       }
 
-      await adminSupabase
-        .from("members")
-        .update({ credits: member.credits - 1 })
-        .eq("id", member_id);
+      // Atomic credit deduction
+      const { data: creditResult } = await adminSupabase.rpc("decrement_member_credits", {
+        p_member_id: member_id,
+      });
+      if (creditResult === -99) {
+        return NextResponse.json({ error: "No credits remaining" }, { status: 400 });
+      }
 
       await adminSupabase
         .from("drop_in_attendances")
@@ -127,9 +133,16 @@ export async function POST(request: Request) {
         .eq("id", drop_in_id);
     }
 
+    // Fetch updated credits for response
+    const { data: updated } = await adminSupabase
+      .from("members")
+      .select("credits")
+      .eq("id", member_id)
+      .single();
+
     return NextResponse.json({
       success: true,
-      credits_remaining: member.credits - 1,
+      credits_remaining: updated?.credits ?? member.credits - 1,
     });
   } catch {
     return NextResponse.json(

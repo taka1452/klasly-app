@@ -94,11 +94,11 @@ export async function POST(request: Request) {
         );
       }
 
+      // Atomic credit increment
       if (member.credits !== -1) {
-        await adminSupabase
-          .from("members")
-          .update({ credits: member.credits + 1 })
-          .eq("id", member_id);
+        await adminSupabase.rpc("increment_member_credits", {
+          p_member_id: member_id,
+        });
       }
 
       await adminSupabase
@@ -126,11 +126,11 @@ export async function POST(request: Request) {
         );
       }
 
+      // Atomic credit increment
       if (member.credits !== -1) {
-        await adminSupabase
-          .from("members")
-          .update({ credits: member.credits + 1 })
-          .eq("id", member_id);
+        await adminSupabase.rpc("increment_member_credits", {
+          p_member_id: member_id,
+        });
       }
 
       await adminSupabase
@@ -139,9 +139,16 @@ export async function POST(request: Request) {
         .eq("id", drop_in_id);
     }
 
+    // Fetch updated credits for response
+    const { data: updated } = await adminSupabase
+      .from("members")
+      .select("credits")
+      .eq("id", member_id)
+      .single();
+
     return NextResponse.json({
       success: true,
-      credits_remaining: member.credits === -1 ? -1 : member.credits + 1,
+      credits_remaining: updated?.credits ?? (member.credits === -1 ? -1 : member.credits + 1),
     });
   } catch {
     return NextResponse.json(
