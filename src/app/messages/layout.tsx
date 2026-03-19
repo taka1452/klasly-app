@@ -6,8 +6,9 @@ import MemberHeader from "@/components/member/member-header";
 import DashboardShell from "@/components/ui/dashboard-shell";
 import { getPlanAccess } from "@/lib/plan-guard";
 import { isAdmin } from "@/lib/admin/auth";
-import { getStudioFeatures } from "@/lib/features/check-feature";
+import { getStudioFeatures, isFeatureEnabled } from "@/lib/features/check-feature";
 import { FeatureProvider } from "@/lib/features/feature-context";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 /**
  * /messages レイアウト
@@ -113,7 +114,17 @@ export default async function MessagesLayout({
     }
   }
 
-  // メンバー用レイアウト
+  // メンバー用レイアウト — Passes / クレジット表示
+  const showPasses = await isFeatureEnabled(profile.studio_id, FEATURE_KEYS.STUDIO_PASS);
+
+  const { data: memberRec } = await supabase
+    .from("members")
+    .select("credits")
+    .eq("profile_id", user.id)
+    .eq("studio_id", profile.studio_id)
+    .maybeSingle();
+  const memberCredits = memberRec?.credits ?? null;
+
   return (
     <div className="min-h-screen bg-gray-50">
       <MemberHeader
@@ -141,6 +152,14 @@ export default async function MessagesLayout({
             >
               Purchase
             </Link>
+            {showPasses && (
+              <Link
+                href="/my-passes"
+                className="text-sm font-medium text-gray-600 hover:text-gray-900"
+              >
+                Passes
+              </Link>
+            )}
             <Link
               href="/my-payments"
               className="text-sm font-medium text-gray-600 hover:text-gray-900"
@@ -154,6 +173,14 @@ export default async function MessagesLayout({
               Messages
             </Link>
           </div>
+          {memberCredits !== null && (
+            <span className="text-sm text-gray-500">
+              Credits:{" "}
+              <span className={`font-semibold ${memberCredits === 0 ? "text-amber-600" : "text-gray-900"}`}>
+                {memberCredits === -1 ? "Unlimited" : memberCredits}
+              </span>
+            </span>
+          )}
         </div>
       </nav>
       <main className="mx-auto max-w-4xl px-4 py-6">{children}</main>

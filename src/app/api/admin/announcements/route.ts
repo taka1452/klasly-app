@@ -1,25 +1,15 @@
 import { createClient } from "@supabase/supabase-js";
-import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
-
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "").split(",").map((e) => e.trim().toLowerCase());
+import { isAdmin } from "@/lib/admin/auth";
 
 async function getAdminSupabase() {
-  const serverSupabase = await createServerClient();
-  const {
-    data: { user },
-  } = await serverSupabase.auth.getUser();
-
-  if (!user || !ADMIN_EMAILS.includes(user.email?.toLowerCase() || "")) {
-    return null;
-  }
+  const ok = await isAdmin();
+  if (!ok) return null;
 
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const supabase = serviceRoleKey
-    ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey)
-    : serverSupabase;
+  if (!serviceRoleKey) return null;
 
-  return supabase;
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey);
 }
 
 // GET: 全通知一覧
@@ -89,7 +79,8 @@ export async function PATCH(request: Request) {
     const { error } = await supabase
       .from("announcements")
       .update({ is_active })
-      .eq("id", id);
+      .eq("id", id)
+      .is("studio_id", null);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

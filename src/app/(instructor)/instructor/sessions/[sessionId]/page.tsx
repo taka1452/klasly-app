@@ -27,7 +27,7 @@ export default async function InstructorSessionDetailPage({
 
   const { data: instructor } = await supabase
     .from("instructors")
-    .select("id")
+    .select("id, studio_id")
     .eq("profile_id", user.id)
     .single();
 
@@ -35,8 +35,9 @@ export default async function InstructorSessionDetailPage({
 
   const { data: session } = await supabase
     .from("class_sessions")
-    .select("id, session_date, start_time, capacity, is_cancelled, is_public, class_id, classes(name, location)")
+    .select("id, session_date, start_time, capacity, is_cancelled, is_public, class_id, studio_id, classes(name, location)")
     .eq("id", sessionId)
+    .eq("studio_id", instructor.studio_id)
     .single();
 
   if (!session) notFound();

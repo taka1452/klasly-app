@@ -1,9 +1,7 @@
-import { requireAdmin } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/admin/supabase";
 import AdminDashboardClient from "@/components/admin/admin-dashboard-client";
 
 export default async function AdminDashboardPage() {
-  await requireAdmin();
   const supabase = createAdminClient();
 
   // is_demo = false のみ集計（デモ・テストスタジオを KPI から除外）
@@ -31,7 +29,10 @@ export default async function AdminDashboardPage() {
     (s) => (s as { subscription_period?: string }).subscription_period === "yearly"
   ).length;
 
-  const MRR = monthlyActive * 19 + yearlyActive * (190 / 12);
+  // Prices from env (defaults match current Stripe config)
+  const monthlyPrice = Number(process.env.PLAN_MONTHLY_PRICE ?? 19);
+  const yearlyPrice = Number(process.env.PLAN_YEARLY_PRICE ?? 190);
+  const MRR = monthlyActive * monthlyPrice + yearlyActive * (yearlyPrice / 12);
 
   const { count: pastDueCount } = await supabase
     .from("studios")
@@ -84,9 +85,9 @@ export default async function AdminDashboardPage() {
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const { data: recentlyCanceled } = await supabase
     .from("studios")
-    .select("id, name, created_at")
+    .select("id, name, current_period_end")
     .eq("plan_status", "canceled")
-    .gte("created_at", sevenDaysAgo)
+    .gte("current_period_end", sevenDaysAgo)
     .eq("is_demo", false);
 
   const { data: recentStudios } = await supabase

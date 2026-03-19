@@ -71,7 +71,7 @@ export default async function EventPage({ params }: Props) {
     if (profile?.studio_id) {
       const { data: event } = await supabase
         .from("events")
-        .select("*")
+        .select("id, studio_id")
         .eq("id", id)
         .eq("studio_id", profile.studio_id)
         .single();
@@ -82,10 +82,11 @@ export default async function EventPage({ params }: Props) {
     }
   }
 
-  // Public mode: published event, with is_public or same-studio auth
+  // Public mode: published event
+  const EVENT_PUBLIC_COLUMNS = "id, studio_id, name, description, start_date, end_date, location_name, location_address, image_url, is_public, status, capacity, price_cents, payment_type, installment_count, installment_interval_days, cancellation_policy_text";
   const { data: event } = await supabase
     .from("events")
-    .select("*")
+    .select(EVENT_PUBLIC_COLUMNS)
     .eq("id", id)
     .eq("status", "published")
     .single();

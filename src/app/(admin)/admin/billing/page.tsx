@@ -1,9 +1,7 @@
-import { requireAdmin } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/admin/supabase";
 import AdminBillingClient from "@/components/admin/admin-billing-client";
 
 export default async function AdminBillingPage() {
-  await requireAdmin();
   const supabase = createAdminClient();
 
   const { data: activeStudios } = await supabase

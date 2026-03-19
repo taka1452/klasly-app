@@ -1,9 +1,7 @@
-import { requireAdmin } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/admin/supabase";
 import AdminMetricsContent from "@/components/admin/admin-metrics-content";
 
 export default async function AdminMetricsPage() {
-  await requireAdmin();
   const supabase = createAdminClient();
 
   const now = new Date();

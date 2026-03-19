@@ -1,4 +1,3 @@
-import { requireAdmin } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/admin/supabase";
 import Link from "next/link";
 import AdminSupportList from "@/components/admin/admin-support-list";
@@ -10,7 +9,6 @@ export default async function AdminSupportPage({
 }: {
   searchParams: Promise<{ status?: string; priority?: string; search?: string; page?: string }>;
 }) {
-  await requireAdmin();
   const supabase = createAdminClient();
   const { status = "", priority = "", search = "", page = "1" } = await searchParams;
   const pageNum = Math.max(1, parseInt(page, 10) || 1);

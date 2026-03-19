@@ -1,4 +1,3 @@
-import { requireAdmin } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/admin/supabase";
 import { getStripe } from "@/lib/stripe/server";
 import Link from "next/link";
@@ -29,7 +28,6 @@ export default async function AdminStudioDetailPage({
 }: {
   params: Promise<{ studioId: string }>;
 }) {
-  await requireAdmin();
   const supabase = createAdminClient();
   const { studioId } = await params;
 

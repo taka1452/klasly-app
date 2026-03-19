@@ -117,6 +117,12 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
+      // Rollback: delete the Stripe coupon since DB insert failed
+      try {
+        await stripe.coupons.del(stripeCoupon.id);
+      } catch {
+        // Best-effort rollback
+      }
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     return NextResponse.json({ coupon });

@@ -193,11 +193,16 @@ export async function executeBookingAction({
 
   const { data: session } = await adminSupabase
     .from("class_sessions")
-    .select("id, session_date, start_time, capacity, is_online, online_link, class_id, classes(name, is_online, online_link, instructor_id)")
+    .select("id, session_date, start_time, capacity, is_online, online_link, class_id, studio_id, classes(name, is_online, online_link, instructor_id)")
     .eq("id", sessionId)
     .single();
 
   if (!session) {
+    return { success: false, error: "Session not found", status: 404 };
+  }
+
+  // Verify session belongs to the same studio as the member
+  if ((session as { studio_id?: string }).studio_id !== member.studio_id) {
     return { success: false, error: "Session not found", status: 404 };
   }
 

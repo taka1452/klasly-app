@@ -1,8 +1,6 @@
-import { requireAdmin } from "@/lib/admin/auth";
 import AdminPlatformSettings from "@/components/admin/admin-platform-settings";
 
 export default async function AdminSettingsPage() {
-  await requireAdmin();
 
   return (
     <div>

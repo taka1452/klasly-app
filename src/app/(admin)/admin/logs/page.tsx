@@ -1,4 +1,3 @@
-import { requireAdmin } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/admin/supabase";
 import Link from "next/link";
 import AdminLogsTitle from "@/components/admin/admin-logs-title";
@@ -10,7 +9,6 @@ export default async function AdminLogsPage({
 }: {
   searchParams: Promise<{ tab?: string; page?: string; type?: string }>;
 }) {
-  await requireAdmin();
   const supabase = createAdminClient();
   const { tab = "webhooks", page = "1", type } = await searchParams;
   const pageNum = Math.max(1, parseInt(page, 10) || 1);

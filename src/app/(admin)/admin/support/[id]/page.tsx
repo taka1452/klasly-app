@@ -1,4 +1,3 @@
-import { requireAdmin } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/admin/supabase";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -9,7 +8,6 @@ export default async function AdminSupportTicketPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireAdmin();
   const supabase = createAdminClient();
   const { id } = await params;
 

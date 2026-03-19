@@ -1,9 +1,7 @@
-import { requireAdmin } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/admin/supabase";
 import AdminStudiosList from "@/components/admin/admin-studios-list";
 
 export default async function AdminStudiosPage() {
-  await requireAdmin();
   const supabase = createAdminClient();
 
   const statuses = ["all", "trialing", "active", "past_due", "grace", "canceled"] as const;
