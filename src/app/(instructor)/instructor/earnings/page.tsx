@@ -69,6 +69,7 @@ export default function InstructorEarningsPage() {
   const [onboardingLoading, setOnboardingLoading] = useState(false);
   const [dashboardLoading, setDashboardLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [monthLoading, setMonthLoading] = useState(false);
 
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(
@@ -76,6 +77,7 @@ export default function InstructorEarningsPage() {
   );
 
   const fetchData = useCallback(async () => {
+    setMonthLoading(true);
     try {
       const [earningsRes, statusRes] = await Promise.all([
         fetch(`/api/instructor-earnings?month=${selectedMonth}`),
@@ -97,6 +99,8 @@ export default function InstructorEarningsPage() {
       }
     } catch {
       setToastMessage("Failed to load data. Please try again.");
+    } finally {
+      setMonthLoading(false);
     }
   }, [selectedMonth]);
 
@@ -216,10 +220,14 @@ export default function InstructorEarningsPage() {
         <label className="text-sm font-medium text-gray-700">Month:</label>
         <input
           type="month"
+          disabled={monthLoading}
           value={selectedMonth}
           onChange={(e) => setSelectedMonth(e.target.value)}
           className="input-field w-auto"
         />
+        {monthLoading && (
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-brand-600 border-t-transparent" />
+        )}
       </div>
 
       {/* Summary Cards */}

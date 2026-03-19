@@ -98,7 +98,7 @@ export default function MemberLayoutClient({
             {memberCredits !== null && (
               <span className="text-sm text-gray-500">
                 Credits:{" "}
-                <span className="font-semibold text-gray-900">
+                <span className={`font-semibold ${memberCredits === 0 ? "text-amber-600" : "text-gray-900"}`}>
                   {memberCredits === -1 ? "Unlimited" : memberCredits}
                 </span>
               </span>

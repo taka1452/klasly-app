@@ -13,6 +13,7 @@ export default function InstructorProfileForm() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [saved, setSaved] = useState(false);
 
   const fetchProfile = useCallback(async () => {
     const res = await fetch("/api/instructor/profile");
@@ -66,6 +67,8 @@ export default function InstructorProfileForm() {
       return;
     }
 
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
     router.refresh();
   }
 
@@ -169,6 +172,11 @@ export default function InstructorProfileForm() {
         >
           {saving ? "Saving..." : "Save"}
         </button>
+        {saved && (
+          <span className="ml-3 text-sm font-medium text-green-600">
+            Saved!
+          </span>
+        )}
       </div>
     </form>
   );

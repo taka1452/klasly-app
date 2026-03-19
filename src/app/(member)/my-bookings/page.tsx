@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { formatDate, formatTime } from "@/lib/utils";
 import { getPlanAccess } from "@/lib/plan-guard";
 import BookingButton from "@/components/bookings/booking-button";
@@ -245,12 +246,21 @@ export default async function MyBookingsPage() {
         </div>
       )}
 
+      {upcoming.length === 0 && past.length > 0 && (
+        <div className="mt-6 card">
+          <p className="text-sm text-gray-500">No upcoming bookings.</p>
+          <Link href="/schedule" className="btn-primary mt-4 inline-block">
+            Book a class
+          </Link>
+        </div>
+      )}
+
       {upcoming.length === 0 && past.length === 0 && (
         <div className="mt-6 card">
           <p className="text-sm text-gray-500">No bookings yet.</p>
-          <a href="/schedule" className="btn-primary mt-4 inline-block">
+          <Link href="/schedule" className="btn-primary mt-4 inline-block">
             View schedule
-          </a>
+          </Link>
         </div>
       )}
     </div>

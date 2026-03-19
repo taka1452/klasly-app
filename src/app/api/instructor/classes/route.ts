@@ -73,6 +73,13 @@ export async function POST(request: Request) {
       );
     }
 
+    if (typeof day_of_week !== "number" || day_of_week < 0 || day_of_week > 6) {
+      return NextResponse.json(
+        { error: "day_of_week must be between 0 (Sunday) and 6 (Saturday)" },
+        { status: 400 }
+      );
+    }
+
     if (price_cents !== undefined && price_cents !== null && price_cents < 0) {
       return NextResponse.json(
         { error: "Price must be a positive number" },

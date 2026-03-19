@@ -159,9 +159,9 @@ export default async function DashboardLayout({
 
   const features = await getStudioFeatures(profile.studio_id);
 
-  // オーナーがインストラクターとしても登録されているか
+  // オーナーまたはマネージャーがインストラクターとしても登録されているか
   let isAlsoInstructor = false;
-  if (profile.role === "owner") {
+  if (profile.role === "owner" || profile.role === "manager") {
     const { data: instrRec } = await adminSupabase
       .from("instructors")
       .select("id")

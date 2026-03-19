@@ -150,6 +150,7 @@ export default function NewRoomBookingPage() {
               type="date"
               value={bookingDate}
               onChange={(e) => setBookingDate(e.target.value)}
+              min={new Date().toISOString().split("T")[0]}
               required
               className="input-field mt-1"
             />

@@ -91,6 +91,13 @@ export default function ScheduleView({
             >
               Next Week →
             </button>
+            <button
+              type="button"
+              onClick={() => setWeekOffset(0)}
+              className="btn-secondary text-sm"
+            >
+              Today
+            </button>
           </div>
           <p className="text-sm font-medium text-gray-600">
             Week of {weekStart.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}

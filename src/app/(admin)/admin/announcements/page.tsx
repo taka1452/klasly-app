@@ -63,11 +63,15 @@ export default function AdminAnnouncementsPage() {
   }
 
   async function toggleActive(id: string, currentState: boolean) {
-    await fetch("/api/admin/announcements", {
+    const res = await fetch("/api/admin/announcements", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, is_active: !currentState }),
     });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "Failed to update announcement");
+    }
     await fetchAnnouncements();
   }
 

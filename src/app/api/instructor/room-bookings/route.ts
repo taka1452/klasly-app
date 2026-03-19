@@ -57,6 +57,15 @@ export async function POST(request: Request) {
       );
     }
 
+    // 過去日バリデーション
+    const today = new Date().toISOString().split("T")[0];
+    if (booking_date < today) {
+      return NextResponse.json(
+        { error: "Cannot book a room in the past" },
+        { status: 400 }
+      );
+    }
+
     // 時間帯バリデーション
     if (end_time <= start_time) {
       return NextResponse.json(

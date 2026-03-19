@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { formatCurrency } from "@/lib/utils";
 import PaymentsTable from "@/components/payments/payments-table";
 import ExportCsvButton from "@/components/ui/export-csv-button";
 
@@ -97,7 +98,7 @@ export default async function PaymentsPage({
           This month&apos;s revenue
         </h2>
         <p className="mt-1 text-2xl font-bold text-brand-600">
-          ${(monthTotal / 100).toFixed(2)}
+          {formatCurrency(monthTotal)}
         </p>
       </div>
 
