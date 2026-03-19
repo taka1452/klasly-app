@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import HelpTip from "@/components/ui/help-tip";
 
 export default function NewPassPage() {
   const router = useRouter();
@@ -120,6 +121,10 @@ export default function NewPassPage() {
         <div>
           <label className="block text-sm font-medium text-gray-700">
             Classes per month
+            <HelpTip
+              text="Set a monthly limit, or leave unlimited. Members see their remaining count."
+              helpSlug="studio-pass"
+            />
           </label>
           <div className="mt-2 space-y-2">
             <label className="flex items-center gap-2">

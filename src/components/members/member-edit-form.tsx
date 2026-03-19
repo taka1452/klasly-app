@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import HelpTip from "@/components/ui/help-tip";
 
 type Props = {
   memberId: string;
@@ -144,6 +145,10 @@ export default function MemberEditForm({
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Plan type
+              <HelpTip
+                text="This is the initial plan. Members can purchase different plans from their dashboard."
+                helpSlug="payments"
+              />
             </label>
             <select
               value={planType}
@@ -230,6 +235,10 @@ export default function MemberEditForm({
           />
           <label htmlFor="isMinorEdit" className="text-sm font-medium text-gray-700">
             This member is a minor
+            <HelpTip
+              text="Minor members require a guardian's email. The waiver will be sent to the guardian instead."
+              helpSlug="minor-waivers"
+            />
           </label>
         </div>
 

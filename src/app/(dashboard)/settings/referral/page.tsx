@@ -3,6 +3,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import ReferralSettingsClient from "@/components/settings/referral-settings-client";
+import HelpTip from "@/components/ui/help-tip";
 
 export const metadata: Metadata = {
   title: "Referral Program - Klasly",
@@ -65,7 +66,13 @@ export default async function ReferralSettingsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900">Referral Program</h1>
+      <h1 className="text-2xl font-bold text-gray-900">
+        Referral Program
+        <HelpTip
+          text="Share your link. When they pay, you both get 1 month free. No limit on referrals."
+          helpSlug="referral-program"
+        />
+      </h1>
       <p className="mt-1 text-sm text-gray-500">
         Share your link and earn free months
       </p>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useFeature } from "@/lib/features/feature-context";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
+import HelpTip from "@/components/ui/help-tip";
 
 type TrafficSource = {
   name: string;
@@ -65,6 +66,10 @@ export default function AnalyticsPage() {
           <div className="card">
             <h2 className="text-lg font-semibold text-gray-900">
               Traffic Sources
+              <HelpTip
+                text="Add ?utm_source=instagram to your booking link to track where members come from."
+                helpSlug="utm-tracking"
+              />
               <span className="ml-2 text-sm font-normal text-gray-400">
                 Last 30 days
               </span>

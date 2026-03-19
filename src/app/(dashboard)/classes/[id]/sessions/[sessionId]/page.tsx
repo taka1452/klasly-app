@@ -8,6 +8,7 @@ import SessionVisibilityToggle from "@/components/classes/session-visibility-tog
 import SessionOnlineToggle from "@/components/classes/session-online-toggle";
 import { isFeatureEnabled } from "@/lib/features/check-feature";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
+import HelpTip from "@/components/ui/help-tip";
 
 export default async function SessionDetailPage({
   params,
@@ -110,10 +111,20 @@ export default async function SessionDetailPage({
             sessionId={sessionId}
             initialIsPublic={session.is_public ?? true}
           />
+          <HelpTip
+            text="Private sessions are hidden from the member schedule but still block room bookings."
+            helpSlug="schedule-visibility"
+          />
         </div>
         {onlineEnabled && (
           <div className="mt-4 card">
-            <h3 className="mb-3 text-sm font-medium text-gray-700">Session Type</h3>
+            <h3 className="mb-3 text-sm font-medium text-gray-700">
+              Session Type
+              <HelpTip
+                text="Switch this session between in-person and online. Members will see the updated format."
+                helpSlug="online-classes"
+              />
+            </h3>
             <SessionOnlineToggle
               sessionId={sessionId}
               initialIsOnline={session.is_online}

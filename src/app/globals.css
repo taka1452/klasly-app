@@ -21,6 +21,15 @@
   }
 }
 
+@keyframes helpTipFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes zoomIn {
   from {
     opacity: 0;

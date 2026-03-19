@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { usePlanAccess } from "@/components/ui/plan-access-provider";
 import FlowHintPanel from "@/components/ui/flow-hint-panel";
+import HelpTip from "@/components/ui/help-tip";
 
 export default function NewMemberPage() {
   const router = useRouter();
@@ -163,6 +164,10 @@ export default function NewMemberPage() {
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Plan type *
+              <HelpTip
+                text="This is the initial plan. Members can purchase different plans from their dashboard."
+                helpSlug="payments"
+              />
             </label>
             <select
               value={planType}
@@ -221,6 +226,10 @@ export default function NewMemberPage() {
             />
             <label htmlFor="isMinor" className="text-sm font-medium text-gray-700">
               This member is a minor
+              <HelpTip
+                text="Minor members require a guardian's email. The waiver will be sent to the guardian instead."
+                helpSlug="minor-waivers"
+              />
             </label>
           </div>
 

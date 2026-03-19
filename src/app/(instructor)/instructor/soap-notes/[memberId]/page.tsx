@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import HelpTip from "@/components/ui/help-tip";
 
 type SOAPNoteItem = {
   id: string;
@@ -245,6 +246,10 @@ export default function MemberSOAPNotesPage() {
                 className="rounded accent-emerald-500"
               />
               Confidential (only you can view this note)
+              <HelpTip
+                text="When on, only you can see this note. The studio owner cannot view confidential notes."
+                helpSlug="soap-notes"
+              />
             </label>
 
             <div className="flex gap-3">

@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { usePlanAccess } from "@/components/ui/plan-access-provider";
 import { useFeature } from "@/lib/features/feature-context";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
+import HelpTip from "@/components/ui/help-tip";
 
 type InstructorOption = { id: string; full_name: string; isMe?: boolean };
 type RoomOption = { id: string; name: string; capacity: number | null };
@@ -282,6 +283,10 @@ export default function NewClassPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700">
                   Class Type
+                  <HelpTip
+                    text="Choose In-person, Online, or Hybrid. Online classes include a video link sent after booking."
+                    helpSlug="online-classes"
+                  />
                 </label>
                 <div className="mt-1 flex gap-4">
                   <label className="flex items-center gap-2 text-sm text-gray-700">
@@ -395,6 +400,10 @@ export default function NewClassPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Capacity *
+                <HelpTip
+                  text="Maximum number of members who can book this class. Waitlist kicks in after this limit."
+                  helpSlug="bookings"
+                />
               </label>
               <input
                 type="number"

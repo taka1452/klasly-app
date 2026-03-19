@@ -67,16 +67,68 @@ export function AccordionItem({ question, answer }: { question: string; answer: 
   );
 }
 
-export function SectionBlock({ title, items }: { title: string; items: HelpItem[] }) {
+// Maps section titles to URL-safe slugs for anchor links
+const SLUG_MAP: Record<string, string> = {
+  // Owner
+  "Getting Started": "getting-started",
+  "Dashboard": "dashboard",
+  "Members": "managing-members",
+  "Instructors": "managing-instructors",
+  "Classes": "classes",
+  "Rooms": "rooms",
+  "Bookings": "bookings",
+  "Payments": "payments",
+  "Settings": "settings",
+  "Reports": "reports",
+  "Schedule Visibility": "schedule-visibility",
+  "Minor Waivers": "minor-waivers",
+  "SOAP Notes": "soap-notes",
+  "Traffic Sources (UTM Tracking)": "utm-tracking",
+  "Studio Announcements": "updates-notifications",
+  "Online Classes": "online-classes",
+  "Feature Management": "feature-settings",
+  "Referral Program": "referral-program",
+  "Events & Retreats": "events-retreats",
+  "Studio Passes": "studio-pass",
+  "Mobile Access for Members": "mobile-access",
+  "Updates & Notifications": "updates-notifications",
+  // Member
+  "Schedule & Booking": "member-booking",
+  "My Bookings": "member-bookings",
+  "Credits & Purchases": "member-credits",
+  "Waiver & Account": "member-waiver",
+  "Install the App": "member-install-app",
+  "Updates": "member-updates",
+  // Instructor
+  "My Schedule": "instructor-schedule",
+  "My Classes": "instructor-classes",
+  "Room Bookings": "instructor-rooms",
+  "Membership": "instructor-membership",
+  "My Earnings": "instructor-earnings",
+  "My Profile": "instructor-profile",
+};
+
+export function SectionBlock({ title, items, tab }: { title: string; items: HelpItem[]; tab?: string }) {
   const icon = ICON_MAP[title] || null;
+  // For ambiguous titles shared across tabs, use a prefixed slug
+  let slug = SLUG_MAP[title];
+  if (title === "Getting Started" && tab === "member") slug = "member-getting-started";
+  else if (title === "Getting Started" && tab === "instructor") slug = "instructor-getting-started";
+  else if (title === "Dashboard" && tab === "instructor") slug = "instructor-dashboard";
+  else if (title === "Payments" && tab === "member") slug = "member-payments";
+  else if (title === "Events & Retreats" && tab === "member") slug = "member-events-retreats";
+  else if (title === "Studio Passes" && tab === "member") slug = "member-studio-pass";
+
   return (
     <div
+      id={slug}
       style={{
         background: "#fff",
         borderRadius: "10px",
         border: "1px solid #eaeaee",
         padding: "20px 24px",
         marginBottom: "12px",
+        scrollMarginTop: "24px",
       }}
     >
       <div

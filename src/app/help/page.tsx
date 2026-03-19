@@ -1,7 +1,7 @@
 "use client";
 
 import { DM_Sans } from "next/font/google";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { SECTIONS } from "@/components/help/help-data";
 import { SectionBlock } from "@/components/help/help-section";
 import { MailIcon, SearchIcon } from "@/components/help/help-icons";
@@ -36,6 +36,24 @@ export default function KlaslyHelp() {
   const [search, setSearch] = useState("");
 
   const sections = SECTIONS[tab];
+
+  // Smooth scroll to anchor on page load or hash change
+  useEffect(() => {
+    function scrollToHash() {
+      const hash = window.location.hash.slice(1);
+      if (!hash) return;
+      // Small delay to allow DOM to render
+      setTimeout(() => {
+        const el = document.getElementById(hash);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 100);
+    }
+    scrollToHash();
+    window.addEventListener("hashchange", scrollToHash);
+    return () => window.removeEventListener("hashchange", scrollToHash);
+  }, []);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -240,6 +258,7 @@ export default function KlaslyHelp() {
               key={`${tab}-${i}`}
               title={section.title}
               items={section.items}
+              tab={tab}
             />
           ))
         )}

@@ -3,6 +3,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import WaiverSettingsClient from "@/components/settings/waiver-settings-client";
+import HelpTip from "@/components/ui/help-tip";
 
 export default async function WaiverSettingsPage() {
   const serverSupabase = await createServerClient();
@@ -59,7 +60,13 @@ export default async function WaiverSettingsPage() {
         ← Back to Settings
       </Link>
 
-      <h1 className="mt-4 text-2xl font-bold text-gray-900">Waiver & Liability Release</h1>
+      <h1 className="mt-4 text-2xl font-bold text-gray-900">
+        Waiver & Liability Release
+        <HelpTip
+          text="Create a liability waiver that members must sign. Unsigned members are highlighted in the member list."
+          helpSlug="settings"
+        />
+      </h1>
       <p className="mt-1 text-sm text-gray-500">
         Protect your studio with a digital waiver. Members will sign electronically before their first class.
       </p>

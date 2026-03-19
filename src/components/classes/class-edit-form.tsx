@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useFeature } from "@/lib/features/feature-context";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 import { usePlanAccess } from "@/components/ui/plan-access-provider";
+import HelpTip from "@/components/ui/help-tip";
 import Link from "next/link";
 
 const DAY_OPTIONS = [
@@ -196,6 +197,10 @@ export default function ClassEditForm({
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Class Type
+                <HelpTip
+                  text="Choose In-person, Online, or Hybrid. Online classes include a video link sent after booking."
+                  helpSlug="online-classes"
+                />
               </label>
               <div className="mt-1 flex gap-4">
                 <label className="flex items-center gap-2 text-sm text-gray-700">
@@ -309,6 +314,10 @@ export default function ClassEditForm({
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Capacity
+              <HelpTip
+                text="Maximum number of members who can book this class. Waitlist kicks in after this limit."
+                helpSlug="bookings"
+              />
             </label>
             <input
               type="number"

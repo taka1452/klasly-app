@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import HelpTip from "@/components/ui/help-tip";
 
 type Props = {
   passId: string;
@@ -43,7 +44,13 @@ export default function PassAutoDistributeToggle({ passId, initialValue }: Props
 
   return (
     <div className="flex items-center gap-2">
-      <span className="font-medium">Auto-distribute:</span>
+      <span className="font-medium">
+        Auto-distribute:
+        <HelpTip
+          text="ON: payouts sent automatically on the 1st. OFF: you review and approve first."
+          helpSlug="studio-pass"
+        />
+      </span>
       <button
         type="button"
         role="switch"

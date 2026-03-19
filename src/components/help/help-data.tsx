@@ -384,6 +384,14 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
+          q: "What are the help tips I see next to labels?",
+          a: (
+            <>
+              The small <B>? icons</B> next to form labels and section headings are context help tips. Hover (or tap on mobile) to see a short explanation of the field. Many tips include a <B>Learn more</B> link that jumps to the relevant section of this help page.
+            </>
+          ),
+        },
+        {
           q: "How do I delete my studio account?",
           a: (
             <>

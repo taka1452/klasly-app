@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { CancellationPolicyTier } from "@/types/database";
+import HelpTip from "@/components/ui/help-tip";
 
 type OptionDraft = {
   name: string;
@@ -228,7 +229,13 @@ export default function CreateEventPage() {
               <p className="mt-1 text-xs text-gray-400">Paste a link to your cover image.</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Visibility</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Visibility
+                <HelpTip
+                  text="Private events are only visible to logged-in members. Use for corporate retreats."
+                  helpSlug="events-retreats"
+                />
+              </label>
               <div className="mt-1 flex gap-4">
                 <label className="flex items-center gap-2 text-sm text-gray-700">
                   <input type="radio" checked={isPublic} onChange={() => setIsPublic(true)} className="text-brand-600" />
@@ -289,7 +296,13 @@ export default function CreateEventPage() {
         {step === 2 && (
           <div className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Payment Type</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Payment Type
+                <HelpTip
+                  text="Installment splits the total into 3 equal payments: at booking, 30 days later, and 60 days later."
+                  helpSlug="events-retreats"
+                />
+              </label>
               <div className="mt-2 space-y-2">
                 <label className="flex items-start gap-3 rounded-lg border border-gray-200 p-4 cursor-pointer hover:bg-gray-50">
                   <input type="radio" checked={paymentType === "full"} onChange={() => setPaymentType("full")} className="mt-0.5 text-brand-600" />
@@ -326,8 +339,12 @@ export default function CreateEventPage() {
         {/* Step 4: Cancellation Policy */}
         {step === 3 && (
           <div className="space-y-5">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 inline-flex items-center gap-1">
               Define refund tiers based on how far in advance a guest cancels.
+              <HelpTip
+                text="Set refund rules by time before the event. Each retreat can have its own policy."
+                helpSlug="events-retreats"
+              />
             </p>
             {policyTiers.map((tier, i) => (
               <div key={i} className="rounded-lg border border-gray-200 p-4 space-y-3">
