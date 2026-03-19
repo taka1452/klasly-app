@@ -197,7 +197,9 @@ export default function InstructorClassesPage() {
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold text-gray-900">
                         {cls.is_online && <span title="Online">📹 </span>}
-                        {cls.name}
+                        <Link href={`/instructor/classes/${cls.id}`} className="hover:text-brand-600">
+                          {cls.name}
+                        </Link>
                       </h3>
                       {!cls.is_public && (
                         <span className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-500">Private</span>

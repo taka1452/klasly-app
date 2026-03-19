@@ -984,7 +984,30 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I view and manage my classes?",
           a: (
             <>
-              Go to <B>My Classes</B> from the sidebar. You&apos;ll see all your classes with their schedule, capacity, and pricing. Each class shows badges for visibility (Private) and status (Inactive).
+              Go to <B>My Classes</B> from the sidebar. You&apos;ll see all your classes with their schedule, capacity, and pricing. Click any class name to open the detail page where you can edit all fields and view upcoming sessions.
+            </>
+          ),
+        },
+        {
+          q: "How do I edit a class?",
+          a: (
+            <>
+              Click the class name on the <B>My Classes</B> page to open the detail page. From there you can edit:
+              <Steps>
+                <li>Name, description, and schedule (day, time, duration).</li>
+                <li>Capacity, price, and room assignment.</li>
+                <li>Visibility (Public/Private) and online class settings.</li>
+              </Steps>
+              Click <B>Save Changes</B> when done.
+            </>
+          ),
+        },
+        {
+          q: "How do I delete a class?",
+          a: (
+            <>
+              Open the class detail page by clicking the class name. Scroll down to the <B>Danger Zone</B> section and click <B>Delete class</B>. You&apos;ll be asked to confirm before deletion.
+              <Tip>Classes with future bookings cannot be deleted. Deactivate the class instead to hide it from the schedule while preserving existing bookings.</Tip>
             </>
           ),
         },

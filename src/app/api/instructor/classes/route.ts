@@ -232,7 +232,10 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { id, name, description, capacity, is_active, price_cents } = body;
+    const {
+      id, name, description, capacity, is_active, price_cents,
+      day_of_week, start_time, duration_minutes, room_id, is_public, is_online, online_link,
+    } = body;
 
     if (!id) {
       return NextResponse.json({ error: "Class id is required" }, { status: 400 });
@@ -249,12 +252,39 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Class not found" }, { status: 404 });
     }
 
+    // Validate new fields
+    if (day_of_week !== undefined && (typeof day_of_week !== "number" || day_of_week < 0 || day_of_week > 6)) {
+      return NextResponse.json({ error: "day_of_week must be between 0 (Sunday) and 6 (Saturday)" }, { status: 400 });
+    }
+    if (duration_minutes !== undefined && (duration_minutes < 1 || duration_minutes > 180)) {
+      return NextResponse.json({ error: "Duration must be between 1 and 180 minutes" }, { status: 400 });
+    }
+    if (room_id) {
+      const { data: room } = await ctx.supabase
+        .from("rooms")
+        .select("id")
+        .eq("id", room_id)
+        .eq("studio_id", ctx.studioId)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (!room) {
+        return NextResponse.json({ error: "Room not found or inactive" }, { status: 400 });
+      }
+    }
+
     const updates: Record<string, unknown> = {};
     if (name !== undefined) updates.name = name;
     if (description !== undefined) updates.description = description || null;
     if (capacity !== undefined) updates.capacity = capacity;
     if (is_active !== undefined) updates.is_active = is_active;
     if (price_cents !== undefined) updates.price_cents = price_cents;
+    if (day_of_week !== undefined) updates.day_of_week = day_of_week;
+    if (start_time !== undefined) updates.start_time = start_time.length === 5 ? `${start_time}:00` : start_time;
+    if (duration_minutes !== undefined) updates.duration_minutes = duration_minutes;
+    if (room_id !== undefined) updates.room_id = room_id || null;
+    if (is_public !== undefined) updates.is_public = is_public;
+    if (is_online !== undefined) updates.is_online = is_online;
+    if (online_link !== undefined) updates.online_link = online_link || null;
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ error: "No fields to update" }, { status: 400 });
@@ -264,7 +294,7 @@ export async function PATCH(request: Request) {
       .from("classes")
       .update(updates)
       .eq("id", id)
-      .select("id, name, is_active")
+      .select("id, name, description, day_of_week, start_time, duration_minutes, capacity, is_active, is_public, is_online, online_link, price_cents, room_id, rooms(name)")
       .single();
 
     if (error) {
@@ -272,6 +302,78 @@ export async function PATCH(request: Request) {
     }
 
     return NextResponse.json(data);
+  } catch {
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+// DELETE: delete a class owned by the instructor
+export async function DELETE(request: Request) {
+  try {
+    const ctx = await getInstructorContext();
+    if (!ctx) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+    if (!id) {
+      return NextResponse.json({ error: "Class id is required" }, { status: 400 });
+    }
+
+    // Verify class belongs to the instructor
+    const { data: existing } = await ctx.supabase
+      .from("classes")
+      .select("id, instructor_id, studio_id")
+      .eq("id", id)
+      .single();
+
+    if (!existing || existing.instructor_id !== ctx.instructorId || existing.studio_id !== ctx.studioId) {
+      return NextResponse.json({ error: "Class not found" }, { status: 404 });
+    }
+
+    // Check for future confirmed bookings
+    const today = new Date().toISOString().split("T")[0];
+    const { data: futureSessions } = await ctx.supabase
+      .from("class_sessions")
+      .select("id")
+      .eq("class_id", id)
+      .gte("session_date", today)
+      .eq("is_cancelled", false);
+
+    if (futureSessions && futureSessions.length > 0) {
+      const sessionIds = futureSessions.map((s: { id: string }) => s.id);
+      const { count } = await ctx.supabase
+        .from("bookings")
+        .select("id", { count: "exact", head: true })
+        .in("session_id", sessionIds)
+        .eq("status", "confirmed");
+
+      if (count && count > 0) {
+        return NextResponse.json(
+          { error: "Cannot delete class with future bookings. Deactivate it instead." },
+          { status: 409 }
+        );
+      }
+
+      // Delete future sessions without bookings
+      await ctx.supabase
+        .from("class_sessions")
+        .delete()
+        .eq("class_id", id)
+        .gte("session_date", today);
+    }
+
+    const { error } = await ctx.supabase
+      .from("classes")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
