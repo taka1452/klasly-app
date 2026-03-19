@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+type AnySupabaseClient = import("@supabase/supabase-js").SupabaseClient<any>;
 
 type WebhookLogInsert = {
   event_type: string;
@@ -14,7 +14,7 @@ type WebhookLogInsert = {
  * supabase は service role クライアントを渡す。
  */
 export async function insertWebhookLog(
-  supabase: SupabaseClient,
+  supabase: AnySupabaseClient,
   row: WebhookLogInsert
 ): Promise<void> {
   try {
@@ -45,7 +45,7 @@ type CronLogInsert = {
  * Cron ジョブ結果を cron_logs に挿入する。
  */
 export async function insertCronLog(
-  supabase: SupabaseClient,
+  supabase: AnySupabaseClient,
   row: CronLogInsert
 ): Promise<void> {
   try {
@@ -78,7 +78,7 @@ type EmailLogInsert = {
  * メール送信結果を email_logs に挿入する。
  */
 export async function insertEmailLog(
-  supabase: SupabaseClient,
+  supabase: AnySupabaseClient,
   row: EmailLogInsert
 ): Promise<void> {
   try {
