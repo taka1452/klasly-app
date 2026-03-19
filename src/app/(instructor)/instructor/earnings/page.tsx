@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Toast from "@/components/ui/toast";
 
 type EarningItem = {
   id: string;
@@ -67,6 +68,7 @@ export default function InstructorEarningsPage() {
   const [loading, setLoading] = useState(true);
   const [onboardingLoading, setOnboardingLoading] = useState(false);
   const [dashboardLoading, setDashboardLoading] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(
@@ -74,21 +76,27 @@ export default function InstructorEarningsPage() {
   );
 
   const fetchData = useCallback(async () => {
-    const [earningsRes, statusRes] = await Promise.all([
-      fetch(`/api/instructor-earnings?month=${selectedMonth}`),
-      fetch("/api/stripe/connect/instructor-status"),
-    ]);
+    try {
+      const [earningsRes, statusRes] = await Promise.all([
+        fetch(`/api/instructor-earnings?month=${selectedMonth}`),
+        fetch("/api/stripe/connect/instructor-status"),
+      ]);
 
-    if (earningsRes.ok) {
-      const data = await earningsRes.json();
-      setEarnings(data.earnings ?? []);
-      setSummary(data.summary ?? null);
-      setPassDistributions(data.passDistributions ?? []);
-      setPassSummary(data.passSummary ?? null);
-    }
-    if (statusRes.ok) {
-      const data = await statusRes.json();
-      setStripeStatus(data);
+      if (earningsRes.ok) {
+        const data = await earningsRes.json();
+        setEarnings(data.earnings ?? []);
+        setSummary(data.summary ?? null);
+        setPassDistributions(data.passDistributions ?? []);
+        setPassSummary(data.passSummary ?? null);
+      } else {
+        setToastMessage("Failed to load earnings data");
+      }
+      if (statusRes.ok) {
+        const data = await statusRes.json();
+        setStripeStatus(data);
+      }
+    } catch {
+      setToastMessage("Failed to load data. Please try again.");
     }
   }, [selectedMonth]);
 
@@ -112,7 +120,7 @@ export default function InstructorEarningsPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error ?? "Failed to start onboarding");
+        setToastMessage(data.error ?? "Failed to start onboarding");
         return;
       }
       if (data.url) {
@@ -132,7 +140,7 @@ export default function InstructorEarningsPage() {
       );
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error ?? "Failed to get dashboard link");
+        setToastMessage(data.error ?? "Failed to get dashboard link");
         return;
       }
       if (data.url) {
@@ -348,6 +356,14 @@ export default function InstructorEarningsPage() {
           </div>
         )}
       </div>
+
+      {toastMessage && (
+        <Toast
+          message={toastMessage}
+          variant="error"
+          onClose={() => setToastMessage(null)}
+        />
+      )}
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Toast from "@/components/ui/toast";
 
 export default function InstructorDeleteButton({
   instructorId,
@@ -11,6 +12,7 @@ export default function InstructorDeleteButton({
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   async function handleDelete() {
     setLoading(true);
@@ -20,7 +22,7 @@ export default function InstructorDeleteButton({
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      alert(data?.error ?? "Failed to delete instructor");
+      setToastMessage(data?.error ?? "Failed to delete instructor");
       setLoading(false);
       return;
     }
@@ -31,12 +33,17 @@ export default function InstructorDeleteButton({
 
   if (!confirming) {
     return (
-      <button
-        onClick={() => setConfirming(true)}
-        className="btn-danger mt-3 w-full text-sm"
-      >
-        Delete instructor
-      </button>
+      <>
+        <button
+          onClick={() => setConfirming(true)}
+          className="btn-danger mt-3 w-full text-sm"
+        >
+          Delete instructor
+        </button>
+        {toastMessage && (
+          <Toast message={toastMessage} variant="error" onClose={() => setToastMessage(null)} />
+        )}
+      </>
     );
   }
 
@@ -60,6 +67,9 @@ export default function InstructorDeleteButton({
           Cancel
         </button>
       </div>
+      {toastMessage && (
+        <Toast message={toastMessage} variant="error" onClose={() => setToastMessage(null)} />
+      )}
     </div>
   );
 }

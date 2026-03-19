@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { getStripe } from "@/lib/stripe/server";
 
 export async function POST() {
   try {
@@ -40,6 +41,74 @@ export async function POST() {
     }
 
     const studioId = profile.studio_id;
+
+    // Cancel all active Stripe subscriptions before deleting data
+    const stripe = getStripe();
+
+    // 1. Cancel studio plan subscription
+    const { data: studio } = await adminSupabase
+      .from("studios")
+      .select("stripe_subscription_id")
+      .eq("id", studioId)
+      .single();
+    if (studio?.stripe_subscription_id) {
+      try {
+        await stripe.subscriptions.cancel(studio.stripe_subscription_id);
+      } catch {
+        // Subscription may already be cancelled — continue
+      }
+    }
+
+    // 2. Cancel member subscriptions
+    const { data: members } = await adminSupabase
+      .from("members")
+      .select("stripe_subscription_id")
+      .eq("studio_id", studioId)
+      .not("stripe_subscription_id", "is", null);
+    for (const m of members || []) {
+      if (!m.stripe_subscription_id) continue;
+      try {
+        await stripe.subscriptions.cancel(m.stripe_subscription_id);
+      } catch {
+        // Continue on error
+      }
+    }
+
+    // 3. Cancel pass subscriptions
+    const { data: memberIds } = await adminSupabase
+      .from("members")
+      .select("id")
+      .eq("studio_id", studioId);
+    if (memberIds && memberIds.length > 0) {
+      const { data: passSubs } = await adminSupabase
+        .from("pass_subscriptions")
+        .select("stripe_subscription_id")
+        .in("member_id", memberIds.map((m) => m.id))
+        .not("stripe_subscription_id", "is", null);
+      for (const ps of passSubs || []) {
+        if (!ps.stripe_subscription_id) continue;
+        try {
+          await stripe.subscriptions.cancel(ps.stripe_subscription_id);
+        } catch {
+          // Continue on error
+        }
+      }
+    }
+
+    // 4. Cancel instructor membership subscriptions
+    const { data: instrMemberships } = await adminSupabase
+      .from("instructor_memberships")
+      .select("stripe_subscription_id")
+      .eq("studio_id", studioId)
+      .not("stripe_subscription_id", "is", null);
+    for (const im of instrMemberships || []) {
+      if (!im.stripe_subscription_id) continue;
+      try {
+        await stripe.subscriptions.cancel(im.stripe_subscription_id);
+      } catch {
+        // Continue on error
+      }
+    }
 
     // Get all user IDs (profiles) for this studio before deletion
     const { data: studioProfiles } = await adminSupabase

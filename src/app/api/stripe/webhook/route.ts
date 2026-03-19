@@ -864,15 +864,21 @@ export async function POST(request: Request) {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal error";
     if (adminSupabase) {
-      await insertWebhookLog(adminSupabase, {
-        event_type: "webhook_error",
-        event_id: null,
-        studio_id: null,
-        status: "failure",
-        error_message: message,
-      });
+      try {
+        await insertWebhookLog(adminSupabase, {
+          event_type: "webhook_error",
+          event_id: null,
+          studio_id: null,
+          status: "failure",
+          error_message: message,
+        });
+      } catch {
+        // Logging failure should not prevent response
+      }
     }
-    return NextResponse.json({ error: message }, { status: 500 });
+    // Return 200 to prevent Stripe from retrying non-retryable errors.
+    // The error has been logged above for debugging.
+    return NextResponse.json({ error: message, received: true }, { status: 200 });
   }
 }
 

@@ -29,6 +29,16 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith("/instructors/")) return "Instructor";
   if (pathname.startsWith("/classes/")) return "Class";
   if (pathname.startsWith("/bookings/")) return "Session";
+  if (pathname.startsWith("/rooms/")) return "Room";
+  if (pathname.startsWith("/events/")) return "Event";
+  if (pathname.startsWith("/payments/")) return "Payments";
+  if (pathname.startsWith("/passes/")) return "Passes";
+  if (pathname.startsWith("/managers/")) return "Managers";
+  if (pathname.startsWith("/analytics/")) return "Analytics";
+  if (pathname.startsWith("/my-classes/")) return "My Classes";
+  if (pathname.startsWith("/settings/")) return "Settings";
+  if (pathname.startsWith("/studio-announcements/")) return "Announcements";
+  if (pathname.startsWith("/messages/")) return "Messages";
   return "Klasly";
 }
 

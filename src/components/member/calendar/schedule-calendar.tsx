@@ -47,6 +47,7 @@ export default function ScheduleCalendar({
     maxClasses: number | null;
   }>({ hasPass: false, hasCapacity: false, classesUsed: 0, maxClasses: null });
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   // Detect mobile on mount
@@ -62,19 +63,23 @@ export default function ScheduleCalendar({
   const fetchSessions = useCallback(
     async (v: CalendarView, d: Date) => {
       setLoading(true);
+      setFetchError(false);
       try {
         const { start, end } = getDateRange(v, d);
         const res = await fetch(
           `/api/member/sessions?start=${start}&end=${end}`,
         );
-        if (!res.ok) return;
+        if (!res.ok) {
+          setFetchError(true);
+          return;
+        }
         const data = await res.json();
         setSessions(data.sessions ?? []);
         setBookings(data.bookings ?? {});
         setConfirmedCounts(data.confirmedCounts ?? {});
         if (data.passInfo) setPassInfo(data.passInfo);
       } catch {
-        // silently fail
+        setFetchError(true);
       } finally {
         setLoading(false);
       }
@@ -148,7 +153,20 @@ export default function ScheduleCalendar({
         onViewChange={handleViewChange}
       />
 
-      {loading && sessions.length === 0 ? (
+      {fetchError && !loading ? (
+        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-8 text-center">
+          <p className="text-sm text-red-600">
+            Failed to load schedule. Please try again.
+          </p>
+          <button
+            type="button"
+            onClick={() => fetchSessions(view, currentDate)}
+            className="mt-3 text-sm font-medium text-brand-600 hover:text-brand-700"
+          >
+            Retry
+          </button>
+        </div>
+      ) : loading && sessions.length === 0 ? (
         <div className="flex items-center justify-center rounded-lg border border-gray-200 bg-white py-20">
           <div className="text-center">
             <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-brand-600 border-t-transparent" />

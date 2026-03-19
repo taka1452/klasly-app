@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { formatDate, formatTime, getPlanLabel } from "@/lib/utils";
+import Toast from "@/components/ui/toast";
 
 type BookedItem = {
   booking_id: string;
@@ -69,6 +70,7 @@ export default function SessionAttendance({
   const [data, setData] = useState<SessionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     const res = await fetch(`/api/attendance/session/${sessionId}`);
@@ -112,7 +114,7 @@ export default function SessionAttendance({
     if (!res.ok) {
       const err = await res.json();
       fetchData();
-      alert(err.error || "Failed to update");
+      setToastMessage(err.error || "Failed to update");
     }
     router.refresh();
   };
@@ -134,7 +136,7 @@ export default function SessionAttendance({
 
     if (!res.ok) {
       const err = await res.json();
-      alert(err.error || "Failed to deduct");
+      setToastMessage(err.error || "Failed to deduct");
       return;
     }
     await fetchData();
@@ -158,7 +160,7 @@ export default function SessionAttendance({
 
     if (!res.ok) {
       const err = await res.json();
-      alert(err.error || "Failed to undo");
+      setToastMessage(err.error || "Failed to undo");
       return;
     }
     await fetchData();
@@ -182,7 +184,7 @@ export default function SessionAttendance({
 
     if (!res.ok) {
       const err = await res.json();
-      alert(err.error || "Failed to remove");
+      setToastMessage(err.error || "Failed to remove");
       return;
     }
     await fetchData();
@@ -319,6 +321,7 @@ export default function SessionAttendance({
               ...data.booked.map((b) => b.member_id),
               ...data.drop_ins.map((d) => d.member_id),
             ]}
+            onError={(msg) => setToastMessage(msg)}
           />
         </div>
         {data.drop_ins.length > 0 ? (
@@ -405,6 +408,13 @@ export default function SessionAttendance({
           </p>
         )}
       </div>
+      {toastMessage && (
+        <Toast
+          message={toastMessage}
+          variant="error"
+          onClose={() => setToastMessage(null)}
+        />
+      )}
     </div>
   );
 }
@@ -413,10 +423,12 @@ function AddDropInButton({
   sessionId,
   onAdded,
   excludedIds,
+  onError,
 }: {
   sessionId: string;
   onAdded: () => void;
   excludedIds: string[];
+  onError: (msg: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -440,10 +452,10 @@ function AddDropInButton({
         onAdded();
       } else {
         const err = await res.json();
-        alert(err.error || "Failed to add.");
+        onError(err.error || "Failed to add.");
       }
     },
-    [sessionId, onAdded]
+    [sessionId, onAdded, onError]
   );
 
   useEffect(() => {

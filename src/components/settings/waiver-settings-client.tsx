@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { WAIVER_PRESETS, type WaiverPreset } from "@/lib/waiver-presets";
+import Toast from "@/components/ui/toast";
 import { WaiverPresetIcon } from "@/components/waiver-preset-icon";
 import { htmlToMarkdown, markdownToHtml } from "@/lib/waiver-content";
 
@@ -70,6 +71,7 @@ export default function WaiverSettingsClient({
   const [bulkLoading, setBulkLoading] = useState(false);
   const [bulkSuccess, setBulkSuccess] = useState<number | null>(null);
   const [showPresetPicker, setShowPresetPicker] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{ text: string; variant: "success" | "error" } | null>(null);
 
   async function handleCreateFromPreset(contentWithStudio: string) {
     setLoading(true);
@@ -88,7 +90,7 @@ export default function WaiverSettingsClient({
       }
       window.location.reload();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to create");
+      setToastMessage({ text: err instanceof Error ? err.message : "Failed to create", variant: "error" });
     } finally {
       setLoading(false);
     }
@@ -118,7 +120,7 @@ export default function WaiverSettingsClient({
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to save");
+      setToastMessage({ text: err instanceof Error ? err.message : "Failed to save", variant: "error" });
     } finally {
       setLoading(false);
     }
@@ -144,7 +146,7 @@ export default function WaiverSettingsClient({
       setBulkSuccess(data.sent ?? 0);
       setTimeout(() => setBulkSuccess(null), 3000);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to send invites");
+      setToastMessage({ text: err instanceof Error ? err.message : "Failed to send invites", variant: "error" });
     } finally {
       setBulkLoading(false);
     }
@@ -162,9 +164,9 @@ export default function WaiverSettingsClient({
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Failed to send");
       }
-      alert("Invite sent!");
+      setToastMessage({ text: "Invite sent!", variant: "success" });
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to send invite");
+      setToastMessage({ text: err instanceof Error ? err.message : "Failed to send invite", variant: "error" });
     } finally {
       setResendLoading(null);
     }
@@ -327,6 +329,13 @@ export default function WaiverSettingsClient({
           <p className="mt-4 text-sm text-green-600">All members have signed.</p>
         )}
       </div>
+      {toastMessage && (
+        <Toast
+          message={toastMessage.text}
+          variant={toastMessage.variant}
+          onClose={() => setToastMessage(null)}
+        />
+      )}
     </div>
   );
 }

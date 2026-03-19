@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Toast from "@/components/ui/toast";
 
 type Props = {
   className?: string;
@@ -14,6 +15,7 @@ export default function AdminPlatformSettings({ className }: Props) {
   const [platformFeePercent, setPlatformFeePercent] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -34,7 +36,7 @@ export default function AdminPlatformSettings({ className }: Props) {
   async function handleSave() {
     const num = parseFloat(platformFeePercent);
     if (Number.isNaN(num) || num < 0 || num > 30) {
-      alert("Platform fee must be between 0 and 30");
+      setToastMessage("Platform fee must be between 0 and 30");
       return;
     }
     setSaving(true);
@@ -50,7 +52,7 @@ export default function AdminPlatformSettings({ className }: Props) {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        alert(data.error ?? "Failed to save");
+        setToastMessage(data.error ?? "Failed to save");
         return;
       }
       setSaved(true);
@@ -110,6 +112,9 @@ export default function AdminPlatformSettings({ className }: Props) {
           Current value: {platformFeePercent}%
         </p>
       </div>
+      {toastMessage && (
+        <Toast message={toastMessage} variant="error" onClose={() => setToastMessage(null)} />
+      )}
     </div>
   );
 }

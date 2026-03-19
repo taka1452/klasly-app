@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import Toast from "@/components/ui/toast";
 
 type FeeOverride = {
   fee_type: "percentage" | "fixed";
@@ -38,6 +39,7 @@ export default function PayoutSettingsPage() {
   const [editFeeType, setEditFeeType] = useState<"percentage" | "fixed">("percentage");
   const [editFeeValue, setEditFeeValue] = useState("");
   const [savingOverride, setSavingOverride] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const fetchSettings = useCallback(async () => {
     const res = await fetch("/api/studio/payout-settings");
@@ -67,7 +69,7 @@ export default function PayoutSettingsPage() {
       });
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error ?? "Failed to save settings");
+        setToastMessage(data.error ?? "Failed to save settings");
         return;
       }
       await fetchSettings();
@@ -101,7 +103,7 @@ export default function PayoutSettingsPage() {
       });
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error ?? "Failed to save override");
+        setToastMessage(data.error ?? "Failed to save override");
         return;
       }
       setEditingInstructorId(null);
@@ -121,7 +123,7 @@ export default function PayoutSettingsPage() {
       });
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error ?? "Failed to remove override");
+        setToastMessage(data.error ?? "Failed to remove override");
         return;
       }
       setEditingInstructorId(null);
@@ -485,6 +487,9 @@ export default function PayoutSettingsPage() {
           </p>
         </div>
       </div>
+      {toastMessage && (
+        <Toast message={toastMessage} variant="error" onClose={() => setToastMessage(null)} />
+      )}
     </div>
   );
 }
@@ -512,6 +517,7 @@ function ClassFeeSection({
 }) {
   const [overrides, setOverrides] = useState<ClassFeeRow[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [featureEnabled, setFeatureEnabled] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [selectedClassId, setSelectedClassId] = useState("");
@@ -556,7 +562,7 @@ function ClassFeeSection({
       });
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error ?? "Failed to save");
+        setToastMessage(data.error ?? "Failed to save");
         return;
       }
       setShowForm(false);
@@ -714,6 +720,9 @@ function ClassFeeSection({
           </p>
         )}
       </div>
+      {toastMessage && (
+        <Toast message={toastMessage} variant="error" onClose={() => setToastMessage(null)} />
+      )}
     </div>
   );
 }
@@ -741,6 +750,7 @@ function FeeScheduleSection() {
   const [loaded, setLoaded] = useState(false);
   const [featureEnabled, setFeatureEnabled] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [formName, setFormName] = useState("");
   const [formDays, setFormDays] = useState<number[]>([]);
   const [formStartTime, setFormStartTime] = useState("09:00");
@@ -789,7 +799,7 @@ function FeeScheduleSection() {
       });
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error ?? "Failed to save");
+        setToastMessage(data.error ?? "Failed to save");
         return;
       }
       setShowForm(false);
@@ -1016,6 +1026,9 @@ function FeeScheduleSection() {
           </p>
         )}
       </div>
+      {toastMessage && (
+        <Toast message={toastMessage} variant="error" onClose={() => setToastMessage(null)} />
+      )}
     </div>
   );
 }

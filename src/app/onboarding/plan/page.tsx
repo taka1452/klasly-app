@@ -175,7 +175,7 @@ export default function OnboardingPlanPage() {
               if (res.ok && data.redirect) {
                 window.location.href = data.redirect;
               } else {
-                alert(data.error || "Skip failed");
+                console.error(data.error || "Skip failed");
               }
             }}
             className="fixed bottom-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-amber-400/90 text-amber-900 shadow-lg hover:bg-amber-500/90"

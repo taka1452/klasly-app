@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import FlowHintPanel from "@/components/ui/flow-hint-panel";
+import Toast from "@/components/ui/toast";
 
 type Status = {
   connected: boolean;
@@ -18,6 +19,7 @@ export default function SettingsConnectPage() {
   const [loading, setLoading] = useState(true);
   const [onboardingLoading, setOnboardingLoading] = useState(false);
   const [dashboardLoading, setDashboardLoading] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const fetchStatus = useCallback(async () => {
     const res = await fetch("/api/stripe/connect/status");
@@ -46,7 +48,7 @@ export default function SettingsConnectPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error ?? "Failed to start onboarding");
+        setToastMessage(data.error ?? "Failed to start onboarding");
         return;
       }
       if (data.url) {
@@ -65,7 +67,7 @@ export default function SettingsConnectPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error ?? "Failed to get dashboard link");
+        setToastMessage(data.error ?? "Failed to get dashboard link");
         return;
       }
       if (data.url) {
@@ -161,6 +163,9 @@ export default function SettingsConnectPage() {
             {dashboardLoading ? "Opening..." : "Open Stripe Dashboard"}
           </button>
         </div>
+      )}
+      {toastMessage && (
+        <Toast message={toastMessage} variant="error" onClose={() => setToastMessage(null)} />
       )}
     </div>
   );

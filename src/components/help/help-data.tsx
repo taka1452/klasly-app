@@ -383,6 +383,20 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             </>
           ),
         },
+        {
+          q: "How do I delete my studio account?",
+          a: (
+            <>
+              Go to <B>Settings</B> and scroll to the bottom to find the <B>Delete Account</B> section. Deleting your account will:
+              <Steps>
+                <li>Cancel all active Stripe subscriptions (studio plan, member plans, passes, and instructor memberships).</li>
+                <li>Permanently remove all studio data including classes, sessions, bookings, members, and instructors.</li>
+                <li>Delete all associated user accounts.</li>
+              </Steps>
+              <Tip>This action is irreversible. Make sure to export any data you need before deleting your account.</Tip>
+            </>
+          ),
+        },
       ],
     },
     {
@@ -993,6 +1007,14 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               Go to <B>Room Bookings</B> from the sidebar to see all your room reservations with date, time, and room name.
+            </>
+          ),
+        },
+        {
+          q: "How do I cancel a room booking?",
+          a: (
+            <>
+              On the Room Bookings page, click <B>Cancel</B> next to the booking you want to remove. You&apos;ll be asked to confirm before the cancellation is processed.
             </>
           ),
         },

@@ -107,7 +107,7 @@ export default function SettingsContent({
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error ?? "Failed to replay tutorial");
+        showToast(data.error ?? "Failed to replay tutorial");
         return;
       }
       showToast("Tutorial will restart");
@@ -127,7 +127,7 @@ export default function SettingsContent({
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error ?? "Failed to mark complete");
+        showToast(data.error ?? "Failed to mark complete");
         return;
       }
       setShowMarkCompleteConfirm(false);
@@ -144,7 +144,7 @@ export default function SettingsContent({
     const data = await res.json();
 
     if (!res.ok) {
-      alert(data.error || "Failed to delete account");
+      showToast(data.error || "Failed to delete account");
       setDeleteLoading(false);
       return;
     }

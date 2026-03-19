@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import type { Product } from "@/types/database";
+import Toast from "@/components/ui/toast";
 
 function centsToDollars(cents: number): string {
   return (cents / 100).toFixed(2);
@@ -48,6 +49,7 @@ export default function ProductManager({ initialProducts = [] }: ProductManagerP
   const [form, setForm] = useState<FormState>(emptyForm);
   const [error, setError] = useState<string | null>(null);
   const [creditsWarning, setCreditsWarning] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -167,7 +169,7 @@ export default function ProductManager({ initialProducts = [] }: ProductManagerP
     const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
     if (!res.ok) {
       const data = await res.json();
-      alert(data.error ?? "Failed to deactivate");
+      setToastMessage(data.error ?? "Failed to deactivate");
       return;
     }
     setProducts((prev) => prev.filter((p) => p.id !== id));
@@ -419,6 +421,9 @@ export default function ProductManager({ initialProducts = [] }: ProductManagerP
             </form>
           </div>
         </div>
+      )}
+      {toastMessage && (
+        <Toast message={toastMessage} variant="error" onClose={() => setToastMessage(null)} />
       )}
     </div>
   );
