@@ -4,9 +4,15 @@ import { welcomeMember } from "@/lib/email/templates";
 import { NextResponse } from "next/server";
 import { getAppUrl } from "@/lib/app-url";
 import { getDashboardContext } from "@/lib/auth/dashboard-access";
+import { ratelimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   try {
+    const ip = request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip") ?? "unknown";
+    const { success } = await ratelimit.limit(ip);
+    if (!success) {
+      return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+    }
     // 認証確認（Owner または can_manage_members 権限を持つ Manager）
     const ctx = await getDashboardContext();
     if (!ctx) {

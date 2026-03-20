@@ -3,11 +3,17 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { stripe } from "@/lib/stripe/server";
 import { NextResponse } from "next/server";
 import { resolveStudioFee, calculateStudioFee } from "@/lib/fee/resolve-fee";
+import { ratelimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
+    const ip = request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip") ?? "unknown";
+    const { success } = await ratelimit.limit(ip);
+    if (!success) {
+      return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+    }
     const serverSupabase = await createServerClient();
     const {
       data: { user },
