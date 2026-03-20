@@ -6,6 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import PasswordField from "@/components/ui/password-field";
 import GoogleSignInButton from "@/components/auth/google-sign-in-button";
+import HoneypotField from "@/components/ui/honeypot-field";
 
 function SignupForm() {
   const [fullName, setFullName] = useState("");
@@ -42,6 +43,11 @@ function SignupForm() {
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    // Honeypot — silently reject bots
+    const hp = (e.target as HTMLFormElement).querySelector<HTMLInputElement>("#website");
+    if (hp?.value) return;
+
     setLoading(true);
 
     if (password.length < 6) {
@@ -194,6 +200,7 @@ function SignupForm() {
       </div>
 
       <form onSubmit={handleSignup} className="mt-6 space-y-5">
+          <HoneypotField />
         {error && (
           <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
             {error}

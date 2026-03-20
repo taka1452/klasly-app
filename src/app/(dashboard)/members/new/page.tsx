@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePlanAccess } from "@/components/ui/plan-access-provider";
 import FlowHintPanel from "@/components/ui/flow-hint-panel";
 import HelpTip from "@/components/ui/help-tip";
+import HoneypotField from "@/components/ui/honeypot-field";
 
 export default function NewMemberPage() {
   const router = useRouter();
@@ -54,6 +55,11 @@ export default function NewMemberPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    // Honeypot check — bots fill hidden fields
+    const honeypot = (e.target as HTMLFormElement).querySelector<HTMLInputElement>("#website");
+    if (honeypot?.value) return;
+
     setLoading(true);
 
     // API Route で会員を作成（studio_id はサーバー側で取得）
@@ -111,6 +117,7 @@ export default function NewMemberPage() {
 
       <div className="card max-w-xl">
         <form onSubmit={handleSubmit} className="space-y-5">
+          <HoneypotField />
           {error && (
             <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
               {error}

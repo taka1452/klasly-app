@@ -6,6 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import PasswordField from "@/components/ui/password-field";
 import GoogleSignInButton from "@/components/auth/google-sign-in-button";
+import HoneypotField from "@/components/ui/honeypot-field";
 
 function LoginForm() {
   const router = useRouter();
@@ -66,6 +67,10 @@ function LoginForm() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    const hp = (e.target as HTMLFormElement).querySelector<HTMLInputElement>("#website");
+    if (hp?.value) return;
+
     setLoading(true);
 
     const supabase = createClient();
@@ -184,6 +189,7 @@ function LoginForm() {
       </div>
 
       <form onSubmit={handleLogin} className="mt-8 space-y-5">
+          <HoneypotField />
         {error && (
           <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
             {error}
