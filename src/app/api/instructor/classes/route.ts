@@ -64,6 +64,8 @@ export async function POST(request: Request) {
       room_id,
       is_public,
       price_cents,
+      is_online,
+      online_link,
     } = body;
 
     if (!name || day_of_week === undefined || !start_time || !duration_minutes || !capacity) {
@@ -176,9 +178,11 @@ export async function POST(request: Request) {
         start_time: startTimeFormatted,
         duration_minutes,
         capacity,
-        room_id: room_id || null,
+        room_id: is_online ? null : room_id || null,
         is_public: is_public ?? true,
         price_cents: price_cents ?? null,
+        is_online: is_online ?? false,
+        online_link: (is_online || online_link) ? online_link || null : null,
         is_active: true,
       })
       .select("id, start_time, capacity")
@@ -209,6 +213,8 @@ export async function POST(request: Request) {
         capacity: newClass.capacity,
         is_cancelled: false,
         is_public: is_public ?? true,
+        is_online: is_online ?? false,
+        online_link: (is_online || online_link) ? online_link || null : null,
       });
     }
 

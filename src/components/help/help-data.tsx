@@ -257,13 +257,21 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I manage rooms?",
           a: (
             <>
-              Go to <B>Rooms</B> from the sidebar. You can:
+              Go to <B>Rooms</B> from the sidebar. The default view shows <B>upcoming room bookings</B> by instructors. To add or edit rooms, click <B>Manage Rooms</B>.
               <Steps>
-                <li><B>Add rooms</B> — click &quot;New Room&quot; and enter name, capacity, and description.</li>
+                <li><B>Add rooms</B> — click &quot;Manage Rooms → + Add room&quot; and enter name, capacity, and description.</li>
                 <li><B>Assign rooms to classes</B> — when creating or editing a class, select a room from the dropdown.</li>
-                <li><B>View room bookings</B> — go to <B>Rooms → Bookings</B> to see a calendar of room usage.</li>
+                <li><B>View room bookings</B> — the Rooms page shows all upcoming instructor room bookings at a glance.</li>
               </Steps>
-              <Tip>The system prevents double-booking: if a room is occupied, you&apos;ll see a conflict warning.</Tip>
+              <Tip>Room bookings also appear on the Classes calendar (in teal), so you can see classes and room usage together.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "Can I see room bookings on the calendar?",
+          a: (
+            <>
+              Yes. Instructor room bookings are shown on the <B>Classes</B> calendar alongside class sessions. Room bookings appear in <B>teal</B> with a &quot;Room&quot; badge to distinguish them from classes.
             </>
           ),
         },
@@ -1078,6 +1086,20 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
+          q: "How do I create an online or hybrid class?",
+          a: (
+            <>
+              When creating a class, choose <B>Class Type</B>:
+              <Steps>
+                <li><B>In-person</B> — a regular class held at the studio (default).</li>
+                <li><B>Online</B> — a virtual class. Add your Zoom or Google Meet link. No room needed.</li>
+                <li><B>Hybrid</B> — students can attend in-person or online. Add a room and an online link.</li>
+              </Steps>
+              <Tip>Online classes don&apos;t require a room booking, so you can create them without booking a studio room first.</Tip>
+            </>
+          ),
+        },
+        {
           q: "How do I delete a class?",
           a: (
             <>
@@ -1096,7 +1118,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               Go to <B>Room Bookings → New Booking</B>. Select a room, date, and time. The system will check for conflicts and prevent double-booking.
-              <Tip>If a room is already booked at your selected time, you&apos;ll see a warning. Choose a different time or room.</Tip>
+              <Tip>If you don&apos;t have an active membership yet, you&apos;ll see a reminder to purchase one before booking. This ensures your hours are tracked correctly.</Tip>
             </>
           ),
         },

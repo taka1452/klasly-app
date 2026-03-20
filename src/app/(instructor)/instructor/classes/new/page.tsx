@@ -29,11 +29,19 @@ export default function InstructorNewClassPage() {
   const [roomId, setRoomId] = useState("");
   const [isPublic, setIsPublic] = useState(true);
   const [priceDollars, setPriceDollars] = useState("");
+  const [classType, setClassType] = useState<"in-person" | "online" | "hybrid">("in-person");
+  const [onlineLink, setOnlineLink] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [hasRoomBookings, setHasRoomBookings] = useState(true);
+
+  const isOnline = classType === "online";
+  const showOnlineLink = classType === "online" || classType === "hybrid";
+  const showRoom = classType === "in-person" || classType === "hybrid";
+  const showNoBookingWarning = !isOnline && !hasRoomBookings;
 
   useEffect(() => {
-    async function fetchRooms() {
+    async function fetchData() {
       const supabase = createClient();
       const {
         data: { user },
@@ -51,8 +59,30 @@ export default function InstructorNewClassPage() {
         .eq("is_active", true)
         .order("name", { ascending: true });
       setRooms(data || []);
+
+      // Check if instructor has any upcoming room bookings (for warning)
+      try {
+        const today = new Date().toISOString().split("T")[0];
+        const { data: instructor } = await supabase
+          .from("instructors")
+          .select("id")
+          .eq("profile_id", user?.id)
+          .maybeSingle();
+        if (instructor) {
+          const { data: bookings } = await supabase
+            .from("instructor_room_bookings")
+            .select("id")
+            .eq("instructor_id", instructor.id)
+            .eq("status", "confirmed")
+            .gte("booking_date", today)
+            .limit(1);
+          setHasRoomBookings((bookings?.length ?? 0) > 0);
+        }
+      } catch {
+        // Ignore — warning is best-effort
+      }
     }
-    fetchRooms();
+    fetchData();
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -82,9 +112,11 @@ export default function InstructorNewClassPage() {
           start_time: startTime,
           duration_minutes: durationMinutes,
           capacity,
-          room_id: roomId || null,
+          room_id: isOnline ? null : roomId || null,
           is_public: isPublic,
           price_cents: priceCents,
+          is_online: isOnline,
+          online_link: showOnlineLink ? onlineLink || null : null,
         }),
       });
 
@@ -121,6 +153,24 @@ export default function InstructorNewClassPage() {
           and pay directly.
         </p>
       </div>
+
+      {showNoBookingWarning && (
+        <div className="mb-4 max-w-xl rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <p className="text-sm font-medium text-amber-800">
+            ⚠️ No upcoming room bookings
+          </p>
+          <p className="mt-1 text-sm text-amber-700">
+            You don&apos;t have any upcoming room bookings. For in-person
+            classes, book a room first so students know where to go.
+          </p>
+          <Link
+            href="/instructor/room-bookings/new"
+            className="mt-2 inline-block text-sm font-medium text-amber-800 underline hover:text-amber-900"
+          >
+            Book a room →
+          </Link>
+        </div>
+      )}
 
       <div className="card max-w-xl">
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -182,6 +232,49 @@ export default function InstructorNewClassPage() {
             </p>
           </div>
 
+          {/* Class Type */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Class Type
+            </label>
+            <div className="mt-2 flex gap-4">
+              {(["in-person", "online", "hybrid"] as const).map((type) => (
+                <label key={type} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="radio"
+                    name="classType"
+                    checked={classType === type}
+                    onChange={() => setClassType(type)}
+                    className="h-4 w-4 border-gray-300 text-emerald-600"
+                  />
+                  <span className="capitalize">{type === "in-person" ? "In-person" : type === "online" ? "Online" : "Hybrid"}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Online Link */}
+          {showOnlineLink && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Online Link (Zoom, Google Meet, etc.)
+              </label>
+              <input
+                type="url"
+                value={onlineLink}
+                onChange={(e) => setOnlineLink(e.target.value)}
+                placeholder="https://zoom.us/j/123456789"
+                required={isOnline}
+                className="input-field mt-1"
+              />
+              <p className="mt-1 text-xs text-gray-400">
+                {isOnline
+                  ? "Required for online classes."
+                  : "Optional for hybrid classes. Students can join online or in-person."}
+              </p>
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Day of week *
@@ -242,24 +335,27 @@ export default function InstructorNewClassPage() {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Room
-            </label>
-            <select
-              value={roomId}
-              onChange={(e) => setRoomId(e.target.value)}
-              className="input-field mt-1"
-            >
-              <option value="">No room assigned</option>
-              {rooms.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                  {r.capacity ? ` (cap. ${r.capacity})` : ""}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Room — hidden for online-only classes */}
+          {showRoom && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Room
+              </label>
+              <select
+                value={roomId}
+                onChange={(e) => setRoomId(e.target.value)}
+                className="input-field mt-1"
+              >
+                <option value="">No room assigned</option>
+                {rooms.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                    {r.capacity ? ` (cap. ${r.capacity})` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="flex items-center gap-3">
             <input

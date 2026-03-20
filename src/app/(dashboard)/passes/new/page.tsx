@@ -85,7 +85,7 @@ export default function NewPassPage() {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder='e.g. "Elizabeth Monthly Pass"'
+            placeholder='e.g. "Unlimited Monthly" or "10 Class Pack"'
             className="input-field mt-1"
           />
         </div>

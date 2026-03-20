@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * GET /api/dashboard/sessions?start=YYYY-MM-DD&end=YYYY-MM-DD
- * Returns sessions with class info and confirmed booking counts
+ * Returns sessions with class info, room bookings, and confirmed booking counts
  * for the owner/manager dashboard calendar view.
  */
 export async function GET(request: NextRequest) {
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
 
     const studioId = profile.studio_id;
 
-    // Fetch sessions with expanded class + instructor info (no is_public filter for dashboard)
+    // ── Fetch class sessions ──
     type SessionRow = {
       id: string;
       class_id: string;
@@ -124,7 +124,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Format sessions (include class_id for navigation)
+    // Format class sessions
     const formattedSessions = typedSessions.map((s) => ({
       id: s.id,
       class_id: s.class_id,
@@ -139,10 +139,79 @@ export async function GET(request: NextRequest) {
       is_public: s.classes?.is_public ?? true,
       room_name: s.classes?.rooms?.name ?? null,
       is_online: s.is_online ?? s.classes?.is_online ?? false,
+      event_type: "class" as const,
     }));
 
+    // ── Fetch room bookings ──
+    type RoomBookingRow = {
+      id: string;
+      title: string;
+      booking_date: string;
+      start_time: string;
+      end_time: string;
+      is_public: boolean;
+      status: string;
+      rooms?: { name?: string } | null;
+      instructors?: {
+        profiles?: { full_name?: string };
+      } | null;
+    };
+
+    const { data: roomBookings } = await supabase
+      .from("instructor_room_bookings")
+      .select(
+        "id, title, booking_date, start_time, end_time, is_public, status, rooms(name), instructors(profiles(full_name))",
+      )
+      .eq("studio_id", studioId)
+      .eq("status", "confirmed")
+      .gte("booking_date", start)
+      .lte("booking_date", end)
+      .order("booking_date", { ascending: true })
+      .order("start_time", { ascending: true });
+
+    const typedRoomBookings = (roomBookings ?? []) as RoomBookingRow[];
+
+    // Format room bookings as calendar events
+    const formattedRoomBookings = typedRoomBookings.map((rb) => {
+      // Calculate duration from start_time and end_time (HH:MM:SS format)
+      const [sh, sm] = rb.start_time.split(":").map(Number);
+      const [eh, em] = rb.end_time.split(":").map(Number);
+      const durationMinutes = (eh * 60 + em) - (sh * 60 + sm);
+
+      const room = rb.rooms;
+      const roomName = Array.isArray(room) ? room[0]?.name : room?.name || null;
+      const instr = rb.instructors;
+      const rawInstr = Array.isArray(instr) ? instr[0] : instr;
+
+      return {
+        id: rb.id,
+        class_id: rb.id, // use booking id for navigation key
+        session_date: rb.booking_date,
+        start_time: rb.start_time,
+        capacity: 1,
+        is_cancelled: false,
+        class_name: rb.title || "Room Booking",
+        duration_minutes: durationMinutes > 0 ? durationMinutes : 60,
+        instructor_name: rawInstr?.profiles?.full_name ?? "",
+        location: null,
+        is_public: rb.is_public,
+        room_name: roomName,
+        is_online: false,
+        event_type: "room_booking" as const,
+      };
+    });
+
+    // Merge and sort
+    const allEvents = [...formattedSessions, ...formattedRoomBookings].sort(
+      (a, b) => {
+        if (a.session_date !== b.session_date)
+          return a.session_date.localeCompare(b.session_date);
+        return a.start_time.localeCompare(b.start_time);
+      },
+    );
+
     return NextResponse.json({
-      sessions: formattedSessions,
+      sessions: allEvents,
       confirmedCounts: confirmedMap,
     });
   } catch (err: unknown) {

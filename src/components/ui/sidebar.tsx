@@ -19,7 +19,15 @@ type NavItem = {
   href: string;
   dataTour?: string;
   featureKey?: string;
+  group?: string;
   icon: React.ReactNode;
+};
+
+const GROUP_LABELS: Record<string, string> = {
+  people: "People",
+  schedule: "Schedule",
+  money: "Money",
+  communication: "Communication",
 };
 
 const ownerNavItems: NavItem[] = [
@@ -33,10 +41,12 @@ const ownerNavItems: NavItem[] = [
       </svg>
     ),
   },
+  // ── PEOPLE ──
   {
     label: "Members",
     href: "/members",
     dataTour: "members-section",
+    group: "people",
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
@@ -47,6 +57,7 @@ const ownerNavItems: NavItem[] = [
     label: "Instructors",
     href: "/instructors",
     dataTour: undefined,
+    group: "people",
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
@@ -54,9 +65,23 @@ const ownerNavItems: NavItem[] = [
     ),
   },
   {
+    label: "Managers",
+    href: "/managers",
+    dataTour: undefined,
+    group: "people",
+    featureKey: FEATURE_KEYS.MANAGER_ROLE,
+    icon: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+      </svg>
+    ),
+  },
+  // ── SCHEDULE ──
+  {
     label: "Classes",
     href: "/classes",
     dataTour: undefined,
+    group: "schedule",
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
@@ -67,6 +92,7 @@ const ownerNavItems: NavItem[] = [
     label: "Rooms",
     href: "/rooms",
     dataTour: undefined,
+    group: "schedule",
     featureKey: FEATURE_KEYS.ROOM_MANAGEMENT,
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -78,6 +104,7 @@ const ownerNavItems: NavItem[] = [
     label: "Events",
     href: "/events",
     dataTour: undefined,
+    group: "schedule",
     featureKey: FEATURE_KEYS.RETREAT_BOOKING,
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -89,16 +116,19 @@ const ownerNavItems: NavItem[] = [
     label: "Bookings",
     href: "/bookings",
     dataTour: "bookings-section",
+    group: "schedule",
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
       </svg>
     ),
   },
+  // ── MONEY ──
   {
     label: "Payments",
     href: "/payments",
     dataTour: undefined,
+    group: "money",
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -109,6 +139,7 @@ const ownerNavItems: NavItem[] = [
     label: "Passes",
     href: "/passes",
     dataTour: undefined,
+    group: "money",
     featureKey: FEATURE_KEYS.STUDIO_PASS,
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -116,10 +147,12 @@ const ownerNavItems: NavItem[] = [
       </svg>
     ),
   },
+  // ── COMMUNICATION ──
   {
     label: "Messages",
     href: "/messages",
     dataTour: undefined,
+    group: "communication",
     featureKey: FEATURE_KEYS.MESSAGING,
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -131,23 +164,14 @@ const ownerNavItems: NavItem[] = [
     label: "Announcements",
     href: "/studio-announcements",
     dataTour: undefined,
+    group: "communication",
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 110-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 01-1.44-4.282m3.102.069a18.03 18.03 0 01-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 018.835 2.535M10.34 6.66a23.847 23.847 0 008.835-2.535m0 0A23.74 23.74 0 0018.795 3m.38 1.125a23.91 23.91 0 011.014 5.395m-1.014 8.855c-.118.38-.245.754-.38 1.125m.38-1.125a23.91 23.91 0 001.014-5.395m0-3.46c.495.413.811 1.035.811 1.73 0 .695-.316 1.317-.811 1.73m0-3.46a24.347 24.347 0 010 3.46" />
       </svg>
     ),
   },
-  {
-    label: "Managers",
-    href: "/managers",
-    dataTour: undefined,
-    featureKey: FEATURE_KEYS.MANAGER_ROLE,
-    icon: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-      </svg>
-    ),
-  },
+  // ── UNGROUPED (bottom) ──
   {
     label: "Analytics",
     href: "/analytics",
@@ -181,12 +205,77 @@ const myClassesNavItem: NavItem = {
   label: "My Classes",
   href: "/my-classes",
   dataTour: undefined,
+  group: "schedule",
   icon: (
     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
     </svg>
   ),
 };
+
+/** Render a list of nav items with group section headers */
+function NavList({
+  items,
+  pathname,
+  onMobileClose,
+}: {
+  items: NavItem[];
+  pathname: string;
+  onMobileClose?: () => void;
+}) {
+  let lastGroup: string | undefined = undefined;
+
+  return (
+    <>
+      {items.map((item) => {
+        const isActive =
+          pathname === item.href ||
+          (item.href !== "/dashboard" && pathname.startsWith(item.href));
+
+        // Show group header when group changes
+        let groupHeader: React.ReactNode = null;
+        if (item.group && item.group !== lastGroup) {
+          groupHeader = (
+            <div
+              key={`group-${item.group}`}
+              className="px-3 pb-1 pt-4 first:pt-2"
+            >
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                {GROUP_LABELS[item.group] ?? item.group}
+              </span>
+            </div>
+          );
+        }
+        // Reset when transitioning from grouped to ungrouped
+        if (!item.group && lastGroup) {
+          groupHeader = <div key="group-sep" className="my-2 border-t border-gray-100" />;
+        }
+        lastGroup = item.group;
+
+        return (
+          <div key={item.href}>
+            {groupHeader}
+            <Link
+              href={item.href}
+              onClick={onMobileClose}
+              {...(item.dataTour ? { "data-tour": item.dataTour } : {})}
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                isActive
+                  ? "bg-brand-50 text-brand-700"
+                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+              }`}
+            >
+              <span className={isActive ? "text-brand-600" : "text-gray-400"}>
+                {item.icon}
+              </span>
+              {item.label}
+            </Link>
+          </div>
+        );
+      })}
+    </>
+  );
+}
 
 export default function Sidebar({
   currentRole,
@@ -245,30 +334,8 @@ export default function Sidebar({
           <p className="truncate text-sm font-medium text-gray-900">{studioName}</p>
           <p className="text-xs text-gray-400 capitalize">{currentRole}</p>
         </div>
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-          {navItems.map((item) => {
-            const isActive =
-              pathname === item.href ||
-              (item.href !== "/dashboard" && pathname.startsWith(item.href));
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onMobileClose}
-                {...(item.dataTour ? { "data-tour": item.dataTour } : {})}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                  isActive
-                    ? "bg-brand-50 text-brand-700"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                }`}
-              >
-                <span className={isActive ? "text-brand-600" : "text-gray-400"}>
-                  {item.icon}
-                </span>
-                {item.label}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
+          <NavList items={navItems} pathname={pathname} onMobileClose={onMobileClose} />
         </nav>
         {showAdminLink && (
           <div className="border-t border-gray-200 px-6 py-3">
@@ -312,30 +379,8 @@ export default function Sidebar({
       </div>
 
       {/* ナビゲーション */}
-      <nav className="flex-1 space-y-1 px-3 py-4">
-        {navItems.map((item) => {
-          const isActive =
-            pathname === item.href ||
-            (item.href !== "/dashboard" && pathname.startsWith(item.href));
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              {...(item.dataTour ? { "data-tour": item.dataTour } : {})}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                isActive
-                  ? "bg-brand-50 text-brand-700"
-                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-              }`}
-            >
-              <span className={isActive ? "text-brand-600" : "text-gray-400"}>
-                {item.icon}
-              </span>
-              {item.label}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
+        <NavList items={navItems} pathname={pathname} />
       </nav>
 
       {showAdminLink && (

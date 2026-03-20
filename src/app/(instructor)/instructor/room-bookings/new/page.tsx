@@ -19,9 +19,10 @@ export default function NewRoomBookingPage() {
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [noMembershipWarning, setNoMembershipWarning] = useState(false);
 
   useEffect(() => {
-    async function fetchRooms() {
+    async function fetchData() {
       const supabase = createClient();
       const {
         data: { user },
@@ -39,8 +40,21 @@ export default function NewRoomBookingPage() {
         .eq("is_active", true)
         .order("name", { ascending: true });
       setRooms(data || []);
+
+      // Check if instructor has active membership (for warning)
+      try {
+        const res = await fetch("/api/instructor/quota");
+        if (res.ok) {
+          const quota = await res.json();
+          if (!quota.hasTier) {
+            setNoMembershipWarning(true);
+          }
+        }
+      } catch {
+        // Ignore — warning is best-effort
+      }
     }
-    fetchRooms();
+    fetchData();
 
     // デフォルト日付を今日に
     const today = new Date().toISOString().split("T")[0];
@@ -94,6 +108,25 @@ export default function NewRoomBookingPage() {
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-gray-900">Book a room</h1>
       </div>
+
+      {noMembershipWarning && (
+        <div className="mb-4 max-w-xl rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <p className="text-sm font-medium text-amber-800">
+            ⚠️ No active membership
+          </p>
+          <p className="mt-1 text-sm text-amber-700">
+            You don&apos;t have an active studio membership yet. Please purchase
+            a membership plan before booking rooms to ensure your hours are
+            tracked correctly.
+          </p>
+          <Link
+            href="/instructor/membership"
+            className="mt-2 inline-block text-sm font-medium text-amber-800 underline hover:text-amber-900"
+          >
+            View membership plans →
+          </Link>
+        </div>
+      )}
 
       <div className="card max-w-xl">
         <form onSubmit={handleSubmit} className="space-y-5">
