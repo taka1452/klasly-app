@@ -56,6 +56,9 @@ export default async function ClassesPage() {
           <Link href="/classes/import" className="btn-secondary">
             Import CSV
           </Link>
+          <Link href="/classes/templates" className="btn-secondary">
+            Templates
+          </Link>
           <Link href="/classes/new" className="btn-primary">
             + Add class
           </Link>

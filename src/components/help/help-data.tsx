@@ -184,15 +184,13 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I create a class?",
           a: (
             <>
-              Go to <B>Classes → New Class</B>. Fill in:
+              Creating a class is now a two-step process using <B>templates</B> and <B>sessions</B>:
               <Steps>
-                <li>Class name and description.</li>
-                <li>Assign an instructor.</li>
-                <li>Choose <B>Recurring (weekly)</B> or <B>One-time</B>. Recurring classes repeat every week on the selected day. One-time classes happen on a single date (great for workshops).</li>
-                <li>Set the time, duration, and capacity.</li>
-                <li>Optionally assign a room.</li>
+                <li>Go to <B>Classes &rarr; Templates</B> and create a template with the class name, duration, capacity, type, and instructor.</li>
+                <li>From the template, click <B>Schedule</B> to create a session. Pick a date, time, room, and choose Single or Weekly repeat.</li>
               </Steps>
-              Once created, sessions (bookable time slots) will be generated automatically.
+              You can also create sessions directly from the <B>instructor room calendar</B> by clicking an empty time slot and selecting a template from the dropdown.
+              <Tip>Clicking <B>+ Add class</B> on the Classes page takes you to the template creation page.</Tip>
             </>
           ),
         },
@@ -208,7 +206,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
                 <li><B>Gray</B> — cancelled sessions.</li>
                 <li><B>Teal</B> — instructor room bookings (shown with a &quot;Room&quot; badge).</li>
               </Steps>
-              Each card shows the class name, time, instructor, and booking count. A red line indicates the current time.
+              Each card shows the class name, time, instructor, and booking count. Classes with a room show a teal room badge. Online classes display a camera icon. A red line indicates the current time.
             </>
           ),
         },
@@ -230,6 +228,21 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
                 <li>To change visibility for an individual session, go to <B>Classes → [Class] → [Session]</B> and click the visibility toggle.</li>
               </Steps>
               <Tip>Private sessions still count for room availability — they prevent double-booking even though members can&apos;t see them.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "What are class templates?",
+          a: (
+            <>
+              Class templates are reusable blueprints for your classes. Each template stores the class name, description, duration, capacity, class type (in-person, online, or hybrid), optional pricing, and assigned instructor. Templates make it faster to create new classes without re-entering the same details each time.
+              <Steps>
+                <li>Go to <B>Classes &rarr; Templates</B> to see all templates in a grid view.</li>
+                <li>Click <B>+ New Template</B> to create one. Fill in the name, class type, duration, capacity, price, and instructor.</li>
+                <li>Click any template card to edit its details, or click <B>Schedule</B> to create a session from it.</li>
+                <li>Templates can be deactivated from the edit page &mdash; they won&apos;t appear in the list but can be restored later.</li>
+              </Steps>
+              <Tip>Instructors can also create and manage their own templates. Owners and managers can see and edit all templates for the studio.</Tip>
             </>
           ),
         },
@@ -1119,7 +1132,12 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I book a room?",
           a: (
             <>
-              Go to <B>Room Bookings → New Booking</B>. Choose <B>One-time</B> for a single date, or <B>Recurring (weekly)</B> to book the same room every week. The system checks for conflicts and prevents double-booking.
+              Open the <B>Room Calendar</B> page. Click an empty time slot to open the session form. You can choose:
+              <Steps>
+                <li><B>Room only</B> — a simple room reservation with a custom title (no class attached).</li>
+                <li><B>Class template</B> — select a template from the dropdown to create a class session in that room. The duration auto-fills from the template.</li>
+              </Steps>
+              Choose <B>Single</B> for one date, or <B>Weekly</B> to repeat the booking for multiple weeks. The system checks for conflicts and prevents double-booking.
               <Tip>If you don&apos;t have an active membership yet, you&apos;ll see a reminder to purchase one before booking. This ensures your hours are tracked correctly.</Tip>
             </>
           ),

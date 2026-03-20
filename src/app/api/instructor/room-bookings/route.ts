@@ -2,7 +2,15 @@ import { getInstructorContext } from "@/lib/auth/instructor-access";
 import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-// GET: 自分のルームブッキング一覧
+/**
+ * Backward-compatible wrapper around class_sessions.
+ * instructor_room_bookings is deprecated — all data now lives in class_sessions
+ * with session_type IN ('class', 'room_only').
+ *
+ * Response format is preserved for the existing room-calendar UI.
+ */
+
+// GET: 自分のセッション一覧 (ルーム付き)
 export async function GET(request: Request) {
   try {
     const ctx = await getInstructorContext();
@@ -15,15 +23,16 @@ export async function GET(request: Request) {
     const to = searchParams.get("to");
 
     let query = ctx.supabase
-      .from("instructor_room_bookings")
+      .from("class_sessions")
       .select("*, rooms(name, capacity)")
       .eq("instructor_id", ctx.instructorId)
-      .eq("status", "confirmed")
-      .order("booking_date", { ascending: true })
+      .eq("is_cancelled", false)
+      .not("room_id", "is", null)
+      .order("session_date", { ascending: true })
       .order("start_time", { ascending: true });
 
-    if (from) query = query.gte("booking_date", from);
-    if (to) query = query.lte("booking_date", to);
+    if (from) query = query.gte("session_date", from);
+    if (to) query = query.lte("session_date", to);
 
     const { data, error } = await query;
 
@@ -31,7 +40,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(data || []);
+    // Map to backward-compatible shape for room-calendar UI
+    const mapped = (data || []).map(mapSessionToBooking);
+
+    return NextResponse.json(mapped);
   } catch {
     return NextResponse.json(
       { error: "Internal server error" },
@@ -40,7 +52,7 @@ export async function GET(request: Request) {
   }
 }
 
-// POST: 新規ルームブッキング作成
+// POST: 新規ルームブッキング作成 → class_sessions に挿入
 export async function POST(request: Request) {
   try {
     const ctx = await getInstructorContext();
@@ -51,8 +63,6 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { room_id, title, booking_date, start_time, end_time, is_public, notes, recurring, day_of_week, weeks } = body;
 
-    // For recurring: day_of_week + start/end required, booking_date derived
-    // For one-time: booking_date + start/end required
     if (!room_id || !title || !start_time || !end_time) {
       return NextResponse.json(
         { error: "room_id, title, start_time, end_time are required" },
@@ -110,12 +120,11 @@ export async function POST(request: Request) {
     // Generate list of booking dates
     const bookingDates: string[] = [];
     if (recurring) {
-      // Generate N weeks of dates starting from next occurrence of day_of_week
       const numWeeks = Math.min(Math.max(weeks ?? 8, 1), 52);
       const todayDate = new Date();
       todayDate.setHours(0, 0, 0, 0);
       const currentDay = todayDate.getDay();
-      const daysUntilFirst = (day_of_week - currentDay + 7) % 7 || 7; // at least next week
+      const daysUntilFirst = (day_of_week - currentDay + 7) % 7 || 7;
       const firstDate = new Date(todayDate);
       firstDate.setDate(todayDate.getDate() + daysUntilFirst);
 
@@ -128,13 +137,13 @@ export async function POST(request: Request) {
       bookingDates.push(booking_date);
     }
 
-    // 重複チェック: 全日付について同じ部屋で時間帯が重なるブッキングがないか
+    // 重複チェック: class_sessions で同じ部屋・時間帯の衝突確認
     const { data: conflicts } = await ctx.supabase
-      .from("instructor_room_bookings")
-      .select("id, title, booking_date, start_time, end_time")
+      .from("class_sessions")
+      .select("id, title, session_date, start_time, end_time")
       .eq("room_id", room_id)
-      .in("booking_date", bookingDates)
-      .eq("status", "confirmed")
+      .in("session_date", bookingDates)
+      .eq("is_cancelled", false)
       .lt("start_time", end_time)
       .gt("end_time", start_time);
 
@@ -144,7 +153,13 @@ export async function POST(request: Request) {
           error: recurring
             ? `Room conflicts found on ${conflicts.length} date(s)`
             : "This room is already booked during that time",
-          conflicts,
+          conflicts: conflicts.map((c) => ({
+            id: c.id,
+            title: c.title,
+            booking_date: c.session_date,
+            start_time: c.start_time,
+            end_time: c.end_time,
+          })),
         },
         { status: 409 }
       );
@@ -172,14 +187,11 @@ export async function POST(request: Request) {
       const overageRateCents = tierData?.overage_rate_cents ?? null;
 
       if (monthlyMinutes !== -1) {
-        // Calculate per-booking duration
         const [sh, sm] = start_time.split(":").map(Number);
         const [eh, em] = end_time.split(":").map(Number);
         const perBookingMinutes = (eh * 60 + em) - (sh * 60 + sm);
         const totalRequestedMinutes = perBookingMinutes * bookingDates.length;
 
-        // For simplicity: check quota for the first booking's month
-        // (recurring bookings may span months, but this is a reasonable approximation)
         const firstBookingMonth = new Date(bookingDates[0]);
         const year = firstBookingMonth.getFullYear();
         const month = firstBookingMonth.getMonth() + 1;
@@ -225,35 +237,46 @@ export async function POST(request: Request) {
     // Generate recurrence_group_id for recurring bookings
     const recurrenceGroupId = recurring ? crypto.randomUUID() : null;
 
-    // Insert booking(s)
-    const bookingsToInsert = bookingDates.map((date) => ({
+    // Calculate duration_minutes
+    const [sh, sm] = start_time.split(":").map(Number);
+    const [eh, em] = end_time.split(":").map(Number);
+    const durationMinutes = (eh * 60 + em) - (sh * 60 + sm);
+
+    // Insert into class_sessions as room_only sessions
+    const sessionsToInsert = bookingDates.map((date) => ({
       studio_id: ctx.studioId,
       instructor_id: ctx.instructorId,
       room_id,
+      template_id: null,
+      session_type: "room_only" as const,
       title,
-      booking_date: date,
+      session_date: date,
       start_time,
       end_time,
+      duration_minutes: durationMinutes,
       is_public: is_public ?? true,
-      notes: notes || null,
-      status: "confirmed" as const,
+      is_cancelled: false,
+      location: notes || null,
       recurrence_group_id: recurrenceGroupId,
-      day_of_week: recurring ? day_of_week : null,
+      recurrence_rule: recurring ? ("weekly" as const) : null,
     }));
 
-    const { data: insertedBookings, error: insertError } = await ctx.supabase
-      .from("instructor_room_bookings")
-      .insert(bookingsToInsert)
+    const { data: insertedSessions, error: insertError } = await ctx.supabase
+      .from("class_sessions")
+      .insert(sessionsToInsert)
       .select("*");
 
     if (insertError) {
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
+    // Return backward-compatible format
+    const bookings = (insertedSessions || []).map(mapSessionToBooking);
+
     return NextResponse.json(
       {
-        bookings: insertedBookings,
-        count: insertedBookings?.length ?? 0,
+        bookings,
+        count: bookings.length,
         overageWarning,
       },
       { status: 201 }
@@ -266,6 +289,37 @@ export async function POST(request: Request) {
   }
 }
 
+/**
+ * Map a class_sessions row to the old instructor_room_bookings shape
+ * for backward compatibility with the room-calendar UI.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapSessionToBooking(session: any) {
+  return {
+    id: session.id,
+    studio_id: session.studio_id,
+    instructor_id: session.instructor_id,
+    room_id: session.room_id,
+    title: session.title,
+    booking_date: session.session_date,
+    start_time: session.start_time,
+    end_time: session.end_time,
+    is_public: session.is_public,
+    notes: session.location,
+    status: session.is_cancelled ? "cancelled" : "confirmed",
+    recurrence_group_id: session.recurrence_group_id,
+    day_of_week: session.session_date
+      ? new Date(session.session_date + "T00:00:00").getDay()
+      : null,
+    rooms: session.rooms,
+    // Preserve these for forward compatibility
+    session_type: session.session_type,
+    template_id: session.template_id,
+    created_at: session.created_at,
+    updated_at: session.updated_at,
+  };
+}
+
 // Helper: send 90% warning email (fire-and-forget, deduped by email_logs)
 async function sendOverageWarningEmail(
   supabase: SupabaseClient,
@@ -276,17 +330,8 @@ async function sendOverageWarningEmail(
   overageRateCents: number | null,
 ) {
   try {
-    // Check if warning already sent this month
     const now = new Date();
     const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-    const { data: existing } = await supabase
-      .from("email_logs")
-      .select("id")
-      .eq("template", "tierOverageWarning")
-      .eq("studio_id", studioId)
-      .gte("created_at", `${monthKey}-01`)
-      .like("to_email", `%`) // filter by instructor later
-      .limit(1);
 
     // Get instructor email
     const { data: instructor } = await supabase

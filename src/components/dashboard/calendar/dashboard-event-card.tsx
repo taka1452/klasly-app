@@ -39,6 +39,7 @@ export default function DashboardEventCard({
   const leftPercent = totalCols > 1 ? colIndex * widthPercent : 0;
 
   const isRoomBooking = session.event_type === "room_booking";
+  const isOnline = session.is_online;
 
   // Color based on state
   let bgColor: string;
@@ -93,6 +94,11 @@ export default function DashboardEventCard({
               Room
             </span>
           )}
+          {!isRoomBooking && isOnline && (
+            <span className="mr-0.5" title="Online class">
+              {"\uD83D\uDCF9"}
+            </span>
+          )}
           {session.is_cancelled && <span className="line-through">{session.class_name}</span>}
           {!session.is_cancelled && session.class_name}
         </span>
@@ -109,6 +115,11 @@ export default function DashboardEventCard({
                 Private
               </span>
             )}
+            {!isRoomBooking && isOnline && (
+              <span className="mr-0.5" title="Online class">
+                {"\uD83D\uDCF9"}
+              </span>
+            )}
             {session.is_cancelled ? (
               <span className="line-through">{session.class_name}</span>
             ) : (
@@ -122,12 +133,18 @@ export default function DashboardEventCard({
           {height >= 55 && !isRoomBooking && (
             <div className="truncate opacity-60">
               {confirmedCount}/{session.capacity} booked
-              {session.room_name ? ` · ${session.room_name}` : ""}
+              {session.room_name && (
+                <span className="ml-1 inline-block rounded bg-teal-100 px-1 text-[9px] font-medium text-teal-700">
+                  {session.room_name}
+                </span>
+              )}
             </div>
           )}
           {height >= 55 && isRoomBooking && session.room_name && (
             <div className="truncate opacity-60">
-              {session.room_name}
+              <span className="inline-block rounded bg-teal-100 px-1 text-[9px] font-medium text-teal-700">
+                {session.room_name}
+              </span>
             </div>
           )}
         </>

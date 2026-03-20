@@ -17,6 +17,16 @@ type CalEvent = {
   date: string; // YYYY-MM-DD
 };
 
+type ClassTemplate = {
+  id: string;
+  name: string;
+  duration_minutes: number;
+  capacity: number;
+  is_public: boolean;
+  instructor_id: string | null;
+  instructors: { id: string; profiles: { full_name: string } | null } | null;
+};
+
 const HOUR_HEIGHT = 60;
 const SLOT_MINUTES = 15;
 const OPERATING_START = 6;
@@ -71,6 +81,15 @@ function formatWeekRange(weekStart: Date) {
   return `${weekStart.toLocaleDateString("en-US", opts)} – ${end.toLocaleDateString("en-US", { ...opts, year: "numeric" })}`;
 }
 
+/** Add duration_minutes to a "HH:MM" time string */
+function addMinutesToTime(time: string, minutes: number): string {
+  const [h, m] = time.split(":").map(Number);
+  const total = h * 60 + m + minutes;
+  const endH = Math.floor(total / 60);
+  const endM = total % 60;
+  return `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
+}
+
 export default function InstructorRoomCalendar() {
   const router = useRouter();
   const [weekStart, setWeekStart] = useState(() => getWeekStart(new Date()));
@@ -79,6 +98,10 @@ export default function InstructorRoomCalendar() {
   const [selectedRoomId, setSelectedRoomId] = useState<string>("all");
   const [loading, setLoading] = useState(true);
 
+  // Templates
+  const [templates, setTemplates] = useState<ClassTemplate[]>([]);
+  const [templatesLoaded, setTemplatesLoaded] = useState(false);
+
   // Booking form state
   const [showForm, setShowForm] = useState(false);
   const [formDate, setFormDate] = useState("");
@@ -86,15 +109,25 @@ export default function InstructorRoomCalendar() {
   const [formStartTime, setFormStartTime] = useState("09:00");
   const [formEndTime, setFormEndTime] = useState("10:00");
   const [formTitle, setFormTitle] = useState("");
-  const [formIsPublic, setFormIsPublic] = useState(true);
-  const [formNotes, setFormNotes] = useState("");
-  const [formBookingType, setFormBookingType] = useState<"one_time" | "recurring">("one_time");
-  const [formDayOfWeek, setFormDayOfWeek] = useState(1);
-  const [formWeeks, setFormWeeks] = useState(4);
+  const [formTemplateId, setFormTemplateId] = useState<string>("");
+  const [formRepeat, setFormRepeat] = useState<"single" | "weekly">("single");
+  const [formRepeatWeeks, setFormRepeatWeeks] = useState(4);
   const [formError, setFormError] = useState("");
   const [formSubmitting, setFormSubmitting] = useState(false);
 
   const weekDays = useMemo(() => getWeekDays(weekStart), [weekStart]);
+
+  // Fetch templates once
+  useEffect(() => {
+    if (templatesLoaded) return;
+    fetch("/api/class-templates")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => {
+        setTemplates(Array.isArray(data) ? data : []);
+        setTemplatesLoaded(true);
+      })
+      .catch(() => setTemplatesLoaded(true));
+  }, [templatesLoaded]);
 
   const fetchWeek = useCallback(async (ws: Date) => {
     setLoading(true);
@@ -177,7 +210,7 @@ export default function InstructorRoomCalendar() {
   }
 
   // Slot click: find first available room or the selected room
-  function handleSlotClick(date: string, dayIdx: number, slotMinute: number) {
+  function handleSlotClick(date: string, _dayIdx: number, slotMinute: number) {
     const targetRooms = selectedRoomId === "all" ? rooms : rooms.filter((r) => r.id === selectedRoomId);
     const availRoom = targetRooms.find((r) => !isSlotOccupied(date, r.id, slotMinute));
     if (!availRoom) return;
@@ -189,14 +222,37 @@ export default function InstructorRoomCalendar() {
     setFormStartTime(timeStr(h, m));
     setFormEndTime(timeStr(h + 1, m));
     setFormTitle("");
-    setFormIsPublic(true);
-    setFormNotes("");
-    setFormBookingType("one_time");
-    const jsDay = (dayIdx + 1) % 7; // convert Mon=0 to Sun=0 JS format
-    setFormDayOfWeek(jsDay);
-    setFormWeeks(4);
+    setFormTemplateId("");
+    setFormRepeat("single");
+    setFormRepeatWeeks(4);
     setFormError("");
     setShowForm(true);
+  }
+
+  // When template changes, auto-fill duration (end_time) and title
+  function handleTemplateChange(templateId: string) {
+    setFormTemplateId(templateId);
+    if (templateId) {
+      const tpl = templates.find((t) => t.id === templateId);
+      if (tpl) {
+        setFormEndTime(addMinutesToTime(formStartTime, tpl.duration_minutes));
+        setFormTitle(tpl.name);
+      }
+    } else {
+      // Room only — clear title, keep times
+      setFormTitle("");
+    }
+  }
+
+  // When start time changes, recalculate end time if template selected
+  function handleStartTimeChange(newStart: string) {
+    setFormStartTime(newStart);
+    if (formTemplateId) {
+      const tpl = templates.find((t) => t.id === formTemplateId);
+      if (tpl) {
+        setFormEndTime(addMinutesToTime(newStart, tpl.duration_minutes));
+      }
+    }
   }
 
   async function handleBookingSubmit(e: React.FormEvent) {
@@ -205,20 +261,18 @@ export default function InstructorRoomCalendar() {
     setFormSubmitting(true);
 
     try {
-      const res = await fetch("/api/instructor/room-bookings", {
+      const res = await fetch("/api/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          template_id: formTemplateId || null,
           room_id: formRoomId,
-          title: formTitle,
-          booking_date: formBookingType === "one_time" ? formDate : undefined,
+          date: formDate,
           start_time: formStartTime,
           end_time: formEndTime,
-          is_public: formIsPublic,
-          notes: formNotes || null,
-          recurring: formBookingType === "recurring",
-          day_of_week: formBookingType === "recurring" ? formDayOfWeek : undefined,
-          weeks: formBookingType === "recurring" ? formWeeks : undefined,
+          title: formTitle || undefined,
+          repeat: formRepeat,
+          repeat_weeks: formRepeat === "weekly" ? formRepeatWeeks : undefined,
         }),
       });
 
@@ -227,7 +281,7 @@ export default function InstructorRoomCalendar() {
         if (res.status === 401) {
           setFormError("You need to be registered as an instructor to book rooms. Please set up your instructor profile first.");
         } else {
-          setFormError(data.error || "Failed to create booking");
+          setFormError(data.error || "Failed to create session");
         }
         setFormSubmitting(false);
         return;
@@ -238,15 +292,15 @@ export default function InstructorRoomCalendar() {
       fetchWeek(weekStart);
       router.refresh();
     } catch {
-      setFormError("Failed to create booking");
+      setFormError("Failed to create session");
       setFormSubmitting(false);
     }
   }
 
   async function handleCancelBooking(bookingId: string) {
-    if (!confirm("Cancel this booking?")) return;
+    if (!confirm("Cancel this session?")) return;
     try {
-      await fetch(`/api/instructor/room-bookings/${bookingId}`, { method: "DELETE" });
+      await fetch(`/api/sessions/${bookingId}`, { method: "DELETE" });
       fetchWeek(weekStart);
       router.refresh();
     } catch {
@@ -448,7 +502,7 @@ export default function InstructorRoomCalendar() {
                               {showRoom && ` · ${roomName(evt.room_id)}`}
                             </div>
                           )}
-                          {evt.is_own && evt.event_type === "room_booking" && height >= 48 && (
+                          {evt.is_own && height >= 48 && (
                             <button
                               type="button"
                               onClick={(e) => {
@@ -472,13 +526,13 @@ export default function InstructorRoomCalendar() {
         </div>
       )}
 
-      {/* Booking form modal */}
+      {/* Session creation form modal */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-bold text-gray-900">Book Room</h3>
+                <h3 className="text-lg font-bold text-gray-900">New Session</h3>
                 <p className="text-sm text-gray-500">
                   {new Date(formDate + "T00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
                 </p>
@@ -499,6 +553,32 @@ export default function InstructorRoomCalendar() {
                 <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{formError}</div>
               )}
 
+              {/* Class Template */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Class Template</label>
+                <select
+                  value={formTemplateId}
+                  onChange={(e) => handleTemplateChange(e.target.value)}
+                  className="input-field mt-1"
+                >
+                  <option value="">— Room only (no class) —</option>
+                  {templates.map((t) => {
+                    const instrName = t.instructors?.profiles
+                      ? (Array.isArray(t.instructors.profiles) ? (t.instructors.profiles as unknown as { full_name: string }[])[0]?.full_name : t.instructors.profiles.full_name)
+                      : null;
+                    return (
+                      <option key={t.id} value={t.id}>
+                        {t.name} ({t.duration_minutes}min){instrName ? ` — ${instrName}` : ""}
+                      </option>
+                    );
+                  })}
+                </select>
+                <p className="mt-1 text-xs text-gray-400">
+                  {formTemplateId ? "Class session — members can book" : "Room-only reservation — no class attached"}
+                </p>
+              </div>
+
+              {/* Room */}
               <div>
                 <label className="block text-sm font-medium text-gray-700">Room *</label>
                 <select
@@ -515,25 +595,29 @@ export default function InstructorRoomCalendar() {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Title *</label>
-                <input
-                  type="text"
-                  value={formTitle}
-                  onChange={(e) => setFormTitle(e.target.value)}
-                  placeholder="Yoga class, Private session, etc."
-                  required
-                  className="input-field mt-1"
-                />
-              </div>
+              {/* Title (only for room-only) */}
+              {!formTemplateId && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Title *</label>
+                  <input
+                    type="text"
+                    value={formTitle}
+                    onChange={(e) => setFormTitle(e.target.value)}
+                    placeholder="Private session, Rehearsal, etc."
+                    required
+                    className="input-field mt-1"
+                  />
+                </div>
+              )}
 
+              {/* Times */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Start *</label>
                   <input
                     type="time"
                     value={formStartTime}
-                    onChange={(e) => setFormStartTime(e.target.value)}
+                    onChange={(e) => handleStartTimeChange(e.target.value)}
                     required
                     className="input-field mt-1"
                   />
@@ -545,8 +629,12 @@ export default function InstructorRoomCalendar() {
                     value={formEndTime}
                     onChange={(e) => setFormEndTime(e.target.value)}
                     required
-                    className="input-field mt-1"
+                    className={`input-field mt-1 ${formTemplateId ? "bg-gray-50" : ""}`}
+                    readOnly={!!formTemplateId}
                   />
+                  {formTemplateId && (
+                    <p className="mt-0.5 text-xs text-gray-400">Auto-set from template duration</p>
+                  )}
                 </div>
               </div>
 
@@ -558,18 +646,18 @@ export default function InstructorRoomCalendar() {
                     <input
                       type="radio"
                       name="schedType"
-                      checked={formBookingType === "one_time"}
-                      onChange={() => setFormBookingType("one_time")}
+                      checked={formRepeat === "single"}
+                      onChange={() => setFormRepeat("single")}
                       className="h-4 w-4 border-gray-300 text-brand-600"
                     />
-                    One-time
+                    Single
                   </label>
                   <label className="flex items-center gap-2 text-sm">
                     <input
                       type="radio"
                       name="schedType"
-                      checked={formBookingType === "recurring"}
-                      onChange={() => setFormBookingType("recurring")}
+                      checked={formRepeat === "weekly"}
+                      onChange={() => setFormRepeat("weekly")}
                       className="h-4 w-4 border-gray-300 text-brand-600"
                     />
                     Weekly
@@ -577,61 +665,23 @@ export default function InstructorRoomCalendar() {
                 </div>
               </div>
 
-              {formBookingType === "recurring" && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Day</label>
-                    <select
-                      value={formDayOfWeek}
-                      onChange={(e) => setFormDayOfWeek(parseInt(e.target.value, 10))}
-                      className="input-field mt-1"
-                    >
-                      {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d, i) => (
-                        <option key={i} value={i}>{d}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Weeks</label>
-                    <input
-                      type="number"
-                      value={formWeeks}
-                      onChange={(e) => setFormWeeks(parseInt(e.target.value, 10) || 4)}
-                      min={1}
-                      max={52}
-                      className="input-field mt-1"
-                    />
-                  </div>
+              {formRepeat === "weekly" && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Number of weeks</label>
+                  <input
+                    type="number"
+                    value={formRepeatWeeks}
+                    onChange={(e) => setFormRepeatWeeks(parseInt(e.target.value, 10) || 4)}
+                    min={1}
+                    max={52}
+                    className="input-field mt-1 w-24"
+                  />
                 </div>
               )}
 
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="calPublic"
-                  checked={formIsPublic}
-                  onChange={(e) => setFormIsPublic(e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300 text-brand-600"
-                />
-                <label htmlFor="calPublic" className="text-sm text-gray-700">
-                  Public <span className="text-gray-400">(visible to members)</span>
-                </label>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Notes</label>
-                <textarea
-                  value={formNotes}
-                  onChange={(e) => setFormNotes(e.target.value)}
-                  rows={2}
-                  placeholder="Optional details..."
-                  className="input-field mt-1"
-                />
-              </div>
-
               <div className="flex gap-3 pt-1">
                 <button type="submit" disabled={formSubmitting} className="btn-primary flex-1">
-                  {formSubmitting ? "Booking..." : "Book room"}
+                  {formSubmitting ? "Creating..." : formTemplateId ? "Create session" : "Book room"}
                 </button>
                 <button
                   type="button"

@@ -132,6 +132,28 @@ export type Room = {
   created_at: string;
 };
 
+// ============================================
+// クラステンプレート + 統合セッション
+// ============================================
+
+export type ClassTemplate = {
+  id: string;
+  studio_id: string;
+  instructor_id: string | null;
+  name: string;
+  description: string | null;
+  duration_minutes: number;
+  capacity: number;
+  price_cents: number | null;
+  location: string | null;
+  class_type: "in_person" | "online" | "hybrid";
+  online_link: string | null;
+  is_active: boolean;
+  is_public: boolean;
+  created_at: string;
+};
+
+/** @deprecated Use ClassTemplate instead. Kept for migration compatibility. */
 export type Class = {
   id: string;
   studio_id: string;
@@ -158,16 +180,39 @@ export type Class = {
 export type ClassSession = {
   id: string;
   studio_id: string;
-  class_id: string;
+  /** @deprecated Use template_id instead */
+  class_id: string | null;
+  /** テンプレートID（NULL = room_only） */
+  template_id: string | null;
+  /** 部屋ID（NULL = オンライン/外部会場） */
+  room_id: string | null;
+  /** インストラクターID */
+  instructor_id: string | null;
   session_date: string;
   start_time: string;
+  /** 終了時間 */
+  end_time: string | null;
+  /** セッション時間（分） */
+  duration_minutes: number | null;
   capacity: number;
   is_cancelled: boolean;
   is_public: boolean;
-  /** NULL = inherit from parent class */
+  /** @deprecated class_typeで判定 */
   is_online: boolean | null;
   online_link: string | null;
   notes: string | null;
+  /** セッション単位の表示名（room_only用） */
+  title: string | null;
+  /** 'class' | 'room_only' */
+  session_type: "class" | "room_only";
+  /** セッション単位の価格override（cents） */
+  price_cents: number | null;
+  /** 外部会場名 */
+  location: string | null;
+  /** 繰り返しグループID */
+  recurrence_group_id: string | null;
+  /** 繰り返しルール: 'weekly' | null */
+  recurrence_rule: string | null;
   created_at: string;
 };
 
@@ -261,10 +306,17 @@ export type MemberWithProfile = Member & {
   profiles: Profile;
 };
 
+/** @deprecated Use ClassTemplateWithInstructor */
 export type ClassWithInstructor = Class & {
   instructors: Instructor & {
     profiles: Profile;
   };
+};
+
+export type ClassTemplateWithInstructor = ClassTemplate & {
+  instructors: (Instructor & {
+    profiles: Profile;
+  }) | null;
 };
 
 export type BookingWithDetails = Booking & {

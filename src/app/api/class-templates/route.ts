@@ -1,0 +1,187 @@
+import { getDashboardContext } from "@/lib/auth/dashboard-access";
+import { getInstructorContext } from "@/lib/auth/instructor-access";
+import { NextResponse } from "next/server";
+
+/**
+ * GET /api/class-templates
+ * List all class templates for a studio.
+ * Access: Owner, Manager (can_manage_classes), Instructor
+ */
+export async function GET() {
+  try {
+    // Try dashboard context first (owner/manager)
+    const dashCtx = await getDashboardContext();
+    if (dashCtx) {
+      if (
+        dashCtx.role === "manager" &&
+        !dashCtx.permissions?.can_manage_classes
+      ) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+
+      const { data, error } = await dashCtx.supabase
+        .from("class_templates")
+        .select("*, instructors(id, profiles(full_name))")
+        .eq("studio_id", dashCtx.studioId)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+
+      return NextResponse.json(data || []);
+    }
+
+    // Fallback: instructor context
+    const instrCtx = await getInstructorContext();
+    if (!instrCtx) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { data, error } = await instrCtx.supabase
+      .from("class_templates")
+      .select("*, instructors(id, profiles(full_name))")
+      .eq("studio_id", instrCtx.studioId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(data || []);
+  } catch {
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST /api/class-templates
+ * Create a new class template.
+ * Access: Owner, Manager (can_manage_classes), Instructor (forced to own instructor_id)
+ */
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const {
+      name,
+      description,
+      duration_minutes,
+      capacity,
+      price_cents,
+      location,
+      class_type,
+      online_link,
+      is_public,
+      instructor_id,
+    } = body;
+
+    // --- Validation ---
+    if (!name || typeof name !== "string" || name.trim().length === 0) {
+      return NextResponse.json(
+        { error: "name is required" },
+        { status: 400 }
+      );
+    }
+
+    if (
+      typeof duration_minutes !== "number" ||
+      duration_minutes <= 0
+    ) {
+      return NextResponse.json(
+        { error: "duration_minutes must be greater than 0" },
+        { status: 400 }
+      );
+    }
+
+    if (typeof capacity !== "number" || capacity <= 0) {
+      return NextResponse.json(
+        { error: "capacity must be greater than 0" },
+        { status: 400 }
+      );
+    }
+
+    const validClassTypes = ["in_person", "online", "hybrid"] as const;
+    if (!class_type || !validClassTypes.includes(class_type)) {
+      return NextResponse.json(
+        { error: "class_type must be 'in_person', 'online', or 'hybrid'" },
+        { status: 400 }
+      );
+    }
+
+    // Try dashboard context first (owner/manager)
+    const dashCtx = await getDashboardContext();
+    if (dashCtx) {
+      if (
+        dashCtx.role === "manager" &&
+        !dashCtx.permissions?.can_manage_classes
+      ) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+
+      const { data, error } = await dashCtx.supabase
+        .from("class_templates")
+        .insert({
+          studio_id: dashCtx.studioId,
+          instructor_id: instructor_id || null,
+          name: name.trim(),
+          description: description || null,
+          duration_minutes,
+          capacity,
+          price_cents: price_cents ?? null,
+          location: location || null,
+          class_type,
+          online_link: online_link || null,
+          is_public: is_public ?? true,
+          is_active: true,
+        })
+        .select("*, instructors(id, profiles(full_name))")
+        .single();
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+
+      return NextResponse.json(data, { status: 201 });
+    }
+
+    // Fallback: instructor context
+    const instrCtx = await getInstructorContext();
+    if (!instrCtx) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Instructors are forced to use their own instructor_id
+    const { data, error } = await instrCtx.supabase
+      .from("class_templates")
+      .insert({
+        studio_id: instrCtx.studioId,
+        instructor_id: instrCtx.instructorId,
+        name: name.trim(),
+        description: description || null,
+        duration_minutes,
+        capacity,
+        price_cents: price_cents ?? null,
+        location: location || null,
+        class_type,
+        online_link: online_link || null,
+        is_public: is_public ?? true,
+        is_active: true,
+      })
+      .select("*, instructors(id, profiles(full_name))")
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(data, { status: 201 });
+  } catch {
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}

@@ -7,8 +7,12 @@ export const dynamic = "force-dynamic";
 
 /**
  * GET /api/dashboard/sessions?start=YYYY-MM-DD&end=YYYY-MM-DD
- * Returns sessions with class info, room bookings, and confirmed booking counts
- * for the owner/manager dashboard calendar view.
+ * Returns sessions (classes + room bookings) from the unified class_sessions table
+ * with confirmed booking counts for the owner/manager dashboard calendar view.
+ *
+ * The class_sessions table now holds both class sessions (session_type='class')
+ * and room-only bookings (session_type='room_only'). Template info comes from
+ * class_templates; instructor/room are directly on class_sessions.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -55,43 +59,55 @@ export async function GET(request: NextRequest) {
 
     const studioId = profile.studio_id;
 
-    // ── Fetch class sessions ──
+    // ── Fetch all sessions (classes + room bookings) from unified table ──
     type SessionRow = {
       id: string;
-      class_id: string;
+      template_id: string | null;
+      room_id: string | null;
+      instructor_id: string | null;
       session_date: string;
       start_time: string;
+      end_time: string | null;
+      duration_minutes: number | null;
       capacity: number;
       is_cancelled: boolean;
       is_online?: boolean;
       online_link?: string | null;
-      classes?: {
+      title: string | null;
+      session_type: string;
+      price_cents: number | null;
+      location: string | null;
+      recurrence_group_id: string | null;
+      class_templates?: {
         name?: string;
         duration_minutes?: number;
         location?: string;
         is_public?: boolean;
         price_cents?: number | null;
-        room_id?: string | null;
         is_online?: boolean;
         online_link?: string | null;
-        rooms?: { name?: string } | null;
-        instructors?: {
-          profiles?: { full_name?: string };
-        };
-      };
+        class_type?: string;
+      } | null;
+      rooms?: { name?: string } | null;
+      instructors?: {
+        profiles?: { full_name?: string };
+      } | null;
     };
 
     const { data: sessions } = await supabase
       .from("class_sessions")
       .select(
         `
-        id, class_id, session_date, start_time, capacity, is_cancelled, is_online, online_link,
-        classes (
-          name, duration_minutes, location, is_public, price_cents, room_id, is_online, online_link,
-          rooms (name),
-          instructors (
-            profiles (full_name)
-          )
+        id, template_id, room_id, instructor_id,
+        session_date, start_time, end_time, duration_minutes,
+        capacity, is_cancelled, is_online, online_link,
+        title, session_type, price_cents, location, recurrence_group_id,
+        class_templates (
+          name, duration_minutes, location, is_public, price_cents, is_online, online_link, class_type
+        ),
+        rooms (name),
+        instructors (
+          profiles (full_name)
         )
       `,
       )
@@ -102,15 +118,19 @@ export async function GET(request: NextRequest) {
       .order("start_time", { ascending: true });
 
     const typedSessions = (sessions ?? []) as SessionRow[];
-    const sessionIds = typedSessions.map((s) => s.id);
 
-    // Fetch confirmed counts
+    // Only collect IDs of class-type sessions for confirmed counts (room_only has no bookings)
+    const classSessionIds = typedSessions
+      .filter((s) => s.session_type !== "room_only")
+      .map((s) => s.id);
+
+    // Fetch confirmed counts for class sessions
     let confirmedMap: Record<string, number> = {};
-    if (sessionIds.length > 0) {
+    if (classSessionIds.length > 0) {
       const { data: confirmed } = await supabase
         .from("bookings")
         .select("session_id")
-        .in("session_id", sessionIds)
+        .in("session_id", classSessionIds)
         .eq("status", "confirmed");
 
       if (confirmed) {
@@ -124,134 +144,74 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Format class sessions
-    const formattedSessions = typedSessions.map((s) => ({
-      id: s.id,
-      class_id: s.class_id,
-      session_date: s.session_date,
-      start_time: s.start_time,
-      capacity: s.capacity,
-      is_cancelled: s.is_cancelled,
-      class_name: s.classes?.name ?? "Class",
-      duration_minutes: s.classes?.duration_minutes ?? 60,
-      instructor_name: s.classes?.instructors?.profiles?.full_name ?? "",
-      location: s.classes?.location ?? null,
-      is_public: s.classes?.is_public ?? true,
-      room_name: s.classes?.rooms?.name ?? null,
-      is_online: s.is_online ?? s.classes?.is_online ?? false,
-      event_type: "class" as const,
-    }));
+    // Format all sessions with backward-compatible fields
+    const formattedSessions = typedSessions.map((s) => {
+      const isRoomOnly = s.session_type === "room_only";
+      const template = s.class_templates;
 
-    // ── Fetch room bookings ──
-    type RoomBookingRow = {
-      id: string;
-      title: string;
-      booking_date: string;
-      start_time: string;
-      end_time: string;
-      is_public: boolean;
-      status: string;
-      rooms?: { name?: string } | null;
-      instructors?: {
-        profiles?: { full_name?: string };
-      } | null;
-    };
-
-    const { data: roomBookings } = await supabase
-      .from("instructor_room_bookings")
-      .select(
-        "id, title, booking_date, start_time, end_time, is_public, status, rooms(name), instructors(profiles(full_name))",
-      )
-      .eq("studio_id", studioId)
-      .eq("status", "confirmed")
-      .gte("booking_date", start)
-      .lte("booking_date", end)
-      .order("booking_date", { ascending: true })
-      .order("start_time", { ascending: true });
-
-    const typedRoomBookings = (roomBookings ?? []) as RoomBookingRow[];
-
-    // Format room bookings as calendar events
-    const formattedRoomBookings = typedRoomBookings.map((rb) => {
-      // Calculate duration from start_time and end_time (HH:MM:SS format)
-      const [sh, sm] = rb.start_time.split(":").map(Number);
-      const [eh, em] = rb.end_time.split(":").map(Number);
-      const durationMinutes = (eh * 60 + em) - (sh * 60 + sm);
-
-      const room = rb.rooms;
-      const roomName = Array.isArray(room) ? room[0]?.name : room?.name || null;
-      const instr = rb.instructors;
+      // Resolve instructor name
+      const instr = s.instructors;
       const rawInstr = Array.isArray(instr) ? instr[0] : instr;
+      const instructorName = rawInstr?.profiles?.full_name ?? "";
+
+      // Resolve room name
+      const room = s.rooms;
+      const roomName = Array.isArray(room)
+        ? room[0]?.name
+        : room?.name || null;
+
+      // Duration: prefer session-level, then template-level, then compute from end_time
+      let durationMinutes = s.duration_minutes;
+      if (!durationMinutes && template?.duration_minutes) {
+        durationMinutes = template.duration_minutes;
+      }
+      if (!durationMinutes && s.end_time) {
+        const [sh, sm] = s.start_time.split(":").map(Number);
+        const [eh, em] = s.end_time.split(":").map(Number);
+        durationMinutes = eh * 60 + em - (sh * 60 + sm);
+      }
+      if (!durationMinutes || durationMinutes <= 0) {
+        durationMinutes = 60;
+      }
+
+      // Determine is_public / is_online from template's class_type or direct fields
+      const classType = template?.class_type;
+      const isPublic = template?.is_public ?? true;
+      const isOnline =
+        s.is_online ?? template?.is_online ?? classType === "online";
 
       return {
-        id: rb.id,
-        class_id: rb.id, // use booking id for navigation key
-        session_date: rb.booking_date,
-        start_time: rb.start_time,
-        capacity: 1,
-        is_cancelled: false,
-        class_name: rb.title || "Room Booking",
-        duration_minutes: durationMinutes > 0 ? durationMinutes : 60,
-        instructor_name: rawInstr?.profiles?.full_name ?? "",
-        location: null,
-        is_public: rb.is_public,
+        id: s.id,
+        class_id: s.template_id ?? s.id, // backward compat: template_id for classes, id for room_only
+        session_date: s.session_date,
+        start_time: s.start_time,
+        capacity: s.capacity,
+        is_cancelled: s.is_cancelled,
+        class_name: isRoomOnly
+          ? s.title || "Room Booking"
+          : template?.name ?? s.title ?? "Class",
+        duration_minutes: durationMinutes,
+        instructor_name: instructorName,
+        location: s.location ?? template?.location ?? null,
+        is_public: isPublic,
         room_name: roomName,
-        is_online: false,
-        event_type: "room_booking" as const,
+        is_online: isOnline,
+        event_type: isRoomOnly
+          ? ("room_booking" as const)
+          : ("class" as const),
+        price_cents: s.price_cents ?? template?.price_cents ?? null,
       };
     });
 
-    // ── Deduplicate: if a room booking overlaps with a class session
-    // by the same instructor on the same date, merge them (show class only,
-    // attach room name from the booking if the class doesn't have one) ──
-    const matchedRoomBookingIds = new Set<string>();
-
-    for (const session of formattedSessions) {
-      if (!session.instructor_name) continue;
-
-      for (const rb of formattedRoomBookings) {
-        if (matchedRoomBookingIds.has(rb.id)) continue;
-        if (rb.session_date !== session.session_date) continue;
-        if (rb.instructor_name !== session.instructor_name) continue;
-
-        // Check time overlap: session start_time within room booking window
-        // Parse times as minutes for comparison
-        const parseMin = (t: string) => {
-          const [h, m] = t.split(":").map(Number);
-          return h * 60 + m;
-        };
-        const sessStart = parseMin(session.start_time);
-        const sessEnd = sessStart + session.duration_minutes;
-        const rbStart = parseMin(rb.start_time);
-        const rbEnd = rbStart + rb.duration_minutes;
-
-        // Overlap check
-        if (sessStart < rbEnd && sessEnd > rbStart) {
-          matchedRoomBookingIds.add(rb.id);
-          // Attach room name to class if missing
-          if (!session.room_name && rb.room_name) {
-            session.room_name = rb.room_name;
-          }
-        }
-      }
-    }
-
-    // Filter out room bookings that were matched to a class session
-    const standaloneRoomBookings = formattedRoomBookings.filter(
-      (rb) => !matchedRoomBookingIds.has(rb.id),
-    );
-
-    // Merge and sort
-    const allEvents = [...formattedSessions, ...standaloneRoomBookings].sort(
-      (a, b) => {
-        if (a.session_date !== b.session_date)
-          return a.session_date.localeCompare(b.session_date);
-        return a.start_time.localeCompare(b.start_time);
-      },
-    );
+    // Sort (should already be sorted by DB, but ensure merge order)
+    formattedSessions.sort((a, b) => {
+      if (a.session_date !== b.session_date)
+        return a.session_date.localeCompare(b.session_date);
+      return a.start_time.localeCompare(b.start_time);
+    });
 
     return NextResponse.json({
-      sessions: allEvents,
+      sessions: formattedSessions,
       confirmedCounts: confirmedMap,
     });
   } catch (err: unknown) {
