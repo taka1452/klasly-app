@@ -1,5 +1,6 @@
 import { getInstructorContext } from "@/lib/auth/instructor-access";
 import { NextResponse } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 // GET: 自分のルームブッキング一覧
 export async function GET(request: Request) {
@@ -222,8 +223,7 @@ export async function POST(request: Request) {
 
 // Helper: send 90% warning email (fire-and-forget, deduped by email_logs)
 async function sendOverageWarningEmail(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: any,
+  supabase: SupabaseClient,
   instructorId: string,
   studioId: string,
   usedMinutes: number,
