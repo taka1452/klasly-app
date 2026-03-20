@@ -31,7 +31,7 @@ export default function RoomEditForm({ roomId, initialData }: Props) {
     setLoading(true);
 
     const supabase = createClient();
-    const { error: updateError } = await supabase
+    const { data: updated, error: updateError } = await supabase
       .from("rooms")
       .update({
         name,
@@ -39,10 +39,17 @@ export default function RoomEditForm({ roomId, initialData }: Props) {
         capacity: capacity !== "" ? capacity : null,
         is_active: isActive,
       })
-      .eq("id", roomId);
+      .eq("id", roomId)
+      .select("id");
 
     if (updateError) {
       setError(updateError.message);
+      setLoading(false);
+      return;
+    }
+
+    if (!updated || updated.length === 0) {
+      setError("Could not save changes. You may not have permission to edit this room.");
       setLoading(false);
       return;
     }

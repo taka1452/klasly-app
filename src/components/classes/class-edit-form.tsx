@@ -105,7 +105,7 @@ export default function ClassEditForm({
     }
 
     const supabase = createClient();
-    const { error: updateError } = await supabase
+    const { data: updated, error: updateError } = await supabase
       .from("classes")
       .update({
         name,
@@ -121,10 +121,17 @@ export default function ClassEditForm({
         is_online: isOnline,
         online_link: showOnlineLink ? onlineLink || null : null,
       })
-      .eq("id", classId);
+      .eq("id", classId)
+      .select("id");
 
     if (updateError) {
       setError(updateError.message);
+      setLoading(false);
+      return;
+    }
+
+    if (!updated || updated.length === 0) {
+      setError("Could not save changes. You may not have permission to edit this class.");
       setLoading(false);
       return;
     }
