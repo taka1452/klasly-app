@@ -66,6 +66,10 @@ export default function EditEventPage() {
   const [policyTiers, setPolicyTiers] = useState<CancellationPolicyTier[]>([]);
   const [policyText, setPolicyText] = useState("");
 
+  // Step 5: Application Form
+  type AppField = { id: string; label: string; type: string; required: boolean; placeholder: string; options: string };
+  const [appFields, setAppFields] = useState<AppField[]>([]);
+
   // Load existing event
   useEffect(() => {
     async function load() {
@@ -95,6 +99,20 @@ export default function EditEventPage() {
         Array.isArray(event.cancellation_policy) ? event.cancellation_policy : [],
       );
       setPolicyText(event.cancellation_policy_text || "");
+
+      // Load application fields
+      if (Array.isArray(event.application_fields) && event.application_fields.length > 0) {
+        setAppFields(
+          event.application_fields.map((f: { id: string; label: string; type: string; required: boolean; placeholder?: string; options?: string[] }) => ({
+            id: f.id,
+            label: f.label,
+            type: f.type,
+            required: f.required,
+            placeholder: f.placeholder || "",
+            options: Array.isArray(f.options) ? f.options.join(", ") : "",
+          })),
+        );
+      }
 
       // Load options
       const { data: opts } = await supabase
@@ -166,6 +184,16 @@ export default function EditEventPage() {
     );
   }
 
+  function addAppField() {
+    setAppFields((f) => [...f, { id: `f${Date.now()}`, label: "", type: "text", required: false, placeholder: "", options: "" }]);
+  }
+  function removeAppField(i: number) {
+    setAppFields((f) => f.filter((_, idx) => idx !== i));
+  }
+  function updateAppField(i: number, field: keyof AppField, value: string | boolean) {
+    setAppFields((f) => f.map((af, idx) => (idx === i ? { ...af, [field]: value } : af)));
+  }
+
   async function handleSave(status: "draft" | "published") {
     setError("");
     if (status === "published") {
@@ -194,6 +222,16 @@ export default function EditEventPage() {
         installment_count: paymentType === "installment" ? 3 : 1,
         cancellation_policy: policyTiers,
         cancellation_policy_text: policyText.trim() || null,
+        application_fields: appFields.filter((f) => f.label.trim()).map((f) => ({
+          id: f.id,
+          label: f.label.trim(),
+          type: f.type,
+          required: f.required,
+          placeholder: f.placeholder.trim(),
+          ...(["select", "radio", "checkbox"].includes(f.type)
+            ? { options: f.options.split(",").map((o) => o.trim()).filter(Boolean) }
+            : {}),
+        })),
         updated_at: new Date().toISOString(),
       })
       .eq("id", id);
@@ -489,18 +527,72 @@ export default function EditEventPage() {
 
         {/* Step 5: Application Form */}
         {step === 4 && (
-          <div className="space-y-5">
+          <div className="space-y-4">
             <p className="text-sm text-gray-500">
-              Optionally attach a custom form for guests to fill out when booking.
+              Add custom questions for guests to answer when booking (e.g. dietary restrictions, experience level).
             </p>
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center">
-              <p className="text-sm text-gray-500">
-                No forms created yet. You can create one in Settings &rarr; Forms.
-              </p>
-              <p className="mt-2 text-xs text-gray-400">
-                Custom forms are optional. You can add one later.
-              </p>
-            </div>
+            {appFields.length === 0 ? (
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center">
+                <p className="text-sm text-gray-500">
+                  No application form. Guests will only provide their name and email.
+                </p>
+                <button type="button" onClick={addAppField} className="btn-secondary mt-4 text-sm">
+                  + Add Question
+                </button>
+              </div>
+            ) : (
+              <>
+                {appFields.map((af, i) => (
+                  <div key={af.id} className="rounded-lg border border-gray-200 p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">Question {i + 1}</span>
+                      <button type="button" onClick={() => removeAppField(i)} className="text-xs text-red-500 hover:text-red-700">
+                        Remove
+                      </button>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500">Label *</label>
+                        <input type="text" value={af.label} onChange={(e) => updateAppField(i, "label", e.target.value)} placeholder="e.g. Dietary restrictions" className="input-field mt-1" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500">Type</label>
+                        <select value={af.type} onChange={(e) => updateAppField(i, "type", e.target.value)} className="input-field mt-1">
+                          <option value="text">Short text</option>
+                          <option value="textarea">Long text</option>
+                          <option value="select">Dropdown</option>
+                          <option value="radio">Radio buttons</option>
+                          <option value="checkbox">Checkbox</option>
+                        </select>
+                      </div>
+                    </div>
+                    {["select", "radio"].includes(af.type) && (
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500">Options (comma-separated)</label>
+                        <input type="text" value={af.options} onChange={(e) => updateAppField(i, "options", e.target.value)} placeholder="Beginner, Intermediate, Advanced" className="input-field mt-1" />
+                      </div>
+                    )}
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {["text", "textarea"].includes(af.type) && (
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500">Placeholder</label>
+                          <input type="text" value={af.placeholder} onChange={(e) => updateAppField(i, "placeholder", e.target.value)} placeholder="e.g. Vegan, Gluten-free" className="input-field mt-1" />
+                        </div>
+                      )}
+                      <div className="flex items-end">
+                        <label className="flex items-center gap-2 text-sm text-gray-700">
+                          <input type="checkbox" checked={af.required} onChange={(e) => updateAppField(i, "required", e.target.checked)} className="rounded accent-brand-600" />
+                          Required
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <button type="button" onClick={addAppField} className="btn-secondary text-sm">
+                  + Add Question
+                </button>
+              </>
+            )}
           </div>
         )}
 

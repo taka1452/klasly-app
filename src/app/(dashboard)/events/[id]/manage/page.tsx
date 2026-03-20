@@ -55,7 +55,7 @@ export default async function EventManagePage({
   const { data: bookings } = await supabase
     .from("event_bookings")
     .select(
-      "id, event_option_id, guest_name, guest_email, booking_status, total_amount_cents, payment_type, payment_status, created_at",
+      "id, event_option_id, guest_name, guest_email, booking_status, total_amount_cents, payment_type, payment_status, created_at, application_responses",
     )
     .eq("event_id", id)
     .order("created_at", { ascending: false });
@@ -119,8 +119,18 @@ export default async function EventManagePage({
       created_at: booking.created_at,
       installment_paid: progress?.paid ?? 0,
       installment_total: progress?.total ?? 0,
+      application_responses: (booking as { application_responses?: Record<string, string | boolean> }).application_responses ?? null,
     };
   });
+
+  // Parse application field labels for display
+  const appFieldLabels: Record<string, string> = {};
+  const appFields = (event as { application_fields?: { id: string; label: string }[] }).application_fields;
+  if (Array.isArray(appFields)) {
+    for (const f of appFields) {
+      appFieldLabels[f.id] = f.label;
+    }
+  }
 
   return (
     <div>
@@ -254,6 +264,7 @@ export default async function EventManagePage({
       <EventBookingFilters
         eventId={id}
         bookings={bookingRows}
+        appFieldLabels={appFieldLabels}
       />
     </div>
   );

@@ -40,6 +40,7 @@ export async function POST(request: Request) {
       guest_email,
       guest_phone,
       payment_choice, // 'full' | 'installment'
+      application_responses,
     } = body;
 
     if (!event_id || !event_option_id || !guest_email || !guest_name) {
@@ -202,6 +203,7 @@ export async function POST(request: Request) {
         total_amount_cents: totalAmountCents,
         payment_type: effectivePaymentType,
         payment_status: "unpaid",
+        ...(application_responses ? { application_responses } : {}),
       })
       .select("id")
       .single();

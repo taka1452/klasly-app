@@ -49,3 +49,7 @@ ALTER TABLE public.classes
 -- 3. classes に is_public フラグを追加（デフォルト true = 公開）
 ALTER TABLE public.classes
   ADD COLUMN IF NOT EXISTS is_public boolean NOT NULL DEFAULT true;
+
+-- 4. class_sessions に is_public フラグを追加（デフォルト true = 公開）
+ALTER TABLE public.class_sessions
+  ADD COLUMN IF NOT EXISTS is_public boolean DEFAULT true;

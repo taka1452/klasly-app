@@ -27,7 +27,7 @@ export async function GET(
   const { data: event } = await supabase
     .from("events")
     .select(
-      "id, name, studio_id, start_date, end_date, location_name, payment_type, installment_count, cancellation_policy_text",
+      "id, name, studio_id, start_date, end_date, location_name, payment_type, installment_count, cancellation_policy_text, application_fields",
     )
     .eq("id", eventId)
     .eq("status", "published")

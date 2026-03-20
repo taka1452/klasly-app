@@ -198,6 +198,34 @@ export default async function DashboardPage() {
     return acc;
   }, {} as Record<string, number>);
 
+  // Upcoming events with booking counts
+  const { data: upcomingEvents } = await supabase
+    .from("events")
+    .select("id, name, start_date, end_date, status, max_total_capacity")
+    .eq("studio_id", profile.studio_id)
+    .in("status", ["published", "sold_out"])
+    .gte("end_date", today)
+    .order("start_date", { ascending: true })
+    .limit(5);
+
+  const upcomingEventIds = (upcomingEvents || []).map((e) => e.id);
+  const { data: eventBookingCounts } =
+    upcomingEventIds.length > 0
+      ? await supabase
+          .from("event_bookings")
+          .select("event_id")
+          .in("event_id", upcomingEventIds)
+          .in("booking_status", ["pending_payment", "confirmed", "completed"])
+      : { data: [] };
+
+  const eventBookingMap = (eventBookingCounts || []).reduce(
+    (acc, b) => {
+      acc[b.event_id] = (acc[b.event_id] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
+
   // Recent activity: bookings (booked/cancelled) + member signups
   const { data: recentBookings } = await supabase
     .from("bookings")
@@ -547,6 +575,48 @@ export default async function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Upcoming events */}
+      {upcomingEvents && upcomingEvents.length > 0 && (
+        <div className="mt-8">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Upcoming Events
+            </h2>
+            <Link href="/events" className="text-sm text-brand-600 hover:text-brand-700">
+              View all →
+            </Link>
+          </div>
+          <div className="card overflow-hidden p-0">
+            <div className="divide-y divide-gray-200">
+              {upcomingEvents.map((ev) => {
+                const bookingCount = eventBookingMap[ev.id] || 0;
+                return (
+                  <Link
+                    key={ev.id}
+                    href={`/events/${ev.id}/manage`}
+                    className="flex items-center justify-between gap-4 px-6 py-4 transition-colors hover:bg-gray-50"
+                  >
+                    <div>
+                      <p className="font-medium text-gray-900">{ev.name}</p>
+                      <p className="text-sm text-gray-500">
+                        {formatDate(ev.start_date)} – {formatDate(ev.end_date)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-gray-900">
+                        {bookingCount}
+                        {ev.max_total_capacity ? `/${ev.max_total_capacity}` : ""}{" "}
+                        <span className="font-normal text-gray-500">bookings</span>
+                      </p>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Recent activity */}
       <div className="mt-8">

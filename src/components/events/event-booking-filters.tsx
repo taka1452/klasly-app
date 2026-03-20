@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 
 type BookingRow = {
@@ -15,6 +15,7 @@ type BookingRow = {
   created_at: string;
   installment_paid: number;
   installment_total: number;
+  application_responses: Record<string, string | boolean> | null;
 };
 
 const TABS = [
@@ -29,11 +30,15 @@ type TabKey = (typeof TABS)[number]["key"];
 export function EventBookingFilters({
   eventId,
   bookings,
+  appFieldLabels = {},
 }: {
   eventId: string;
   bookings: BookingRow[];
+  appFieldLabels?: Record<string, string>;
 }) {
   const [activeTab, setActiveTab] = useState<TabKey>("all");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const hasAppFields = Object.keys(appFieldLabels).length > 0;
 
   const filtered =
     activeTab === "all"
@@ -83,12 +88,14 @@ export function EventBookingFilters({
                 <th className="pb-2 pr-4">Status</th>
                 <th className="pb-2 pr-4">Payment</th>
                 <th className="pb-2 pr-4">Date</th>
+                {hasAppFields && <th className="pb-2 pr-4">Form</th>}
                 <th className="pb-2"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filtered.map((booking) => (
-                <tr key={booking.id}>
+                <React.Fragment key={booking.id}>
+                <tr>
                   <td className="py-2 pr-4">
                     <p className="font-medium text-gray-900">
                       {booking.guest_name}
@@ -142,6 +149,21 @@ export function EventBookingFilters({
                   <td className="py-2 pr-4 text-gray-500">
                     {new Date(booking.created_at).toLocaleDateString()}
                   </td>
+                  {hasAppFields && (
+                    <td className="py-2 pr-4">
+                      {booking.application_responses ? (
+                        <button
+                          type="button"
+                          onClick={() => setExpandedId(expandedId === booking.id ? null : booking.id)}
+                          className="text-xs font-medium text-brand-600 hover:text-brand-700"
+                        >
+                          {expandedId === booking.id ? "Hide" : "View"}
+                        </button>
+                      ) : (
+                        <span className="text-xs text-gray-400">—</span>
+                      )}
+                    </td>
+                  )}
                   <td className="py-2">
                     <Link
                       href={`/events/${eventId}/bookings/${booking.id}`}
@@ -151,6 +173,25 @@ export function EventBookingFilters({
                     </Link>
                   </td>
                 </tr>
+                {expandedId === booking.id && booking.application_responses && (
+                  <tr>
+                    <td colSpan={hasAppFields ? 8 : 7} className="pb-3 pt-0 px-4">
+                      <div className="rounded-lg bg-gray-50 p-3 space-y-1">
+                        {Object.entries(booking.application_responses).map(([fieldId, answer]) => (
+                          <div key={fieldId} className="flex gap-2 text-xs">
+                            <span className="font-medium text-gray-600 min-w-[120px]">
+                              {appFieldLabels[fieldId] || fieldId}:
+                            </span>
+                            <span className="text-gray-900">
+                              {typeof answer === "boolean" ? (answer ? "Yes" : "No") : String(answer)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>

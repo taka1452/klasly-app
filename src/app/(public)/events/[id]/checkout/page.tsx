@@ -13,6 +13,15 @@ type EventOption = {
   remaining: number;
 };
 
+type AppFieldDef = {
+  id: string;
+  label: string;
+  type: string;
+  required: boolean;
+  placeholder?: string;
+  options?: string[];
+};
+
 type EventData = {
   id: string;
   name: string;
@@ -22,6 +31,7 @@ type EventData = {
   payment_type: "full" | "installment";
   installment_count: number;
   cancellation_policy_text: string | null;
+  application_fields: AppFieldDef[] | null;
   options: EventOption[];
 };
 
@@ -46,6 +56,7 @@ export default function EventCheckoutPage() {
   const [guestPhone, setGuestPhone] = useState("");
   const [paymentChoice, setPaymentChoice] = useState<"full" | "installment">("full");
   const [agreedToPolicy, setAgreedToPolicy] = useState(false);
+  const [appResponses, setAppResponses] = useState<Record<string, string | boolean>>({});
 
   useEffect(() => {
     async function load() {
@@ -104,12 +115,39 @@ export default function EventCheckoutPage() {
     return dates;
   }
 
+  const hasAppFields = (event?.application_fields ?? []).length > 0;
+  const stepLabels = hasAppFields
+    ? ["Select Option", "Your Info", "Application", "Payment"]
+    : ["Select Option", "Your Info", "Payment"];
+  const paymentStep = hasAppFields ? 4 : 3;
+  const appStep = hasAppFields ? 3 : -1;
+
   const canProceedStep1 = !!selectedOption && selectedOpt && selectedOpt.remaining > 0;
   const canProceedStep2 = guestName.trim() !== "" && guestEmail.trim() !== "";
+
+  function validateAppFields(): boolean {
+    if (!hasAppFields || !event?.application_fields) return true;
+    for (const field of event.application_fields) {
+      if (field.required) {
+        const val = appResponses[field.id];
+        if (val === undefined || val === "" || val === false) return false;
+      }
+    }
+    return true;
+  }
+
+  const canProceedApp = validateAppFields();
   const canSubmit = agreedToPolicy || !event?.cancellation_policy_text;
 
   async function handleSubmit() {
     if (!event || !selectedOpt) return;
+
+    // Validate required application fields
+    if (!validateAppFields()) {
+      setError("Please fill in all required application fields.");
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
 
@@ -125,6 +163,7 @@ export default function EventCheckoutPage() {
           guest_phone: guestPhone || null,
           payment_choice:
             event.payment_type === "installment" ? paymentChoice : "full",
+          ...(hasAppFields ? { application_responses: appResponses } : {}),
         }),
       });
 
@@ -184,7 +223,7 @@ export default function EventCheckoutPage() {
 
       {/* Step indicators */}
       <div className="mt-6 mb-8 flex gap-2">
-        {["Select Option", "Your Info", "Payment"].map((label, i) => (
+        {stepLabels.map((label, i) => (
           <button
             key={label}
             onClick={() => {
@@ -329,7 +368,7 @@ export default function EventCheckoutPage() {
             </button>
             <button
               disabled={!canProceedStep2}
-              onClick={() => setStep(3)}
+              onClick={() => setStep(hasAppFields ? appStep : paymentStep)}
               className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
               Next →
@@ -338,8 +377,96 @@ export default function EventCheckoutPage() {
         </div>
       )}
 
-      {/* STEP 3: Payment */}
-      {step === 3 && selectedOpt && (
+      {/* STEP: Application Form */}
+      {step === appStep && hasAppFields && event.application_fields && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold text-gray-900">Application Form</h2>
+          <p className="text-sm text-gray-500">Please answer the following questions.</p>
+          {event.application_fields.map((field) => (
+            <div key={field.id}>
+              <label className="block text-sm font-medium text-gray-700">
+                {field.label}
+                {field.required && <span className="text-red-500"> *</span>}
+              </label>
+              {field.type === "text" && (
+                <input
+                  type="text"
+                  value={(appResponses[field.id] as string) || ""}
+                  onChange={(e) => setAppResponses((r) => ({ ...r, [field.id]: e.target.value }))}
+                  placeholder={field.placeholder || ""}
+                  className="input-field mt-1"
+                />
+              )}
+              {field.type === "textarea" && (
+                <textarea
+                  value={(appResponses[field.id] as string) || ""}
+                  onChange={(e) => setAppResponses((r) => ({ ...r, [field.id]: e.target.value }))}
+                  placeholder={field.placeholder || ""}
+                  rows={3}
+                  className="input-field mt-1"
+                />
+              )}
+              {field.type === "select" && (
+                <select
+                  value={(appResponses[field.id] as string) || ""}
+                  onChange={(e) => setAppResponses((r) => ({ ...r, [field.id]: e.target.value }))}
+                  className="input-field mt-1"
+                >
+                  <option value="">Select...</option>
+                  {(field.options || []).map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              )}
+              {field.type === "radio" && (
+                <div className="mt-1 space-y-1">
+                  {(field.options || []).map((opt) => (
+                    <label key={opt} className="flex items-center gap-2 text-sm text-gray-700">
+                      <input
+                        type="radio"
+                        name={field.id}
+                        value={opt}
+                        checked={appResponses[field.id] === opt}
+                        onChange={() => setAppResponses((r) => ({ ...r, [field.id]: opt }))}
+                      />
+                      {opt}
+                    </label>
+                  ))}
+                </div>
+              )}
+              {field.type === "checkbox" && (
+                <label className="mt-1 flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={!!appResponses[field.id]}
+                    onChange={(e) => setAppResponses((r) => ({ ...r, [field.id]: e.target.checked }))}
+                    className="rounded"
+                  />
+                  Yes
+                </label>
+              )}
+            </div>
+          ))}
+          <div className="flex justify-between pt-4">
+            <button
+              onClick={() => setStep(2)}
+              className="rounded-lg border border-gray-300 px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              ← Back
+            </button>
+            <button
+              disabled={!canProceedApp}
+              onClick={() => setStep(paymentStep)}
+              className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+            >
+              Next →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* STEP: Payment */}
+      {step === paymentStep && selectedOpt && (
         <div className="space-y-6">
           <h2 className="text-lg font-semibold text-gray-900">Payment</h2>
 
@@ -441,7 +568,7 @@ export default function EventCheckoutPage() {
           {/* Pay button */}
           <div className="flex justify-between pt-2">
             <button
-              onClick={() => setStep(2)}
+              onClick={() => setStep(hasAppFields ? appStep : 2)}
               className="rounded-lg border border-gray-300 px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
               ← Back
