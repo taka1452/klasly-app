@@ -224,7 +224,11 @@ export default function InstructorRoomCalendar() {
 
       const data = await res.json();
       if (!res.ok) {
-        setFormError(data.error || "Failed to create booking");
+        if (res.status === 401) {
+          setFormError("You need to be registered as an instructor to book rooms. Please set up your instructor profile first.");
+        } else {
+          setFormError(data.error || "Failed to create booking");
+        }
         setFormSubmitting(false);
         return;
       }
@@ -304,11 +308,36 @@ export default function InstructorRoomCalendar() {
           <p className="mt-1 text-sm text-gray-400">Ask the studio owner to add rooms.</p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+          {/* Fixed header row */}
+          <div className="flex overflow-x-auto" style={{ minWidth: "560px" }}>
+            <div className="w-[52px] shrink-0 border-r border-gray-200">
+              <div className="h-12 border-b border-gray-200" />
+            </div>
+            {weekDays.map((day, dayIdx) => {
+              const dayStr2 = fmtDate(day);
+              const isCurDay = dayStr2 === todayStr;
+              return (
+                <div
+                  key={`hdr-${dayIdx}`}
+                  className="flex-1 border-r border-gray-100 last:border-r-0"
+                  style={{ minWidth: "72px" }}
+                >
+                  <div className={`flex h-12 flex-col items-center justify-center border-b border-gray-200 px-1 ${isCurDay ? "bg-brand-50" : "bg-gray-50"}`}>
+                    <p className="text-[11px] text-gray-500">{DAY_LABELS[dayIdx]}</p>
+                    <p className={`text-sm font-bold ${isCurDay ? "flex h-6 w-6 items-center justify-center rounded-full bg-brand-600 text-white" : "text-gray-700"}`}>
+                      {day.getDate()}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {/* Scrollable time grid — max 65vh so it fits the screen */}
+          <div className="overflow-y-auto overflow-x-auto" style={{ maxHeight: "65vh", minWidth: "560px" }}>
           <div className="flex" style={{ minWidth: "560px" }}>
             {/* Time gutter */}
             <div className="w-[52px] shrink-0 border-r border-gray-200">
-              <div className="h-12 border-b border-gray-200" />
               <div className="relative" style={{ height: `${gridHeight}px` }}>
                 {Array.from({ length: totalHours }, (_, i) => {
                   const h = gridStartHour + i;
@@ -338,14 +367,6 @@ export default function InstructorRoomCalendar() {
                   className="flex-1 border-r border-gray-100 last:border-r-0"
                   style={{ minWidth: "72px" }}
                 >
-                  {/* Day header */}
-                  <div className={`flex h-12 flex-col items-center justify-center border-b border-gray-200 px-1 ${isCurrentDay ? "bg-brand-50" : "bg-gray-50"}`}>
-                    <p className="text-[11px] text-gray-500">{DAY_LABELS[dayIdx]}</p>
-                    <p className={`text-sm font-bold ${isCurrentDay ? "flex h-6 w-6 items-center justify-center rounded-full bg-brand-600 text-white" : "text-gray-700"}`}>
-                      {day.getDate()}
-                    </p>
-                  </div>
-
                   {/* Time grid */}
                   <div className="relative" style={{ height: `${gridHeight}px` }}>
                     {/* Hour lines */}
@@ -447,6 +468,7 @@ export default function InstructorRoomCalendar() {
               );
             })}
           </div>
+          </div>{/* /scrollable */}
         </div>
       )}
 

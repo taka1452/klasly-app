@@ -36,32 +36,28 @@ export async function GET(request: NextRequest) {
       ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey)
       : serverSupabase;
 
-    // Get instructor record for current user
-    const { data: instructor } = await supabase
-      .from("instructors")
-      .select("id, studio_id")
-      .eq("profile_id", user.id)
+    // Get profile to find studio and role
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("studio_id, role")
+      .eq("id", user.id)
       .single();
 
-    if (!instructor?.studio_id) {
-      // Try via profiles (owner acting as instructor)
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("studio_id")
-        .eq("id", user.id)
-        .single();
-
-      if (!profile?.studio_id) {
-        return NextResponse.json({ rooms: [], events: [] });
-      }
-    }
-
-    const studioId = instructor?.studio_id ?? "";
-    if (!studioId) {
+    if (!profile?.studio_id) {
       return NextResponse.json({ rooms: [], events: [] });
     }
 
+    const studioId = profile.studio_id;
+
+    // Get instructor record (may be null for owner/manager without instructor record)
+    const { data: instructor } = await supabase
+      .from("instructors")
+      .select("id")
+      .eq("profile_id", user.id)
+      .maybeSingle();
+
     const instructorId = instructor?.id ?? "";
+    const isOwnerOrManager = profile.role === "owner" || profile.role === "manager";
 
     // Active rooms
     const { data: rooms } = await supabase
@@ -125,7 +121,8 @@ export async function GET(request: NextRequest) {
         room_id: rb.room_id,
         start_time: rb.start_time,
         end_time: rb.end_time,
-        title: isOwn ? rb.title || "Room Booking" : "Booked",
+        // Owner/manager sees all titles; instructors only see own
+        title: isOwn || isOwnerOrManager ? rb.title || "Room Booking" : "Booked",
         is_own: isOwn,
         event_type: "room_booking",
         is_public: rb.is_public,
@@ -150,7 +147,7 @@ export async function GET(request: NextRequest) {
         room_id: cls.room_id,
         start_time: cs.start_time,
         end_time: endTime,
-        title: isOwn ? cls.name ?? "Class" : "Booked",
+        title: isOwn || isOwnerOrManager ? cls.name ?? "Class" : "Booked",
         is_own: isOwn,
         event_type: "class",
         is_public: true,

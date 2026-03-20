@@ -146,17 +146,7 @@ export default function CalendarEventCard({
       {showPopover && (
         <div
           ref={popoverRef}
-          className="fixed inset-x-0 bottom-0 z-50 mx-auto max-w-md rounded-t-2xl border border-gray-200 bg-white p-5 shadow-2xl md:absolute md:inset-auto md:bottom-auto md:rounded-xl"
-          style={{
-            // On desktop, position near the event card
-            ...(typeof window !== "undefined" && window.innerWidth >= 768
-              ? {
-                  top: `${Math.min(top, 300)}px`,
-                  left: `calc(${leftPercent + widthPercent}% + 8px)`,
-                  width: "280px",
-                }
-              : {}),
-          }}
+          className="fixed inset-x-0 bottom-0 z-50 mx-auto max-w-md rounded-t-2xl border border-gray-200 bg-white p-5 shadow-2xl md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-xl md:max-w-sm"
         >
           {/* Close button */}
           <button

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import RoomTimeline from "@/components/dashboard/room-timeline";
+import InstructorRoomCalendar from "@/components/instructor/room-calendar";
 
 export const metadata: Metadata = {
   title: "Rooms - Klasly",
@@ -13,7 +13,7 @@ export default function RoomsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Rooms</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Room usage by day
+            Room usage &amp; bookings
           </p>
         </div>
         <div className="flex gap-2">
@@ -24,7 +24,7 @@ export default function RoomsPage() {
       </div>
 
       <div className="mt-6">
-        <RoomTimeline />
+        <InstructorRoomCalendar />
       </div>
     </div>
   );
