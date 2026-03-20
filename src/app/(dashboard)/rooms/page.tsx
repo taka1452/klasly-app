@@ -29,7 +29,13 @@ export default async function RoomsPage() {
 
   if (!profile?.studio_id) return null;
 
-  const today = new Date().toISOString().split("T")[0];
+  // Show bookings from the start of this week (Monday)
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon, ...
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + mondayOffset);
+  const weekStart = monday.toISOString().split("T")[0];
 
   const { data: bookings } = await supabase
     .from("instructor_room_bookings")
@@ -38,7 +44,7 @@ export default async function RoomsPage() {
     )
     .eq("studio_id", profile.studio_id)
     .eq("status", "confirmed")
-    .gte("booking_date", today)
+    .gte("booking_date", weekStart)
     .order("booking_date", { ascending: true })
     .order("start_time", { ascending: true });
 
@@ -48,7 +54,7 @@ export default async function RoomsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Rooms</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Upcoming room bookings by instructors
+            This week&apos;s room bookings by instructors
           </p>
         </div>
         <div className="flex gap-2">
@@ -75,10 +81,13 @@ export default async function RoomsPage() {
                 const instructorName =
                   rawInstr?.profiles?.full_name || "Unknown";
 
+                const today = new Date().toISOString().split("T")[0];
+                const isPast = b.booking_date < today;
+
                 return (
                   <div
                     key={b.id}
-                    className="flex items-center justify-between gap-4 px-6 py-4"
+                    className={`flex items-center justify-between gap-4 px-6 py-4 ${isPast ? "opacity-50" : ""}`}
                   >
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
