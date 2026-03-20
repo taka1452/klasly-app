@@ -188,7 +188,8 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
               <Steps>
                 <li>Class name and description.</li>
                 <li>Assign an instructor.</li>
-                <li>Set the day of week, start time, duration, and capacity.</li>
+                <li>Choose <B>Recurring (weekly)</B> or <B>One-time</B>. Recurring classes repeat every week on the selected day. One-time classes happen on a single date (great for workshops).</li>
+                <li>Set the time, duration, and capacity.</li>
                 <li>Optionally assign a room.</li>
               </Steps>
               Once created, sessions (bookable time slots) will be generated automatically.
@@ -205,6 +206,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
                 <li><B>Violet</B> — private sessions.</li>
                 <li><B>Amber</B> — fully booked sessions.</li>
                 <li><B>Gray</B> — cancelled sessions.</li>
+                <li><B>Teal</B> — instructor room bookings (shown with a &quot;Room&quot; badge).</li>
               </Steps>
               Each card shows the class name, time, instructor, and booking count. A red line indicates the current time.
             </>
@@ -1117,8 +1119,16 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I book a room?",
           a: (
             <>
-              Go to <B>Room Bookings → New Booking</B>. Select a room, date, and time. The system will check for conflicts and prevent double-booking.
+              Go to <B>Room Bookings → New Booking</B>. Choose <B>One-time</B> for a single date, or <B>Recurring (weekly)</B> to book the same room every week. The system checks for conflicts and prevents double-booking.
               <Tip>If you don&apos;t have an active membership yet, you&apos;ll see a reminder to purchase one before booking. This ensures your hours are tracked correctly.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "Can I create recurring room bookings?",
+          a: (
+            <>
+              Yes. When booking a room, select <B>Recurring (weekly)</B>. Choose a day of week, start and end times, and the number of weeks. Individual bookings will be created for each week, so you can cancel individual dates if needed.
             </>
           ),
         },
@@ -1126,7 +1136,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I view my room bookings?",
           a: (
             <>
-              Go to <B>Room Bookings</B> from the sidebar to see all your room reservations with date, time, and room name.
+              Go to <B>Room Bookings</B> from the sidebar to see all your room reservations with date, time, and room name. Recurring bookings are marked with a <B>Recurring</B> badge.
             </>
           ),
         },
@@ -1134,7 +1144,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I cancel a room booking?",
           a: (
             <>
-              On the Room Bookings page, click <B>Cancel</B> next to the booking you want to remove. You&apos;ll be asked to confirm before the cancellation is processed.
+              On the Room Bookings page, click <B>Cancel</B> to cancel a single booking. For recurring bookings, you can also click <B>Cancel all future</B> to cancel all remaining bookings in the series.
             </>
           ),
         },

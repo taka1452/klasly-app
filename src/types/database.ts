@@ -139,7 +139,7 @@ export type Class = {
   room_id: string | null;
   name: string;
   description: string | null;
-  day_of_week: number; // 0=日 1=月 2=火 3=水 4=木 5=金 6=土
+  day_of_week: number | null; // 0=日 1=月 2=火 3=水 4=木 5=金 6=土 (NULL for one_time)
   start_time: string;
   duration_minutes: number;
   capacity: number;
@@ -150,6 +150,8 @@ export type Class = {
   price_cents: number | null;
   is_online: boolean;
   online_link: string | null;
+  schedule_type: "recurring" | "one_time";
+  one_time_date: string | null;
   created_at: string;
 };
 
@@ -461,6 +463,8 @@ export type InstructorRoomBooking = {
   status: "confirmed" | "cancelled";
   is_public: boolean;
   notes: string | null;
+  recurrence_group_id: string | null;
+  day_of_week: number | null;
   created_at: string;
 };
 

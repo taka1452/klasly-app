@@ -49,18 +49,36 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { room_id, title, booking_date, start_time, end_time, is_public, notes } = body;
+    const { room_id, title, booking_date, start_time, end_time, is_public, notes, recurring, day_of_week, weeks } = body;
 
-    if (!room_id || !title || !booking_date || !start_time || !end_time) {
+    // For recurring: day_of_week + start/end required, booking_date derived
+    // For one-time: booking_date + start/end required
+    if (!room_id || !title || !start_time || !end_time) {
       return NextResponse.json(
-        { error: "room_id, title, booking_date, start_time, end_time are required" },
+        { error: "room_id, title, start_time, end_time are required" },
         { status: 400 }
       );
     }
 
-    // 過去日バリデーション
+    if (recurring) {
+      if (day_of_week === undefined || day_of_week === null || day_of_week < 0 || day_of_week > 6) {
+        return NextResponse.json(
+          { error: "day_of_week (0-6) is required for recurring bookings" },
+          { status: 400 }
+        );
+      }
+    } else {
+      if (!booking_date) {
+        return NextResponse.json(
+          { error: "booking_date is required" },
+          { status: 400 }
+        );
+      }
+    }
+
+    // 過去日バリデーション (one-time only)
     const today = new Date().toISOString().split("T")[0];
-    if (booking_date < today) {
+    if (!recurring && booking_date < today) {
       return NextResponse.json(
         { error: "Cannot book a room in the past" },
         { status: 400 }
@@ -89,12 +107,33 @@ export async function POST(request: Request) {
       );
     }
 
-    // 重複チェック: 同じ部屋・日付で時間帯が重なるブッキングがないか
+    // Generate list of booking dates
+    const bookingDates: string[] = [];
+    if (recurring) {
+      // Generate N weeks of dates starting from next occurrence of day_of_week
+      const numWeeks = Math.min(Math.max(weeks ?? 8, 1), 52);
+      const todayDate = new Date();
+      todayDate.setHours(0, 0, 0, 0);
+      const currentDay = todayDate.getDay();
+      const daysUntilFirst = (day_of_week - currentDay + 7) % 7 || 7; // at least next week
+      const firstDate = new Date(todayDate);
+      firstDate.setDate(todayDate.getDate() + daysUntilFirst);
+
+      for (let i = 0; i < numWeeks; i++) {
+        const d = new Date(firstDate);
+        d.setDate(firstDate.getDate() + i * 7);
+        bookingDates.push(d.toISOString().split("T")[0]);
+      }
+    } else {
+      bookingDates.push(booking_date);
+    }
+
+    // 重複チェック: 全日付について同じ部屋で時間帯が重なるブッキングがないか
     const { data: conflicts } = await ctx.supabase
       .from("instructor_room_bookings")
-      .select("id, title, start_time, end_time")
+      .select("id, title, booking_date, start_time, end_time")
       .eq("room_id", room_id)
-      .eq("booking_date", booking_date)
+      .in("booking_date", bookingDates)
       .eq("status", "confirmed")
       .lt("start_time", end_time)
       .gt("end_time", start_time);
@@ -102,7 +141,9 @@ export async function POST(request: Request) {
     if (conflicts && conflicts.length > 0) {
       return NextResponse.json(
         {
-          error: "This room is already booked during that time",
+          error: recurring
+            ? `Room conflicts found on ${conflicts.length} date(s)`
+            : "This room is already booked during that time",
           conflicts,
         },
         { status: 409 }
@@ -131,15 +172,17 @@ export async function POST(request: Request) {
       const overageRateCents = tierData?.overage_rate_cents ?? null;
 
       if (monthlyMinutes !== -1) {
-        // Calculate requested duration
+        // Calculate per-booking duration
         const [sh, sm] = start_time.split(":").map(Number);
         const [eh, em] = end_time.split(":").map(Number);
-        const requestedMinutes = (eh * 60 + em) - (sh * 60 + sm);
+        const perBookingMinutes = (eh * 60 + em) - (sh * 60 + sm);
+        const totalRequestedMinutes = perBookingMinutes * bookingDates.length;
 
-        // Get used minutes for the booking month
-        const bookingMonth = new Date(booking_date);
-        const year = bookingMonth.getFullYear();
-        const month = bookingMonth.getMonth() + 1;
+        // For simplicity: check quota for the first booking's month
+        // (recurring bookings may span months, but this is a reasonable approximation)
+        const firstBookingMonth = new Date(bookingDates[0]);
+        const year = firstBookingMonth.getFullYear();
+        const month = firstBookingMonth.getMonth() + 1;
 
         const { data: usedData } = await ctx.supabase.rpc("get_instructor_used_minutes", {
           p_instructor_id: ctx.instructorId,
@@ -150,9 +193,14 @@ export async function POST(request: Request) {
         const usedMinutes = typeof usedData === "number" ? usedData : 0;
         const remainingMinutes = monthlyMinutes - usedMinutes;
 
-        if (requestedMinutes > remainingMinutes) {
+        const fmtH = (m: number) => {
+          const h = Math.floor(m / 60);
+          const r = m % 60;
+          return h > 0 && r > 0 ? `${h}h ${r}m` : h > 0 ? `${h}h` : `${r}m`;
+        };
+
+        if (perBookingMinutes > remainingMinutes) {
           if (!allowOverage) {
-            // Block scheduling
             return NextResponse.json(
               {
                 error: "You've reached your monthly hour limit. Please contact the studio to upgrade your membership.",
@@ -161,56 +209,53 @@ export async function POST(request: Request) {
               { status: 403 }
             );
           }
-          // Allow overage — add warning to response
-          const overMinutes = usedMinutes + requestedMinutes - monthlyMinutes;
-          const fmtH = (m: number) => {
-            const h = Math.floor(m / 60);
-            const r = m % 60;
-            return h > 0 && r > 0 ? `${h}h ${r}m` : h > 0 ? `${h}h` : `${r}m`;
-          };
+          const overMinutes = usedMinutes + totalRequestedMinutes - monthlyMinutes;
           const rateStr = overageRateCents ? `$${(overageRateCents / 100).toFixed(2)}` : null;
-          overageWarning = `You've used ${fmtH(usedMinutes)} of ${fmtH(monthlyMinutes)} this month. This booking will put you ${fmtH(overMinutes)} over your limit.${rateStr ? ` Additional hours are charged at ${rateStr}/hour.` : ""}`;
+          overageWarning = `You've used ${fmtH(usedMinutes)} of ${fmtH(monthlyMinutes)} this month. ${recurring ? `These ${bookingDates.length} bookings total ${fmtH(totalRequestedMinutes)}` : "This booking"} will put you ${fmtH(overMinutes)} over your limit.${rateStr ? ` Additional hours are charged at ${rateStr}/hour.` : ""}`;
         } else if (usedMinutes >= monthlyMinutes * 0.9) {
-          // 90% warning (no block)
-          const fmtH = (m: number) => {
-            const h = Math.floor(m / 60);
-            const r = m % 60;
-            return h > 0 && r > 0 ? `${h}h ${r}m` : h > 0 ? `${h}h` : `${r}m`;
-          };
           overageWarning = `You've used ${fmtH(usedMinutes)} of ${fmtH(monthlyMinutes)} this month — approaching your limit.`;
         }
 
-        // Send 90% warning email if threshold reached for the first time
-        if (usedMinutes + requestedMinutes >= monthlyMinutes * 0.9 && usedMinutes < monthlyMinutes * 0.9) {
-          // Async — don't block the booking
-          sendOverageWarningEmail(ctx.supabase, ctx.instructorId, ctx.studioId, usedMinutes + requestedMinutes, monthlyMinutes, overageRateCents).catch(() => {});
+        if (usedMinutes + perBookingMinutes >= monthlyMinutes * 0.9 && usedMinutes < monthlyMinutes * 0.9) {
+          sendOverageWarningEmail(ctx.supabase, ctx.instructorId, ctx.studioId, usedMinutes + perBookingMinutes, monthlyMinutes, overageRateCents).catch(() => {});
         }
       }
     }
 
-    const { data: booking, error: insertError } = await ctx.supabase
+    // Generate recurrence_group_id for recurring bookings
+    const recurrenceGroupId = recurring ? crypto.randomUUID() : null;
+
+    // Insert booking(s)
+    const bookingsToInsert = bookingDates.map((date) => ({
+      studio_id: ctx.studioId,
+      instructor_id: ctx.instructorId,
+      room_id,
+      title,
+      booking_date: date,
+      start_time,
+      end_time,
+      is_public: is_public ?? true,
+      notes: notes || null,
+      status: "confirmed" as const,
+      recurrence_group_id: recurrenceGroupId,
+      day_of_week: recurring ? day_of_week : null,
+    }));
+
+    const { data: insertedBookings, error: insertError } = await ctx.supabase
       .from("instructor_room_bookings")
-      .insert({
-        studio_id: ctx.studioId,
-        instructor_id: ctx.instructorId,
-        room_id,
-        title,
-        booking_date,
-        start_time,
-        end_time,
-        is_public: is_public ?? true,
-        notes: notes || null,
-        status: "confirmed",
-      })
-      .select("*")
-      .single();
+      .insert(bookingsToInsert)
+      .select("*");
 
     if (insertError) {
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
     return NextResponse.json(
-      { ...booking, overageWarning },
+      {
+        bookings: insertedBookings,
+        count: insertedBookings?.length ?? 0,
+        overageWarning,
+      },
       { status: 201 }
     );
   } catch {

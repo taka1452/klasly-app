@@ -83,8 +83,9 @@ export async function PATCH(
 }
 
 // DELETE: ブッキングをキャンセル（ソフトデリート）
+// ?cancel_future=true で同じ recurrence group の未来分を一括キャンセル
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -96,7 +97,7 @@ export async function DELETE(
 
     const { data: existing } = await ctx.supabase
       .from("instructor_room_bookings")
-      .select("id, instructor_id")
+      .select("id, instructor_id, recurrence_group_id, booking_date")
       .eq("id", id)
       .single();
 
@@ -104,6 +105,32 @@ export async function DELETE(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
+    const url = new URL(request.url);
+    const cancelFuture = url.searchParams.get("cancel_future") === "true";
+
+    if (cancelFuture && existing.recurrence_group_id) {
+      // Cancel all future bookings in the same recurrence group
+      const today = new Date().toISOString().split("T")[0];
+      const { data: cancelled, error } = await ctx.supabase
+        .from("instructor_room_bookings")
+        .update({ status: "cancelled" })
+        .eq("recurrence_group_id", existing.recurrence_group_id)
+        .eq("instructor_id", ctx.instructorId)
+        .eq("status", "confirmed")
+        .gte("booking_date", today)
+        .select("id");
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        cancelled_count: cancelled?.length ?? 0,
+      });
+    }
+
+    // Single booking cancel
     const { error } = await ctx.supabase
       .from("instructor_room_bookings")
       .update({ status: "cancelled" })

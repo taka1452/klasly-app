@@ -66,18 +66,41 @@ export async function POST(request: Request) {
       price_cents,
       is_online,
       online_link,
+      schedule_type = "recurring",
+      one_time_date,
     } = body;
 
-    if (!name || day_of_week === undefined || !start_time || !duration_minutes || !capacity) {
+    if (!name || !start_time || !duration_minutes || !capacity) {
       return NextResponse.json(
-        { error: "name, day_of_week, start_time, duration_minutes, capacity are required" },
+        { error: "name, start_time, duration_minutes, capacity are required" },
         { status: 400 }
       );
     }
 
-    if (typeof day_of_week !== "number" || day_of_week < 0 || day_of_week > 6) {
+    // Validate schedule_type specific fields
+    if (schedule_type === "recurring") {
+      if (day_of_week === undefined || day_of_week === null) {
+        return NextResponse.json(
+          { error: "day_of_week is required for recurring classes" },
+          { status: 400 }
+        );
+      }
+      if (typeof day_of_week !== "number" || day_of_week < 0 || day_of_week > 6) {
+        return NextResponse.json(
+          { error: "day_of_week must be between 0 (Sunday) and 6 (Saturday)" },
+          { status: 400 }
+        );
+      }
+    } else if (schedule_type === "one_time") {
+      if (!one_time_date) {
+        return NextResponse.json(
+          { error: "one_time_date is required for one-time classes" },
+          { status: 400 }
+        );
+      }
+    } else {
       return NextResponse.json(
-        { error: "day_of_week must be between 0 (Sunday) and 6 (Saturday)" },
+        { error: "schedule_type must be 'recurring' or 'one_time'" },
         { status: 400 }
       );
     }
@@ -174,7 +197,7 @@ export async function POST(request: Request) {
         instructor_id: ctx.instructorId,
         name,
         description: description || null,
-        day_of_week,
+        day_of_week: schedule_type === "recurring" ? day_of_week : null,
         start_time: startTimeFormatted,
         duration_minutes,
         capacity,
@@ -183,6 +206,8 @@ export async function POST(request: Request) {
         price_cents: price_cents ?? null,
         is_online: is_online ?? false,
         online_link: (is_online || online_link) ? online_link || null : null,
+        schedule_type,
+        one_time_date: schedule_type === "one_time" ? one_time_date : null,
         is_active: true,
       })
       .select("id, start_time, capacity")
@@ -192,23 +217,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: classError.message }, { status: 500 });
     }
 
-    // Generate 4 weeks of sessions
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const currentDay = today.getDay();
-    const daysUntilFirst = (day_of_week - currentDay + 7) % 7;
-    const firstSessionDate = new Date(today);
-    firstSessionDate.setDate(today.getDate() + daysUntilFirst);
-
+    // Generate sessions based on schedule type
     const sessionsToInsert = [];
-    for (let i = 0; i < 4; i++) {
-      const sessionDate = new Date(firstSessionDate);
-      sessionDate.setDate(firstSessionDate.getDate() + i * 7);
+
+    if (schedule_type === "one_time") {
+      // One-time: single session on the specified date
       sessionsToInsert.push({
         studio_id: ctx.studioId,
         class_id: newClass.id,
-        session_date: sessionDate.toISOString().split("T")[0],
+        session_date: one_time_date,
         start_time: startTimeFormatted,
         capacity: newClass.capacity,
         is_cancelled: false,
@@ -216,6 +233,31 @@ export async function POST(request: Request) {
         is_online: is_online ?? false,
         online_link: (is_online || online_link) ? online_link || null : null,
       });
+    } else {
+      // Recurring: generate 4 weeks of sessions
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const currentDay = today.getDay();
+      const daysUntilFirst = (day_of_week - currentDay + 7) % 7;
+      const firstSessionDate = new Date(today);
+      firstSessionDate.setDate(today.getDate() + daysUntilFirst);
+
+      for (let i = 0; i < 4; i++) {
+        const sessionDate = new Date(firstSessionDate);
+        sessionDate.setDate(firstSessionDate.getDate() + i * 7);
+        sessionsToInsert.push({
+          studio_id: ctx.studioId,
+          class_id: newClass.id,
+          session_date: sessionDate.toISOString().split("T")[0],
+          start_time: startTimeFormatted,
+          capacity: newClass.capacity,
+          is_cancelled: false,
+          is_public: is_public ?? true,
+          is_online: is_online ?? false,
+          online_link: (is_online || online_link) ? online_link || null : null,
+        });
+      }
     }
 
     await ctx.supabase.from("class_sessions").insert(sessionsToInsert);

@@ -80,6 +80,11 @@ export default async function InstructorRoomBookingsPage() {
                             Private
                           </span>
                         )}
+                        {b.recurrence_group_id && (
+                          <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium bg-teal-100 text-teal-700">
+                            Recurring
+                          </span>
+                        )}
                       </div>
                       <p className="text-sm text-gray-500">
                         {formatDate(b.booking_date)} · {formatTime(b.start_time)}{" "}
@@ -87,7 +92,16 @@ export default async function InstructorRoomBookingsPage() {
                       </p>
                       <p className="text-xs text-gray-400">{roomName}</p>
                     </div>
-                    <RoomBookingCancelButton bookingId={b.id} />
+                    <div className="flex shrink-0 items-center gap-2">
+                      {b.recurrence_group_id && (
+                        <RoomBookingCancelButton
+                          bookingId={b.id}
+                          cancelFuture
+                          label="Cancel all future"
+                        />
+                      )}
+                      <RoomBookingCancelButton bookingId={b.id} />
+                    </div>
                   </div>
                 );
               })}

@@ -99,6 +99,11 @@ export default async function RoomsPage() {
                             Private
                           </span>
                         )}
+                        {b.recurrence_group_id && (
+                          <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium bg-teal-100 text-teal-700">
+                            Recurring
+                          </span>
+                        )}
                       </div>
                       <p className="text-sm text-gray-600">
                         {instructorName}

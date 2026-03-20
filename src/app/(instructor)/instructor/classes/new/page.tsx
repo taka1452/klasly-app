@@ -31,6 +31,8 @@ export default function InstructorNewClassPage() {
   const [priceDollars, setPriceDollars] = useState("");
   const [classType, setClassType] = useState<"in-person" | "online" | "hybrid">("in-person");
   const [onlineLink, setOnlineLink] = useState("");
+  const [scheduleType, setScheduleType] = useState<"recurring" | "one_time">("recurring");
+  const [oneTimeDate, setOneTimeDate] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [hasRoomBookings, setHasRoomBookings] = useState(true);
@@ -108,7 +110,7 @@ export default function InstructorNewClassPage() {
         body: JSON.stringify({
           name,
           description: description || null,
-          day_of_week: dayOfWeek,
+          day_of_week: scheduleType === "recurring" ? dayOfWeek : null,
           start_time: startTime,
           duration_minutes: durationMinutes,
           capacity,
@@ -117,6 +119,8 @@ export default function InstructorNewClassPage() {
           price_cents: priceCents,
           is_online: isOnline,
           online_link: showOnlineLink ? onlineLink || null : null,
+          schedule_type: scheduleType,
+          one_time_date: scheduleType === "one_time" ? oneTimeDate : null,
         }),
       });
 
@@ -275,22 +279,67 @@ export default function InstructorNewClassPage() {
             </div>
           )}
 
+          {/* Schedule Type */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Day of week *
+              Schedule
             </label>
-            <select
-              value={dayOfWeek}
-              onChange={(e) => setDayOfWeek(parseInt(e.target.value, 10))}
-              className="input-field mt-1"
-            >
-              {DAY_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+            <div className="mt-2 flex gap-4">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="scheduleType"
+                  checked={scheduleType === "recurring"}
+                  onChange={() => setScheduleType("recurring")}
+                  className="h-4 w-4 border-gray-300 text-emerald-600"
+                />
+                Recurring (weekly)
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="scheduleType"
+                  checked={scheduleType === "one_time"}
+                  onChange={() => setScheduleType("one_time")}
+                  className="h-4 w-4 border-gray-300 text-emerald-600"
+                />
+                One-time
+              </label>
+            </div>
           </div>
+
+          {scheduleType === "recurring" ? (
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Day of week *
+              </label>
+              <select
+                value={dayOfWeek}
+                onChange={(e) => setDayOfWeek(parseInt(e.target.value, 10))}
+                className="input-field mt-1"
+              >
+                {DAY_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Date *
+              </label>
+              <input
+                type="date"
+                value={oneTimeDate}
+                onChange={(e) => setOneTimeDate(e.target.value)}
+                min={new Date().toISOString().split("T")[0]}
+                required
+                className="input-field mt-1"
+              />
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700">

@@ -71,7 +71,8 @@ export async function GET(request: Request) {
     const { data: classes } = await supabase
       .from("classes")
       .select("id, studio_id, day_of_week, start_time, capacity, is_public, is_online, online_link")
-      .eq("is_active", true);
+      .eq("is_active", true)
+      .eq("schedule_type", "recurring"); // Skip one-time classes
 
     if (!classes?.length) {
       try {

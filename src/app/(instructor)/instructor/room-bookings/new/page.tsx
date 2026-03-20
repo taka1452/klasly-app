@@ -12,7 +12,10 @@ export default function NewRoomBookingPage() {
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [roomId, setRoomId] = useState("");
   const [title, setTitle] = useState("");
+  const [bookingType, setBookingType] = useState<"one_time" | "recurring">("one_time");
   const [bookingDate, setBookingDate] = useState("");
+  const [dayOfWeek, setDayOfWeek] = useState(1);
+  const [numWeeks, setNumWeeks] = useState(4);
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("10:00");
   const [isPublic, setIsPublic] = useState(true);
@@ -73,11 +76,14 @@ export default function NewRoomBookingPage() {
         body: JSON.stringify({
           room_id: roomId,
           title,
-          booking_date: bookingDate,
+          booking_date: bookingType === "one_time" ? bookingDate : undefined,
           start_time: startTime,
           end_time: endTime,
           is_public: isPublic,
           notes: notes || null,
+          recurring: bookingType === "recurring",
+          day_of_week: bookingType === "recurring" ? dayOfWeek : undefined,
+          weeks: bookingType === "recurring" ? numWeeks : undefined,
         }),
       });
 
@@ -175,19 +181,93 @@ export default function NewRoomBookingPage() {
             )}
           </div>
 
+          {/* Booking Type */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Date *
+              Schedule
             </label>
-            <input
-              type="date"
-              value={bookingDate}
-              onChange={(e) => setBookingDate(e.target.value)}
-              min={new Date().toISOString().split("T")[0]}
-              required
-              className="input-field mt-1"
-            />
+            <div className="mt-2 flex gap-4">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="bookingType"
+                  checked={bookingType === "one_time"}
+                  onChange={() => setBookingType("one_time")}
+                  className="h-4 w-4 border-gray-300 text-emerald-600"
+                />
+                One-time
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="bookingType"
+                  checked={bookingType === "recurring"}
+                  onChange={() => setBookingType("recurring")}
+                  className="h-4 w-4 border-gray-300 text-emerald-600"
+                />
+                Recurring (weekly)
+              </label>
+            </div>
           </div>
+
+          {bookingType === "one_time" ? (
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Date *
+              </label>
+              <input
+                type="date"
+                value={bookingDate}
+                onChange={(e) => setBookingDate(e.target.value)}
+                min={new Date().toISOString().split("T")[0]}
+                required
+                className="input-field mt-1"
+              />
+            </div>
+          ) : (
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Day of week *
+                </label>
+                <select
+                  value={dayOfWeek}
+                  onChange={(e) => setDayOfWeek(parseInt(e.target.value, 10))}
+                  className="input-field mt-1"
+                >
+                  {[
+                    { value: 0, label: "Sunday" },
+                    { value: 1, label: "Monday" },
+                    { value: 2, label: "Tuesday" },
+                    { value: 3, label: "Wednesday" },
+                    { value: 4, label: "Thursday" },
+                    { value: 5, label: "Friday" },
+                    { value: 6, label: "Saturday" },
+                  ].map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Weeks *
+                </label>
+                <input
+                  type="number"
+                  value={numWeeks}
+                  onChange={(e) => setNumWeeks(parseInt(e.target.value, 10) || 4)}
+                  min={1}
+                  max={52}
+                  className="input-field mt-1"
+                />
+                <p className="mt-1 text-xs text-gray-400">
+                  Number of weekly bookings to create
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="grid gap-5 sm:grid-cols-2">
             <div>

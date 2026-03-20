@@ -6,18 +6,27 @@ import Toast from "@/components/ui/toast";
 
 export default function RoomBookingCancelButton({
   bookingId,
+  cancelFuture = false,
+  label,
 }: {
   bookingId: string;
+  cancelFuture?: boolean;
+  label?: string;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  const displayLabel = label ?? "Cancel";
+
   async function handleCancel() {
     setLoading(true);
 
-    const res = await fetch(`/api/instructor/room-bookings/${bookingId}`, {
+    const url = cancelFuture
+      ? `/api/instructor/room-bookings/${bookingId}?cancel_future=true`
+      : `/api/instructor/room-bookings/${bookingId}`;
+    const res = await fetch(url, {
       method: "DELETE",
     });
 
@@ -69,7 +78,7 @@ export default function RoomBookingCancelButton({
         disabled={loading}
         className="shrink-0 text-sm text-red-600 hover:text-red-700 disabled:opacity-50"
       >
-        Cancel
+        {displayLabel}
       </button>
       {toastMessage && (
         <Toast

@@ -40,6 +40,8 @@ export default function NewClassPage() {
   const [isPublic, setIsPublic] = useState(true);
   const [classType, setClassType] = useState<"in-person" | "online" | "hybrid">("in-person");
   const [onlineLink, setOnlineLink] = useState("");
+  const [scheduleType, setScheduleType] = useState<"recurring" | "one_time">("recurring");
+  const [oneTimeDate, setOneTimeDate] = useState("");
   const [instructors, setInstructors] = useState<InstructorOption[]>([]);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [error, setError] = useState("");
@@ -152,7 +154,7 @@ export default function NewClassPage() {
         instructor_id: instructorId || null,
         name,
         description: description || null,
-        day_of_week: dayOfWeek,
+        day_of_week: scheduleType === "recurring" ? dayOfWeek : null,
         start_time: startTimeFormatted,
         duration_minutes: durationMinutes,
         capacity,
@@ -161,6 +163,8 @@ export default function NewClassPage() {
         is_public: isPublic,
         is_online: isOnline,
         online_link: showOnlineLink ? onlineLink || null : null,
+        schedule_type: scheduleType,
+        one_time_date: scheduleType === "one_time" ? oneTimeDate : null,
         is_active: true,
       })
       .select("id, start_time, capacity")
@@ -172,31 +176,47 @@ export default function NewClassPage() {
       return;
     }
 
-    // 今後4週間分の class_sessions を生成
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const currentDay = today.getDay();
-    let daysUntilFirst = (dayOfWeek - currentDay + 7) % 7;
-    const firstSessionDate = new Date(today);
-    firstSessionDate.setDate(today.getDate() + daysUntilFirst);
-
+    // セッション生成
     const sessionsToInsert = [];
-    for (let i = 0; i < 4; i++) {
-      const sessionDate = new Date(firstSessionDate);
-      sessionDate.setDate(firstSessionDate.getDate() + i * 7);
+
+    if (scheduleType === "one_time") {
+      // One-time: 指定日に1セッションのみ
       sessionsToInsert.push({
         studio_id: profile.studio_id,
         class_id: newClass.id,
-        session_date: sessionDate.toISOString().split("T")[0],
+        session_date: oneTimeDate,
         start_time: startTimeFormatted,
         capacity: newClass.capacity,
         is_cancelled: false,
         is_public: isPublic,
-        // NULL = inherit from class (Hybrid sessions inherit per-session)
         is_online: null,
         online_link: null,
       });
+    } else {
+      // Recurring: 今後4週間分の class_sessions を生成
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const currentDay = today.getDay();
+      const daysUntilFirst = (dayOfWeek - currentDay + 7) % 7;
+      const firstSessionDate = new Date(today);
+      firstSessionDate.setDate(today.getDate() + daysUntilFirst);
+
+      for (let i = 0; i < 4; i++) {
+        const sessionDate = new Date(firstSessionDate);
+        sessionDate.setDate(firstSessionDate.getDate() + i * 7);
+        sessionsToInsert.push({
+          studio_id: profile.studio_id,
+          class_id: newClass.id,
+          session_date: sessionDate.toISOString().split("T")[0],
+          start_time: startTimeFormatted,
+          capacity: newClass.capacity,
+          is_cancelled: false,
+          is_public: isPublic,
+          is_online: null,
+          online_link: null,
+        });
+      }
     }
 
     const { error: sessionsError } = await supabase
@@ -351,22 +371,67 @@ export default function NewClassPage() {
             </>
           )}
 
+          {/* Schedule Type */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Day of week *
+              Schedule
             </label>
-            <select
-              value={dayOfWeek}
-              onChange={(e) => setDayOfWeek(parseInt(e.target.value, 10))}
-              className="input-field mt-1"
-            >
-              {DAY_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+            <div className="mt-2 flex gap-4">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="scheduleType"
+                  checked={scheduleType === "recurring"}
+                  onChange={() => setScheduleType("recurring")}
+                  className="h-4 w-4 border-gray-300 text-brand-600"
+                />
+                Recurring (weekly)
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="scheduleType"
+                  checked={scheduleType === "one_time"}
+                  onChange={() => setScheduleType("one_time")}
+                  className="h-4 w-4 border-gray-300 text-brand-600"
+                />
+                One-time
+              </label>
+            </div>
           </div>
+
+          {scheduleType === "recurring" ? (
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Day of week *
+              </label>
+              <select
+                value={dayOfWeek}
+                onChange={(e) => setDayOfWeek(parseInt(e.target.value, 10))}
+                className="input-field mt-1"
+              >
+                {DAY_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Date *
+              </label>
+              <input
+                type="date"
+                value={oneTimeDate}
+                onChange={(e) => setOneTimeDate(e.target.value)}
+                min={new Date().toISOString().split("T")[0]}
+                required
+                className="input-field mt-1"
+              />
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700">
