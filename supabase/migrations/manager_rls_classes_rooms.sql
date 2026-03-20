@@ -1,8 +1,40 @@
 -- ============================================================
--- Manager RLS: Classes, Class Sessions, and Rooms
--- Allows managers with appropriate permissions to manage
--- classes, class_sessions, and rooms in their studio.
+-- Owner & Manager RLS: Classes, Class Sessions, and Rooms
+-- 1. Owners can manage all classes and sessions in their studio
+-- 2. Managers with appropriate permissions can manage them too
 -- ============================================================
+
+-- 0a. Owner can manage all classes in their studio
+CREATE POLICY "owner can manage classes"
+  ON public.classes FOR ALL
+  USING (
+    studio_id IN (
+      SELECT studio_id FROM public.profiles
+      WHERE id = auth.uid() AND role = 'owner'
+    )
+  )
+  WITH CHECK (
+    studio_id IN (
+      SELECT studio_id FROM public.profiles
+      WHERE id = auth.uid() AND role = 'owner'
+    )
+  );
+
+-- 0b. Owner can manage all class_sessions in their studio
+CREATE POLICY "owner can manage class sessions"
+  ON public.class_sessions FOR ALL
+  USING (
+    studio_id IN (
+      SELECT studio_id FROM public.profiles
+      WHERE id = auth.uid() AND role = 'owner'
+    )
+  )
+  WITH CHECK (
+    studio_id IN (
+      SELECT studio_id FROM public.profiles
+      WHERE id = auth.uid() AND role = 'owner'
+    )
+  );
 
 -- 1. Managers with can_manage_classes can manage classes
 CREATE POLICY "manager can manage classes"

@@ -6,18 +6,20 @@ type Account = {
   id: string;
   name: string;
   email: string;
-  role: "owner" | "instructor" | "member";
+  role: "owner" | "manager" | "instructor" | "member";
   isCurrent: boolean;
 };
 
 const ROLE_COLORS: Record<string, string> = {
   owner: "bg-purple-100 text-purple-700",
+  manager: "bg-amber-100 text-amber-700",
   instructor: "bg-blue-100 text-blue-700",
   member: "bg-green-100 text-green-700",
 };
 
 const ROLE_LABELS: Record<string, string> = {
   owner: "Owner",
+  manager: "Manager",
   instructor: "Instructor",
   member: "Member",
 };

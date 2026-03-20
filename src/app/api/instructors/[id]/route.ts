@@ -36,7 +36,18 @@ export async function DELETE(
       .eq("id", user.id)
       .single();
 
-    if (ownerProfile?.role !== "owner") {
+    if (ownerProfile?.role === "manager") {
+      const { data: mgr } = await adminSupabase
+        .from("managers")
+        .select("can_manage_instructors")
+        .eq("profile_id", user.id)
+        .eq("studio_id", ownerProfile.studio_id)
+        .single();
+
+      if (!mgr?.can_manage_instructors) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    } else if (ownerProfile?.role !== "owner") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
