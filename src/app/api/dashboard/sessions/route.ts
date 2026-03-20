@@ -84,7 +84,6 @@ export async function GET(request: NextRequest) {
         location?: string;
         is_public?: boolean;
         price_cents?: number | null;
-        is_online?: boolean;
         online_link?: string | null;
         class_type?: string;
       } | null;
@@ -103,7 +102,7 @@ export async function GET(request: NextRequest) {
         capacity, is_cancelled, is_online, online_link,
         title, session_type, price_cents, location, recurrence_group_id,
         class_templates (
-          name, duration_minutes, location, is_public, price_cents, is_online, online_link, class_type
+          name, duration_minutes, location, is_public, price_cents, online_link, class_type
         ),
         rooms (name),
         instructors (
@@ -178,7 +177,7 @@ export async function GET(request: NextRequest) {
       const classType = template?.class_type;
       const isPublic = template?.is_public ?? true;
       const isOnline =
-        s.is_online ?? template?.is_online ?? classType === "online";
+        s.is_online ?? classType === "online";
 
       return {
         id: s.id,
