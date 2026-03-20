@@ -42,7 +42,7 @@ export async function GET() {
     // Get membership with tier
     const { data: membership } = await supabase
       .from("instructor_memberships")
-      .select("tier_id, instructor_membership_tiers(name, monthly_minutes)")
+      .select("tier_id, instructor_membership_tiers(name, monthly_minutes, allow_overage, overage_rate_cents)")
       .eq("instructor_id", instructor.id)
       .eq("status", "active")
       .maybeSingle();
@@ -55,6 +55,8 @@ export async function GET() {
     const tierData = (Array.isArray(rawTier) ? rawTier[0] : rawTier) as {
       name: string;
       monthly_minutes: number;
+      allow_overage: boolean;
+      overage_rate_cents: number | null;
     } | null;
 
     if (!tierData) {
@@ -71,11 +73,23 @@ export async function GET() {
       p_month: month,
     });
 
+    const used = typeof usedMinutes === "number" ? usedMinutes : 0;
+    const overageMinutes = tierData.monthly_minutes !== -1 && used > tierData.monthly_minutes
+      ? used - tierData.monthly_minutes
+      : 0;
+    const estimatedOverageCharge = overageMinutes > 0 && tierData.overage_rate_cents
+      ? Math.ceil((overageMinutes / 60) * tierData.overage_rate_cents)
+      : 0;
+
     return NextResponse.json({
       hasTier: true,
       tierName: tierData.name,
       monthlyMinutes: tierData.monthly_minutes,
-      usedMinutes: typeof usedMinutes === "number" ? usedMinutes : 0,
+      usedMinutes: used,
+      allowOverage: tierData.allow_overage,
+      overageRateCents: tierData.overage_rate_cents,
+      overageMinutes,
+      estimatedOverageCharge,
       year,
       month,
     });

@@ -899,3 +899,101 @@ export function referralRewardReferred(params: {
     html: baseHtml(content),
   };
 }
+
+// ========================================
+// Tier Overage Notifications
+// ========================================
+
+export function tierOverageWarning(params: {
+  instructorName: string;
+  studioName: string;
+  usedTime: string;
+  limitTime: string;
+  overageRate: string | null;
+}) {
+  const { instructorName, studioName, usedTime, limitTime, overageRate } = params;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">You're approaching your monthly hour limit</h2>
+    <p style="margin:0 0 12px;font-size:14px;color:#374151;">
+      Hi ${instructorName},
+    </p>
+    <div style="background:#fef3c7;border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-weight:600;font-size:16px;color:#92400e;">
+        ${usedTime} used of ${limitTime}
+      </p>
+    </div>
+    <p style="margin:0 0 12px;font-size:14px;color:#374151;">
+      You've used most of your monthly hours at ${studioName}.
+      ${overageRate ? `Additional hours beyond your limit will be charged at ${overageRate}/hour at the end of the month.` : ""}
+    </p>
+    <p style="margin:0;font-size:14px;color:#6b7280;">
+      Contact the studio if you'd like to upgrade your membership tier.
+    </p>
+  `;
+  return {
+    subject: "You're approaching your monthly hour limit",
+    html: baseHtml(content),
+  };
+}
+
+export function tierOverageCharged(params: {
+  instructorName: string;
+  studioName: string;
+  month: string;
+  overageTime: string;
+  rate: string;
+  totalCharge: string;
+}) {
+  const { instructorName, studioName, month, overageTime, rate, totalCharge } = params;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">Overage Charge &mdash; ${month}</h2>
+    <p style="margin:0 0 12px;font-size:14px;color:#374151;">
+      Hi ${instructorName},
+    </p>
+    <p style="margin:0 0 12px;font-size:14px;color:#374151;">
+      You used more than your included hours at ${studioName} in ${month}. Here's a summary:
+    </p>
+    <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-size:14px;color:#374151;">Overage: <strong>${overageTime}</strong></p>
+      <p style="margin:8px 0 0;font-size:14px;color:#374151;">Rate: <strong>${rate}/hour</strong></p>
+      <p style="margin:8px 0 0;font-weight:600;font-size:20px;color:${BRAND_COLOR};">${totalCharge}</p>
+    </div>
+    <p style="margin:0;font-size:14px;color:#6b7280;">
+      This has been charged to your payment method on file.
+    </p>
+  `;
+  return {
+    subject: `Overage Charge — ${month}`,
+    html: baseHtml(content),
+  };
+}
+
+export function tierOverageChargeFailed(params: {
+  ownerName: string;
+  instructorName: string;
+  month: string;
+  totalCharge: string;
+  failureReason: string;
+}) {
+  const { ownerName, instructorName, month, totalCharge, failureReason } = params;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">Overage Charge Failed &mdash; ${instructorName}</h2>
+    <p style="margin:0 0 12px;font-size:14px;color:#374151;">
+      Hi ${ownerName},
+    </p>
+    <p style="margin:0 0 12px;font-size:14px;color:#374151;">
+      We were unable to charge ${instructorName} for their overage hours in ${month}.
+    </p>
+    <div style="background:#fef2f2;border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-size:14px;color:#991b1b;">Amount: <strong>${totalCharge}</strong></p>
+      <p style="margin:8px 0 0;font-size:14px;color:#991b1b;">Reason: ${failureReason}</p>
+    </div>
+    <p style="margin:0;font-size:14px;color:#6b7280;">
+      Please follow up with the instructor to resolve the payment manually.
+    </p>
+  `;
+  return {
+    subject: `Overage Charge Failed — ${instructorName}`,
+    html: baseHtml(content),
+  };
+}

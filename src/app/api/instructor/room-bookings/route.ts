@@ -111,15 +111,23 @@ export async function POST(request: Request) {
     // Time quota enforcement: check instructor's membership tier
     const { data: membership } = await ctx.supabase
       .from("instructor_memberships")
-      .select("tier_id, instructor_membership_tiers(monthly_minutes)")
+      .select("tier_id, instructor_membership_tiers(monthly_minutes, allow_overage, overage_rate_cents)")
       .eq("instructor_id", ctx.instructorId)
       .eq("status", "active")
       .maybeSingle();
 
+    let overageWarning: string | null = null;
+
     if (membership) {
       const rawTier = membership.instructor_membership_tiers as unknown;
-      const tierData = (Array.isArray(rawTier) ? rawTier[0] : rawTier) as { monthly_minutes: number } | null;
+      const tierData = (Array.isArray(rawTier) ? rawTier[0] : rawTier) as {
+        monthly_minutes: number;
+        allow_overage: boolean;
+        overage_rate_cents: number | null;
+      } | null;
       const monthlyMinutes = tierData?.monthly_minutes ?? -1;
+      const allowOverage = tierData?.allow_overage ?? true;
+      const overageRateCents = tierData?.overage_rate_cents ?? null;
 
       if (monthlyMinutes !== -1) {
         // Calculate requested duration
@@ -142,16 +150,39 @@ export async function POST(request: Request) {
         const remainingMinutes = monthlyMinutes - usedMinutes;
 
         if (requestedMinutes > remainingMinutes) {
-          const usedH = Math.floor(usedMinutes / 60);
-          const usedM = usedMinutes % 60;
-          const limitH = Math.floor(monthlyMinutes / 60);
-          const limitM = monthlyMinutes % 60;
-          return NextResponse.json(
-            {
-              error: `Monthly time limit exceeded. Used: ${usedH}h${usedM > 0 ? ` ${usedM}m` : ""} / Limit: ${limitH}h${limitM > 0 ? ` ${limitM}m` : ""}. Remaining: ${Math.floor(remainingMinutes / 60)}h${remainingMinutes % 60 > 0 ? ` ${remainingMinutes % 60}m` : ""}.`,
-            },
-            { status: 403 }
-          );
+          if (!allowOverage) {
+            // Block scheduling
+            return NextResponse.json(
+              {
+                error: "You've reached your monthly hour limit. Please contact the studio to upgrade your membership.",
+                code: "QUOTA_BLOCKED",
+              },
+              { status: 403 }
+            );
+          }
+          // Allow overage — add warning to response
+          const overMinutes = usedMinutes + requestedMinutes - monthlyMinutes;
+          const fmtH = (m: number) => {
+            const h = Math.floor(m / 60);
+            const r = m % 60;
+            return h > 0 && r > 0 ? `${h}h ${r}m` : h > 0 ? `${h}h` : `${r}m`;
+          };
+          const rateStr = overageRateCents ? `$${(overageRateCents / 100).toFixed(2)}` : null;
+          overageWarning = `You've used ${fmtH(usedMinutes)} of ${fmtH(monthlyMinutes)} this month. This booking will put you ${fmtH(overMinutes)} over your limit.${rateStr ? ` Additional hours are charged at ${rateStr}/hour.` : ""}`;
+        } else if (usedMinutes >= monthlyMinutes * 0.9) {
+          // 90% warning (no block)
+          const fmtH = (m: number) => {
+            const h = Math.floor(m / 60);
+            const r = m % 60;
+            return h > 0 && r > 0 ? `${h}h ${r}m` : h > 0 ? `${h}h` : `${r}m`;
+          };
+          overageWarning = `You've used ${fmtH(usedMinutes)} of ${fmtH(monthlyMinutes)} this month — approaching your limit.`;
+        }
+
+        // Send 90% warning email if threshold reached for the first time
+        if (usedMinutes + requestedMinutes >= monthlyMinutes * 0.9 && usedMinutes < monthlyMinutes * 0.9) {
+          // Async — don't block the booking
+          sendOverageWarningEmail(ctx.supabase, ctx.instructorId, ctx.studioId, usedMinutes + requestedMinutes, monthlyMinutes, overageRateCents).catch(() => {});
         }
       }
     }
@@ -177,11 +208,96 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
-    return NextResponse.json(booking, { status: 201 });
+    return NextResponse.json(
+      { ...booking, overageWarning },
+      { status: 201 }
+    );
   } catch {
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
     );
+  }
+}
+
+// Helper: send 90% warning email (fire-and-forget, deduped by email_logs)
+async function sendOverageWarningEmail(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  instructorId: string,
+  studioId: string,
+  usedMinutes: number,
+  monthlyMinutes: number,
+  overageRateCents: number | null,
+) {
+  try {
+    // Check if warning already sent this month
+    const now = new Date();
+    const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const { data: existing } = await supabase
+      .from("email_logs")
+      .select("id")
+      .eq("template", "tierOverageWarning")
+      .eq("studio_id", studioId)
+      .gte("created_at", `${monthKey}-01`)
+      .like("to_email", `%`) // filter by instructor later
+      .limit(1);
+
+    // Get instructor email
+    const { data: instructor } = await supabase
+      .from("instructors")
+      .select("profile_id, profiles(email, full_name)")
+      .eq("id", instructorId)
+      .single();
+
+    if (!instructor) return;
+    const rawProfile = instructor.profiles as unknown;
+    const profile = (Array.isArray(rawProfile) ? rawProfile[0] : rawProfile) as { email: string; full_name: string } | null;
+    if (!profile?.email) return;
+
+    // Check existing email_log for this specific instructor this month
+    const { data: alreadySent } = await supabase
+      .from("email_logs")
+      .select("id")
+      .eq("template", "tierOverageWarning")
+      .eq("to_email", profile.email)
+      .gte("created_at", `${monthKey}-01`)
+      .limit(1);
+
+    if (alreadySent && alreadySent.length > 0) return;
+
+    // Get studio name
+    const { data: studio } = await supabase
+      .from("studios")
+      .select("name")
+      .eq("id", studioId)
+      .single();
+
+    const { tierOverageWarning } = await import("@/lib/email/templates");
+    const { sendEmail } = await import("@/lib/email/send");
+
+    const fmtH = (m: number) => {
+      const h = Math.floor(m / 60);
+      const r = m % 60;
+      return h > 0 && r > 0 ? `${h}h ${r}m` : h > 0 ? `${h}h` : `${r}m`;
+    };
+
+    const template = tierOverageWarning({
+      instructorName: profile.full_name || "Instructor",
+      studioName: studio?.name || "your studio",
+      usedTime: fmtH(usedMinutes),
+      limitTime: fmtH(monthlyMinutes),
+      overageRate: overageRateCents ? `$${(overageRateCents / 100).toFixed(2)}` : null,
+    });
+
+    await sendEmail({
+      to: profile.email,
+      subject: template.subject,
+      html: template.html,
+      studioId,
+      templateName: "tierOverageWarning",
+    });
+  } catch (err) {
+    console.error("[OverageWarning] Failed to send warning email:", err);
   }
 }

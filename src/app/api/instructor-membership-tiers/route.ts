@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await request.json();
-    const { name, monthly_minutes, monthly_price, sort_order } = body;
+    const { name, monthly_minutes, monthly_price, sort_order, overage_rate_cents, allow_overage } = body;
 
     if (!name || monthly_minutes === undefined) {
       return NextResponse.json({ error: "name and monthly_minutes are required" }, { status: 400 });
@@ -67,6 +67,8 @@ export async function POST(request: Request) {
         monthly_price: monthly_price || 0,
         sort_order: sort_order || 0,
         is_active: true,
+        overage_rate_cents: overage_rate_cents ?? null,
+        allow_overage: allow_overage ?? true,
       })
       .select("*")
       .single();

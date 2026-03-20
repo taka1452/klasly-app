@@ -472,6 +472,8 @@ export type InstructorMembershipTier = {
   monthly_price: number;   // cents
   is_active: boolean;
   sort_order: number;
+  overage_rate_cents: number | null; // cents per hour, null = no overage billing
+  allow_overage: boolean; // false = block scheduling at limit
   created_at: string;
 };
 
@@ -486,6 +488,25 @@ export type InstructorMembership = {
   current_period_end: string | null;
   cancel_at_period_end: boolean;
   started_at: string;
+  created_at: string;
+};
+
+export type InstructorOverageCharge = {
+  id: string;
+  studio_id: string;
+  instructor_id: string;
+  period_start: string;
+  period_end: string;
+  tier_name: string;
+  included_minutes: number;
+  used_minutes: number;
+  overage_minutes: number;
+  overage_rate_cents: number;
+  total_charge_cents: number;
+  stripe_payment_intent_id: string | null;
+  status: "pending" | "charged" | "failed" | "waived";
+  waived_by: string | null;
+  waived_reason: string | null;
   created_at: string;
 };
 

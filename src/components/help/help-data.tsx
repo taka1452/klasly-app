@@ -904,6 +904,50 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
         },
       ],
     },
+    {
+      title: "Overage Billing",
+      items: [
+        {
+          q: "How does overage billing work?",
+          a: (
+            <>
+              When an instructor uses more hours than their tier includes, the extra time is charged at the overage rate you set. Charges are calculated at the end of each month and billed automatically. You can waive charges before they&apos;re processed.
+              <Steps>
+                <li>Go to <B>Settings &gt; Tiers</B> and edit a tier.</li>
+                <li>Choose <B>&quot;Allow overage with hourly charge&quot;</B> and set the rate.</li>
+                <li>At the end of each month, overage is calculated and charged automatically.</li>
+                <li>View and manage charges under <B>Settings &gt; Tiers &gt; Overage Charges</B>.</li>
+              </Steps>
+            </>
+          ),
+        },
+        {
+          q: "Can I block instructors from going over their limit?",
+          a: (
+            <>
+              Yes. When editing a tier, select <B>&quot;Block scheduling when limit is reached&quot;</B>. Instructors won&apos;t be able to schedule room bookings beyond their monthly hours.
+            </>
+          ),
+        },
+        {
+          q: "How is the overage amount calculated?",
+          a: (
+            <>
+              Overage is calculated proportionally based on the actual minutes used. For example, 1 hour and 15 minutes of overage at $25/hour = $31.25.
+              <Tip>Instructors are warned when they approach 90% of their monthly limit and again when they exceed it.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "Can I waive an overage charge?",
+          a: (
+            <>
+              Yes. Go to <B>Settings &gt; Tiers &gt; Overage Charges</B>, find the charge, and click <B>Waive</B>. If the charge has already been processed, a refund will be issued automatically.
+            </>
+          ),
+        },
+      ],
+    },
   ],
 
   instructor: [
@@ -1156,6 +1200,28 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               Go to <B>My Profile</B> from the sidebar. You can update your display name and other profile information. Changes are reflected across the app immediately.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Overage & Hour Limits",
+      items: [
+        {
+          q: "What happens if I go over my monthly hours?",
+          a: (
+            <>
+              Depending on your studio&apos;s settings, you may be charged an overage fee at the end of the month. You&apos;ll see a warning when approaching your limit, and your current usage is always visible on your dashboard.
+              <Tip>Check the quota bar on your Room Bookings page to see how many hours you&apos;ve used this month.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "How are overage charges calculated?",
+          a: (
+            <>
+              Overage is calculated based on actual minutes used beyond your tier&apos;s monthly limit, at the hourly rate set by your studio. The charge appears at the end of the month.
             </>
           ),
         },

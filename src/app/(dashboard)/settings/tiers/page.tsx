@@ -10,6 +10,8 @@ type Tier = {
   monthly_price: number;
   is_active: boolean;
   sort_order: number;
+  overage_rate_cents: number | null;
+  allow_overage: boolean;
 };
 
 export default function TierManagementPage() {
@@ -25,6 +27,8 @@ export default function TierManagementPage() {
   const [formMinutes, setFormMinutes] = useState("");
   const [formPrice, setFormPrice] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [formAllowOverage, setFormAllowOverage] = useState(true);
+  const [formOverageRate, setFormOverageRate] = useState("");
 
   const fetchTiers = useCallback(async () => {
     const res = await fetch("/api/instructor-membership-tiers");
@@ -43,6 +47,8 @@ export default function TierManagementPage() {
     setFormName("");
     setFormMinutes("");
     setFormPrice("");
+    setFormAllowOverage(true);
+    setFormOverageRate("");
     setEditingId(null);
     setShowForm(false);
   }
@@ -51,6 +57,12 @@ export default function TierManagementPage() {
     setFormName(tier.name);
     setFormMinutes(tier.monthly_minutes === -1 ? "-1" : String(tier.monthly_minutes));
     setFormPrice(tier.monthly_price > 0 ? String(tier.monthly_price / 100) : "");
+    setFormAllowOverage(tier.allow_overage);
+    setFormOverageRate(
+      tier.allow_overage && tier.overage_rate_cents
+        ? String(tier.overage_rate_cents / 100)
+        : ""
+    );
     setEditingId(tier.id);
     setShowForm(true);
   }
@@ -69,11 +81,28 @@ export default function TierManagementPage() {
     }
 
     const priceCents = Math.round((parseFloat(formPrice) || 0) * 100);
+    const overageRateCents = formAllowOverage && formOverageRate
+      ? Math.round(parseFloat(formOverageRate) * 100)
+      : null;
 
     try {
       const body = editingId
-        ? { id: editingId, name: formName, monthly_minutes: minutes, monthly_price: priceCents }
-        : { name: formName, monthly_minutes: minutes, monthly_price: priceCents, sort_order: tiers.length };
+        ? {
+            id: editingId,
+            name: formName,
+            monthly_minutes: minutes,
+            monthly_price: priceCents,
+            allow_overage: formAllowOverage,
+            overage_rate_cents: overageRateCents,
+          }
+        : {
+            name: formName,
+            monthly_minutes: minutes,
+            monthly_price: priceCents,
+            sort_order: tiers.length,
+            allow_overage: formAllowOverage,
+            overage_rate_cents: overageRateCents,
+          };
 
       const res = await fetch("/api/instructor-membership-tiers", {
         method: editingId ? "PATCH" : "POST",
@@ -117,6 +146,13 @@ export default function TierManagementPage() {
     return `${h}h ${m}min`;
   }
 
+  function overageLabel(tier: Tier) {
+    if (tier.monthly_minutes === -1) return null;
+    if (!tier.allow_overage) return "Blocked at limit";
+    if (tier.overage_rate_cents) return `$${(tier.overage_rate_cents / 100).toFixed(2)}/h overage`;
+    return null;
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -132,7 +168,7 @@ export default function TierManagementPage() {
           href="/settings"
           className="text-sm text-gray-500 hover:text-gray-700"
         >
-          ← Back to settings
+          &larr; Back to settings
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-gray-900">
           Instructor Membership Tiers
@@ -140,6 +176,12 @@ export default function TierManagementPage() {
         <p className="mt-1 text-sm text-gray-500">
           Define tiers with monthly hour limits for instructor room bookings.
         </p>
+        <Link
+          href="/settings/tiers/overage"
+          className="mt-2 inline-block text-sm text-brand-600 hover:text-brand-700"
+        >
+          View overage charges &rarr;
+        </Link>
       </div>
 
       {error && (
@@ -176,7 +218,10 @@ export default function TierManagementPage() {
                   <p className="text-sm text-gray-500">
                     {formatMinutes(tier.monthly_minutes)} / month
                     {tier.monthly_price > 0 && (
-                      <> · ${(tier.monthly_price / 100).toFixed(2)}/mo</>
+                      <> &middot; ${(tier.monthly_price / 100).toFixed(2)}/mo</>
+                    )}
+                    {overageLabel(tier) && (
+                      <> &middot; {overageLabel(tier)}</>
                     )}
                   </p>
                 </div>
@@ -263,6 +308,60 @@ export default function TierManagementPage() {
                 <span className="text-sm text-gray-500">/ month</span>
               </div>
             </div>
+
+            {/* Overage Policy — only show when not unlimited */}
+            {formMinutes !== "-1" && (
+              <div className="rounded-lg border border-gray-200 p-4">
+                <p className="text-sm font-medium text-gray-700 mb-3">
+                  Overage Policy
+                </p>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="overagePolicy"
+                      checked={!formAllowOverage}
+                      onChange={() => {
+                        setFormAllowOverage(false);
+                        setFormOverageRate("");
+                      }}
+                      className="accent-brand-600"
+                    />
+                    <span className="text-sm text-gray-700">
+                      Block scheduling when limit is reached
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="overagePolicy"
+                      checked={formAllowOverage}
+                      onChange={() => setFormAllowOverage(true)}
+                      className="accent-brand-600"
+                    />
+                    <span className="text-sm text-gray-700">
+                      Allow overage with hourly charge
+                    </span>
+                  </label>
+                </div>
+                {formAllowOverage && (
+                  <div className="mt-3 flex items-center gap-2">
+                    <label className="text-sm text-gray-500">Overage Rate:</label>
+                    <span className="text-sm text-gray-500">$</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formOverageRate}
+                      onChange={(e) => setFormOverageRate(e.target.value)}
+                      placeholder="25.00"
+                      className="input-field w-28"
+                    />
+                    <span className="text-sm text-gray-500">/ hour</span>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="flex gap-3 pt-2">
               <button type="submit" disabled={saving} className="btn-primary">

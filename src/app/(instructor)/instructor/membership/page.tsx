@@ -13,6 +13,16 @@ type MembershipInfo = {
   currentPeriodEnd?: string;
 };
 
+type OverageCharge = {
+  id: string;
+  period_start: string;
+  tier_name: string;
+  overage_minutes: number;
+  overage_rate_cents: number;
+  total_charge_cents: number;
+  status: string;
+};
+
 export default function InstructorMembershipPage() {
   const searchParams = useSearchParams();
   const [info, setInfo] = useState<MembershipInfo | null>(null);
@@ -20,11 +30,17 @@ export default function InstructorMembershipPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [overageCharges, setOverageCharges] = useState<OverageCharge[]>([]);
 
   const fetchInfo = useCallback(async () => {
     const res = await fetch("/api/instructor/membership");
     if (res.ok) {
       setInfo(await res.json());
+    }
+    // Also fetch overage charges
+    const overageRes = await fetch("/api/instructor/overage-charges");
+    if (overageRes.ok) {
+      setOverageCharges(await overageRes.json());
     }
     setLoading(false);
   }, []);
@@ -168,6 +184,54 @@ export default function InstructorMembershipPage() {
           </button>
         )}
       </div>
+
+      {/* Overage charge history */}
+      {overageCharges.length > 0 && (
+        <div className="mt-6 card">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Overage Charges
+          </h2>
+          <div className="mt-4 divide-y">
+            {overageCharges.map((c) => {
+              const fmtH = (m: number) => {
+                const h = Math.floor(m / 60);
+                const r = m % 60;
+                return h > 0 && r > 0 ? `${h}h ${r}m` : h > 0 ? `${h}h` : `${r}m`;
+              };
+              const period = new Date(c.period_start + "T00:00:00");
+              const monthStr = period.toLocaleString("en-US", { month: "long", year: "numeric" });
+              const statusColor: Record<string, string> = {
+                pending: "text-amber-600",
+                charged: "text-green-600",
+                failed: "text-red-600",
+                waived: "text-gray-400",
+              };
+              return (
+                <div key={c.id} className="flex items-center justify-between py-3 text-sm">
+                  <div>
+                    <p className="font-medium text-gray-900">{monthStr}</p>
+                    <p className="text-xs text-gray-500">
+                      {fmtH(c.overage_minutes)} overage &middot; ${(c.overage_rate_cents / 100).toFixed(2)}/h
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium text-gray-900">
+                      {c.status === "waived" ? (
+                        <span className="line-through text-gray-400">${(c.total_charge_cents / 100).toFixed(2)}</span>
+                      ) : (
+                        `$${(c.total_charge_cents / 100).toFixed(2)}`
+                      )}
+                    </p>
+                    <p className={`text-xs font-medium ${statusColor[c.status] || "text-gray-500"}`}>
+                      {c.status.charAt(0).toUpperCase() + c.status.slice(1)}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
