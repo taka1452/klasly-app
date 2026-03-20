@@ -293,8 +293,7 @@ export async function POST(request: Request) {
  * Map a class_sessions row to the old instructor_room_bookings shape
  * for backward compatibility with the room-calendar UI.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapSessionToBooking(session: any) {
+function mapSessionToBooking(session: Record<string, unknown>) {
   return {
     id: session.id,
     studio_id: session.studio_id,

@@ -78,8 +78,8 @@ export async function GET(request: Request) {
       .eq("is_cancelled", false)
       .not("recurrence_group_id", "is", null);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const recurringSessions = rawRecurringSessions as any[] | null;
+    // eslint-disable -- supabase returns untyped rows
+    const recurringSessions = rawRecurringSessions as Array<Record<string, string | number | boolean | null>> | null;
 
     if (!recurringSessions?.length) {
       try {
@@ -101,18 +101,18 @@ export async function GET(request: Request) {
     }
 
     // Group sessions by recurrence_group_id and find latest date + template row
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const groupMap = new Map<string, { latestDate: string; template: any; studioId: string }>();
+    const groupMap = new Map<string, { latestDate: string; template: Record<string, string | number | boolean | null>; studioId: string }>();
 
     for (const session of recurringSessions) {
       if (!session.recurrence_group_id) continue;
       const gid = session.recurrence_group_id as string;
       const existing = groupMap.get(gid);
-      if (!existing || session.session_date > existing.latestDate) {
+      const sessionDate = session.session_date as string;
+      if (!existing || sessionDate > existing.latestDate) {
         groupMap.set(gid, {
-          latestDate: session.session_date,
+          latestDate: sessionDate,
           template: session,
-          studioId: session.studio_id,
+          studioId: session.studio_id as string,
         });
       }
     }
