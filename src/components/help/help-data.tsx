@@ -186,19 +186,19 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             <>
               Creating a class is now a two-step process using <B>templates</B> and <B>sessions</B>:
               <Steps>
-                <li>Go to <B>Classes &rarr; Templates</B> and create a template with the class name, duration, capacity, type, and instructor.</li>
+                <li>Go to <B>Classes</B> in the sidebar and create a template with the class name, duration, capacity, type, and instructor.</li>
                 <li>From the template, click <B>Schedule</B> to create a session. Pick a date, time, room, and choose Single or Weekly repeat.</li>
               </Steps>
               You can also create sessions directly from the <B>instructor room calendar</B> by clicking an empty time slot and selecting a template from the dropdown.
-              <Tip>Clicking <B>+ Add class</B> on the Classes page takes you to the template creation page.</Tip>
+              <Tip>Clicking <B>+ Add class</B> on the Schedule page takes you to the template creation page.</Tip>
             </>
           ),
         },
         {
-          q: "How does the Classes calendar work?",
+          q: "How does the Schedule calendar work?",
           a: (
             <>
-              The <B>Classes</B> page shows all upcoming sessions in a calendar format with Day, Week, and Month views. You can navigate between dates and click any session to go to its detail page. Sessions are color-coded:
+              The <B>Schedule</B> page shows all upcoming sessions in a calendar format with Day, Week, and Month views. You can navigate between dates and click any session to go to its detail page. Sessions are color-coded:
               <Steps>
                 <li><B>Blue</B> — normal public sessions.</li>
                 <li><B>Violet</B> — private sessions.</li>
@@ -214,7 +214,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I add sessions to a class?",
           a: (
             <>
-              Open a class from the <B>Classes</B> page. Sessions are created automatically based on the class schedule. You can also manually add individual sessions with specific dates from the class detail page.
+              Open a class from the <B>Schedule</B> page. Sessions are created automatically based on the class schedule. You can also manually add individual sessions with specific dates from the class detail page.
             </>
           ),
         },
@@ -225,7 +225,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
               Each session can be toggled between <B>Public</B> and <B>Private</B>. Private sessions are hidden from the member schedule and public widget but remain visible to owners and instructors for room management.
               <Steps>
                 <li>When creating a class, use the &quot;Public&quot; checkbox to set the default visibility for all generated sessions.</li>
-                <li>To change visibility for an individual session, go to <B>Classes → [Class] → [Session]</B> and click the visibility toggle.</li>
+                <li>To change visibility for an individual session, go to <B>Schedule → [Class] → [Session]</B> and click the visibility toggle.</li>
               </Steps>
               <Tip>Private sessions still count for room availability — they prevent double-booking even though members can&apos;t see them.</Tip>
             </>
@@ -237,7 +237,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             <>
               Class templates are reusable blueprints for your classes. Each template stores the class name, description, duration, capacity, class type (in-person, online, or hybrid), optional pricing, and assigned instructor. Templates make it faster to create new classes without re-entering the same details each time.
               <Steps>
-                <li>Go to <B>Classes &rarr; Templates</B> to see all templates in a grid view.</li>
+                <li>Go to <B>Classes</B> in the sidebar to see all templates in a grid view.</li>
                 <li>Click <B>+ New Template</B> to create one. Fill in the name, class type, duration, capacity, price, and instructor.</li>
                 <li>Click any template card to edit its details, or click <B>Schedule</B> to create a session from it.</li>
                 <li>Templates can be deactivated from the edit page &mdash; they won&apos;t appear in the list but can be restored later.</li>
@@ -250,7 +250,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "Can I import classes in bulk?",
           a: (
             <>
-              Yes. Go to <B>Classes → Import</B>. Upload a CSV file with the class details. This is useful when migrating from another system.
+              Yes. Go to <B>Schedule → Import CSV</B>. Upload a CSV file with the class details. This is useful when migrating from another system.
             </>
           ),
         },
@@ -272,13 +272,14 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I manage rooms?",
           a: (
             <>
-              Go to <B>Rooms</B> from the sidebar. The default view shows <B>upcoming room bookings</B> by instructors. To add or edit rooms, click <B>Manage Rooms</B>.
+              Go to <B>Rooms</B> from the sidebar. The default view shows a <B>Room Usage</B> timeline for the day, with all rooms and their bookings. To add or edit rooms, click <B>Manage Rooms</B>.
               <Steps>
                 <li><B>Add rooms</B> — click &quot;Manage Rooms → + Add room&quot; and enter name, capacity, and description.</li>
                 <li><B>Assign rooms to classes</B> — when creating or editing a class, select a room from the dropdown.</li>
-                <li><B>View room bookings</B> — the Rooms page shows all upcoming instructor room bookings at a glance.</li>
+                <li><B>View room usage</B> — the Rooms page shows all room bookings and class sessions in a daily timeline view.</li>
               </Steps>
-              <Tip>Room bookings also appear on the Classes calendar (in teal), so you can see classes and room usage together.</Tip>
+              If you also teach classes (owner-instructor), a <B>Book Room</B> tab appears on the Rooms page so you can create room bookings directly.
+              <Tip>Room bookings also appear on the Schedule calendar (in teal), so you can see classes and room usage together.</Tip>
             </>
           ),
         },
@@ -286,7 +287,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "Can I see room bookings on the calendar?",
           a: (
             <>
-              Yes. Instructor room bookings are shown on the <B>Classes</B> calendar alongside class sessions. Room bookings appear in <B>teal</B> with a &quot;Room&quot; badge to distinguish them from classes.
+              Yes. Instructor room bookings are shown on the <B>Schedule</B> calendar alongside class sessions. Room bookings appear in <B>teal</B> with a &quot;Room&quot; badge to distinguish them from classes.
             </>
           ),
         },
@@ -634,7 +635,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "Can I switch a class between in-person and online?",
           a: (
             <>
-              Yes. Go to <B>Classes → [Class Name]</B> and change the Class Type in the edit form. Switching to online will clear the room and location, and switching to in-person will clear the online link.
+              Yes. Go to <B>Schedule → [Class Name]</B> and change the Class Type in the edit form. Switching to online will clear the room and location, and switching to in-person will clear the online link.
             </>
           ),
         },
@@ -1033,7 +1034,19 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
                 <li><B>Week View</B> — see all your sessions on a weekly calendar grid.</li>
                 <li><B>List View</B> — see sessions in a chronological list.</li>
               </Steps>
-              Use the Previous/Next Week buttons to navigate between weeks.
+              Use the Previous/Next Week buttons to navigate between weeks. Your schedule shows both class sessions and room-only bookings. Class sessions appear in green, while room bookings appear in teal with a &quot;Room&quot; badge. Each session displays the date, time range, class or room name, and booking count (for classes).
+            </>
+          ),
+        },
+        {
+          q: "What are the different session types on my schedule?",
+          a: (
+            <>
+              Your schedule includes two types of sessions:
+              <Steps>
+                <li><B>Class sessions</B> — regular classes with booking counts and capacity. Click to view the session detail page.</li>
+                <li><B>Room-only bookings</B> — time slots you&apos;ve reserved in a room without a class. These are shown with a teal &quot;Room&quot; badge.</li>
+              </Steps>
             </>
           ),
         },
@@ -1041,7 +1054,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I take attendance?",
           a: (
             <>
-              Click on any session in your schedule to open the session detail page. You&apos;ll see the list of booked members. Mark each member as present or absent. Attendance is saved automatically.
+              Click on any class session in your schedule to open the session detail page. You&apos;ll see the list of booked members. Mark each member as present or absent. Attendance is saved automatically.
             </>
           ),
         },

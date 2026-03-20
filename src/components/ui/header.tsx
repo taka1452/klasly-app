@@ -9,6 +9,7 @@ const PAGE_NAMES: Record<string, string> = {
   "/dashboard": "Dashboard",
   "/members": "Members",
   "/instructors": "Instructors",
+  "/schedule": "Schedule",
   "/classes": "Classes",
   "/bookings": "Bookings",
   "/rooms": "Rooms",
@@ -27,6 +28,7 @@ function getPageTitle(pathname: string): string {
   if (PAGE_NAMES[pathname]) return PAGE_NAMES[pathname];
   if (pathname.startsWith("/members/")) return "Member";
   if (pathname.startsWith("/instructors/")) return "Instructor";
+  if (pathname.startsWith("/schedule/")) return "Schedule";
   if (pathname.startsWith("/classes/")) return "Class";
   if (pathname.startsWith("/bookings/")) return "Session";
   if (pathname.startsWith("/rooms/")) return "Room";

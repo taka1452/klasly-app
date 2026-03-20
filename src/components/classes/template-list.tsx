@@ -113,7 +113,7 @@ export default function TemplateList() {
           <div
             key={t.id}
             className="card cursor-pointer transition-shadow hover:shadow-md"
-            onClick={() => router.push(`/classes/templates/${t.id}`)}
+            onClick={() => router.push(`/classes/${t.id}`)}
           >
             <div className="flex items-start justify-between gap-2">
               <h3 className="text-base font-semibold text-gray-900 line-clamp-1">
@@ -156,7 +156,7 @@ export default function TemplateList() {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  router.push(`/classes/templates/${t.id}/schedule`);
+                  router.push(`/classes/${t.id}/schedule`);
                 }}
                 className="btn-secondary text-xs"
               >

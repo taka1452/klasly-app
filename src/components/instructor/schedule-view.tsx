@@ -11,16 +11,20 @@ type SessionItem = {
   id: string;
   session_date: string;
   start_time: string;
+  end_time?: string | null;
+  duration_minutes?: number | null;
   capacity: number;
   is_cancelled: boolean;
-  class_id: string;
   class_name: string;
   location?: string | null;
+  room_name?: string | null;
   booked: number;
   price_cents?: number | null;
   is_public?: boolean;
   is_online?: boolean;
   online_link?: string | null;
+  session_type?: "class" | "room_only";
+  template_id?: string | null;
 };
 
 export default function ScheduleView({
@@ -71,6 +75,68 @@ export default function ScheduleView({
     d.setDate(weekStart.getDate() + i);
     return d;
   });
+
+  const isRoomOnly = (s: SessionItem) => s.session_type === "room_only";
+
+  function SessionCard({ s, compact }: { s: SessionItem; compact?: boolean }) {
+    const roomOnly = isRoomOnly(s);
+    const href = roomOnly
+      ? "/instructor/room-bookings"
+      : `/instructor/sessions/${s.id}`;
+
+    const borderColor = s.is_cancelled
+      ? "border-gray-200 bg-gray-50 text-gray-400"
+      : roomOnly
+        ? "border-teal-200 bg-teal-50/50"
+        : "border-emerald-200 bg-emerald-50/50";
+
+    return (
+      <Link
+        href={href}
+        className={`block rounded border px-2 py-1.5 text-xs transition-colors hover:bg-emerald-50 ${borderColor}`}
+      >
+        <span className="font-medium">
+          {roomOnly && (
+            <span className="mr-1 inline-block rounded bg-teal-200 px-1 text-[9px] font-semibold uppercase text-teal-700">
+              Room
+            </span>
+          )}
+          {onlineEnabled && s.is_online && <span title="Online">📹 </span>}
+          {s.class_name}
+        </span>
+        {s.is_public === false && !roomOnly && (
+          <span className="ml-1 text-gray-400" title="Private">&#128274;</span>
+        )}
+        <br />
+        {formatTime(s.start_time)}
+        {s.end_time && ` – ${formatTime(s.end_time)}`}
+        {!roomOnly && s.price_cents != null && (
+          <span className="ml-1 text-emerald-700">
+            ${(s.price_cents / 100).toFixed(0)}
+          </span>
+        )}
+        {s.room_name && (
+          <>
+            <br />
+            <span className="inline-block rounded bg-teal-100 px-1 text-[9px] font-medium text-teal-700">
+              {s.room_name}
+            </span>
+          </>
+        )}
+        {!roomOnly && !compact && (
+          <>
+            <br />
+            <span className="text-gray-500">
+              {s.booked}/{s.capacity}
+            </span>
+          </>
+        )}
+        {s.is_cancelled && (
+          <span className="mt-1 block text-red-600">Cancelled</span>
+        )}
+      </Link>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -137,37 +203,7 @@ export default function ScheduleView({
                       <p className="py-2 text-center text-xs text-gray-400">—</p>
                     ) : (
                       daySessions.map((s) => (
-                        <Link
-                          key={s.id}
-                          href={`/instructor/sessions/${s.id}`}
-                          className={`block rounded border px-2 py-1.5 text-xs transition-colors hover:bg-emerald-50 ${
-                            s.is_cancelled
-                              ? "border-gray-200 bg-gray-50 text-gray-400"
-                              : "border-emerald-200 bg-emerald-50/50"
-                          }`}
-                        >
-                          <span className="font-medium">
-                            {onlineEnabled && s.is_online && <span title="Online">📹 </span>}
-                            {s.class_name}
-                          </span>
-                          {s.is_public === false && (
-                            <span className="ml-1 text-gray-400" title="Private">&#128274;</span>
-                          )}
-                          <br />
-                          {formatTime(s.start_time)}
-                          {s.price_cents != null && (
-                            <span className="ml-1 text-emerald-700">
-                              ${(s.price_cents / 100).toFixed(0)}
-                            </span>
-                          )}
-                          <br />
-                          <span className="text-gray-500">
-                            {s.booked}/{s.capacity}
-                          </span>
-                          {s.is_cancelled && (
-                            <span className="mt-1 block text-red-600">Cancelled</span>
-                          )}
-                        </Link>
+                        <SessionCard key={s.id} s={s} compact />
                       ))
                     )}
                   </div>
@@ -184,66 +220,86 @@ export default function ScheduleView({
                 No sessions found.
               </div>
             ) : (
-              sessions.map((s) => (
-                <Link
-                  key={s.id}
-                  href={`/instructor/sessions/${s.id}`}
-                  className={`block px-6 py-4 transition-colors hover:bg-gray-50 ${
-                    s.is_cancelled ? "opacity-60" : ""
-                  }`}
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium text-gray-900">
-                          {onlineEnabled && s.is_online && <span title="Online">📹 </span>}
-                          {s.class_name}
+              sessions.map((s) => {
+                const roomOnly = isRoomOnly(s);
+                const href = roomOnly
+                  ? "/instructor/room-bookings"
+                  : `/instructor/sessions/${s.id}`;
+
+                return (
+                  <Link
+                    key={s.id}
+                    href={href}
+                    className={`block px-6 py-4 transition-colors hover:bg-gray-50 ${
+                      s.is_cancelled ? "opacity-60" : ""
+                    }`}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          {roomOnly && (
+                            <span className="rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold text-teal-700">
+                              ROOM
+                            </span>
+                          )}
+                          <p className="font-medium text-gray-900">
+                            {onlineEnabled && s.is_online && <span title="Online">📹 </span>}
+                            {s.class_name}
+                          </p>
+                          {onlineEnabled && s.is_online && (
+                            <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] text-blue-700">
+                              Online
+                            </span>
+                          )}
+                          {s.is_public === false && !roomOnly && (
+                            <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500">
+                              Private
+                            </span>
+                          )}
+                          {!roomOnly && s.price_cents != null && (
+                            <span className="text-sm font-medium text-emerald-700">
+                              ${(s.price_cents / 100).toFixed(2)}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-500">
+                          {formatDate(s.session_date)} · {formatTime(s.start_time)}
+                          {s.end_time && ` – ${formatTime(s.end_time)}`}
+                          {s.room_name && (
+                            <span className="ml-1 inline-block rounded bg-teal-100 px-1 text-[10px] font-medium text-teal-700">
+                              {s.room_name}
+                            </span>
+                          )}
+                          {!s.room_name && s.location && ` · ${s.location}`}
                         </p>
-                        {onlineEnabled && s.is_online && (
-                          <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] text-blue-700">
-                            Online
+                        {onlineEnabled && s.is_online && s.online_link && (
+                          <a
+                            href={s.online_link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-brand-600 hover:text-brand-700 font-medium"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            Open link →
+                          </a>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {!roomOnly && (
+                          <span className="text-sm text-gray-600">
+                            {s.booked}/{s.capacity}
                           </span>
                         )}
-                        {s.is_public === false && (
-                          <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500">
-                            Private
-                          </span>
-                        )}
-                        {s.price_cents != null && (
-                          <span className="text-sm font-medium text-emerald-700">
-                            ${(s.price_cents / 100).toFixed(2)}
+                        {s.is_cancelled && (
+                          <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
+                            Cancelled
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-500">
-                        {formatDate(s.session_date)} · {formatTime(s.start_time)}
-                        {s.location && ` · ${s.location}`}
-                      </p>
-                      {onlineEnabled && s.is_online && s.online_link && (
-                        <a
-                          href={s.online_link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-brand-600 hover:text-brand-700 font-medium"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          Open link →
-                        </a>
-                      )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-600">
-                        {s.booked}/{s.capacity}
-                      </span>
-                      {s.is_cancelled && (
-                        <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
-                          Cancelled
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-              ))
+                  </Link>
+                );
+              })
             )}
           </div>
         </div>

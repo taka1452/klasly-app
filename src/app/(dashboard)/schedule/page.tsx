@@ -2,14 +2,15 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import DashboardCalendar from "@/components/dashboard/calendar/dashboard-calendar";
+import ExportCsvButton from "@/components/ui/export-csv-button";
 import type { Metadata } from "next";
-import RoomsPageClient from "@/components/dashboard/rooms-page-client";
 
 export const metadata: Metadata = {
-  title: "Rooms - Klasly",
+  title: "Schedule - Klasly",
 };
 
-export default async function RoomsPage() {
+export default async function SchedulePage() {
   const serverSupabase = await createServerClient();
   const {
     data: { user },
@@ -37,34 +38,35 @@ export default async function RoomsPage() {
     redirect("/onboarding");
   }
 
-  // Check if owner is also an instructor
-  const { data: instrRec } = await supabase
-    .from("instructors")
-    .select("id")
-    .eq("profile_id", user.id)
-    .eq("studio_id", profile.studio_id)
-    .maybeSingle();
-
-  const isAlsoInstructor = !!instrRec;
-
   return (
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Rooms</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Schedule</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Room usage &amp; bookings
+            View all sessions and room bookings
           </p>
         </div>
         <div className="flex gap-2">
-          <Link href="/rooms/manage" className="btn-secondary">
-            Manage Rooms
+          <ExportCsvButton
+            url="/api/export/classes"
+            filename={`classes-${new Date().toISOString().slice(0, 10)}.csv`}
+            label="Export CSV"
+          />
+          <Link href="/schedule/import" className="btn-secondary">
+            Import CSV
+          </Link>
+          <Link href="/classes" className="btn-secondary">
+            Classes
+          </Link>
+          <Link href="/schedule/new" className="btn-primary">
+            + Add class
           </Link>
         </div>
       </div>
 
       <div className="mt-6">
-        <RoomsPageClient isAlsoInstructor={isAlsoInstructor} />
+        <DashboardCalendar />
       </div>
     </div>
   );

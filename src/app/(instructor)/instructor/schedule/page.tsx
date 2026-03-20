@@ -27,25 +27,24 @@ export default async function InstructorSchedulePage() {
 
   if (!instructor) return null;
 
-  const { data: myClasses } = await supabase
-    .from("classes")
-    .select("id, name, price_cents, is_public")
-    .eq("instructor_id", instructor.id);
+  // Fetch from unified class_sessions table (both classes and room-only)
+  const today = new Date().toISOString().split("T")[0];
+  const { data: sessions } = await supabase
+    .from("class_sessions")
+    .select(
+      "id, session_date, start_time, end_time, duration_minutes, capacity, is_cancelled, is_public, session_type, price_cents, location, title, online_link, template_id, room_id, rooms(name), class_templates(name, price_cents, is_public, location, online_link)"
+    )
+    .eq("instructor_id", instructor.id)
+    .eq("is_cancelled", false)
+    .gte("session_date", today)
+    .order("session_date", { ascending: true })
+    .order("start_time", { ascending: true })
+    .limit(200);
 
-  const classIds = (myClasses || []).map((c) => c.id);
+  const sessionIds = (sessions || [])
+    .filter((s) => s.session_type === "class")
+    .map((s) => s.id);
 
-  const { data: sessions } =
-    classIds.length > 0
-      ? await supabase
-          .from("class_sessions")
-          .select("id, session_date, start_time, capacity, is_cancelled, is_online, online_link, class_id, classes(name, location, is_online, online_link)")
-          .in("class_id", classIds)
-          .order("session_date", { ascending: true })
-          .order("start_time", { ascending: true })
-          .limit(100)
-      : { data: [] };
-
-  const sessionIds = (sessions || []).map((s) => s.id);
   const { data: bookings } =
     sessionIds.length > 0
       ? await supabase
@@ -60,31 +59,41 @@ export default async function InstructorSchedulePage() {
     return acc;
   }, {} as Record<string, number>);
 
-  const classMap = (myClasses || []).reduce((acc, c) => {
-    acc[c.id] = { name: c.name, price_cents: c.price_cents, is_public: c.is_public };
-    return acc;
-  }, {} as Record<string, { name: string; price_cents: number | null; is_public: boolean }>);
-
   const sessionsWithData = (sessions || []).map((s) => {
-    const cls = s.classes as { name?: string; location?: string; is_online?: boolean; online_link?: string | null } | null;
-    const raw = Array.isArray(cls) ? cls[0] : cls;
-    // Session-level online overrides class-level (null = inherit)
-    const isOnline = (s as { is_online?: boolean | null }).is_online ?? raw?.is_online ?? false;
-    const onlineLink = (s as { online_link?: string | null }).online_link ?? raw?.online_link ?? null;
+    const template = s.class_templates as {
+      name?: string;
+      price_cents?: number | null;
+      is_public?: boolean;
+      location?: string | null;
+      online_link?: string | null;
+    } | null;
+    const rawTemplate = Array.isArray(template) ? template[0] : template;
+    const room = s.rooms as { name?: string } | null;
+    const rawRoom = Array.isArray(room) ? room[0] : room;
+
+    const isRoomOnly = s.session_type === "room_only";
+    const isOnline = !isRoomOnly && !s.room_id && !!((s as Record<string, unknown>).online_link || rawTemplate?.online_link);
+
     return {
       id: s.id,
       session_date: s.session_date,
       start_time: s.start_time,
-      capacity: s.capacity,
+      end_time: s.end_time,
+      duration_minutes: s.duration_minutes,
+      capacity: s.capacity ?? 0,
       is_cancelled: s.is_cancelled,
-      class_id: s.class_id,
-      class_name: raw?.name || classMap[s.class_id]?.name || "—",
-      location: raw?.location,
+      class_name: isRoomOnly
+        ? (s.title || "Room Booking")
+        : (s.title || rawTemplate?.name || "—"),
+      location: s.location || rawTemplate?.location,
+      room_name: rawRoom?.name || null,
       booked: bookedBySession[s.id] || 0,
-      price_cents: classMap[s.class_id]?.price_cents ?? null,
-      is_public: classMap[s.class_id]?.is_public ?? true,
+      price_cents: s.price_cents ?? rawTemplate?.price_cents ?? null,
+      is_public: s.is_public ?? rawTemplate?.is_public ?? true,
       is_online: isOnline,
-      online_link: onlineLink,
+      online_link: (s as Record<string, unknown>).online_link as string | null ?? rawTemplate?.online_link ?? null,
+      session_type: s.session_type as "class" | "room_only",
+      template_id: s.template_id,
     };
   });
 

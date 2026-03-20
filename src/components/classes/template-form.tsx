@@ -183,7 +183,7 @@ export default function TemplateForm({ templateId }: Props) {
         throw new Error(data.error || "Failed to save template");
       }
 
-      router.push("/classes/templates");
+      router.push("/classes");
       router.refresh();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to save template");
@@ -205,7 +205,7 @@ export default function TemplateForm({ templateId }: Props) {
         const data = await res.json();
         throw new Error(data.error || "Failed to delete template");
       }
-      router.push("/classes/templates");
+      router.push("/classes");
       router.refresh();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to delete template");
@@ -445,7 +445,7 @@ export default function TemplateForm({ templateId }: Props) {
                 ? "Save changes"
                 : "Create template"}
           </button>
-          <Link href="/classes/templates" className="btn-secondary">
+          <Link href="/classes" className="btn-secondary">
             Cancel
           </Link>
         </div>

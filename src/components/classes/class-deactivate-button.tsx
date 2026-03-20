@@ -30,7 +30,7 @@ export default function ClassDeactivateButton({
       return;
     }
 
-    router.push("/classes");
+    router.push("/schedule");
     router.refresh();
   }
 
