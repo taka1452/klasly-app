@@ -41,7 +41,7 @@ export async function GET(request: Request) {
       if (!mgr?.can_manage_bookings) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
-    } else if (profile?.role !== "owner" || !profile.studio_id) {
+    } else if (profile?.role !== "owner" || !profile?.studio_id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
