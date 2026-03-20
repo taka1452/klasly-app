@@ -196,6 +196,21 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
+          q: "How does the Classes calendar work?",
+          a: (
+            <>
+              The <B>Classes</B> page shows all upcoming sessions in a calendar format with Day, Week, and Month views. You can navigate between dates and click any session to go to its detail page. Sessions are color-coded:
+              <Steps>
+                <li><B>Blue</B> — normal public sessions.</li>
+                <li><B>Violet</B> — private sessions.</li>
+                <li><B>Amber</B> — fully booked sessions.</li>
+                <li><B>Gray</B> — cancelled sessions.</li>
+              </Steps>
+              Each card shows the class name, time, instructor, and booking count. A red line indicates the current time.
+            </>
+          ),
+        },
+        {
           q: "How do I add sessions to a class?",
           a: (
             <>

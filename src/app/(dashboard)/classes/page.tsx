@@ -2,9 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import WeeklySchedule from "@/components/classes/weekly-schedule";
-import EmptyState from "@/components/ui/empty-state";
-import FlowHintPanel from "@/components/ui/flow-hint-panel";
+import DashboardCalendar from "@/components/dashboard/calendar/dashboard-calendar";
 import ExportCsvButton from "@/components/ui/export-csv-button";
 import type { Metadata } from "next";
 
@@ -40,25 +38,14 @@ export default async function ClassesPage() {
     redirect("/onboarding");
   }
 
-  const { data: classes } = await supabase
-    .from("classes")
-    .select("*, instructors(profiles(full_name))")
-    .eq("studio_id", profile.studio_id)
-    .eq("is_active", true)
-    .order("day_of_week", { ascending: true })
-    .order("start_time", { ascending: true });
-
   return (
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-3">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Classes</h1>
-            <p className="mt-1 text-sm text-gray-500">
-              Weekly schedule
-            </p>
-          </div>
-          <FlowHintPanel flowType="instructor-assign" buttonLabel="How to assign instructor?" />
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Classes</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Session schedule
+          </p>
         </div>
         <div className="flex gap-2">
           <ExportCsvButton
@@ -76,15 +63,7 @@ export default async function ClassesPage() {
       </div>
 
       <div className="mt-6">
-        {classes && classes.length > 0 ? (
-          <WeeklySchedule classes={classes} />
-        ) : (
-          <EmptyState
-            title="No classes yet"
-            actionLabel="+ Create your first class"
-            actionHref="/classes/new"
-          />
-        )}
+        <DashboardCalendar />
       </div>
     </div>
   );
