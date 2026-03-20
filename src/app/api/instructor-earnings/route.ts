@@ -32,7 +32,8 @@ export async function GET(request: Request) {
       .eq("id", user.id)
       .single();
 
-    if (profile?.role !== "instructor" || !profile?.studio_id) {
+    const allowedRoles = ["instructor", "owner", "manager"];
+    if (!profile?.studio_id || !allowedRoles.includes(profile.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

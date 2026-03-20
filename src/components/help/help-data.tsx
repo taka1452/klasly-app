@@ -417,8 +417,16 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "Can I also teach classes as an owner?",
           a: (
             <>
-              Yes. Go to <B>Settings → Studio Features</B> and enable <B>I Also Teach Classes</B>. This adds you as an instructor in your studio. A <B>My Classes</B> section will appear in your sidebar where you can create and manage classes you personally teach, including setting per-class pricing.
+              Yes. Go to <B>Settings → Studio Features</B> and enable <B>I Also Teach Classes</B>. This adds you as an instructor in your studio. A <B>My Classes</B> and <B>My Earnings</B> section will appear in your sidebar where you can create and manage classes you personally teach, view your earnings, and connect your Stripe account for direct payouts.
               <Tip>When creating classes from the regular Classes page, your name will appear in the instructor dropdown with &quot;(Me)&quot; next to it.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "Can a manager also teach classes?",
+          a: (
+            <>
+              Yes. Go to <B>Managers</B> in the sidebar, find the manager, and enable the <B>Teach Classes</B> permission. Once enabled, the manager can go to <B>Settings → I Also Teach Classes</B> to activate instructor mode. They will see <B>My Classes</B> and <B>My Earnings</B> in their sidebar and can connect their own Stripe account for direct payouts.
             </>
           ),
         },

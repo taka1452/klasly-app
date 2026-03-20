@@ -119,6 +119,7 @@ export type Manager = {
   can_manage_rooms: boolean;
   can_view_payments: boolean;
   can_send_messages: boolean;
+  can_teach: boolean;
   created_at: string;
 };
 

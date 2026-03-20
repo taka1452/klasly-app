@@ -53,13 +53,25 @@ export default async function SettingsPage() {
     (studio as { session_generation_weeks?: number } | null)
       ?.session_generation_weeks ?? 8;
 
-  // オーナーが自分をインストラクターとして登録しているか
+  // オーナー/マネージャーが自分をインストラクターとして登録しているか
   const { data: instructorRecord } = await supabase
     .from("instructors")
     .select("id")
     .eq("profile_id", user.id)
     .eq("studio_id", profile.studio_id)
     .maybeSingle();
+
+  // マネージャーの can_teach 権限を確認
+  let canTeach = false;
+  if (profile.role === "manager") {
+    const { data: mgr } = await supabase
+      .from("managers")
+      .select("can_teach")
+      .eq("profile_id", user.id)
+      .eq("studio_id", profile.studio_id)
+      .maybeSingle();
+    canTeach = mgr?.can_teach ?? false;
+  }
 
   return (
     <div>
@@ -76,6 +88,7 @@ export default async function SettingsPage() {
         isAlsoInstructor={!!instructorRecord}
         sessionGenerationWeeks={sessionGenerationWeeks}
         role={profile.role as "owner" | "manager"}
+        canTeach={canTeach}
       />
     </div>
   );

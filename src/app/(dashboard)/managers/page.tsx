@@ -15,6 +15,7 @@ type ManagerInfo = {
   canManageRooms: boolean;
   canViewPayments: boolean;
   canSendMessages: boolean;
+  canTeach: boolean;
   createdAt: string;
 };
 
@@ -26,6 +27,7 @@ const permissionLabels: { key: keyof Omit<ManagerInfo, "id" | "profileId" | "ful
   { key: "canManageRooms", label: "Rooms" },
   { key: "canViewPayments", label: "Payments (view)" },
   { key: "canSendMessages", label: "Messages" },
+  { key: "canTeach", label: "Teach Classes" },
 ];
 
 export default function ManagersPage() {

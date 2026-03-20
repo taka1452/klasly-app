@@ -36,7 +36,8 @@ export async function POST() {
       .eq("id", user.id)
       .single();
 
-    if (profile?.role !== "instructor" || !profile?.studio_id) {
+    const allowedRoles = ["instructor", "owner", "manager"];
+    if (!profile?.studio_id || !allowedRoles.includes(profile.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -81,10 +82,14 @@ export async function POST() {
       process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
       "http://localhost:3000";
 
+    const earningsPath = profile.role === "instructor"
+      ? "/instructor/earnings"
+      : "/my-earnings";
+
     const accountLink = await stripe.accountLinks.create({
       account: connectAccountId,
-      refresh_url: `${baseUrl}/instructor/earnings?refresh=true`,
-      return_url: `${baseUrl}/instructor/earnings?return=true`,
+      refresh_url: `${baseUrl}${earningsPath}?refresh=true`,
+      return_url: `${baseUrl}${earningsPath}?return=true`,
       type: "account_onboarding",
     });
 

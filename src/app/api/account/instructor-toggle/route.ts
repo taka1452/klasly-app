@@ -1,15 +1,25 @@
-import { getOwnerOnlyContext } from "@/lib/auth/dashboard-access";
+import { getDashboardContext } from "@/lib/auth/dashboard-access";
 import { NextResponse } from "next/server";
 
 /**
- * POST: オーナーが自分をインストラクターとしても登録/解除する
+ * POST: オーナー/マネージャーが自分をインストラクターとしても登録/解除する
  * body: { action: "enable" | "disable" }
  */
 export async function POST(request: Request) {
   try {
-    const ctx = await getOwnerOnlyContext();
+    const ctx = await getDashboardContext();
     if (!ctx) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // マネージャーの場合、can_teach 権限を確認
+    if (ctx.role === "manager") {
+      if (!ctx.permissions?.can_teach) {
+        return NextResponse.json(
+          { error: "Not authorized to teach. Ask the studio owner to enable this." },
+          { status: 403 }
+        );
+      }
     }
 
     const body = await request.json();

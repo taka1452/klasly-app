@@ -6,8 +6,8 @@ export type InstructorContext = {
   userId: string;
   studioId: string;
   instructorId: string;
-  /** 元のプロフィールロール（owner がインストラクターとしてアクセスする場合は "owner"） */
-  role: "owner" | "instructor";
+  /** 元のプロフィールロール（owner/manager がインストラクターとしてアクセスする場合） */
+  role: "owner" | "instructor" | "manager";
 };
 
 /**
@@ -36,8 +36,8 @@ export async function getInstructorContext(): Promise<InstructorContext | null> 
 
   if (!profile?.studio_id) return null;
 
-  // instructor または owner のみ許可
-  if (profile.role !== "instructor" && profile.role !== "owner") return null;
+  // instructor, owner, manager のみ許可
+  if (profile.role !== "instructor" && profile.role !== "owner" && profile.role !== "manager") return null;
 
   const { data: instructor } = await supabase
     .from("instructors")
@@ -53,6 +53,6 @@ export async function getInstructorContext(): Promise<InstructorContext | null> 
     userId: user.id,
     studioId: profile.studio_id,
     instructorId: instructor.id,
-    role: profile.role as "owner" | "instructor",
+    role: profile.role as "owner" | "instructor" | "manager",
   };
 }

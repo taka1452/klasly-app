@@ -16,6 +16,7 @@ type Props = {
   isAlsoInstructor: boolean;
   sessionGenerationWeeks: number;
   role?: "owner" | "manager";
+  canTeach?: boolean;
 };
 
 const WEEKS_OPTIONS = [4, 6, 8, 12];
@@ -28,6 +29,7 @@ export default function SettingsContent({
   isAlsoInstructor,
   sessionGenerationWeeks,
   role = "owner",
+  canTeach = false,
 }: Props) {
   const isOwner = role === "owner";
   const router = useRouter();
@@ -295,8 +297,8 @@ export default function SettingsContent({
             </div>
           )}
 
-          {/* I Also Teach Classes — owner only */}
-          {isOwner && (
+          {/* I Also Teach Classes — owner or manager with can_teach */}
+          {(isOwner || canTeach) && (
             <div className="card">
               <div className="flex items-start justify-between gap-4">
                 <div>
