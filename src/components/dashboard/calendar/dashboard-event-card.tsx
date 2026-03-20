@@ -122,6 +122,7 @@ export default function DashboardEventCard({
           {height >= 55 && !isRoomBooking && (
             <div className="truncate opacity-60">
               {confirmedCount}/{session.capacity} booked
+              {session.room_name ? ` · ${session.room_name}` : ""}
             </div>
           )}
           {height >= 55 && isRoomBooking && session.room_name && (
