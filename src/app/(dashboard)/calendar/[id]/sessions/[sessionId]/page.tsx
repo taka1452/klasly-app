@@ -72,7 +72,7 @@ export default async function SessionDetailPage({
     <div>
       <div className="mb-6">
         <nav className="flex items-center gap-2 text-sm text-gray-500">
-          <Link href="/schedule" className="hover:text-gray-700">
+          <Link href="/calendar" className="hover:text-gray-700">
             Schedule
           </Link>
           <span>/</span>

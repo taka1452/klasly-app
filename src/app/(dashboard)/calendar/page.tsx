@@ -53,13 +53,13 @@ export default async function SchedulePage() {
             filename={`classes-${new Date().toISOString().slice(0, 10)}.csv`}
             label="Export CSV"
           />
-          <Link href="/schedule/import" className="btn-secondary">
+          <Link href="/calendar/import" className="btn-secondary">
             Import CSV
           </Link>
           <Link href="/classes" className="btn-secondary">
             Classes
           </Link>
-          <Link href="/schedule/new" className="btn-primary">
+          <Link href="/calendar/new" className="btn-primary">
             + Add class
           </Link>
         </div>

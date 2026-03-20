@@ -46,7 +46,7 @@ export default function WeeklySchedule({ classes }: Props) {
                 classesByDay[dayOfWeek].map((cls) => (
                   <Link
                     key={cls.id}
-                    href={`/schedule/${cls.id}`}
+                    href={`/calendar/${cls.id}`}
                     className="card block cursor-pointer p-3 transition-colors hover:border-brand-300 hover:bg-brand-50/50"
                   >
                     <div className="flex items-start justify-between gap-1">
@@ -91,7 +91,7 @@ export default function WeeklySchedule({ classes }: Props) {
                   <button
                     key={cls.id}
                     type="button"
-                    onClick={() => router.push(`/schedule/${cls.id}`)}
+                    onClick={() => router.push(`/calendar/${cls.id}`)}
                     className="card w-full p-3 text-left transition-colors hover:border-brand-300 hover:bg-brand-50/50"
                   >
                     <div className="flex items-start justify-between gap-1">

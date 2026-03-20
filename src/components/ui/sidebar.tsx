@@ -79,7 +79,7 @@ const ownerNavItems: NavItem[] = [
   // ── SCHEDULE ──
   {
     label: "Schedule",
-    href: "/schedule",
+    href: "/calendar",
     dataTour: undefined,
     group: "schedule",
     icon: (
@@ -315,7 +315,7 @@ export default function Sidebar({
       ];
     } else {
       // Fallback: insert after Schedule
-      const scheduleIdx = navItems.findIndex((item) => item.href === "/schedule");
+      const scheduleIdx = navItems.findIndex((item) => item.href === "/calendar");
       if (scheduleIdx !== -1) {
         navItems = [
           ...navItems.slice(0, scheduleIdx + 1),

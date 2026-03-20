@@ -70,7 +70,7 @@ export default function DashboardEventCard({
       // Room bookings navigate to the rooms bookings list
       router.push("/rooms");
     } else {
-      router.push(`/schedule/${session.class_id}/sessions/${session.id}`);
+      router.push(`/calendar/${session.class_id}/sessions/${session.id}`);
     }
   }
 

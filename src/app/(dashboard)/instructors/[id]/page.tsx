@@ -203,7 +203,7 @@ export default async function InstructorDetailPage({
                     className="flex items-center justify-between text-sm"
                   >
                     <Link
-                      href={`/schedule/${cls.id}`}
+                      href={`/calendar/${cls.id}`}
                       className="font-medium text-brand-600 hover:text-brand-700"
                     >
                       {cls.name}

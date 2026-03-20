@@ -103,7 +103,7 @@ export default async function DashboardLayout({
         id: "create-class",
         label: "Create at least one class",
         done: (classesCount ?? 0) >= 1,
-        href: "/schedule/new",
+        href: "/calendar/new",
         hint: "Add a recurring class (e.g. Yoga Monday 10am) so members can book.",
       },
       {

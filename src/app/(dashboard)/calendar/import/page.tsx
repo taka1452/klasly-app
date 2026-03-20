@@ -206,7 +206,7 @@ export default function ImportClassesPage() {
     return (
       <div className="mx-auto max-w-3xl">
         <div className="mb-6">
-          <Link href="/schedule" className="text-sm text-gray-500 hover:text-gray-700">
+          <Link href="/calendar" className="text-sm text-gray-500 hover:text-gray-700">
             ← Back to schedule
           </Link>
         </div>
@@ -228,7 +228,7 @@ export default function ImportClassesPage() {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-6">
-        <Link href="/schedule" className="text-sm text-gray-500 hover:text-gray-700">
+        <Link href="/calendar" className="text-sm text-gray-500 hover:text-gray-700">
           ← Back to schedule
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-gray-900">
@@ -441,7 +441,7 @@ export default function ImportClassesPage() {
           )}
 
           <div className="flex gap-2">
-            <Link href="/schedule" className="btn-primary">
+            <Link href="/calendar" className="btn-primary">
               View Schedule →
             </Link>
             <button

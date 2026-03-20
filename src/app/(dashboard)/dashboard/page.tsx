@@ -549,7 +549,7 @@ export default async function DashboardPage() {
                     </span>
                     {classIdForLink ? (
                       <Link
-                        href={`/schedule/${classIdForLink}/sessions/${session.id}`}
+                        href={`/calendar/${classIdForLink}/sessions/${session.id}`}
                         className="shrink-0 text-sm text-blue-600 hover:text-blue-800"
                       >
                         Take Attendance →

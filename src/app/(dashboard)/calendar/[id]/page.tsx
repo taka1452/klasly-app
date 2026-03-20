@@ -103,7 +103,7 @@ export default async function ClassDetailPage({
     <div>
       <div className="mb-6">
         <Link
-          href="/schedule"
+          href="/calendar"
           className="text-sm text-gray-500 hover:text-gray-700"
         >
           ← Back to schedule
@@ -220,7 +220,7 @@ export default async function ClassDetailPage({
                       className="flex items-center justify-between gap-2 text-sm"
                     >
                       <Link
-                        href={`/schedule/${id}/sessions/${session.id}`}
+                        href={`/calendar/${id}/sessions/${session.id}`}
                         className="text-gray-700 hover:text-brand-600"
                       >
                         {formatDate(session.session_date)}
@@ -243,7 +243,7 @@ export default async function ClassDetailPage({
                       </span>
                       {!session.is_cancelled && (
                         <Link
-                          href={`/schedule/${id}/sessions/${session.id}`}
+                          href={`/calendar/${id}/sessions/${session.id}`}
                           className="shrink-0 text-xs text-blue-600 hover:text-blue-800"
                         >
                           Take Attendance →
