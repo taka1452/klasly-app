@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type Room = { id: string; name: string; capacity: number | null };
@@ -14,12 +14,13 @@ type CalEvent = {
   event_type: "room_booking" | "class";
   is_public: boolean;
   recurring: boolean;
+  date: string; // YYYY-MM-DD
 };
 
 const HOUR_HEIGHT = 60;
 const SLOT_MINUTES = 15;
-const OPERATING_START = 6; // 6 AM
-const OPERATING_END = 22; // 10 PM
+const OPERATING_START = 6;
+const OPERATING_END = 22;
 
 function parseMin(t: string) {
   const [h, m] = t.split(":").map(Number);
@@ -37,29 +38,51 @@ function timeStr(hour: number, min: number) {
   return `${String(hour).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
 }
 
-function formatDateLabel(d: Date) {
-  return d.toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    year: "numeric",
+function fmtDate(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
+}
+
+function getWeekStart(d: Date) {
+  const copy = new Date(d);
+  const day = copy.getDay();
+  const diff = day === 0 ? -6 : 1 - day; // Monday start
+  copy.setDate(copy.getDate() + diff);
+  copy.setHours(0, 0, 0, 0);
+  return copy;
+}
+
+function getWeekDays(weekStart: Date): Date[] {
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart);
+    d.setDate(d.getDate() + i);
+    return d;
   });
 }
 
-function formatDateParam(d: Date) {
-  return d.toISOString().split("T")[0];
+const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+function formatWeekRange(weekStart: Date) {
+  const end = new Date(weekStart);
+  end.setDate(end.getDate() + 6);
+  const opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
+  return `${weekStart.toLocaleDateString("en-US", opts)} – ${end.toLocaleDateString("en-US", { ...opts, year: "numeric" })}`;
 }
 
 export default function InstructorRoomCalendar() {
   const router = useRouter();
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [weekStart, setWeekStart] = useState(() => getWeekStart(new Date()));
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [events, setEvents] = useState<CalEvent[]>([]);
+  const [allEvents, setAllEvents] = useState<CalEvent[]>([]);
+  const [selectedRoomId, setSelectedRoomId] = useState<string>("all");
   const [loading, setLoading] = useState(true);
 
   // Booking form state
   const [showForm, setShowForm] = useState(false);
-  const [formRoom, setFormRoom] = useState<Room | null>(null);
+  const [formDate, setFormDate] = useState("");
+  const [formRoomId, setFormRoomId] = useState("");
   const [formStartTime, setFormStartTime] = useState("09:00");
   const [formEndTime, setFormEndTime] = useState("10:00");
   const [formTitle, setFormTitle] = useState("");
@@ -71,39 +94,57 @@ export default function InstructorRoomCalendar() {
   const [formError, setFormError] = useState("");
   const [formSubmitting, setFormSubmitting] = useState(false);
 
-  const dateStr = formatDateParam(currentDate);
+  const weekDays = useMemo(() => getWeekDays(weekStart), [weekStart]);
 
-  const fetchData = useCallback(async (date: string) => {
+  const fetchWeek = useCallback(async (ws: Date) => {
     setLoading(true);
+    const days = getWeekDays(ws);
     try {
-      const res = await fetch(`/api/instructor/room-availability?date=${date}`);
-      if (res.ok) {
-        const data = await res.json();
-        setRooms(data.rooms ?? []);
-        setEvents(data.events ?? []);
-      }
-    } catch {
-      // ignore
+      const results = await Promise.all(
+        days.map((d) =>
+          fetch(`/api/instructor/room-availability?date=${fmtDate(d)}`)
+            .then((r) => (r.ok ? r.json() : { rooms: [], events: [] }))
+            .catch(() => ({ rooms: [], events: [] })),
+        ),
+      );
+
+      // Rooms from first non-empty response
+      const firstRooms = results.find((r) => r.rooms?.length > 0)?.rooms ?? [];
+      setRooms(firstRooms);
+
+      // Collect all events with date tag
+      const collected: CalEvent[] = [];
+      results.forEach((r, i) => {
+        for (const e of r.events ?? []) {
+          collected.push({ ...e, date: fmtDate(days[i]) });
+        }
+      });
+      setAllEvents(collected);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchData(dateStr);
-  }, [dateStr, fetchData]);
+    fetchWeek(weekStart);
+  }, [weekStart, fetchWeek]);
 
-  function handlePrev() {
-    setCurrentDate((d) => { const n = new Date(d); n.setDate(n.getDate() - 1); return n; });
+  function handlePrevWeek() {
+    setWeekStart((d) => { const n = new Date(d); n.setDate(n.getDate() - 7); return n; });
   }
-  function handleNext() {
-    setCurrentDate((d) => { const n = new Date(d); n.setDate(n.getDate() + 1); return n; });
+  function handleNextWeek() {
+    setWeekStart((d) => { const n = new Date(d); n.setDate(n.getDate() + 7); return n; });
   }
   function handleToday() {
-    setCurrentDate(new Date());
+    setWeekStart(getWeekStart(new Date()));
   }
 
-  // Determine visible time range
+  // Filter events by selected room
+  const events = selectedRoomId === "all"
+    ? allEvents
+    : allEvents.filter((e) => e.room_id === selectedRoomId);
+
+  // Time range
   let gridStartHour = OPERATING_START;
   let gridEndHour = OPERATING_END;
   if (events.length > 0) {
@@ -112,43 +153,47 @@ export default function InstructorRoomCalendar() {
     gridStartHour = Math.max(OPERATING_START, Math.floor(Math.min(...allStarts) / 60) - 1);
     gridEndHour = Math.min(OPERATING_END, Math.ceil(Math.max(...allEnds) / 60) + 1);
   }
-  // Ensure at least a few hours shown
   if (gridEndHour - gridStartHour < 4) {
     gridEndHour = Math.min(OPERATING_END, gridStartHour + 8);
   }
   const totalHours = gridEndHour - gridStartHour;
   const gridHeight = totalHours * HOUR_HEIGHT;
 
-  // Current time indicator
+  // Current time
   const now = new Date();
-  const isToday = dateStr === formatDateParam(now);
+  const todayStr = fmtDate(now);
   const nowMin = now.getHours() * 60 + now.getMinutes();
   const nowTop = ((nowMin - gridStartHour * 60) / 60) * HOUR_HEIGHT;
 
-  // Is a slot occupied?
-  function isSlotOccupied(roomId: string, slotMinute: number) {
-    return events.some(
+  // Is slot occupied on a given date?
+  function isSlotOccupied(date: string, roomId: string, slotMinute: number) {
+    return allEvents.some(
       (e) =>
+        e.date === date &&
         e.room_id === roomId &&
         parseMin(e.start_time) <= slotMinute &&
         parseMin(e.end_time) > slotMinute,
     );
   }
 
-  // Click on empty slot
-  function handleSlotClick(room: Room, hourMinute: number) {
-    if (isSlotOccupied(room.id, hourMinute)) return;
+  // Slot click: find first available room or the selected room
+  function handleSlotClick(date: string, dayIdx: number, slotMinute: number) {
+    const targetRooms = selectedRoomId === "all" ? rooms : rooms.filter((r) => r.id === selectedRoomId);
+    const availRoom = targetRooms.find((r) => !isSlotOccupied(date, r.id, slotMinute));
+    if (!availRoom) return;
 
-    const h = Math.floor(hourMinute / 60);
-    const m = hourMinute % 60;
-    setFormRoom(room);
+    const h = Math.floor(slotMinute / 60);
+    const m = slotMinute % 60;
+    setFormDate(date);
+    setFormRoomId(availRoom.id);
     setFormStartTime(timeStr(h, m));
-    setFormEndTime(timeStr(h + 1, m)); // Default 1 hour
+    setFormEndTime(timeStr(h + 1, m));
     setFormTitle("");
     setFormIsPublic(true);
     setFormNotes("");
     setFormBookingType("one_time");
-    setFormDayOfWeek(currentDate.getDay());
+    const jsDay = (dayIdx + 1) % 7; // convert Mon=0 to Sun=0 JS format
+    setFormDayOfWeek(jsDay);
     setFormWeeks(4);
     setFormError("");
     setShowForm(true);
@@ -156,7 +201,6 @@ export default function InstructorRoomCalendar() {
 
   async function handleBookingSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!formRoom) return;
     setFormError("");
     setFormSubmitting(true);
 
@@ -165,9 +209,9 @@ export default function InstructorRoomCalendar() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          room_id: formRoom.id,
+          room_id: formRoomId,
           title: formTitle,
-          booking_date: formBookingType === "one_time" ? dateStr : undefined,
+          booking_date: formBookingType === "one_time" ? formDate : undefined,
           start_time: formStartTime,
           end_time: formEndTime,
           is_public: formIsPublic,
@@ -179,7 +223,6 @@ export default function InstructorRoomCalendar() {
       });
 
       const data = await res.json();
-
       if (!res.ok) {
         setFormError(data.error || "Failed to create booking");
         setFormSubmitting(false);
@@ -188,7 +231,7 @@ export default function InstructorRoomCalendar() {
 
       setShowForm(false);
       setFormSubmitting(false);
-      fetchData(dateStr);
+      fetchWeek(weekStart);
       router.refresh();
     } catch {
       setFormError("Failed to create booking");
@@ -196,25 +239,27 @@ export default function InstructorRoomCalendar() {
     }
   }
 
-  // Cancel own booking
   async function handleCancelBooking(bookingId: string) {
     if (!confirm("Cancel this booking?")) return;
     try {
       await fetch(`/api/instructor/room-bookings/${bookingId}`, { method: "DELETE" });
-      fetchData(dateStr);
+      fetchWeek(weekStart);
       router.refresh();
     } catch {
       // ignore
     }
   }
 
-  const isPastDate = dateStr < formatDateParam(new Date());
+  // Find room name by id
+  function roomName(id: string) {
+    return rooms.find((r) => r.id === id)?.name ?? "";
+  }
 
   return (
     <div>
-      {/* Date navigation */}
-      <div className="mb-4 flex items-center gap-3">
-        <button type="button" onClick={handlePrev} className="rounded-lg border border-gray-300 p-1.5 hover:bg-gray-100">
+      {/* Header: navigation + room filter */}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <button type="button" onClick={handlePrevWeek} className="rounded-lg border border-gray-300 p-1.5 hover:bg-gray-100">
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
           </svg>
@@ -222,17 +267,31 @@ export default function InstructorRoomCalendar() {
         <button type="button" onClick={handleToday} className="rounded-lg border border-gray-300 px-3 py-1 text-sm hover:bg-gray-100">
           Today
         </button>
-        <button type="button" onClick={handleNext} className="rounded-lg border border-gray-300 p-1.5 hover:bg-gray-100">
+        <button type="button" onClick={handleNextWeek} className="rounded-lg border border-gray-300 p-1.5 hover:bg-gray-100">
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
           </svg>
         </button>
         <span className="text-sm font-medium text-gray-700">
-          {formatDateLabel(currentDate)}
+          {formatWeekRange(weekStart)}
         </span>
+
+        {/* Room filter */}
+        {rooms.length > 1 && (
+          <select
+            value={selectedRoomId}
+            onChange={(e) => setSelectedRoomId(e.target.value)}
+            className="ml-auto rounded-lg border border-gray-300 px-3 py-1 text-sm"
+          >
+            <option value="all">All rooms</option>
+            {rooms.map((r) => (
+              <option key={r.id} value={r.id}>{r.name}</option>
+            ))}
+          </select>
+        )}
       </div>
 
-      {loading && events.length === 0 && rooms.length === 0 ? (
+      {loading && allEvents.length === 0 && rooms.length === 0 ? (
         <div className="flex items-center justify-center rounded-lg border border-gray-200 bg-white py-16">
           <div className="text-center">
             <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-brand-600 border-t-transparent" />
@@ -242,16 +301,14 @@ export default function InstructorRoomCalendar() {
       ) : rooms.length === 0 ? (
         <div className="card py-12 text-center">
           <p className="text-gray-500">No rooms available.</p>
-          <p className="mt-1 text-sm text-gray-400">
-            Ask the studio owner to add rooms.
-          </p>
+          <p className="mt-1 text-sm text-gray-400">Ask the studio owner to add rooms.</p>
         </div>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-          <div className="flex" style={{ minWidth: `${60 + rooms.length * 180}px` }}>
+          <div className="flex" style={{ minWidth: "560px" }}>
             {/* Time gutter */}
-            <div className="w-[60px] shrink-0 border-r border-gray-200">
-              <div className="h-10 border-b border-gray-200" />
+            <div className="w-[52px] shrink-0 border-r border-gray-200">
+              <div className="h-12 border-b border-gray-200" />
               <div className="relative" style={{ height: `${gridHeight}px` }}>
                 {Array.from({ length: totalHours }, (_, i) => {
                   const h = gridStartHour + i;
@@ -268,22 +325,25 @@ export default function InstructorRoomCalendar() {
               </div>
             </div>
 
-            {/* Room columns */}
-            {rooms.map((room) => {
-              const roomEvents = events.filter((e) => e.room_id === room.id);
+            {/* Day columns */}
+            {weekDays.map((day, dayIdx) => {
+              const dayStr = fmtDate(day);
+              const dayEvents = events.filter((e) => e.date === dayStr);
+              const isCurrentDay = dayStr === todayStr;
+              const isPast = dayStr < todayStr;
 
               return (
                 <div
-                  key={room.id}
+                  key={dayIdx}
                   className="flex-1 border-r border-gray-100 last:border-r-0"
-                  style={{ minWidth: "160px" }}
+                  style={{ minWidth: "72px" }}
                 >
-                  {/* Room header */}
-                  <div className="flex h-10 flex-col items-center justify-center border-b border-gray-200 bg-gray-50 px-2">
-                    <p className="truncate text-xs font-semibold text-gray-700">{room.name}</p>
-                    {room.capacity && (
-                      <p className="text-[10px] text-gray-400">Cap. {room.capacity}</p>
-                    )}
+                  {/* Day header */}
+                  <div className={`flex h-12 flex-col items-center justify-center border-b border-gray-200 px-1 ${isCurrentDay ? "bg-brand-50" : "bg-gray-50"}`}>
+                    <p className="text-[11px] text-gray-500">{DAY_LABELS[dayIdx]}</p>
+                    <p className={`text-sm font-bold ${isCurrentDay ? "flex h-6 w-6 items-center justify-center rounded-full bg-brand-600 text-white" : "text-gray-700"}`}>
+                      {day.getDate()}
+                    </p>
                   </div>
 
                   {/* Time grid */}
@@ -298,31 +358,31 @@ export default function InstructorRoomCalendar() {
                     ))}
 
                     {/* Clickable 15-min slots */}
-                    {!isPastDate &&
+                    {!isPast &&
                       Array.from(
                         { length: totalHours * (60 / SLOT_MINUTES) },
                         (_, i) => {
                           const slotMinute = gridStartHour * 60 + i * SLOT_MINUTES;
-                          const occupied = isSlotOccupied(room.id, slotMinute);
+                          // Check if ALL filtered rooms are occupied
+                          const targetRooms = selectedRoomId === "all" ? rooms : rooms.filter((r) => r.id === selectedRoomId);
+                          const allOccupied = targetRooms.every((r) => isSlotOccupied(dayStr, r.id, slotMinute));
                           const top = ((slotMinute - gridStartHour * 60) / 60) * HOUR_HEIGHT;
                           const height = (SLOT_MINUTES / 60) * HOUR_HEIGHT;
                           return (
                             <div
                               key={i}
                               className={`absolute left-0 right-0 z-0 ${
-                                occupied
-                                  ? ""
-                                  : "cursor-pointer hover:bg-brand-50/50 transition-colors"
+                                allOccupied ? "" : "cursor-pointer hover:bg-brand-50/50 transition-colors"
                               }`}
                               style={{ top: `${top}px`, height: `${height}px` }}
-                              onClick={() => !occupied && handleSlotClick(room, slotMinute)}
+                              onClick={() => !allOccupied && handleSlotClick(dayStr, dayIdx, slotMinute)}
                             />
                           );
                         },
                       )}
 
                     {/* Current time line */}
-                    {isToday && nowTop > 0 && nowTop < gridHeight && (
+                    {isCurrentDay && nowTop > 0 && nowTop < gridHeight && (
                       <div
                         className="absolute left-0 right-0 z-30 h-0.5 bg-red-400"
                         style={{ top: `${nowTop}px` }}
@@ -330,11 +390,11 @@ export default function InstructorRoomCalendar() {
                     )}
 
                     {/* Event blocks */}
-                    {roomEvents.map((evt) => {
+                    {dayEvents.map((evt) => {
                       const startMin = parseMin(evt.start_time);
                       const endMin = parseMin(evt.end_time);
                       const top = ((startMin - gridStartHour * 60) / 60) * HOUR_HEIGHT;
-                      const height = Math.max(((endMin - startMin) / 60) * HOUR_HEIGHT, 24);
+                      const height = Math.max(((endMin - startMin) / 60) * HOUR_HEIGHT, 20);
 
                       let bg: string;
                       if (evt.is_own) {
@@ -345,50 +405,39 @@ export default function InstructorRoomCalendar() {
                         bg = "bg-gray-100 border-l-[3px] border-gray-300 text-gray-500";
                       }
 
-                      const isCompact = height < 40;
+                      const showRoom = selectedRoomId === "all";
 
                       return (
                         <div
                           key={evt.id}
-                          className={`absolute left-1 right-1 z-10 overflow-hidden rounded-md px-1.5 py-0.5 text-xs leading-tight ${bg}`}
+                          className={`absolute left-0.5 right-0.5 z-10 overflow-hidden rounded px-1 py-0.5 text-[10px] leading-tight ${bg}`}
                           style={{ top: `${top}px`, height: `${height}px` }}
                         >
-                          {isCompact ? (
-                            <span className="truncate font-medium">
-                              {evt.is_own && evt.event_type === "room_booking" && (
-                                <span className="mr-1 inline-block rounded bg-teal-200 px-0.5 text-[9px] font-semibold uppercase text-teal-700">
-                                  Room
-                                </span>
-                              )}
-                              {evt.title}
-                            </span>
-                          ) : (
-                            <>
-                              <div className="flex items-center gap-1">
-                                {evt.is_own && evt.event_type === "room_booking" && (
-                                  <span className="inline-block rounded bg-teal-200 px-0.5 text-[9px] font-semibold uppercase text-teal-700">
-                                    Room
-                                  </span>
-                                )}
-                                <span className="truncate font-medium">{evt.title}</span>
-                              </div>
-                              <div className="truncate opacity-75">
-                                {formatShort(evt.start_time)} – {formatShort(evt.end_time)}
-                              </div>
-                              {/* Cancel button for own bookings */}
-                              {evt.is_own && evt.event_type === "room_booking" && height >= 50 && (
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleCancelBooking(evt.id);
-                                  }}
-                                  className="mt-0.5 text-[10px] text-red-500 underline hover:text-red-700"
-                                >
-                                  Cancel
-                                </button>
-                              )}
-                            </>
+                          <div className="truncate font-medium">
+                            {evt.is_own && evt.event_type === "room_booking" && (
+                              <span className="mr-0.5 inline-block rounded bg-teal-200 px-0.5 text-[8px] font-semibold uppercase text-teal-700">
+                                R
+                              </span>
+                            )}
+                            {evt.title}
+                          </div>
+                          {height >= 32 && (
+                            <div className="truncate opacity-70">
+                              {formatShort(evt.start_time)}
+                              {showRoom && ` · ${roomName(evt.room_id)}`}
+                            </div>
+                          )}
+                          {evt.is_own && evt.event_type === "room_booking" && height >= 48 && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCancelBooking(evt.id);
+                              }}
+                              className="text-[9px] text-red-500 underline hover:text-red-700"
+                            >
+                              Cancel
+                            </button>
                           )}
                         </div>
                       );
@@ -402,14 +451,14 @@ export default function InstructorRoomCalendar() {
       )}
 
       {/* Booking form modal */}
-      {showForm && formRoom && (
+      {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-bold text-gray-900">Book Room</h3>
                 <p className="text-sm text-gray-500">
-                  {formRoom.name} · {formatDateLabel(currentDate)}
+                  {new Date(formDate + "T00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
                 </p>
               </div>
               <button
@@ -427,6 +476,22 @@ export default function InstructorRoomCalendar() {
               {formError && (
                 <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{formError}</div>
               )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Room *</label>
+                <select
+                  value={formRoomId}
+                  onChange={(e) => setFormRoomId(e.target.value)}
+                  required
+                  className="input-field mt-1"
+                >
+                  {rooms.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}{r.capacity ? ` (cap. ${r.capacity})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700">Title *</label>
@@ -485,7 +550,7 @@ export default function InstructorRoomCalendar() {
                       onChange={() => setFormBookingType("recurring")}
                       className="h-4 w-4 border-gray-300 text-brand-600"
                     />
-                    Weekly recurring
+                    Weekly
                   </label>
                 </div>
               </div>
