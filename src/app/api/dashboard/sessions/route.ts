@@ -201,8 +201,48 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    // ── Deduplicate: if a room booking overlaps with a class session
+    // by the same instructor on the same date, merge them (show class only,
+    // attach room name from the booking if the class doesn't have one) ──
+    const matchedRoomBookingIds = new Set<string>();
+
+    for (const session of formattedSessions) {
+      if (!session.instructor_name) continue;
+
+      for (const rb of formattedRoomBookings) {
+        if (matchedRoomBookingIds.has(rb.id)) continue;
+        if (rb.session_date !== session.session_date) continue;
+        if (rb.instructor_name !== session.instructor_name) continue;
+
+        // Check time overlap: session start_time within room booking window
+        // Parse times as minutes for comparison
+        const parseMin = (t: string) => {
+          const [h, m] = t.split(":").map(Number);
+          return h * 60 + m;
+        };
+        const sessStart = parseMin(session.start_time);
+        const sessEnd = sessStart + session.duration_minutes;
+        const rbStart = parseMin(rb.start_time);
+        const rbEnd = rbStart + rb.duration_minutes;
+
+        // Overlap check
+        if (sessStart < rbEnd && sessEnd > rbStart) {
+          matchedRoomBookingIds.add(rb.id);
+          // Attach room name to class if missing
+          if (!session.room_name && rb.room_name) {
+            session.room_name = rb.room_name;
+          }
+        }
+      }
+    }
+
+    // Filter out room bookings that were matched to a class session
+    const standaloneRoomBookings = formattedRoomBookings.filter(
+      (rb) => !matchedRoomBookingIds.has(rb.id),
+    );
+
     // Merge and sort
-    const allEvents = [...formattedSessions, ...formattedRoomBookings].sort(
+    const allEvents = [...formattedSessions, ...standaloneRoomBookings].sort(
       (a, b) => {
         if (a.session_date !== b.session_date)
           return a.session_date.localeCompare(b.session_date);
