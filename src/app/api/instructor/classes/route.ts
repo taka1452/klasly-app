@@ -1,7 +1,7 @@
 import { getInstructorContext } from "@/lib/auth/instructor-access";
 import { NextResponse } from "next/server";
 
-// GET: list instructor's own classes
+// GET: list instructor's own classes (from both legacy classes and class_templates)
 export async function GET() {
   try {
     const ctx = await getInstructorContext();
@@ -9,18 +9,36 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data, error } = await ctx.supabase
+    // Query legacy classes table
+    const { data: legacyClasses } = await ctx.supabase
       .from("classes")
       .select("*, rooms(name)")
       .eq("studio_id", ctx.studioId)
       .eq("instructor_id", ctx.instructorId)
       .order("created_at", { ascending: false });
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
+    // Query new class_templates table
+    const { data: templates } = await ctx.supabase
+      .from("class_templates")
+      .select("*")
+      .eq("studio_id", ctx.studioId)
+      .eq("instructor_id", ctx.instructorId)
+      .order("created_at", { ascending: false });
 
-    return NextResponse.json(data || []);
+    // Merge: use legacy classes, add any templates that don't exist in legacy
+    const legacyIds = new Set((legacyClasses || []).map((c: { id: string }) => c.id));
+    const uniqueTemplates = (templates || [])
+      .filter((t: { id: string }) => !legacyIds.has(t.id))
+      .map((t: Record<string, unknown>) => ({
+        ...t,
+        // Map class_templates fields to classes-compatible shape
+        day_of_week: null,
+        start_time: null,
+        is_online: t.class_type === "online",
+        rooms: null,
+      }));
+
+    return NextResponse.json([...(legacyClasses || []), ...uniqueTemplates]);
   } catch {
     return NextResponse.json(
       { error: "Internal server error" },

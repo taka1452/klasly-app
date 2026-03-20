@@ -53,46 +53,41 @@ export default async function InstructorDashboardPage() {
   weekEnd.setDate(weekEnd.getDate() + (daysUntilSunday === 0 ? 7 : daysUntilSunday));
   const weekEndStr = weekEnd.toISOString().split("T")[0];
 
-  const { data: myClasses } = await supabase
-    .from("classes")
-    .select("id")
-    .eq("instructor_id", instructor.id);
+  // Query class_sessions directly by instructor_id (unified table)
+  const { data: todaySessions } = await supabase
+    .from("class_sessions")
+    .select(
+      "id, session_date, start_time, capacity, is_cancelled, title, session_type, duration_minutes, location, template_id, room_id, rooms(name), class_templates(name, duration_minutes, location)"
+    )
+    .eq("instructor_id", instructor.id)
+    .eq("session_date", today)
+    .eq("is_cancelled", false)
+    .order("start_time", { ascending: true });
 
-  const classIds = (myClasses || []).map((c) => c.id);
+  const { data: weekSessions } = await supabase
+    .from("class_sessions")
+    .select(
+      "id, session_date, start_time, capacity, is_cancelled, title, session_type, duration_minutes, location, template_id, room_id, rooms(name), class_templates(name, duration_minutes, location)"
+    )
+    .eq("instructor_id", instructor.id)
+    .gt("session_date", today)
+    .lte("session_date", weekEndStr)
+    .eq("is_cancelled", false)
+    .order("session_date", { ascending: true })
+    .order("start_time", { ascending: true });
 
-  const { data: todaySessions } =
-    classIds.length > 0
-      ? await supabase
-          .from("class_sessions")
-          .select("id, session_date, start_time, capacity, is_cancelled, class_id, classes(name, duration_minutes, location)")
-          .in("class_id", classIds)
-          .eq("session_date", today)
-          .eq("is_cancelled", false)
-          .order("start_time", { ascending: true })
-      : { data: [] };
-
-  const { data: weekSessions } =
-    classIds.length > 0
-      ? await supabase
-          .from("class_sessions")
-          .select("id, session_date, start_time, capacity, is_cancelled, class_id, classes(name, duration_minutes, location)")
-          .in("class_id", classIds)
-          .gt("session_date", today)
-          .lte("session_date", weekEndStr)
-          .order("session_date", { ascending: true })
-          .order("start_time", { ascending: true })
-      : { data: [] };
-
-  const todaySessionIds = (todaySessions || []).map((s) => s.id);
-  const weekSessionIds = (weekSessions || []).map((s) => s.id);
-  const allSessionIds = [...todaySessionIds, ...weekSessionIds];
+  const allSessions = [...(todaySessions || []), ...(weekSessions || [])];
+  const classSessionIds = allSessions
+    .filter((s) => s.session_type !== "room_only")
+    .map((s) => s.id);
+  const allSessionIds = allSessions.map((s) => s.id);
 
   const { data: bookings } =
-    allSessionIds.length > 0
+    classSessionIds.length > 0
       ? await supabase
           .from("bookings")
           .select("session_id, status, attended")
-          .in("session_id", allSessionIds)
+          .in("session_id", classSessionIds)
           .eq("status", "confirmed")
       : { data: [] };
 
@@ -145,11 +140,14 @@ export default async function InstructorDashboardPage() {
         {todaySessions && todaySessions.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2">
             {todaySessions.map((session, idx) => {
-              const cls = session.classes as { name?: string; duration_minutes?: number; location?: string } | null;
-              const raw = Array.isArray(cls) ? cls[0] : cls;
-              const className = raw?.name || "—";
-              const duration = raw?.duration_minutes ?? 60;
-              const location = raw?.location;
+              const template = session.class_templates as { name?: string; duration_minutes?: number; location?: string } | null;
+              const rawTemplate = Array.isArray(template) ? template[0] : template;
+              const isRoomOnly = session.session_type === "room_only";
+              const className = isRoomOnly ? (session.title || "Room Booking") : (session.title || rawTemplate?.name || "—");
+              const duration = session.duration_minutes ?? rawTemplate?.duration_minutes ?? 60;
+              const location = session.location || rawTemplate?.location;
+              const room = session.rooms as { name?: string } | null;
+              const roomName = Array.isArray(room) ? room[0]?.name : room?.name;
               const endTime = getEndTime(session.start_time, duration);
               const booked = bookedBySession[session.id] || 0;
               const attended =
@@ -163,17 +161,27 @@ export default async function InstructorDashboardPage() {
                   className="card block transition-colors hover:border-emerald-300 hover:bg-emerald-50/30"
                   {...(idx === 0 ? { "data-tour": "attendance-section" } : {})}
                 >
-                  <p className="font-medium text-gray-900">{className}</p>
+                  <p className="font-medium text-gray-900">
+                    {isRoomOnly && (
+                      <span className="mr-1 inline-block rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-teal-700">
+                        Room
+                      </span>
+                    )}
+                    {className}
+                  </p>
                   <p className="mt-1 text-sm text-gray-600">
                     {formatTime(session.start_time)} – {formatTime(endTime)}
+                    {roomName && ` · ${roomName}`}
                   </p>
                   {location && (
                     <p className="mt-1 text-sm text-gray-500">{location}</p>
                   )}
-                  <p className="mt-2 text-sm text-gray-600">
-                    {booked} / {session.capacity} booked
-                    {attended > 0 && ` · ${attended} attended`}
-                  </p>
+                  {!isRoomOnly && (
+                    <p className="mt-2 text-sm text-gray-600">
+                      {booked} / {session.capacity} booked
+                      {attended > 0 && ` · ${attended} attended`}
+                    </p>
+                  )}
                   <p className="mt-2 text-sm font-medium text-emerald-600">
                     View Details →
                   </p>
@@ -198,27 +206,40 @@ export default async function InstructorDashboardPage() {
           <div className="card overflow-hidden p-0">
             <div className="divide-y divide-gray-200">
               {weekSessions.map((session) => {
-                const cls = session.classes as { name?: string } | null;
-                const raw = Array.isArray(cls) ? cls[0] : cls;
-                const className = raw?.name || "—";
+                const template = session.class_templates as { name?: string } | null;
+                const rawTmpl = Array.isArray(template) ? template[0] : template;
+                const isRoomOnly = session.session_type === "room_only";
+                const className = isRoomOnly ? (session.title || "Room Booking") : (session.title || rawTmpl?.name || "—");
                 const booked = bookedBySession[session.id] || 0;
+                const room = session.rooms as { name?: string } | null;
+                const roomName = Array.isArray(room) ? room[0]?.name : room?.name;
 
                 return (
                   <Link
                     key={session.id}
-                    href={`/instructor/sessions/${session.id}`}
+                    href={isRoomOnly ? "/instructor/room-bookings" : `/instructor/sessions/${session.id}`}
                     className="block px-6 py-4 transition-colors hover:bg-gray-50"
                   >
                     <div className="flex items-center justify-between gap-4">
                       <div>
-                        <p className="font-medium text-gray-900">{className}</p>
+                        <p className="font-medium text-gray-900">
+                          {isRoomOnly && (
+                            <span className="mr-1 inline-block rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-teal-700">
+                              Room
+                            </span>
+                          )}
+                          {className}
+                        </p>
                         <p className="text-sm text-gray-500">
                           {formatDate(session.session_date)} · {formatTime(session.start_time)}
+                          {roomName && ` · ${roomName}`}
                         </p>
                       </div>
-                      <span className="text-sm text-gray-600">
-                        {booked}/{session.capacity}
-                      </span>
+                      {!isRoomOnly && (
+                        <span className="text-sm text-gray-600">
+                          {booked}/{session.capacity}
+                        </span>
+                      )}
                     </div>
                   </Link>
                 );
