@@ -42,6 +42,8 @@ export async function GET() {
       .from("class_templates")
       .select("*, instructors(id, profiles(full_name))")
       .eq("studio_id", instrCtx.studioId)
+      .eq("instructor_id", instrCtx.instructorId)
+      .eq("is_active", true)
       .order("created_at", { ascending: false });
 
     if (error) {
