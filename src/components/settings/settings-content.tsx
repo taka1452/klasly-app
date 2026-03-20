@@ -15,6 +15,7 @@ type Props = {
   stripeConnectComplete: boolean;
   isAlsoInstructor: boolean;
   sessionGenerationWeeks: number;
+  role?: "owner" | "manager";
 };
 
 const WEEKS_OPTIONS = [4, 6, 8, 12];
@@ -26,7 +27,9 @@ export default function SettingsContent({
   stripeConnectComplete,
   isAlsoInstructor,
   sessionGenerationWeeks,
+  role = "owner",
 }: Props) {
+  const isOwner = role === "owner";
   const router = useRouter();
   const tourActions = useTourActions();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -160,32 +163,34 @@ export default function SettingsContent({
           Payments &amp; Pricing
         </h2>
         <div className="space-y-6">
-          {/* Stripe Connect */}
-          <div className="card">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Stripe Connect
-                </h3>
-                <p className="mt-2 text-sm text-gray-600">
-                  Connect your Stripe account to receive payments from members
-                  (drop-in, packs, monthly).
-                </p>
+          {/* Stripe Connect — owner only */}
+          {isOwner && (
+            <div className="card">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Stripe Connect
+                  </h3>
+                  <p className="mt-2 text-sm text-gray-600">
+                    Connect your Stripe account to receive payments from members
+                    (drop-in, packs, monthly).
+                  </p>
+                </div>
+                <FlowHintPanel
+                  flowType="stripe-connect"
+                  buttonLabel="Why Stripe Connect?"
+                />
               </div>
-              <FlowHintPanel
-                flowType="stripe-connect"
-                buttonLabel="Why Stripe Connect?"
-              />
+              <Link
+                href="/settings/connect"
+                className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+              >
+                Stripe Connect →
+              </Link>
             </div>
-            <Link
-              href="/settings/connect"
-              className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
-            >
-              Stripe Connect →
-            </Link>
-          </div>
+          )}
 
-          {/* Class Pricing */}
+          {/* Class Pricing — owner + manager */}
           <div className="card">
             <h3 className="text-lg font-semibold text-gray-900">
               Class Pricing
@@ -201,67 +206,72 @@ export default function SettingsContent({
             </Link>
           </div>
 
-          {/* Payout Settings */}
-          <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900">Payout</h3>
-            <p className="mt-2 text-sm text-gray-600">
-              Configure payment distribution to instructors. Choose between
-              studio payout or instructor direct payout.
-            </p>
-            <Link
-              href="/settings/payout"
-              className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
-            >
-              Payout Settings →
-            </Link>
-          </div>
+          {/* Payout Settings — owner only */}
+          {isOwner && (
+            <div className="card">
+              <h3 className="text-lg font-semibold text-gray-900">Payout</h3>
+              <p className="mt-2 text-sm text-gray-600">
+                Configure payment distribution to instructors. Choose between
+                studio payout or instructor direct payout.
+              </p>
+              <Link
+                href="/settings/payout"
+                className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+              >
+                Payout Settings →
+              </Link>
+            </div>
+          )}
 
-          {/* Booking Credit Requirement */}
-          <BookingSettingsCard
-            bookingRequiresCredits={bookingRequiresCredits}
-            stripeConnectComplete={stripeConnectComplete}
-          />
+          {/* Booking Credit Requirement — owner only */}
+          {isOwner && (
+            <BookingSettingsCard
+              bookingRequiresCredits={bookingRequiresCredits}
+              stripeConnectComplete={stripeConnectComplete}
+            />
+          )}
         </div>
       </section>
 
-      {/* ── Scheduling ── */}
-      <section>
-        <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
-          Scheduling
-        </h2>
-        <div className="space-y-6">
-          {/* Schedule Generation */}
-          <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Schedule Generation
-            </h3>
-            <p className="mt-2 text-sm text-gray-600">
-              Choose how far ahead sessions are automatically generated for your classes.
-            </p>
-            <div className="mt-4 flex items-center gap-3">
-              <label htmlFor="gen-weeks" className="text-sm font-medium text-gray-700">
-                Auto-generate sessions:
-              </label>
-              <select
-                id="gen-weeks"
-                value={genWeeks}
-                onChange={(e) => handleGenWeeksChange(Number(e.target.value))}
-                disabled={genWeeksLoading}
-                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:opacity-50"
-              >
-                {WEEKS_OPTIONS.map((w) => (
-                  <option key={w} value={w}>
-                    {w} weeks ahead
-                  </option>
-                ))}
-              </select>
-              {genWeeksLoading && (
-                <span className="text-xs text-gray-400">Saving…</span>
-              )}
+      {/* ── Scheduling — owner only ── */}
+      {isOwner && (
+        <section>
+          <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
+            Scheduling
+          </h2>
+          <div className="space-y-6">
+            <div className="card">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Schedule Generation
+              </h3>
+              <p className="mt-2 text-sm text-gray-600">
+                Choose how far ahead sessions are automatically generated for your classes.
+              </p>
+              <div className="mt-4 flex items-center gap-3">
+                <label htmlFor="gen-weeks" className="text-sm font-medium text-gray-700">
+                  Auto-generate sessions:
+                </label>
+                <select
+                  id="gen-weeks"
+                  value={genWeeks}
+                  onChange={(e) => handleGenWeeksChange(Number(e.target.value))}
+                  disabled={genWeeksLoading}
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:opacity-50"
+                >
+                  {WEEKS_OPTIONS.map((w) => (
+                    <option key={w} value={w}>
+                      {w} weeks ahead
+                    </option>
+                  ))}
+                </select>
+                {genWeeksLoading && (
+                  <span className="text-xs text-gray-400">Saving…</span>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ── Studio Features ── */}
       <section>
@@ -269,68 +279,74 @@ export default function SettingsContent({
           Studio Features
         </h2>
         <div className="space-y-6">
-          {/* Features Toggle Page */}
-          <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900">Features</h3>
-            <p className="mt-2 text-sm text-gray-600">
-              Enable or disable optional features like Online Classes, SOAP Notes, UTM Tracking, and more.
-            </p>
-            <Link
-              href="/settings/features"
-              className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
-            >
-              Manage Features &rarr;
-            </Link>
-          </div>
-
-          {/* I Also Teach Classes */}
-          <div className="card">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  I Also Teach Classes
-                </h3>
-                <p className="mt-2 text-sm text-gray-600">
-                  Enable this to create and manage your own classes as an
-                  instructor. You&apos;ll see a &quot;My Classes&quot; section in the sidebar.
-                </p>
-              </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={instructorEnabled}
-                disabled={instructorToggleLoading}
-                onClick={handleInstructorToggle}
-                className={`relative mt-1 inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50 ${
-                  instructorEnabled ? "bg-brand-600" : "bg-gray-200"
-                }`}
+          {/* Features Toggle Page — owner only */}
+          {isOwner && (
+            <div className="card">
+              <h3 className="text-lg font-semibold text-gray-900">Features</h3>
+              <p className="mt-2 text-sm text-gray-600">
+                Enable or disable optional features like Online Classes, SOAP Notes, UTM Tracking, and more.
+              </p>
+              <Link
+                href="/settings/features"
+                className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
               >
-                <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                    instructorEnabled ? "translate-x-5" : "translate-x-0"
-                  }`}
-                />
-              </button>
+                Manage Features &rarr;
+              </Link>
             </div>
-          </div>
+          )}
 
-          {/* Instructor Tiers */}
-          <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Instructor Membership Tiers
-            </h3>
-            <p className="mt-2 text-sm text-gray-600">
-              Define tiers with monthly hour limits for instructor room bookings.
-            </p>
-            <Link
-              href="/settings/tiers"
-              className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
-            >
-              Manage Tiers →
-            </Link>
-          </div>
+          {/* I Also Teach Classes — owner only */}
+          {isOwner && (
+            <div className="card">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    I Also Teach Classes
+                  </h3>
+                  <p className="mt-2 text-sm text-gray-600">
+                    Enable this to create and manage your own classes as an
+                    instructor. You&apos;ll see a &quot;My Classes&quot; section in the sidebar.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={instructorEnabled}
+                  disabled={instructorToggleLoading}
+                  onClick={handleInstructorToggle}
+                  className={`relative mt-1 inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50 ${
+                    instructorEnabled ? "bg-brand-600" : "bg-gray-200"
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      instructorEnabled ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+          )}
 
-          {/* Waiver */}
+          {/* Instructor Tiers — owner only */}
+          {isOwner && (
+            <div className="card">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Instructor Membership Tiers
+              </h3>
+              <p className="mt-2 text-sm text-gray-600">
+                Define tiers with monthly hour limits for instructor room bookings.
+              </p>
+              <Link
+                href="/settings/tiers"
+                className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+              >
+                Manage Tiers →
+              </Link>
+            </div>
+          )}
+
+          {/* Waiver — owner + manager */}
           <div className="card">
             <h3 className="text-lg font-semibold text-gray-900">Waiver</h3>
             <p className="mt-2 text-sm text-gray-600">
@@ -344,7 +360,7 @@ export default function SettingsContent({
             </Link>
           </div>
 
-          {/* Website Widget */}
+          {/* Website Widget — owner + manager */}
           <div className="card">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -371,7 +387,7 @@ export default function SettingsContent({
         </div>
       </section>
 
-      {/* ── Referral ── */}
+      {/* ── Referral — owner + manager ── */}
       <section>
         <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
           Referral
@@ -406,19 +422,21 @@ export default function SettingsContent({
           Account
         </h2>
         <div className="space-y-6">
-          {/* Billing */}
-          <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900">Billing</h3>
-            <p className="mt-2 text-sm text-gray-600">
-              Manage your subscription and payment methods.
-            </p>
-            <Link
-              href="/settings/billing"
-              className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
-            >
-              Manage billing →
-            </Link>
-          </div>
+          {/* Billing — owner only */}
+          {isOwner && (
+            <div className="card">
+              <h3 className="text-lg font-semibold text-gray-900">Billing</h3>
+              <p className="mt-2 text-sm text-gray-600">
+                Manage your subscription and payment methods.
+              </p>
+              <Link
+                href="/settings/billing"
+                className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+              >
+                Manage billing →
+              </Link>
+            </div>
+          )}
 
           {/* Profile */}
           <div className="card">
@@ -440,22 +458,24 @@ export default function SettingsContent({
             </p>
           </div>
 
-          {/* Support */}
-          <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900">Support</h3>
-            <p className="mt-2 text-sm text-gray-600">
-              Open a support ticket or view your existing tickets.
-            </p>
-            <Link
-              href="/settings/support"
-              className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
-            >
-              Support tickets →
-            </Link>
-          </div>
+          {/* Support — owner only */}
+          {isOwner && (
+            <div className="card">
+              <h3 className="text-lg font-semibold text-gray-900">Support</h3>
+              <p className="mt-2 text-sm text-gray-600">
+                Open a support ticket or view your existing tickets.
+              </p>
+              <Link
+                href="/settings/support"
+                className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+              >
+                Support tickets →
+              </Link>
+            </div>
+          )}
 
-          {/* Tutorial */}
-          <div className="card">
+          {/* Tutorial — owner only */}
+          {isOwner && <div className="card">
             <h3 className="text-lg font-semibold text-gray-900">Tutorial</h3>
             <p className="mt-2 text-sm text-gray-600">
               Replay the onboarding tour or mark it as complete.
@@ -503,10 +523,10 @@ export default function SettingsContent({
                 </div>
               )}
             </div>
-          </div>
+          </div>}
 
-          {/* Data Export */}
-          <div className="card">
+          {/* Data Export — owner only */}
+          {isOwner && <div className="card">
             <h3 className="text-lg font-semibold text-gray-900">
               Export your data
             </h3>
@@ -521,10 +541,10 @@ export default function SettingsContent({
             >
               Export my data
             </button>
-          </div>
+          </div>}
 
-          {/* Danger Zone */}
-          <div className="card border-red-200">
+          {/* Danger Zone — owner only */}
+          {isOwner && <div className="card border-red-200">
             <h3 className="text-lg font-semibold text-red-600">Danger Zone</h3>
             <p className="mt-2 text-sm text-gray-600">
               Permanently delete your account and all associated data.
@@ -567,7 +587,7 @@ export default function SettingsContent({
                 </div>
               </div>
             )}
-          </div>
+          </div>}
         </div>
       </section>
 

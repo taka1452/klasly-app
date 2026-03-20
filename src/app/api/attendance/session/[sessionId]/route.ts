@@ -35,7 +35,17 @@ export async function GET(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    if (profile.role !== "owner" && profile.role !== "instructor") {
+    if (profile.role === "manager") {
+      const { data: mgr } = await supabase
+        .from("managers")
+        .select("can_manage_bookings")
+        .eq("profile_id", user.id)
+        .eq("studio_id", profile.studio_id)
+        .single();
+      if (!mgr?.can_manage_bookings) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    } else if (profile.role !== "owner" && profile.role !== "instructor") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

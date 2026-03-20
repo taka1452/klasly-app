@@ -32,7 +32,7 @@ export default async function WidgetSettingsPage() {
     .eq("id", user.id)
     .single();
 
-  if (!profile?.studio_id || profile?.role !== "owner") {
+  if (!profile?.studio_id || (profile?.role !== "owner" && profile?.role !== "manager")) {
     redirect("/");
   }
 

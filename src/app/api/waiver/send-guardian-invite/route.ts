@@ -40,7 +40,7 @@ export async function POST(request: Request) {
       .eq("id", user.id)
       .single();
 
-    if (ownerProfile?.role !== "owner" || !ownerProfile?.studio_id) {
+    if ((ownerProfile?.role !== "owner" && ownerProfile?.role !== "manager") || !ownerProfile?.studio_id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

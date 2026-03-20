@@ -32,7 +32,7 @@ export default async function PricingPage() {
     .eq("id", user.id)
     .single();
 
-  if (!profile?.studio_id || profile.role !== "owner") redirect("/");
+  if (!profile?.studio_id || (profile.role !== "owner" && profile.role !== "manager")) redirect("/");
 
   const { data: products } = await supabase
     .from("products")

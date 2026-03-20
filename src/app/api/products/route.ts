@@ -32,7 +32,7 @@ export async function GET(request: Request) {
       .eq("id", user.id)
       .single();
 
-    if (profile?.role !== "owner" || !profile?.studio_id) {
+    if ((profile?.role !== "owner" && profile?.role !== "manager") || !profile?.studio_id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -95,7 +95,7 @@ export async function POST(request: Request) {
       .eq("id", user.id)
       .single();
 
-    if (profile?.role !== "owner" || !profile?.studio_id) {
+    if ((profile?.role !== "owner" && profile?.role !== "manager") || !profile?.studio_id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

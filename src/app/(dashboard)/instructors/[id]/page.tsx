@@ -42,7 +42,7 @@ export default async function InstructorDetailPage({
 
   const { data: ownerProfile } = await supabase
     .from("profiles")
-    .select("studio_id")
+    .select("studio_id, role")
     .eq("id", user.id)
     .single();
 
@@ -219,7 +219,9 @@ export default async function InstructorDetailPage({
             )}
           </div>
 
-          <InstructorManagerToggle instructorId={instructor.id} />
+          {ownerProfile?.role === "owner" && (
+            <InstructorManagerToggle instructorId={instructor.id} />
+          )}
 
           <div className="card">
             <h3 className="text-sm font-medium text-red-600">Danger Zone</h3>

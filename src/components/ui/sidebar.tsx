@@ -172,9 +172,9 @@ const ownerNavItems: NavItem[] = [
   },
 ];
 
-// マネージャーは Settings と Managers を除外（Stripe・プラン管理・マネージャー管理はオーナーのみ）
+// マネージャーは Managers のみ除外（Settings は限定的にアクセス可能）
 const managerNavItems = ownerNavItems.filter(
-  (item) => item.href !== "/settings" && item.href !== "/managers"
+  (item) => item.href !== "/managers"
 );
 
 const myClassesNavItem: NavItem = {

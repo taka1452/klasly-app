@@ -32,7 +32,7 @@ export default async function SettingsPage() {
     .eq("id", user.id)
     .single();
 
-  if (!profile?.studio_id || profile?.role !== "owner") {
+  if (!profile?.studio_id || (profile?.role !== "owner" && profile?.role !== "manager")) {
     redirect("/");
   }
 
@@ -75,6 +75,7 @@ export default async function SettingsPage() {
         stripeConnectComplete={stripeConnectComplete}
         isAlsoInstructor={!!instructorRecord}
         sessionGenerationWeeks={sessionGenerationWeeks}
+        role={profile.role as "owner" | "manager"}
       />
     </div>
   );

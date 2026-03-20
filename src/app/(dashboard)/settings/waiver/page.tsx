@@ -27,7 +27,7 @@ export default async function WaiverSettingsPage() {
     .eq("id", user.id)
     .single();
 
-  if (!profile?.studio_id || profile.role !== "owner") redirect("/");
+  if (!profile?.studio_id || (profile.role !== "owner" && profile.role !== "manager")) redirect("/");
 
   const { data: studio } = await supabase
     .from("studios")
