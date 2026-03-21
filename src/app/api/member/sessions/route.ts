@@ -54,12 +54,13 @@ export async function GET(request: NextRequest) {
     // Get member
     const { data: member } = await supabase
       .from("members")
-      .select("id")
+      .select("id, credits")
       .eq("studio_id", studioId)
       .eq("profile_id", user.id)
       .single();
 
     const memberId = member?.id ?? null;
+    const memberCredits = member?.credits ?? 0;
 
     // Fetch sessions with expanded class + instructor info
     type SessionRow = {
@@ -124,9 +125,14 @@ export async function GET(request: NextRequest) {
         .in("session_id", sessionIds);
 
       if (bookings) {
+        // Prioritize non-cancelled bookings: if a session has both cancelled and active bookings,
+        // the active one should be shown (e.g. cancel then rebook scenario)
         bookingsMap = (bookings as { session_id: string; id: string; status: string }[]).reduce(
           (acc: Record<string, { id: string; status: string }>, b) => {
-            acc[b.session_id] = { id: b.id, status: b.status };
+            const existing = acc[b.session_id];
+            if (!existing || existing.status === "cancelled") {
+              acc[b.session_id] = { id: b.id, status: b.status };
+            }
             return acc;
           },
           {},
@@ -219,6 +225,7 @@ export async function GET(request: NextRequest) {
       bookings: bookingsMap,
       confirmedCounts: confirmedMap,
       passInfo,
+      memberCredits,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal error";

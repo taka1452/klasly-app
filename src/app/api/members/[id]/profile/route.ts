@@ -27,11 +27,26 @@ export async function GET(
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("studio_id")
+      .select("studio_id, role")
       .eq("id", user.id)
       .single();
 
     if (!profile?.studio_id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Only owners and managers can view member profiles
+    if (profile.role === "manager") {
+      const { data: mgr } = await supabase
+        .from("managers")
+        .select("can_manage_members")
+        .eq("profile_id", user.id)
+        .eq("studio_id", profile.studio_id)
+        .single();
+      if (!mgr?.can_manage_members) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    } else if (profile.role !== "owner") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

@@ -43,8 +43,15 @@ export default async function MyPaymentsPage() {
     return new Date(val).toLocaleDateString();
   }
 
-  function formatAmount(cents: number): string {
-    return `$${(cents / 100).toFixed(2)}`;
+  function formatAmount(cents: number, currency?: string | null): string {
+    const cur = (currency ?? "usd").toUpperCase();
+    // Zero-decimal currencies (e.g. JPY) don't divide by 100
+    const zeroDecimal = ["JPY", "KRW", "VND", "CLP", "BIF", "DJF", "GNF", "KMF", "MGA", "PYG", "RWF", "UGX", "XAF", "XOF", "XPF"];
+    if (zeroDecimal.includes(cur)) {
+      return `${cur === "JPY" ? "¥" : cur + " "}${cents.toLocaleString()}`;
+    }
+    const symbol = cur === "USD" ? "$" : cur === "EUR" ? "€" : cur === "GBP" ? "£" : cur + " ";
+    return `${symbol}${(cents / 100).toFixed(2)}`;
   }
 
   function typeLabel(
@@ -104,7 +111,7 @@ export default async function MyPaymentsPage() {
                       {formatDate(p.paid_at ?? p.created_at)}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
-                      {formatAmount(p.amount)}
+                      {formatAmount(p.amount, p.currency)}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
                       {typeLabel(

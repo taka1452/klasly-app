@@ -316,7 +316,7 @@ export default function BookingButton({
   }
 
   // Pay-per-class mode: show "Book & Pay" when member has no credits
-  if (payPerClass && !existingBooking && memberCredits <= 0 && !showWaitlist) {
+  if (payPerClass && !existingBooking && memberCredits === 0 && !showWaitlist) {
     const priceLabel = classPrice ? `$${(classPrice / 100).toFixed(2)}` : "";
     return (
       <div className="flex flex-col items-end gap-1" {...tourProps}>

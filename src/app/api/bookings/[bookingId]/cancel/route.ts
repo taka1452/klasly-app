@@ -92,7 +92,7 @@ export async function POST(
 
     if (wasConfirmed) {
       if (booking.booked_via_pass) {
-        // Revert pass usage: delete pass_class_usage and decrement counter
+        // Revert pass usage: delete pass_class_usage then decrement counter (sequential for consistency)
         const { data: usageRows } = await adminSupabase
           .from("pass_class_usage")
           .select("id, pass_subscription_id, pass_subscriptions(id, member_id, classes_used_this_period)")
@@ -107,15 +107,18 @@ export async function POST(
             } | null;
             if (!sub || sub.member_id !== booking.member_id) continue;
 
-            await Promise.all([
-              adminSupabase.from("pass_class_usage").delete().eq("id", usage.id),
-              adminSupabase
-                .from("pass_subscriptions")
-                .update({
-                  classes_used_this_period: Math.max(0, sub.classes_used_this_period - 1),
-                })
-                .eq("id", sub.id),
-            ]);
+            // Delete first, then decrement (sequential to avoid inconsistency)
+            const { error: delErr } = await adminSupabase
+              .from("pass_class_usage")
+              .delete()
+              .eq("id", usage.id);
+            if (delErr) {
+              console.error("[cancel] pass_class_usage delete failed:", delErr.message);
+              break;
+            }
+            await adminSupabase.rpc("decrement_pass_usage", {
+              p_subscription_id: sub.id,
+            });
             break;
           }
         }
@@ -163,6 +166,18 @@ export async function POST(
     }
 
     // ウェイトリスト昇格（確認済み予約のキャンセルの場合）
+    // Determine if credits are required for this studio
+    const { data: studioSettings } = await adminSupabase
+      .from("studios")
+      .select("booking_requires_credits, stripe_connect_onboarding_complete")
+      .eq("id", booking.studio_id)
+      .single();
+    const { getRequiresCredits } = await import("@/lib/booking-utils");
+    const requiresCredits = getRequiresCredits({
+      booking_requires_credits: (studioSettings as { booking_requires_credits?: boolean | null })?.booking_requires_credits ?? null,
+      stripe_connect_onboarding_complete: (studioSettings as { stripe_connect_onboarding_complete?: boolean })?.stripe_connect_onboarding_complete ?? false,
+    });
+
     if (wasConfirmed && session) {
       const { count: confirmedCount } = await adminSupabase
         .from("bookings")
@@ -171,50 +186,56 @@ export async function POST(
         .eq("status", "confirmed");
 
       if ((confirmedCount ?? 0) < session.capacity) {
-        const { data: firstWaitlist } = await adminSupabase
+        // Find waitlisted members and promote the first eligible one
+        const { data: waitlistQueue } = await adminSupabase
           .from("bookings")
-          .select("member_id")
+          .select("id, member_id")
           .eq("session_id", booking.session_id)
           .eq("status", "waitlist")
-          .order("created_at", { ascending: true })
-          .limit(1)
-          .single();
+          .order("created_at", { ascending: true });
 
-        if (firstWaitlist) {
+        for (const waitlistItem of waitlistQueue || []) {
+          const { data: waitlistMember } = await adminSupabase
+            .from("members")
+            .select("id, credits, profile_id")
+            .eq("id", waitlistItem.member_id)
+            .single();
+
+          if (!waitlistMember) continue;
+
+          // Skip members with 0 credits in credit-required mode
+          if (requiresCredits && waitlistMember.credits === 0) continue;
+
+          // Atomically deduct credit before promoting
+          if (requiresCredits && waitlistMember.credits > 0) {
+            const { data: creditResult } = await adminSupabase.rpc("decrement_member_credits", {
+              p_member_id: waitlistItem.member_id,
+            });
+            if (creditResult === -99) continue; // insufficient credits, skip
+          }
+
+          // Promote using booking ID for precision
           await adminSupabase
             .from("bookings")
             .update({ status: "confirmed" })
-            .eq("session_id", booking.session_id)
-            .eq("member_id", firstWaitlist.member_id);
+            .eq("id", waitlistItem.id);
 
-          const { data: promotedMember } = await adminSupabase
-            .from("members")
-            .select("credits, profile_id")
-            .eq("id", firstWaitlist.member_id)
+          // Send promotion email
+          const { data: promotedProfile } = await adminSupabase
+            .from("profiles")
+            .select("full_name, email")
+            .eq("id", waitlistMember.profile_id)
             .single();
 
-          if (promotedMember && promotedMember.credits >= 0) {
-            // Atomic credit deduction for promoted member
-            await adminSupabase.rpc("decrement_member_credits", {
-              p_member_id: firstWaitlist.member_id,
+          if (promotedProfile?.email) {
+            const { subject, html } = waitlistPromoted({
+              ...emailPayload,
+              memberName: promotedProfile.full_name ?? "Member",
             });
+            await sendEmail({ to: promotedProfile.email, subject, html });
           }
 
-          if (promotedMember) {
-            const { data: promotedProfile } = await adminSupabase
-              .from("profiles")
-              .select("full_name, email")
-              .eq("id", promotedMember.profile_id)
-              .single();
-
-            if (promotedProfile?.email) {
-              const { subject, html } = waitlistPromoted({
-                ...emailPayload,
-                memberName: promotedProfile.full_name ?? "Member",
-              });
-              await sendEmail({ to: promotedProfile.email, subject, html });
-            }
-          }
+          break;
         }
       }
     }

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { formatDate, formatTime } from "@/lib/utils";
 import { getPlanAccess } from "@/lib/plan-guard";
+import { getRequiresCredits } from "@/lib/booking-utils";
 import BookingButton from "@/components/bookings/booking-button";
 
 export default async function MyBookingsPage() {
@@ -31,15 +32,41 @@ export default async function MyBookingsPage() {
 
   const member = memberList?.[0];
   let planStatus = "trialing";
+  let requiresCredits = true;
   if (member?.studio_id) {
     const { data: studio } = await supabase
       .from("studios")
-      .select("plan_status")
+      .select("plan_status, booking_requires_credits, stripe_connect_onboarding_complete")
       .eq("id", member.studio_id)
       .single();
     planStatus = studio?.plan_status ?? "trialing";
+    requiresCredits = getRequiresCredits({
+      booking_requires_credits: (studio as { booking_requires_credits?: boolean | null })?.booking_requires_credits ?? null,
+      stripe_connect_onboarding_complete: (studio as { stripe_connect_onboarding_complete?: boolean })?.stripe_connect_onboarding_complete ?? false,
+    });
   }
   const planAccess = getPlanAccess(planStatus);
+
+  // Fetch active pass info for the member
+  let passInfo: { hasPass: boolean; hasCapacity: boolean; classesUsed: number; maxClasses: number | null } | undefined;
+  if (member) {
+    const today = new Date().toISOString().split("T")[0];
+    const { data: passSubs } = await supabase
+      .from("pass_subscriptions")
+      .select("id, classes_used_this_period, studio_passes(max_classes_per_month)")
+      .eq("member_id", member.id)
+      .eq("status", "active")
+      .gte("current_period_end", today);
+
+    if (passSubs && passSubs.length > 0) {
+      const sub = passSubs[0];
+      const pass = sub.studio_passes as unknown as { max_classes_per_month: number | null } | null;
+      const maxClasses = pass?.max_classes_per_month ?? null;
+      const used = sub.classes_used_this_period ?? 0;
+      const hasCapacity = maxClasses === null || used < maxClasses;
+      passInfo = { hasPass: true, hasCapacity, classesUsed: used, maxClasses };
+    }
+  }
   const memberIds = (memberList || []).map((m) => m.id);
   const creditsByMember: Record<string, number> = (memberList || []).reduce(
     (acc, m) => {
@@ -192,6 +219,8 @@ export default async function MyBookingsPage() {
                       memberCredits={creditsByMember[booking.member_id] ?? 0}
                       confirmedCount={confirmedCount}
                       canBook={planAccess.canBook}
+                      requiresCredits={requiresCredits}
+                      passInfo={passInfo}
                     />
                   ) : null}
                 </div>

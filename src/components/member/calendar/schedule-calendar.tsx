@@ -25,7 +25,7 @@ type Props = {
 
 export default function ScheduleCalendar({
   memberId,
-  memberCredits,
+  memberCredits: initialCredits,
   canBook,
   requiresCredits,
   payPerClass,
@@ -46,6 +46,7 @@ export default function ScheduleCalendar({
     classesUsed: number;
     maxClasses: number | null;
   }>({ hasPass: false, hasCapacity: false, classesUsed: 0, maxClasses: null });
+  const [credits, setCredits] = useState(initialCredits);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -78,6 +79,7 @@ export default function ScheduleCalendar({
         setBookings(data.bookings ?? {});
         setConfirmedCounts(data.confirmedCounts ?? {});
         if (data.passInfo) setPassInfo(data.passInfo);
+        if (typeof data.memberCredits === "number") setCredits(data.memberCredits);
       } catch {
         setFetchError(true);
       } finally {
@@ -132,7 +134,7 @@ export default function ScheduleCalendar({
     bookings,
     confirmedCounts,
     memberId,
-    memberCredits,
+    memberCredits: credits,
     canBook,
     requiresCredits,
     payPerClass,
