@@ -35,15 +35,13 @@ export default async function InstructorLayout({
     .eq("id", user.id)
     .single();
 
-  if (profile?.role === "owner") {
-    redirect("/");
-  }
-
   if (profile?.role === "member") {
     redirect("/schedule");
   }
 
-  if (profile?.role !== "instructor") {
+  // instructor, owner, manager のみ許可（owner/manager はインストラクター兼任時にアクセス）
+  const allowedRoles = ["instructor", "owner", "manager"];
+  if (!profile?.role || !allowedRoles.includes(profile.role)) {
     redirect("/login");
   }
 

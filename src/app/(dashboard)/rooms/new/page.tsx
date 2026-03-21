@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
 
 export default function NewRoomPage() {
   const router = useRouter();
@@ -18,38 +17,31 @@ export default function NewRoomPage() {
     setError("");
     setLoading(true);
 
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("studio_id")
-      .eq("id", user!.id)
-      .single();
+    try {
+      const res = await fetch("/api/rooms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          description: description || null,
+          capacity: capacity !== "" ? capacity : null,
+        }),
+      });
 
-    if (!profile?.studio_id) {
-      setError("Studio not found.");
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Failed to create room");
+        setLoading(false);
+        return;
+      }
+
+      router.push("/rooms");
+      router.refresh();
+    } catch {
+      setError("An unexpected error occurred");
       setLoading(false);
-      return;
     }
-
-    const { error: insertError } = await supabase.from("rooms").insert({
-      studio_id: profile.studio_id,
-      name,
-      description: description || null,
-      capacity: capacity !== "" ? capacity : null,
-      is_active: true,
-    });
-
-    if (insertError) {
-      setError(insertError.message);
-      setLoading(false);
-      return;
-    }
-
-    router.push("/rooms");
-    router.refresh();
   }
 
   return (

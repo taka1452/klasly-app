@@ -7,6 +7,7 @@ import EmptyState from "@/components/ui/empty-state";
 import ExportCsvButton from "@/components/ui/export-csv-button";
 import type { Metadata } from "next";
 import BookingsMonthNav from "./bookings-month-nav";
+import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
 
 export const metadata: Metadata = {
   title: "Bookings - Klasly",
@@ -45,6 +46,12 @@ export default async function BookingsPage({
 
   if (!user) {
     redirect("/login");
+  }
+
+  // マネージャー権限チェック（can_manage_bookings）
+  const permCheck = await checkManagerPermission("can_manage_bookings");
+  if (!permCheck.allowed) {
+    redirect("/dashboard");
   }
 
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

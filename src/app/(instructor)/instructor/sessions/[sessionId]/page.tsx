@@ -35,26 +35,41 @@ export default async function InstructorSessionDetailPage({
 
   const { data: session } = await supabase
     .from("class_sessions")
-    .select("id, session_date, start_time, capacity, is_cancelled, is_public, class_id, studio_id, classes(name, location)")
+    .select("id, session_date, start_time, capacity, is_cancelled, is_public, class_id, studio_id, session_type, title, location, duration_minutes, instructor_id, classes(name, location)")
     .eq("id", sessionId)
     .eq("studio_id", instructor.studio_id)
     .single();
 
   if (!session) notFound();
 
+  // セッションが自分のものか確認（instructor_id で直接チェック）
+  const isRoomOnly = session.session_type === "room_only";
+
+  if (isRoomOnly) {
+    // room_only セッションは instructor_id で所有権確認
+    if (session.instructor_id !== instructor.id) notFound();
+  } else {
+    // class セッションは classes テーブルで所有権確認
+    if (session.class_id) {
+      const { data: myClass } = await supabase
+        .from("classes")
+        .select("id")
+        .eq("id", session.class_id)
+        .eq("instructor_id", instructor.id)
+        .single();
+
+      if (!myClass) notFound();
+    } else if (session.instructor_id !== instructor.id) {
+      notFound();
+    }
+  }
+
   const cls = session.classes as { name?: string; location?: string } | null;
   const rawClass = Array.isArray(cls) ? cls[0] : cls;
-  const className = rawClass?.name || "—";
-  const location = rawClass?.location;
-
-  const { data: myClass } = await supabase
-    .from("classes")
-    .select("id")
-    .eq("id", session.class_id)
-    .eq("instructor_id", instructor.id)
-    .single();
-
-  if (!myClass) notFound();
+  const className = isRoomOnly
+    ? (session.title || "Room Booking")
+    : (rawClass?.name || session.title || "—");
+  const location = isRoomOnly ? session.location : (rawClass?.location || session.location);
 
   const { data: bookings } = await supabase
     .from("bookings")

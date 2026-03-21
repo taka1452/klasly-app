@@ -67,24 +67,58 @@ export async function GET(request: Request) {
         ? `${year + 1}-01-01`
         : `${year}-${String(month + 1).padStart(2, "0")}-01`;
 
-    const { data: earnings } = await adminSupabase
+    // session_date ベースでフィルター（月末セッションの収益が翌月の created_at で記録されるケースに対応）
+    // まず対象月のセッションIDを取得
+    const { data: monthSessions } = await adminSupabase
+      .from("class_sessions")
+      .select("id")
+      .eq("instructor_id", instructor.id)
+      .gte("session_date", startDate)
+      .lt("session_date", endDate);
+
+    const monthSessionIds = (monthSessions || []).map((s: { id: string }) => s.id);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let earnings: any[] = [];
+    if (monthSessionIds.length > 0) {
+      const { data: earningsData } = await adminSupabase
+        .from("instructor_earnings")
+        .select(
+          "id, gross_amount, stripe_fee, platform_fee, studio_fee, instructor_payout, studio_fee_percentage, status, created_at, session_id, class_sessions(session_date, start_time, classes(name))"
+        )
+        .eq("instructor_id", instructor.id)
+        .in("session_id", monthSessionIds)
+        .order("created_at", { ascending: false });
+      earnings = earningsData ?? [];
+    }
+
+    // session_id が null の収益（パス配分など）は created_at でフォールバック
+    const { data: noSessionEarnings } = await adminSupabase
       .from("instructor_earnings")
       .select(
         "id, gross_amount, stripe_fee, platform_fee, studio_fee, instructor_payout, studio_fee_percentage, status, created_at, session_id, class_sessions(session_date, start_time, classes(name))"
       )
       .eq("instructor_id", instructor.id)
+      .is("session_id", null)
       .gte("created_at", startDate)
       .lt("created_at", endDate)
       .order("created_at", { ascending: false });
 
+    // マージして重複排除
+    const earningIds = new Set(earnings.map((e: { id: string }) => e.id));
+    const mergedEarnings = [
+      ...earnings,
+      ...(noSessionEarnings || []).filter((e: { id: string }) => !earningIds.has(e.id)),
+    ];
+
     // Calculate summary
-    const items = earnings ?? [];
+    const items = mergedEarnings;
     const summary = {
-      totalGross: items.reduce((s, e) => s + e.gross_amount, 0),
-      totalStripeFee: items.reduce((s, e) => s + e.stripe_fee, 0),
-      totalPlatformFee: items.reduce((s, e) => s + e.platform_fee, 0),
-      totalStudioFee: items.reduce((s, e) => s + e.studio_fee, 0),
-      totalPayout: items.reduce((s, e) => s + e.instructor_payout, 0),
+      totalGross: items.reduce((s: number, e: { gross_amount: number }) => s + e.gross_amount, 0),
+      totalStripeFee: items.reduce((s: number, e: { stripe_fee: number }) => s + e.stripe_fee, 0),
+      totalPlatformFee: items.reduce((s: number, e: { platform_fee: number }) => s + e.platform_fee, 0),
+      totalStudioFee: items.reduce((s: number, e: { studio_fee: number }) => s + e.studio_fee, 0),
+      totalPayout: items.reduce((s: number, e: { instructor_payout: number }) => s + e.instructor_payout, 0),
       classCount: items.length,
     };
 

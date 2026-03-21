@@ -11,6 +11,7 @@ import DevRoleSwitcher from "@/components/ui/dev-role-switcher";
 import { getStudioFeatures } from "@/lib/features/check-feature";
 import { FeatureProvider } from "@/lib/features/feature-context";
 import AnnouncementBanner from "@/components/announcements/announcement-banner";
+import { getManagerPermissions, type ManagerPermissions } from "@/lib/auth/check-manager-permission";
 
 export default async function DashboardLayout({
   children,
@@ -159,6 +160,12 @@ export default async function DashboardLayout({
 
   const features = await getStudioFeatures(profile.studio_id);
 
+  // マネージャーの権限情報を取得（サイドバーのフィルタリング用）
+  let managerPermissions: ManagerPermissions | null = null;
+  if (profile.role === "manager") {
+    managerPermissions = await getManagerPermissions(user.id, profile.studio_id);
+  }
+
   // オーナーまたはマネージャーがインストラクターとしても登録されているか
   let isAlsoInstructor = false;
   if (profile.role === "owner" || profile.role === "manager") {
@@ -182,6 +189,7 @@ export default async function DashboardLayout({
       planAccess={planAccess}
       showAdminLink={showAdminLink}
       isAlsoInstructor={isAlsoInstructor}
+      managerPermissions={managerPermissions}
       onboardingCompleted={onboardingCompleted}
       onboardingStep={onboardingStep}
       onboardingStartedAt={onboardingStartedAt}

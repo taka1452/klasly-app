@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { formatCurrency } from "@/lib/utils";
 import PaymentsTable from "@/components/payments/payments-table";
 import ExportCsvButton from "@/components/ui/export-csv-button";
+import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
 
 export default async function PaymentsPage({
   searchParams,
@@ -32,6 +33,12 @@ export default async function PaymentsPage({
     .single();
 
   if (!profile?.studio_id || !["owner", "manager"].includes(profile.role)) redirect("/dashboard");
+
+  // マネージャー権限チェック（can_view_payments）
+  const permCheck = await checkManagerPermission("can_view_payments");
+  if (!permCheck.allowed) {
+    redirect("/dashboard");
+  }
 
   const params = await searchParams;
   const typeFilter = params.type ?? "all";

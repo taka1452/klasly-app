@@ -31,7 +31,8 @@ export async function GET() {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
 
-    if (profile.role !== "instructor" && profile.role !== "owner") {
+    const allowedRoles = ["instructor", "owner", "manager"];
+    if (!allowedRoles.includes(profile.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -80,7 +81,8 @@ export async function PATCH(request: Request) {
       .eq("id", user.id)
       .single();
 
-    if (profile?.role !== "instructor" && profile?.role !== "owner") {
+    const allowedPatchRoles = ["instructor", "owner", "manager"];
+    if (!profile?.role || !allowedPatchRoles.includes(profile.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

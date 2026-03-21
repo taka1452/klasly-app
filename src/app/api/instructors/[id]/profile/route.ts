@@ -27,11 +27,17 @@ export async function GET(
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("studio_id")
+      .select("studio_id, role")
       .eq("id", user.id)
       .single();
 
     if (!profile?.studio_id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // owner, manager, instructor のみ閲覧可能（member はアクセス不可）
+    const allowedRoles = ["owner", "manager", "instructor"];
+    if (!allowedRoles.includes(profile.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

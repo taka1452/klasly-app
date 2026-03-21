@@ -26,7 +26,7 @@ export default async function InstructorDashboardPage() {
     .eq("id", user.id)
     .single();
 
-  if (!profile?.studio_id) return null;
+  if (!profile?.studio_id) redirect("/login");
 
   const { data: instructor } = await supabase
     .from("instructors")
@@ -34,7 +34,18 @@ export default async function InstructorDashboardPage() {
     .eq("profile_id", user.id)
     .single();
 
-  if (!instructor) return null;
+  if (!instructor) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="max-w-md text-center">
+          <h2 className="text-lg font-semibold text-gray-900">Instructor Setup Incomplete</h2>
+          <p className="mt-2 text-sm text-gray-600">
+            Your instructor profile has not been set up yet. Please contact the studio owner to complete your instructor registration.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const { data: studio } = await supabase
     .from("studios")
@@ -48,9 +59,10 @@ export default async function InstructorDashboardPage() {
   const today = new Date().toISOString().split("T")[0];
   const now = new Date();
   const dayOfWeek = now.getDay();
-  const daysUntilSunday = (7 - dayOfWeek) % 7;
+  // 今日から次の土曜日（週末）までを表示（日曜始まりで6日後の土曜まで）
+  const daysUntilSaturday = (6 - dayOfWeek + 7) % 7;
   const weekEnd = new Date(now);
-  weekEnd.setDate(weekEnd.getDate() + (daysUntilSunday === 0 ? 7 : daysUntilSunday));
+  weekEnd.setDate(weekEnd.getDate() + (daysUntilSaturday === 0 ? 6 : daysUntilSaturday));
   const weekEndStr = weekEnd.toISOString().split("T")[0];
 
   // Query class_sessions directly by instructor_id (unified table)

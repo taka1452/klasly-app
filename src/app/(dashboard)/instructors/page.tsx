@@ -5,6 +5,8 @@ import EmptyState from "@/components/ui/empty-state";
 import InstructorsListClient from "@/components/instructors/instructors-list-client";
 import FlowHintPanel from "@/components/ui/flow-hint-panel";
 import ExportCsvButton from "@/components/ui/export-csv-button";
+import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
+import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -18,7 +20,13 @@ export default async function InstructorsPage() {
   } = await serverSupabase.auth.getUser();
 
   if (!user) {
-    return null;
+    redirect("/login");
+  }
+
+  // マネージャー権限チェック（can_manage_instructors）
+  const permCheck = await checkManagerPermission("can_manage_instructors");
+  if (!permCheck.allowed) {
+    redirect("/dashboard");
   }
 
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -36,7 +44,7 @@ export default async function InstructorsPage() {
     .single();
 
   if (!profile?.studio_id) {
-    return null;
+    redirect("/onboarding");
   }
 
   const { data: instructors } = await supabase

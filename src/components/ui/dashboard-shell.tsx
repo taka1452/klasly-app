@@ -8,6 +8,7 @@ import { PlanAccessProvider } from "./plan-access-provider";
 import TourProvider from "@/components/tour/TourProvider";
 import type { PlanAccess } from "@/lib/plan-guard";
 import type { SetupTask } from "./setup-task-list";
+import type { ManagerPermissions } from "@/lib/auth/check-manager-permission";
 
 type DashboardShellProps = {
   children: React.ReactNode;
@@ -18,6 +19,7 @@ type DashboardShellProps = {
   planAccess?: PlanAccess;
   showAdminLink?: boolean;
   isAlsoInstructor?: boolean;
+  managerPermissions?: ManagerPermissions | null;
   onboardingCompleted?: boolean;
   onboardingStep?: number;
   onboardingStartedAt?: string | null;
@@ -35,6 +37,7 @@ export default function DashboardShell({
   planAccess,
   showAdminLink = false,
   isAlsoInstructor = false,
+  managerPermissions = null,
   onboardingCompleted = true,
   onboardingStep = 0,
   onboardingStartedAt = null,
@@ -77,6 +80,7 @@ export default function DashboardShell({
         onMobileClose={() => setSidebarOpen(false)}
         showAdminLink={showAdminLink}
         isAlsoInstructor={isAlsoInstructor}
+        managerPermissions={managerPermissions}
       />
 
       <div className="flex flex-1 flex-col overflow-hidden">

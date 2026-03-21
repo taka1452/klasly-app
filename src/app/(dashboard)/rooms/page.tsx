@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import RoomsPageClient from "@/components/dashboard/rooms-page-client";
+import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
 
 export const metadata: Metadata = {
   title: "Rooms - Klasly",
@@ -17,6 +18,12 @@ export default async function RoomsPage() {
 
   if (!user) {
     redirect("/login");
+  }
+
+  // マネージャー権限チェック（can_manage_rooms）
+  const permCheck = await checkManagerPermission("can_manage_rooms");
+  if (!permCheck.allowed) {
+    redirect("/dashboard");
   }
 
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

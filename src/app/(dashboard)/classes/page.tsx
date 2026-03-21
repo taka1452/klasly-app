@@ -1,12 +1,20 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import TemplateList from "@/components/classes/template-list";
+import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Classes - Klasly",
 };
 
-export default function ClassesPage() {
+export default async function ClassesPage() {
+  // マネージャー権限チェック（can_manage_classes）
+  const permCheck = await checkManagerPermission("can_manage_classes");
+  if (!permCheck.allowed) {
+    redirect("/dashboard");
+  }
+
   return (
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

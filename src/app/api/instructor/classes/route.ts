@@ -257,7 +257,8 @@ export async function POST(request: Request) {
       today.setHours(0, 0, 0, 0);
 
       const currentDay = today.getDay();
-      const daysUntilFirst = (day_of_week - currentDay + 7) % 7;
+      // 今日と同じ曜日の場合は次週にスケジュール（過去時間のセッション防止）
+      const daysUntilFirst = (day_of_week - currentDay + 7) % 7 || 7;
       const firstSessionDate = new Date(today);
       firstSessionDate.setDate(today.getDate() + daysUntilFirst);
 

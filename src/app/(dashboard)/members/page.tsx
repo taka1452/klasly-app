@@ -6,6 +6,7 @@ import MemberSearch from "@/components/members/member-search";
 import MembersListClient from "@/components/members/members-list-client";
 import ExportCsvButton from "@/components/ui/export-csv-button";
 import FlowHintPanel from "@/components/ui/flow-hint-panel";
+import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -25,6 +26,12 @@ export default async function MembersPage({
 
   if (!user) {
     redirect("/login");
+  }
+
+  // マネージャー権限チェック（can_manage_members）
+  const permCheck = await checkManagerPermission("can_manage_members");
+  if (!permCheck.allowed) {
+    redirect("/dashboard");
   }
 
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

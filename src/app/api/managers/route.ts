@@ -71,7 +71,8 @@ export async function POST(request: Request) {
     if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await request.json();
-    const { email, permissions } = body;
+    const { permissions } = body;
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
 
     if (!email) {
       return NextResponse.json({ error: "email is required" }, { status: 400 });
@@ -235,6 +236,40 @@ export async function DELETE(request: Request) {
       .delete()
       .eq("id", id)
       .eq("studio_id", ctx.studioId);
+
+    // インストラクターレコードが残っている場合もクリーンアップ
+    // （can_teach でインストラクター兼任していた場合の孤立防止）
+    const { data: instructorRecord } = await ctx.supabase
+      .from("instructors")
+      .select("id")
+      .eq("profile_id", manager.profile_id)
+      .eq("studio_id", ctx.studioId)
+      .maybeSingle();
+
+    if (instructorRecord) {
+      // アクティブなクラスがある場合はインストラクターレコードを残す（ロールを instructor に）
+      const { count: activeClasses } = await ctx.supabase
+        .from("classes")
+        .select("id", { count: "exact", head: true })
+        .eq("instructor_id", instructorRecord.id)
+        .eq("is_active", true);
+
+      if (activeClasses && activeClasses > 0) {
+        // アクティブなクラスがあるためインストラクターとして保持
+        await ctx.supabase
+          .from("profiles")
+          .update({ role: "instructor" })
+          .eq("id", manager.profile_id);
+
+        return NextResponse.json({ success: true, note: "Demoted to instructor (has active classes)" });
+      }
+
+      // アクティブなクラスがないのでインストラクターレコードも削除
+      await ctx.supabase
+        .from("instructors")
+        .delete()
+        .eq("id", instructorRecord.id);
+    }
 
     // プロフィールのロールをリセット（studio_id は保持、ロールを member に）
     await ctx.supabase

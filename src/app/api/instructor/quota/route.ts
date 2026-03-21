@@ -25,7 +25,8 @@ export async function GET() {
       .eq("id", user.id)
       .single();
 
-    if (!profile?.studio_id || profile.role !== "instructor") {
+    const allowedRoles = ["instructor", "owner", "manager"];
+    if (!profile?.studio_id || !allowedRoles.includes(profile.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
