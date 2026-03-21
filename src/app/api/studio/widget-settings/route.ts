@@ -72,7 +72,8 @@ export async function PUT(request: NextRequest) {
       .eq("id", user.id)
       .single();
 
-    if (!profile?.studio_id || (profile.role !== "owner" && profile.role !== "manager")) {
+    // ウィジェット設定変更はオーナーのみ
+    if (!profile?.studio_id || profile.role !== "owner") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

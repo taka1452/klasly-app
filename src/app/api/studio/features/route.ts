@@ -14,7 +14,7 @@ import { DEFAULT_FEATURES } from "@/lib/features/feature-keys";
  * Bulk set features. Body: { features: Record<string, boolean> }
  */
 
-async function getOwnerStudioId() {
+async function getStudioContext(requiredRole: "owner" | "owner_or_manager" = "owner_or_manager") {
   const serverSupabase = await createServerClient();
   const {
     data: { user },
@@ -33,7 +33,12 @@ async function getOwnerStudioId() {
     .eq("id", user.id)
     .single();
 
-  if (!profile || (profile.role !== "owner" && profile.role !== "manager")) {
+  if (!profile?.studio_id) return null;
+
+  if (requiredRole === "owner" && profile.role !== "owner") {
+    return null;
+  }
+  if (requiredRole === "owner_or_manager" && profile.role !== "owner" && profile.role !== "manager") {
     return null;
   }
 
@@ -42,7 +47,7 @@ async function getOwnerStudioId() {
 
 export async function GET() {
   try {
-    const result = await getOwnerStudioId();
+    const result = await getStudioContext("owner_or_manager");
     if (!result) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -74,7 +79,8 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    const result = await getOwnerStudioId();
+    // フィーチャーフラグの変更はオーナーのみ
+    const result = await getStudioContext("owner");
     if (!result) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

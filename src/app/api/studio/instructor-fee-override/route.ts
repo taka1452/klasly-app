@@ -221,6 +221,21 @@ export async function DELETE(request: Request) {
       );
     }
 
+    // インストラクターがこのスタジオに属しているか確認
+    const { data: instructor } = await adminSupabase
+      .from("instructors")
+      .select("id")
+      .eq("id", instructor_id)
+      .eq("studio_id", profile.studio_id)
+      .single();
+
+    if (!instructor) {
+      return NextResponse.json(
+        { error: "Instructor not found in this studio" },
+        { status: 404 }
+      );
+    }
+
     await adminSupabase
       .from("instructor_fee_overrides")
       .delete()

@@ -84,14 +84,16 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. プロフィールを更新（studio_id と role = owner）
+    // 2. プロフィールを作成または更新（studio_id と role = owner）
+    // 新規ユーザーで profiles 行がまだない場合にも対応
     const { error: profileError } = await adminSupabase
       .from("profiles")
-      .update({
+      .upsert({
+        id: user.id,
         studio_id: studio.id,
         role: "owner",
-      })
-      .eq("id", user.id);
+        email: user.email || null,
+      }, { onConflict: "id" });
 
     if (profileError) {
       return NextResponse.json(
