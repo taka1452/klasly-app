@@ -139,7 +139,7 @@ export default async function InstructorDashboardPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900">
           Welcome back, {instructorName}
         </h1>
         <p className="mt-1 text-sm text-gray-500">{studioName}</p>
@@ -230,9 +230,9 @@ export default async function InstructorDashboardPage() {
                   <Link
                     key={session.id}
                     href={isRoomOnly ? "/instructor/room-bookings" : `/instructor/sessions/${session.id}`}
-                    className="block px-6 py-4 transition-colors hover:bg-gray-50"
+                    className="block px-4 py-3 md:px-6 md:py-4 transition-colors hover:bg-gray-50"
                   >
-                    <div className="flex items-center justify-between gap-4">
+                    <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                       <div>
                         <p className="font-medium text-gray-900">
                           {isRoomOnly && (

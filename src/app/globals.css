@@ -88,6 +88,27 @@
 
   /* カードスタイル */
   .card {
-    @apply rounded-xl border border-gray-200 bg-white p-6 shadow-sm;
+    @apply rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:p-6;
+  }
+}
+
+/* Hide scrollbar for horizontal scroll navigation */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Safe area padding for fixed/sticky elements on iPhones */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Prevent sticky hover states on touch devices */
+@media (hover: hover) {
+  .hover-only\:hover\:bg-gray-50:hover {
+    background-color: rgb(249 250 251);
   }
 }

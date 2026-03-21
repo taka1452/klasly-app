@@ -72,74 +72,110 @@ export default async function MyPaymentsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900">My Payments</h1>
+      <h1 className="text-xl font-bold text-gray-900 md:text-2xl">My Payments</h1>
       <p className="mt-1 text-sm text-gray-500">Your payment history</p>
 
-      <div className="mt-8 card overflow-hidden p-0">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
-                  Date
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
-                  Amount
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
-                  Type
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
-              {(payments ?? []).length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={4}
-                    className="px-4 py-8 text-center text-sm text-gray-500"
-                  >
-                    No payments yet
-                  </td>
-                </tr>
-              ) : (
-                (payments ?? []).map((p) => (
-                  <tr key={p.id}>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
-                      {formatDate(p.paid_at ?? p.created_at)}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
-                      {formatAmount(p.amount, p.currency)}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
+      {(payments ?? []).length === 0 ? (
+        <div className="mt-6 card">
+          <p className="text-sm text-gray-500">No payments yet</p>
+        </div>
+      ) : (
+        <>
+          {/* Mobile: Card list */}
+          <div className="mt-6 space-y-3 md:hidden">
+            {(payments ?? []).map((p) => (
+              <div key={p.id} className="card">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-base font-medium text-gray-900">
                       {typeLabel(
                         p.payment_type,
                         p.type,
                         (p as unknown as { products?: { name: string } | { name: string }[] | null }).products
                       )}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3">
-                      <span
-                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                          p.status === "paid"
-                            ? "bg-green-100 text-green-800"
-                            : p.status === "failed"
-                            ? "bg-red-100 text-red-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {p.status}
-                      </span>
-                    </td>
+                    </p>
+                    <p className="mt-0.5 text-sm text-gray-500">
+                      {formatDate(p.paid_at ?? p.created_at)}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-base font-semibold text-gray-900">
+                      {formatAmount(p.amount, p.currency)}
+                    </p>
+                    <span
+                      className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                        p.status === "paid"
+                          ? "bg-green-100 text-green-800"
+                          : p.status === "failed"
+                          ? "bg-red-100 text-red-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {p.status}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop: Table */}
+          <div className="mt-8 card hidden overflow-hidden p-0 md:block">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                      Date
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                      Amount
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                      Type
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                      Status
+                    </th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                </thead>
+                <tbody className="divide-y divide-gray-200 bg-white">
+                  {(payments ?? []).map((p) => (
+                    <tr key={p.id}>
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
+                        {formatDate(p.paid_at ?? p.created_at)}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
+                        {formatAmount(p.amount, p.currency)}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
+                        {typeLabel(
+                          p.payment_type,
+                          p.type,
+                          (p as unknown as { products?: { name: string } | { name: string }[] | null }).products
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3">
+                        <span
+                          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                            p.status === "paid"
+                              ? "bg-green-100 text-green-800"
+                              : p.status === "failed"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {p.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

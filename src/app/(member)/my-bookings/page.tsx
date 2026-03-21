@@ -139,7 +139,7 @@ export default async function MyBookingsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900">My Bookings</h1>
+      <h1 className="text-xl font-bold text-gray-900 md:text-2xl">My Bookings</h1>
       <p className="mt-1 text-sm text-gray-500">
         Your upcoming and past classes
       </p>
@@ -170,7 +170,7 @@ export default async function MyBookingsPage() {
               return (
                 <div
                   key={booking.id}
-                  className="card flex flex-wrap items-center justify-between gap-4"
+                  className="card flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4"
                 >
                   <div>
                     <h3 className="font-medium text-gray-900">{className}</h3>

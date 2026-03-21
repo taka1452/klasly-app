@@ -1524,6 +1524,15 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             </>
           ),
         },
+        {
+          q: "Can I use Klasly on my phone?",
+          a: (
+            <>
+              Yes! Klasly is fully optimized for mobile devices. You can access all features — browsing schedules, booking classes, viewing payments, and messaging — directly from your phone&apos;s browser. On iPhone, the app also supports the notch and home bar areas for a seamless experience.
+              <Tip>On mobile, the schedule defaults to Day view for easier one-handed browsing. Swipe the navigation tabs to see all menu options.</Tip>
+            </>
+          ),
+        },
       ],
     },
     {

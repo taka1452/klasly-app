@@ -55,7 +55,7 @@ export default function PaymentsTable({
 
   return (
     <div className="mt-8">
-      <div className="mb-4 flex flex-wrap gap-4">
+      <div className="mb-4 flex flex-wrap gap-4 overflow-x-auto">
         <div className="flex gap-2">
           <span className="text-sm font-medium text-gray-700">Type:</span>
           {["all", "subscription", "drop_in", "class_pack", "monthly"].map(
@@ -84,7 +84,56 @@ export default function PaymentsTable({
         </div>
       </div>
 
-      <div className="card overflow-hidden p-0">
+      {/* Mobile card list */}
+      <div className="md:hidden space-y-3">
+        {payments.length === 0 ? (
+          <div className="card py-8 text-center text-sm text-gray-500">
+            No payments found
+          </div>
+        ) : (
+          payments.map((p) => {
+            const memberName = p.member_id
+              ? ((m: unknown) => {
+                  const obj = m as { profiles?: { full_name?: string } } | null;
+                  const pf = obj?.profiles;
+                  const name = Array.isArray(pf) ? pf[0]?.full_name : pf?.full_name;
+                  return name ?? "—";
+                })(p.members)
+              : "Studio";
+            return (
+              <div key={p.id} className="card">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-medium text-gray-900">{memberName}</p>
+                    <p className="mt-0.5 text-xs text-gray-500">
+                      {formatDate(p.paid_at ?? p.created_at)} · {typeLabel(p.payment_type, p.type)}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-gray-900">{formatAmount(p.amount)}</p>
+                    <span
+                      className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                        p.status === "paid"
+                          ? "bg-green-100 text-green-800"
+                          : p.status === "failed"
+                          ? "bg-red-100 text-red-800"
+                          : p.status === "refunded"
+                          ? "bg-amber-100 text-amber-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {p.status}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden md:block card overflow-hidden p-0">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">

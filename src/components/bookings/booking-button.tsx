@@ -154,7 +154,7 @@ export default function BookingButton({
       // Pass holder can rebook with pass
       if (hasActivePass) {
         return (
-          <div className="flex flex-col items-end gap-1" {...tourProps}>
+          <div className="flex w-full flex-col items-end gap-1 sm:w-auto" {...tourProps}>
             {error && <p className="text-xs text-red-600 text-right">{error}</p>}
             <button
               type="button"
@@ -169,7 +169,7 @@ export default function BookingButton({
       }
       if (hasNoCredits) {
         return (
-          <div className="flex flex-col items-end gap-2 text-right" {...tourProps}>
+          <div className="flex w-full flex-col items-end gap-2 text-right sm:w-auto" {...tourProps}>
             <span className="text-sm text-amber-600">
               No credits remaining. Please purchase a plan to book classes.
             </span>
@@ -183,7 +183,7 @@ export default function BookingButton({
         );
       }
       return (
-        <div className="flex flex-col items-end gap-1" {...tourProps}>
+        <div className="flex w-full flex-col items-end gap-1 sm:w-auto" {...tourProps}>
           {error && <p className="text-xs text-red-600 text-right">{error}</p>}
           <button
             type="button"
@@ -198,7 +198,7 @@ export default function BookingButton({
     }
     if (existingBooking.status === "waitlist") {
       return (
-        <div className="flex flex-col items-end gap-1" {...tourProps}>
+        <div className="flex w-full flex-col items-end gap-1 sm:w-auto" {...tourProps}>
           {error && <p className="text-xs text-red-600 text-right">{error}</p>}
           <button
             type="button"
@@ -212,7 +212,7 @@ export default function BookingButton({
       );
     }
     return (
-      <div className="flex flex-col items-end gap-1" {...tourProps}>
+      <div className="flex w-full flex-col items-end gap-1 sm:w-auto" {...tourProps}>
         {error && <p className="text-xs text-red-600 text-right">{error}</p>}
         {confirmCancel ? (
           <div className="flex items-center gap-2">
@@ -257,7 +257,7 @@ export default function BookingButton({
   // Pass holder with capacity: show "Book with Pass" button
   if (hasActivePass && !showWaitlist) {
     return (
-      <div className="flex flex-col items-end gap-1" {...tourProps}>
+      <div className="flex w-full flex-col items-end gap-1 sm:w-auto" {...tourProps}>
         {error && <p className="text-xs text-red-600 text-right">{error}</p>}
         <button
           type="button"
@@ -275,7 +275,7 @@ export default function BookingButton({
   // Pass limit reached: show message + fallback to regular booking
   if (passLimitReached && !showWaitlist) {
     return (
-      <div className="flex flex-col items-end gap-1" {...tourProps}>
+      <div className="flex w-full flex-col items-end gap-1 sm:w-auto" {...tourProps}>
         {error && <p className="text-xs text-red-600 text-right">{error}</p>}
         <span className="text-xs text-amber-600">Pass limit reached</span>
         {hasNoCredits ? (
@@ -301,7 +301,7 @@ export default function BookingButton({
 
   if (!existingBooking && hasNoCredits && !showWaitlist) {
     return (
-      <div className="flex flex-col items-end gap-2 text-right" {...tourProps}>
+      <div className="flex w-full flex-col items-end gap-2 text-right sm:w-auto" {...tourProps}>
         <span className="text-sm text-amber-600">
           No credits remaining. Please purchase a plan to book classes.
         </span>
@@ -319,7 +319,7 @@ export default function BookingButton({
   if (payPerClass && !existingBooking && memberCredits === 0 && !showWaitlist) {
     const priceLabel = classPrice ? `$${(classPrice / 100).toFixed(2)}` : "";
     return (
-      <div className="flex flex-col items-end gap-1" {...tourProps}>
+      <div className="flex w-full flex-col items-end gap-1 sm:w-auto" {...tourProps}>
         {error && <p className="text-xs text-red-600 text-right">{error}</p>}
         <button
           type="button"
@@ -334,7 +334,7 @@ export default function BookingButton({
   }
 
   return (
-    <div className="flex flex-col items-end gap-1" {...tourProps}>
+    <div className="flex w-full flex-col items-end gap-1 sm:w-auto" {...tourProps}>
       {error && <p className="text-xs text-red-600 text-right">{error}</p>}
       <button
         type="button"

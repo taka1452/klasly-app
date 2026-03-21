@@ -158,7 +158,7 @@ export default function InstructorEarningsPage() {
   if (loading) {
     return (
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">My Earnings</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900">My Earnings</h1>
         <div className="mt-6 card">
           <p className="text-sm text-gray-500">Loading...</p>
         </div>
@@ -168,7 +168,7 @@ export default function InstructorEarningsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900">My Earnings</h1>
+      <h1 className="text-xl md:text-2xl font-bold text-gray-900">My Earnings</h1>
       <p className="mt-1 text-sm text-gray-500">
         View your class earnings and Stripe account status
       </p>
@@ -287,7 +287,7 @@ export default function InstructorEarningsPage() {
                   ? ((d.total_classes / d.total_pool_classes) * 100).toFixed(1)
                   : "100";
                 return (
-                  <div key={d.id} className="flex items-center justify-between px-6 py-4">
+                  <div key={d.id} className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4">
                     <div>
                       <p className="font-medium text-gray-900">Pass Distribution</p>
                       <p className="text-sm text-gray-500">
@@ -334,7 +334,7 @@ export default function InstructorEarningsPage() {
                 const sessionArr = Array.isArray(session) ? session[0] : session;
 
                 return (
-                  <div key={e.id} className="flex items-center justify-between px-6 py-4">
+                  <div key={e.id} className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4">
                     <div>
                       <p className="font-medium text-gray-900">{className}</p>
                       <p className="text-sm text-gray-500">

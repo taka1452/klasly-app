@@ -66,7 +66,7 @@ export default async function EventsListPage() {
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold text-gray-900">Events &amp; Retreats</h1>
+        <h1 className="text-xl font-bold text-gray-900 md:text-2xl">Events &amp; Retreats</h1>
         <Link href="/events/new" className="btn-primary">
           + Create Event
         </Link>
@@ -92,7 +92,7 @@ export default async function EventsListPage() {
                 <Link
                   key={event.id}
                   href={`/events/${event.id}/manage`}
-                  className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 transition-colors hover:bg-gray-50"
+                  className="flex flex-wrap items-center justify-between gap-4 px-4 py-3 transition-colors hover:bg-gray-50 md:px-6 md:py-4"
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">

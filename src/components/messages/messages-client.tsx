@@ -351,7 +351,7 @@ export default function MessagesClient({
             </div>
 
             {/* 入力フォーム */}
-            <div className="border-t border-gray-200 px-4 py-3">
+            <div className="border-t border-gray-200 px-4 py-3 safe-bottom">
               {sendError && (
                 <p className="mb-2 text-xs text-red-500">{sendError}</p>
               )}

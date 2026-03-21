@@ -53,59 +53,61 @@ export default function MemberLayoutClient({
           userEmail={userEmail}
         />
         <nav className="border-b border-gray-200 bg-white">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-            <div className="flex gap-6">
-              <Link
-                href="/schedule"
-                className={linkClass("/schedule")}
-              >
-                Schedule
-              </Link>
-              <Link
-                href="/my-bookings"
-                className={linkClass("/my-bookings")}
-                data-tour="my-bookings"
-              >
-                My Bookings
-              </Link>
-              <Link
-                href="/purchase"
-                className={linkClass("/purchase")}
-              >
-                Purchase
-              </Link>
-              {showPasses && (
+          <div className="mx-auto max-w-6xl px-4 py-2 md:py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex gap-4 overflow-x-auto scrollbar-hide md:gap-6 -mx-4 px-4 md:mx-0 md:px-0">
                 <Link
-                  href="/my-passes"
-                  className={linkClass("/my-passes")}
+                  href="/schedule"
+                  className={`shrink-0 ${linkClass("/schedule")}`}
                 >
-                  Passes
+                  Schedule
                 </Link>
-              )}
-              <Link
-                href="/my-payments"
-                className={linkClass("/my-payments")}
-              >
-                Payments
-              </Link>
-              <Link
-                href="/messages"
-                className={linkClass("/messages")}
-              >
-                Messages
-              </Link>
-            </div>
-            {memberCredits !== null && (
-              <span className="text-sm text-gray-500">
-                Credits:{" "}
-                <span className={`font-semibold ${memberCredits === 0 ? "text-amber-600" : "text-gray-900"}`}>
-                  {memberCredits === -1 ? "Unlimited" : memberCredits}
+                <Link
+                  href="/my-bookings"
+                  className={`shrink-0 ${linkClass("/my-bookings")}`}
+                  data-tour="my-bookings"
+                >
+                  Bookings
+                </Link>
+                <Link
+                  href="/purchase"
+                  className={`shrink-0 ${linkClass("/purchase")}`}
+                >
+                  Purchase
+                </Link>
+                {showPasses && (
+                  <Link
+                    href="/my-passes"
+                    className={`shrink-0 ${linkClass("/my-passes")}`}
+                  >
+                    Passes
+                  </Link>
+                )}
+                <Link
+                  href="/my-payments"
+                  className={`shrink-0 ${linkClass("/my-payments")}`}
+                >
+                  Payments
+                </Link>
+                <Link
+                  href="/messages"
+                  className={`shrink-0 ${linkClass("/messages")}`}
+                >
+                  Messages
+                </Link>
+              </div>
+              {memberCredits !== null && (
+                <span className="ml-4 hidden shrink-0 text-sm text-gray-500 sm:inline">
+                  Credits:{" "}
+                  <span className={`font-semibold ${memberCredits === 0 ? "text-amber-600" : "text-gray-900"}`}>
+                    {memberCredits === -1 ? "Unlimited" : memberCredits}
+                  </span>
                 </span>
-              </span>
-            )}
+              )}
+            </div>
           </div>
         </nav>
-        <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
+        <main className="mx-auto max-w-6xl px-4 py-4 md:py-6">{children}</main>
       </div>
     </TourProvider>
   );

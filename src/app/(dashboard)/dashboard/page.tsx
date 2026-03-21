@@ -369,7 +369,7 @@ export default async function DashboardPage() {
     <div>
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">Dashboard</h1>
           <p className="mt-1 text-sm text-gray-500">
             Welcome back, {profile?.full_name || "there"}!
           </p>
@@ -443,7 +443,7 @@ export default async function DashboardPage() {
 
       {/* Stats cards */}
       <div
-        className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
+        className="grid gap-4 md:gap-6 sm:grid-cols-2 lg:grid-cols-4"
         data-tour="dashboard-stats"
       >
         {canManageMembers && (
@@ -568,7 +568,7 @@ export default async function DashboardPage() {
                 return (
                   <div
                     key={p.id}
-                    className="flex items-center justify-between gap-4 px-6 py-4"
+                    className="flex items-center justify-between gap-4 px-4 py-3 md:px-6 md:py-4"
                   >
                     <div>
                       <p className="font-medium text-gray-900">{name}</p>
@@ -624,7 +624,7 @@ export default async function DashboardPage() {
                 return (
                   <div
                     key={session.id}
-                    className="flex items-center justify-between gap-4 px-6 py-4 transition-colors hover:bg-gray-50"
+                    className="flex items-center justify-between gap-4 px-4 py-3 md:px-6 md:py-4 transition-colors hover:bg-gray-50"
                   >
                     <Link
                       href={`/bookings/${session.id}`}
@@ -637,10 +637,10 @@ export default async function DashboardPage() {
                         </p>
                       </div>
                     </Link>
-                    <span className="text-sm text-gray-600">
+                    <div className="text-right text-xs text-gray-600 sm:text-sm">
                       Attended: {attended}/{confirmed} · {confirmed}/
                       {session.capacity} booked
-                    </span>
+                    </div>
                     {canManageBookings && (classIdForLink ? (
                       <Link
                         href={`/calendar/${classIdForLink}/sessions/${session.id}`}
@@ -689,7 +689,7 @@ export default async function DashboardPage() {
                   <Link
                     key={ev.id}
                     href={`/events/${ev.id}/manage`}
-                    className="flex items-center justify-between gap-4 px-6 py-4 transition-colors hover:bg-gray-50"
+                    className="flex items-center justify-between gap-4 px-4 py-3 md:px-6 md:py-4 transition-colors hover:bg-gray-50"
                   >
                     <div>
                       <p className="font-medium text-gray-900">{ev.name}</p>
@@ -723,7 +723,7 @@ export default async function DashboardPage() {
               {topActivities.map((a, i) => (
                 <div
                   key={`${a.type}-${a.created_at}-${i}`}
-                  className="flex items-center gap-3 px-6 py-3"
+                  className="flex items-center gap-3 px-4 py-3 md:px-6"
                 >
                   <div
                     className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${

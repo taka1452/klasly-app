@@ -138,14 +138,14 @@ export default function DistributionsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Pass Distributions</h1>
+          <h1 className="text-xl font-bold text-gray-900 md:text-2xl">Pass Distributions</h1>
           <p className="mt-1 text-sm text-gray-500">
             Review and approve monthly instructor payouts from pass revenue
           </p>
         </div>
-        <a href="/passes" className="btn-secondary text-sm">
+        <a href="/passes" className="btn-secondary shrink-0 text-sm">
           ← Back to Passes
         </a>
       </div>
@@ -208,7 +208,47 @@ export default function DistributionsPage() {
           </div>
 
           {/* Distribution Table */}
-          <div className="mt-6 card overflow-hidden p-0">
+          {/* Mobile: Card list */}
+          <div className="mt-6 space-y-3 md:hidden">
+            {distributions.map((dist) => {
+              const name = data?.instructorNames?.[dist.instructor_id] ?? "Unknown";
+              const sharePercent = dist.total_pool_classes > 0
+                ? ((dist.total_classes / dist.total_pool_classes) * 100).toFixed(1)
+                : "0";
+              return (
+                <div key={dist.id} className="card">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="font-medium text-gray-900">{name}</p>
+                      <p className="mt-0.5 text-sm text-gray-500">
+                        {dist.total_classes} classes · {sharePercent}% share
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-green-600">{formatCents(dist.payout_amount)}</p>
+                      <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                        dist.status === "completed" ? "bg-green-100 text-green-700"
+                          : dist.status === "approved" ? "bg-blue-100 text-blue-700"
+                          : dist.status === "failed" ? "bg-red-100 text-red-700"
+                          : "bg-yellow-100 text-yellow-700"
+                      }`}>
+                        {dist.status === "completed" ? "Completed" : dist.status.charAt(0).toUpperCase() + dist.status.slice(1)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            <div className="card bg-gray-50">
+              <div className="flex items-center justify-between text-sm font-bold">
+                <span className="text-gray-900">Total: {totalClasses} classes</span>
+                <span className="text-green-600">{formatCents(totalPayout)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop: Table */}
+          <div className="mt-6 card hidden overflow-hidden p-0 md:block">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
