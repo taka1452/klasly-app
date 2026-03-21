@@ -58,6 +58,19 @@ export default async function DashboardPage() {
   const canManageClasses = isOwner || managerPerms?.can_manage_classes;
   const canManageBookings = isOwner || managerPerms?.can_manage_bookings;
 
+  // オーナー向け: スタジオのプラン状況・Stripe Connect 状態を取得
+  let planStatus: string | null = null;
+  let stripeConnectComplete = true;
+  if (isOwner) {
+    const { data: studioInfo } = await supabase
+      .from("studios")
+      .select("plan_status, stripe_connect_onboarding_complete")
+      .eq("id", profile.studio_id)
+      .single();
+    planStatus = (studioInfo as { plan_status?: string } | null)?.plan_status ?? null;
+    stripeConnectComplete = (studioInfo as { stripe_connect_onboarding_complete?: boolean } | null)?.stripe_connect_onboarding_complete ?? false;
+  }
+
   const today = new Date().toISOString().split("T")[0];
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -371,6 +384,62 @@ export default async function DashboardPage() {
           </Link>
         )}
       </div>
+
+      {/* Owner alerts: payment issues & Stripe Connect */}
+      {isOwner && planStatus === "past_due" && (
+        <div className="mb-6 rounded-lg border border-red-300 bg-red-50 p-4">
+          <div className="flex items-start gap-3">
+            <svg className="mt-0.5 h-5 w-5 shrink-0 text-red-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+            </svg>
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-red-800">Payment failed</h3>
+              <p className="mt-1 text-sm text-red-700">
+                Your last subscription payment was unsuccessful. Please update your payment method to avoid service interruption.
+              </p>
+              <Link href="/settings/billing" className="mt-2 inline-block text-sm font-medium text-red-800 underline hover:text-red-900">
+                Update payment method →
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+      {isOwner && planStatus === "grace" && (
+        <div className="mb-6 rounded-lg border border-red-300 bg-red-50 p-4">
+          <div className="flex items-start gap-3">
+            <svg className="mt-0.5 h-5 w-5 shrink-0 text-red-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+            </svg>
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-red-800">Your studio access is limited</h3>
+              <p className="mt-1 text-sm text-red-700">
+                Your subscription payment has failed. Update your payment method to restore full access.
+              </p>
+              <Link href="/settings/billing" className="mt-2 inline-block text-sm font-medium text-red-800 underline hover:text-red-900">
+                Fix billing →
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+      {isOwner && !stripeConnectComplete && (
+        <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 p-4">
+          <div className="flex items-start gap-3">
+            <svg className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+            </svg>
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-amber-800">Stripe Connect setup incomplete</h3>
+              <p className="mt-1 text-sm text-amber-700">
+                Complete your Stripe Connect setup so members can purchase classes and packs.
+              </p>
+              <Link href="/settings/connect" className="mt-2 inline-block text-sm font-medium text-amber-800 underline hover:text-amber-900">
+                Complete setup →
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats cards */}
       <div

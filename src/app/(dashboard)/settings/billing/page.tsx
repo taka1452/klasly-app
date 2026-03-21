@@ -160,6 +160,55 @@ export default async function BillingPage() {
       </p>
 
       <div className="mt-8 space-y-6">
+        {/* Urgent alert for past_due or grace */}
+        {studio.plan_status === "past_due" && (
+          <div className="rounded-lg border border-red-300 bg-red-50 p-4">
+            <div className="flex items-start gap-3">
+              <svg className="mt-0.5 h-5 w-5 shrink-0 text-red-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+              </svg>
+              <div>
+                <h3 className="text-sm font-semibold text-red-800">Action required: Payment failed</h3>
+                <p className="mt-1 text-sm text-red-700">
+                  Your last payment was unsuccessful. Please update your payment method to avoid service interruption.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        {studio.plan_status === "grace" && (
+          <div className="rounded-lg border border-red-300 bg-red-50 p-4">
+            <div className="flex items-start gap-3">
+              <svg className="mt-0.5 h-5 w-5 shrink-0 text-red-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+              </svg>
+              <div>
+                <h3 className="text-sm font-semibold text-red-800">Your studio access is limited</h3>
+                <p className="mt-1 text-sm text-red-700">
+                  Your subscription payment has failed and your account is in a grace period.
+                  {gracePeriodEndsAtFormatted && <> Full access will be suspended on <strong>{gracePeriodEndsAtFormatted}</strong>.</>}
+                  {" "}Please update your payment method immediately to restore full access.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        {studio.plan_status === "canceled" && (
+          <div className="rounded-lg border border-gray-300 bg-gray-50 p-4">
+            <div className="flex items-start gap-3">
+              <svg className="mt-0.5 h-5 w-5 shrink-0 text-gray-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+              </svg>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-800">Subscription canceled</h3>
+                <p className="mt-1 text-sm text-gray-600">
+                  Your subscription has been canceled. To continue using Klasly, please resubscribe from the options below.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Current Plan */}
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-900">Current Plan</h2>
@@ -212,10 +261,13 @@ export default async function BillingPage() {
             )}
             {studio.plan_status === "grace" && gracePeriodEndsAtFormatted && (
               <div>
-                <dt className="text-xs text-gray-400">Access suspended on</dt>
-                <dd className="text-sm font-medium text-gray-900">
+                <dt className="text-xs text-gray-400">Full access suspended on</dt>
+                <dd className="text-sm font-medium text-red-600">
                   {gracePeriodEndsAtFormatted}
                 </dd>
+                <p className="mt-1 text-xs text-gray-500">
+                  Update your payment method before this date to restore full access.
+                </p>
               </div>
             )}
             {appliedCouponCode && (

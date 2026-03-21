@@ -17,6 +17,7 @@ type Props = {
   sessionGenerationWeeks: number;
   role?: "owner" | "manager";
   canTeach?: boolean;
+  studioName?: string;
 };
 
 const WEEKS_OPTIONS = [4, 6, 8, 12];
@@ -30,11 +31,13 @@ export default function SettingsContent({
   sessionGenerationWeeks,
   role = "owner",
   canTeach = false,
+  studioName = "",
 }: Props) {
   const isOwner = role === "owner";
   const router = useRouter();
   const tourActions = useTourActions();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmInput, setDeleteConfirmInput] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [showMarkCompleteConfirm, setShowMarkCompleteConfirm] = useState(false);
   const [markCompleteLoading, setMarkCompleteLoading] = useState(false);
@@ -192,21 +195,23 @@ export default function SettingsContent({
             </div>
           )}
 
-          {/* Class Pricing — owner + manager */}
-          <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Class Pricing
-            </h3>
-            <p className="mt-2 text-sm text-gray-600">
-              Set prices for drop-in, class packs, and monthly membership.
-            </p>
-            <Link
-              href="/settings/pricing"
-              className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
-            >
-              Class Pricing →
-            </Link>
-          </div>
+          {/* Class Pricing — owner only */}
+          {isOwner && (
+            <div className="card">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Class Pricing
+              </h3>
+              <p className="mt-2 text-sm text-gray-600">
+                Set prices for drop-in, class packs, and monthly membership.
+              </p>
+              <Link
+                href="/settings/pricing"
+                className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+              >
+                Class Pricing →
+              </Link>
+            </div>
+          )}
 
           {/* Payout Settings — owner only */}
           {isOwner && (
@@ -555,7 +560,7 @@ export default function SettingsContent({
             {!showDeleteConfirm ? (
               <button
                 type="button"
-                onClick={() => setShowDeleteConfirm(true)}
+                onClick={() => { setShowDeleteConfirm(true); setDeleteConfirmInput(""); }}
                 className="btn-danger mt-4"
               >
                 Delete my account
@@ -567,16 +572,31 @@ export default function SettingsContent({
                   associated data (members, classes, bookings). This action
                   cannot be undone.
                 </p>
+                {studioName && (
+                  <div>
+                    <label className="block text-sm text-red-700">
+                      Type <strong>{studioName}</strong> to confirm:
+                    </label>
+                    <input
+                      type="text"
+                      value={deleteConfirmInput}
+                      onChange={(e) => setDeleteConfirmInput(e.target.value)}
+                      placeholder={studioName}
+                      className="mt-1 w-full rounded-lg border border-red-300 bg-white px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                      autoComplete="off"
+                    />
+                  </div>
+                )}
                 <div className="flex gap-3">
                   <button
                     type="button"
                     onClick={handleDelete}
-                    disabled={deleteLoading}
-                    className="btn-danger"
+                    disabled={deleteLoading || (!!studioName && deleteConfirmInput !== studioName)}
+                    className="btn-danger disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {deleteLoading
                       ? "Deleting..."
-                      : "Yes, delete my account"}
+                      : "Yes, delete everything"}
                   </button>
                   <button
                     type="button"

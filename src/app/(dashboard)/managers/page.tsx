@@ -19,15 +19,15 @@ type ManagerInfo = {
   createdAt: string;
 };
 
-const permissionLabels: { key: keyof Omit<ManagerInfo, "id" | "profileId" | "fullName" | "email" | "createdAt">; label: string }[] = [
-  { key: "canManageMembers", label: "Members" },
-  { key: "canManageClasses", label: "Classes" },
-  { key: "canManageInstructors", label: "Instructors" },
-  { key: "canManageBookings", label: "Bookings" },
-  { key: "canManageRooms", label: "Rooms" },
-  { key: "canViewPayments", label: "Payments (view)" },
-  { key: "canSendMessages", label: "Messages" },
-  { key: "canTeach", label: "Teach Classes" },
+const permissionLabels: { key: keyof Omit<ManagerInfo, "id" | "profileId" | "fullName" | "email" | "createdAt">; label: string; description: string }[] = [
+  { key: "canManageMembers", label: "Members", description: "Create, edit, and view member profiles and credits" },
+  { key: "canManageClasses", label: "Classes", description: "Create and edit class templates, sessions, and schedules" },
+  { key: "canManageInstructors", label: "Instructors", description: "Invite, edit, and remove instructors" },
+  { key: "canManageBookings", label: "Bookings", description: "View bookings, manage attendance, and cancel bookings" },
+  { key: "canManageRooms", label: "Rooms", description: "Create, edit, and manage studio rooms" },
+  { key: "canViewPayments", label: "Payments", description: "View payment history, passes, and export reports" },
+  { key: "canSendMessages", label: "Messages", description: "Send messages and announcements to members" },
+  { key: "canTeach", label: "Teach", description: "Register as instructor and teach classes" },
 ];
 
 export default function ManagersPage() {
@@ -38,6 +38,7 @@ export default function ManagersPage() {
   const [inviteLoading, setInviteLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [removeConfirmId, setRemoveConfirmId] = useState<string | null>(null);
 
   const fetchManagers = useCallback(async () => {
     const res = await fetch("/api/managers");
@@ -85,10 +86,10 @@ export default function ManagersPage() {
   }
 
   async function handleRemove(manager: ManagerInfo) {
-    if (!confirm(`Remove ${manager.fullName || manager.email} as manager?`)) return;
     const res = await fetch(`/api/managers?id=${manager.id}`, { method: "DELETE" });
     if (res.ok) {
       setSuccess("Manager removed");
+      setRemoveConfirmId(null);
       await fetchManagers();
     }
   }
@@ -162,12 +163,30 @@ export default function ManagersPage() {
                   </p>
                   <p className="text-sm text-gray-500">{mgr.email}</p>
                 </div>
-                <button
-                  onClick={() => handleRemove(mgr)}
-                  className="text-sm text-red-600 hover:text-red-700"
-                >
-                  Remove
-                </button>
+                {removeConfirmId === mgr.id ? (
+                  <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
+                    <p className="text-xs text-red-700">Remove this manager?</p>
+                    <button
+                      onClick={() => handleRemove(mgr)}
+                      className="rounded bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-700"
+                    >
+                      Yes
+                    </button>
+                    <button
+                      onClick={() => setRemoveConfirmId(null)}
+                      className="rounded border border-red-300 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
+                    >
+                      No
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setRemoveConfirmId(mgr.id)}
+                    className="text-sm text-red-600 hover:text-red-700"
+                  >
+                    Remove
+                  </button>
+                )}
               </div>
 
               <div className="mt-4">
@@ -175,12 +194,13 @@ export default function ManagersPage() {
                   Permissions
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {permissionLabels.map(({ key, label }) => {
+                  {permissionLabels.map(({ key, label, description }) => {
                     const isEnabled = mgr[key] as boolean;
                     return (
                       <button
                         key={key}
                         onClick={() => handleTogglePermission(mgr, key, !isEnabled)}
+                        title={description}
                         className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                           isEnabled
                             ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
