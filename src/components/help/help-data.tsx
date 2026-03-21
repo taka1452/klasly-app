@@ -980,6 +980,166 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
         },
       ],
     },
+    {
+      title: "Messaging",
+
+      items: [
+        {
+          q: "How do I send a message to a member?",
+          a: (
+            <>
+              Go to <B>Messages</B> in the sidebar. You&apos;ll see a list of all your studio members. Click on a member to open the conversation and type your message.
+              <Tip>You can also start a conversation from a member&apos;s profile page.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "Who can send messages?",
+          a: (
+            <>
+              <B>Owners</B> can message any member. <B>Managers</B> with the &quot;Messages&quot; permission can also message all members. <B>Members</B> can only reply to messages from the studio (owner or manager).
+            </>
+          ),
+        },
+        {
+          q: "How do I know if I have unread messages?",
+          a: (
+            <>
+              A red badge appears on the <B>Messages</B> link in the sidebar showing the number of unread messages. The badge updates automatically.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Manager Role",
+
+      items: [
+        {
+          q: "How do I add a manager?",
+          a: (
+            <>
+              Go to <B>Managers</B> in the sidebar and click <B>+ Invite manager</B>. Enter the person&apos;s email address. They&apos;ll receive an invitation to join your studio as a manager.
+            </>
+          ),
+        },
+        {
+          q: "What permissions can I give a manager?",
+          a: (
+            <>
+              Each manager has 8 permission toggles:
+              <Steps>
+                <li><B>Members</B> — create, edit, and view member profiles and credits.</li>
+                <li><B>Classes</B> — create and edit class templates, sessions, and schedules.</li>
+                <li><B>Instructors</B> — invite, edit, and remove instructors.</li>
+                <li><B>Bookings</B> — view bookings, manage attendance, cancel bookings, and manage events.</li>
+                <li><B>Rooms</B> — create, edit, and manage studio rooms.</li>
+                <li><B>Payments</B> — view payment history, passes, and export reports.</li>
+                <li><B>Messages</B> — send messages and announcements to members.</li>
+                <li><B>Teach</B> — register as an instructor and teach classes.</li>
+              </Steps>
+              <Tip>Hover over each permission badge to see what it controls.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "Can I remove a manager?",
+          a: (
+            <>
+              Yes. Go to <B>Managers</B>, find the manager, and click <B>Remove</B>. You&apos;ll see a confirmation before the manager is removed. Their role will revert to member.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Payout Settings",
+
+      items: [
+        {
+          q: "What is the difference between Studio Mode and Collective Mode?",
+          a: (
+            <>
+              <B>Studio Mode</B>: All payments go to the studio&apos;s Stripe account. Instructors are paid separately (e.g., salary or manual transfer).
+              <br /><br />
+              <B>Collective Mode</B>: Payments are split automatically. Each instructor connects their own Stripe account, and earnings are distributed after deducting the studio fee.
+            </>
+          ),
+        },
+        {
+          q: "How do I set the studio fee?",
+          a: (
+            <>
+              Go to <B>Settings &gt; Payout</B>. Choose between a <B>percentage</B> (e.g., 20%) or <B>fixed amount</B> (e.g., $5 per booking). You can also set per-instructor fee overrides if some instructors have different rates.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Billing & Subscription",
+
+      items: [
+        {
+          q: "How do I manage my subscription?",
+          a: (
+            <>
+              Go to <B>Settings &gt; Billing</B> to view your current plan, switch between monthly and yearly, update your payment method, apply promo codes, or cancel.
+            </>
+          ),
+        },
+        {
+          q: "What happens if my payment fails?",
+          a: (
+            <>
+              If a payment fails, your plan status changes to <B>Past Due</B>. You&apos;ll see an alert on the dashboard and billing page prompting you to update your payment method. If not resolved, your account enters a <B>Grace Period</B> with limited access.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "CSV Import & Export",
+
+      items: [
+        {
+          q: "How do I bulk import members?",
+          a: (
+            <>
+              <Steps>
+                <li>Go to <B>Members</B> and click <B>Import CSV</B>.</li>
+                <li>Download the CSV template and fill it with your member data.</li>
+                <li>Upload the file and map columns to fields.</li>
+                <li>Review the preview and click <B>Import</B>.</li>
+              </Steps>
+              <Tip>The import will skip rows with invalid email addresses and show you which rows were skipped.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "What data can I export?",
+          a: (
+            <>
+              You can export <B>Members</B>, <B>Instructors</B>, <B>Classes</B>, <B>Bookings</B>, and <B>Payments</B> as CSV files. Look for the <B>Export CSV</B> button on each page.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Support",
+
+      items: [
+        {
+          q: "How do I contact support?",
+          a: (
+            <>
+              Go to <B>Settings &gt; Support</B> and click <B>New Ticket</B>. Describe your issue and our team will respond within the thread. You can check the status of your tickets at any time.
+            </>
+          ),
+        },
+      ],
+    },
   ],
 
   instructor: [

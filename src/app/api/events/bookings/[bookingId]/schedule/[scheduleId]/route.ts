@@ -43,6 +43,22 @@ export async function PUT(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // マネージャーの場合、can_manage_bookings 権限を確認
+  if (profile.role === "manager") {
+    const { data: mgr } = await supabase
+      .from("managers")
+      .select("can_manage_bookings")
+      .eq("profile_id", user.id)
+      .eq("studio_id", profile.studio_id)
+      .single();
+    if (!mgr?.can_manage_bookings) {
+      return NextResponse.json(
+        { error: "You don't have permission to manage event bookings" },
+        { status: 403 }
+      );
+    }
+  }
+
   // Verify booking belongs to studio's event
   const { data: booking } = await supabase
     .from("event_bookings")

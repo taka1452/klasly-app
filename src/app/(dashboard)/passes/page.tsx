@@ -122,18 +122,22 @@ export default async function PassesPage() {
           </p>
         </div>
         <div className="flex gap-3">
-          <Link
-            href="/passes/distributions"
-            className="btn-secondary"
-          >
-            Distributions
-          </Link>
-          <Link
-            href="/passes/new"
-            className="btn-primary"
-          >
-            + Create Pass
-          </Link>
+          {ctx.role === "owner" && (
+            <>
+              <Link
+                href="/passes/distributions"
+                className="btn-secondary"
+              >
+                Distributions
+              </Link>
+              <Link
+                href="/passes/new"
+                className="btn-primary"
+              >
+                + Create Pass
+              </Link>
+            </>
+          )}
         </div>
       </div>
 

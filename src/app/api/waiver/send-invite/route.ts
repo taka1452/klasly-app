@@ -74,25 +74,43 @@ export async function POST(request: Request) {
       );
     }
 
-    const token = randomUUID();
-
-    const { error: insertError } = await adminSupabase
+    // 冪等性: 未使用の既存トークンがあればそれを再利用する
+    const { data: existingSignature } = await adminSupabase
       .from("waiver_signatures")
-      .insert({
-        member_id: memberId,
-        studio_id: member.studio_id,
-        template_id: template.id,
-        sign_token: token,
-        signed_name: "",
-        signed_at: null,
-        token_used: false,
-      });
+      .select("id, sign_token")
+      .eq("member_id", memberId)
+      .eq("studio_id", member.studio_id)
+      .eq("token_used", false)
+      .is("signed_at", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    if (insertError) {
-      return NextResponse.json(
-        { error: insertError.message },
-        { status: 500 }
-      );
+    let token: string;
+    if (existingSignature?.sign_token) {
+      // 既存の未使用トークンを再利用
+      token = existingSignature.sign_token;
+    } else {
+      // 新しいトークンを作成
+      token = randomUUID();
+      const { error: insertError } = await adminSupabase
+        .from("waiver_signatures")
+        .insert({
+          member_id: memberId,
+          studio_id: member.studio_id,
+          template_id: template.id,
+          sign_token: token,
+          signed_name: "",
+          signed_at: null,
+          token_used: false,
+        });
+
+      if (insertError) {
+        return NextResponse.json(
+          { error: insertError.message },
+          { status: 500 }
+        );
+      }
     }
 
     const { data: profile } = await adminSupabase

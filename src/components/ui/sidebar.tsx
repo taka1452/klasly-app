@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useFeature } from "@/lib/features/feature-context";
@@ -125,6 +126,7 @@ const ownerNavItems: NavItem[] = [
     dataTour: undefined,
     group: "schedule",
     featureKey: FEATURE_KEYS.RETREAT_BOOKING,
+    permissionKey: "can_manage_bookings",
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z" />
@@ -254,10 +256,12 @@ function NavList({
   items,
   pathname,
   onMobileClose,
+  unreadMessageCount = 0,
 }: {
   items: NavItem[];
   pathname: string;
   onMobileClose?: () => void;
+  unreadMessageCount?: number;
 }) {
   let lastGroup: string | undefined = undefined;
 
@@ -304,7 +308,12 @@ function NavList({
               <span className={isActive ? "text-brand-600" : "text-gray-400"}>
                 {item.icon}
               </span>
-              {item.label}
+              <span className="flex-1">{item.label}</span>
+              {item.href === "/messages" && unreadMessageCount > 0 && (
+                <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
+                  {unreadMessageCount > 99 ? "99+" : unreadMessageCount}
+                </span>
+              )}
             </Link>
           </div>
         );
@@ -324,6 +333,24 @@ export default function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   const { isEnabled } = useFeature();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const fetchUnread = useCallback(async () => {
+    try {
+      const res = await fetch("/api/messages/unread-count");
+      if (res.ok) {
+        const data = await res.json();
+        setUnreadCount(data.count ?? 0);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => {
+    fetchUnread();
+    // 60秒ごとにポーリング
+    const interval = setInterval(fetchUnread, 60_000);
+    return () => clearInterval(interval);
+  }, [fetchUnread]);
 
   const baseItems = currentRole === "manager" ? managerNavItems : ownerNavItems;
   // Filter out nav items whose feature is disabled
@@ -399,7 +426,7 @@ export default function Sidebar({
           <p className="text-xs text-gray-400 capitalize">{currentRole}</p>
         </div>
         <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
-          <NavList items={navItems} pathname={pathname} onMobileClose={onMobileClose} />
+          <NavList items={navItems} pathname={pathname} onMobileClose={onMobileClose} unreadMessageCount={unreadCount} />
         </nav>
         {showAdminLink && (
           <div className="border-t border-gray-200 px-6 py-3">
@@ -444,7 +471,7 @@ export default function Sidebar({
 
       {/* ナビゲーション */}
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
-        <NavList items={navItems} pathname={pathname} />
+        <NavList items={navItems} pathname={pathname} unreadMessageCount={unreadCount} />
       </nav>
 
       {showAdminLink && (

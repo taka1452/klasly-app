@@ -60,7 +60,21 @@ export default async function MessagesPage({
 
   let initialMemberId: string | null = null;
 
-  if (profile.role === "owner") {
+  // マネージャーの can_send_messages 権限を確認
+  let isStaffMessaging = profile.role === "owner";
+  if (profile.role === "manager") {
+    const { data: mgr } = await supabase
+      .from("managers")
+      .select("can_send_messages")
+      .eq("profile_id", user.id)
+      .eq("studio_id", profile.studio_id)
+      .single();
+    if (mgr?.can_send_messages) {
+      isStaffMessaging = true;
+    }
+  }
+
+  if (isStaffMessaging) {
     // ① スタジオの全メンバー（プロフィール）を取得
     const { data: allMembers } = await supabase
       .from("members")
@@ -101,9 +115,9 @@ export default async function MessagesPage({
       const sender = (msg.sender as unknown) as ProfileInfo | null;
       const recipient = (msg.recipient as unknown) as ProfileInfo | null;
 
-      const isOwnerSender = sender?.role === "owner";
-      const member = isOwnerSender ? recipient : sender;
-      if (!member || member.role === "owner") continue;
+      const isStaffSender = sender?.role === "owner" || sender?.role === "manager";
+      const member = isStaffSender ? recipient : sender;
+      if (!member || member.role === "owner" || member.role === "manager") continue;
 
       const memberId = member.id;
       if (!convMap.has(memberId)) {
@@ -117,7 +131,7 @@ export default async function MessagesPage({
         });
       }
       const conv = convMap.get(memberId)!;
-      if (!isOwnerSender && !msg.read_at) {
+      if (!isStaffSender && !msg.read_at) {
         conv.unreadCount += 1;
       }
     }
@@ -200,7 +214,7 @@ export default async function MessagesPage({
   return (
     <MessagesClient
       myId={user.id}
-      role={profile.role}
+      role={isStaffMessaging ? "owner" : profile.role}
       initialConversations={conversations}
       initialMemberId={initialMemberId}
     />

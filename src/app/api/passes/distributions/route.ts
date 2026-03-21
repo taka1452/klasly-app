@@ -134,7 +134,8 @@ export async function PUT(request: Request) {
       .select("studio_id, role")
       .eq("id", user.id)
       .single();
-    if (!profile?.studio_id || !["owner", "manager"].includes(profile.role)) {
+    // 配分金額の編集はオーナーのみ
+    if (!profile?.studio_id || profile.role !== "owner") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -220,7 +221,8 @@ export async function POST(request: Request) {
       .select("studio_id, role, id")
       .eq("id", user.id)
       .single();
-    if (!profile?.studio_id || !["owner", "manager"].includes(profile.role)) {
+    // 配分承認・支払いの実行はオーナーのみ
+    if (!profile?.studio_id || profile.role !== "owner") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

@@ -1,8 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
+import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   draft: { label: "Draft", cls: "bg-gray-100 text-gray-700" },
@@ -18,6 +19,12 @@ export default async function EventsListPage() {
     data: { user },
   } = await serverSupabase.auth.getUser();
   if (!user) notFound();
+
+  // マネージャー権限チェック（イベント管理は can_manage_bookings を使用）
+  const permCheck = await checkManagerPermission("can_manage_bookings");
+  if (!permCheck.allowed) {
+    redirect("/dashboard");
+  }
 
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const supabase = serviceRoleKey

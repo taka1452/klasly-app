@@ -62,7 +62,7 @@ export async function POST(request: Request) {
 
     const { data: signature } = await supabase
       .from("waiver_signatures")
-      .select("id, token_used")
+      .select("id, token_used, member_id")
       .eq("sign_token", token)
       .single();
 
@@ -76,6 +76,20 @@ export async function POST(request: Request) {
     if (signature.token_used) {
       return NextResponse.json(
         { error: "This link has already been used" },
+        { status: 400 }
+      );
+    }
+
+    // 保護者署名は未成年メンバーのみ許可
+    const { data: member } = await supabase
+      .from("members")
+      .select("is_minor")
+      .eq("id", signature.member_id)
+      .single();
+
+    if (!member?.is_minor) {
+      return NextResponse.json(
+        { error: "Guardian signatures are only for minor members" },
         { status: 400 }
       );
     }
