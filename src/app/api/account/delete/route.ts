@@ -171,7 +171,10 @@ export async function POST() {
     await adminSupabase.from("email_logs").delete().eq("studio_id", studioId);
     await adminSupabase.from("rooms").delete().eq("studio_id", studioId);
 
-    // 9. Profiles & studio
+    // 9. Messages — null out sender/recipient before profile deletion to preserve history
+    await adminSupabase.from("messages").delete().eq("studio_id", studioId);
+
+    // 10. Profiles & studio
     await adminSupabase.from("profiles").delete().eq("studio_id", studioId);
     await adminSupabase.from("studios").delete().eq("id", studioId);
 

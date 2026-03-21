@@ -414,9 +414,17 @@ async function cancelSession(
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // 各キャンセルされたセッションの予約を自動キャンセル
+    const cancelledIds = (cancelled || []).map((c: { id: string }) => c.id);
+    let bookingsCancelledCount = 0;
+    if (cancelledIds.length > 0) {
+      bookingsCancelledCount = await autoCancelBookingsForSessions(supabase, cancelledIds);
+    }
+
     return NextResponse.json({
       success: true,
       cancelled_count: cancelled?.length ?? 0,
+      bookings_cancelled_count: bookingsCancelledCount,
     });
   }
 
@@ -432,5 +440,77 @@ async function cancelSession(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ success: true, session: cancelled });
+  // 紐づく予約を自動キャンセル（クレジット/パス返却含む）
+  const bookingsCancelledCount = await autoCancelBookingsForSessions(supabase, [sessionId]);
+
+  return NextResponse.json({
+    success: true,
+    session: cancelled,
+    bookings_cancelled_count: bookingsCancelledCount,
+  });
+}
+
+/**
+ * セッションキャンセル時に紐づく confirmed/waitlist 予約を自動キャンセルし、
+ * クレジット/パス利用を返却する。
+ */
+async function autoCancelBookingsForSessions(
+  supabase: import("@supabase/supabase-js").SupabaseClient,
+  sessionIds: string[]
+): Promise<number> {
+  // confirmed + waitlist の予約を取得
+  const { data: bookings } = await supabase
+    .from("bookings")
+    .select("id, status, member_id, session_id, booked_via_pass")
+    .in("session_id", sessionIds)
+    .in("status", ["confirmed", "waitlist"]);
+
+  if (!bookings || bookings.length === 0) return 0;
+
+  const bookingIds = bookings.map((b: { id: string }) => b.id);
+
+  // 一括キャンセル
+  await supabase
+    .from("bookings")
+    .update({ status: "cancelled" })
+    .in("id", bookingIds);
+
+  // confirmed 予約のクレジット/パス返却
+  for (const b of bookings) {
+    if (b.status !== "confirmed") continue;
+
+    if (b.booked_via_pass) {
+      // パス利用のリバート
+      const { data: usageRows } = await supabase
+        .from("pass_class_usage")
+        .select("id, pass_subscription_id, pass_subscriptions(id, member_id)")
+        .eq("session_id", b.session_id);
+
+      if (usageRows) {
+        for (const usage of usageRows) {
+          const sub = usage.pass_subscriptions as unknown as {
+            id: string;
+            member_id: string;
+          } | null;
+          if (!sub || sub.member_id !== b.member_id) continue;
+
+          await supabase
+            .from("pass_class_usage")
+            .delete()
+            .eq("id", usage.id);
+          await supabase.rpc("decrement_pass_usage", {
+            p_subscription_id: sub.id,
+          });
+          break;
+        }
+      }
+    } else {
+      // クレジット返却
+      await supabase.rpc("increment_member_credits", {
+        p_member_id: b.member_id,
+      });
+    }
+  }
+
+  return bookings.length;
 }
