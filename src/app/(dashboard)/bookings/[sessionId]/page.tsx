@@ -5,6 +5,8 @@ import Link from "next/link";
 import { formatDate, formatTime } from "@/lib/utils";
 import AttendanceToggle from "@/components/bookings/attendance-toggle";
 import OwnerCancelButton from "@/components/bookings/owner-cancel-button";
+import { redirect } from "next/navigation";
+import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
 
 export default async function SessionBookingsPage({
   params,
@@ -19,6 +21,12 @@ export default async function SessionBookingsPage({
 
   if (!user) {
     notFound();
+  }
+
+  // マネージャー権限チェック
+  const permCheck = await checkManagerPermission("can_manage_bookings");
+  if (!permCheck.allowed) {
+    redirect("/dashboard");
   }
 
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

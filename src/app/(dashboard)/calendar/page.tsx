@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import DashboardCalendar from "@/components/dashboard/calendar/dashboard-calendar";
 import ExportCsvButton from "@/components/ui/export-csv-button";
+import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -38,6 +39,9 @@ export default async function SchedulePage() {
     redirect("/onboarding");
   }
 
+  const permCheck = await checkManagerPermission("can_manage_classes");
+  const canManageClasses = permCheck.allowed;
+
   return (
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -47,22 +51,24 @@ export default async function SchedulePage() {
             View all sessions and room bookings
           </p>
         </div>
-        <div className="flex gap-2">
-          <ExportCsvButton
-            url="/api/export/classes"
-            filename={`classes-${new Date().toISOString().slice(0, 10)}.csv`}
-            label="Export CSV"
-          />
-          <Link href="/calendar/import" className="btn-secondary">
-            Import CSV
-          </Link>
-          <Link href="/classes" className="btn-secondary">
-            Classes
-          </Link>
-          <Link href="/calendar/new" className="btn-primary">
-            + Add class
-          </Link>
-        </div>
+        {canManageClasses && (
+          <div className="flex gap-2">
+            <ExportCsvButton
+              url="/api/export/classes"
+              filename={`classes-${new Date().toISOString().slice(0, 10)}.csv`}
+              label="Export CSV"
+            />
+            <Link href="/calendar/import" className="btn-secondary">
+              Import CSV
+            </Link>
+            <Link href="/classes" className="btn-secondary">
+              Classes
+            </Link>
+            <Link href="/calendar/new" className="btn-primary">
+              + Add class
+            </Link>
+          </div>
+        )}
       </div>
 
       <div className="mt-6">

@@ -33,13 +33,30 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, studio_id")
+    .select("full_name, studio_id, role")
     .eq("id", user.id)
     .single();
 
   if (!profile?.studio_id) {
     redirect("/onboarding");
   }
+
+  // マネージャーの権限情報を取得
+  let managerPerms: Record<string, boolean> | null = null;
+  if (profile.role === "manager") {
+    const { data: mgr } = await supabase
+      .from("managers")
+      .select("can_manage_members, can_manage_classes, can_manage_bookings, can_manage_rooms, can_view_payments, can_send_messages, can_manage_instructors, can_teach")
+      .eq("profile_id", user.id)
+      .eq("studio_id", profile.studio_id)
+      .single();
+    managerPerms = mgr as Record<string, boolean> | null;
+  }
+  const isOwner = profile.role === "owner";
+  const canViewPayments = isOwner || managerPerms?.can_view_payments;
+  const canManageMembers = isOwner || managerPerms?.can_manage_members;
+  const canManageClasses = isOwner || managerPerms?.can_manage_classes;
+  const canManageBookings = isOwner || managerPerms?.can_manage_bookings;
 
   const today = new Date().toISOString().split("T")[0];
   const now = new Date();
@@ -344,13 +361,15 @@ export default async function DashboardPage() {
             Welcome back, {profile?.full_name || "there"}!
           </p>
         </div>
-        <Link
-          href="/classes/new"
-          className="inline-flex shrink-0 items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
-          data-tour="create-class-button"
-        >
-          + Create class
-        </Link>
+        {canManageClasses && (
+          <Link
+            href="/classes/new"
+            className="inline-flex shrink-0 items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+            data-tour="create-class-button"
+          >
+            + Create class
+          </Link>
+        )}
       </div>
 
       {/* Stats cards */}
@@ -358,12 +377,14 @@ export default async function DashboardPage() {
         className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
         data-tour="dashboard-stats"
       >
-        <div className="card">
-          <p className="text-sm font-medium text-gray-500">Active Members</p>
-          <p className="mt-2 text-3xl font-bold text-gray-900">
-            {activeMembersCount ?? 0}
-          </p>
-        </div>
+        {canManageMembers && (
+          <div className="card">
+            <p className="text-sm font-medium text-gray-500">Active Members</p>
+            <p className="mt-2 text-3xl font-bold text-gray-900">
+              {activeMembersCount ?? 0}
+            </p>
+          </div>
+        )}
         <div className="card">
           <p className="text-sm font-medium text-gray-500">
             Today&apos;s Classes
@@ -372,34 +393,38 @@ export default async function DashboardPage() {
             {todayClassesCount}
           </p>
         </div>
-        <div className="card">
-          <p className="text-sm font-medium text-gray-500">
-            Today&apos;s Bookings
-          </p>
-          <p className="mt-2 text-3xl font-bold text-gray-900">
-            {todayBookingsCount ?? 0}
-          </p>
-        </div>
-        <div className="card">
-          <p className="text-sm font-medium text-gray-500">
-            This Month&apos;s Revenue
-          </p>
-          <p className="mt-2 text-3xl font-bold text-gray-900">
-            {formatCurrency(monthRevenue)}
-          </p>
-          {revenueChange !== null ? (
-            <p
-              className={`mt-1 text-sm ${revenueChange >= 0 ? "text-green-600" : "text-red-600"}`}
-            >
-              {revenueChange >= 0 ? "+" : ""}
-              {revenueChange.toFixed(1)}% vs last month
+        {canManageBookings && (
+          <div className="card">
+            <p className="text-sm font-medium text-gray-500">
+              Today&apos;s Bookings
             </p>
-          ) : null}
-        </div>
+            <p className="mt-2 text-3xl font-bold text-gray-900">
+              {todayBookingsCount ?? 0}
+            </p>
+          </div>
+        )}
+        {canViewPayments && (
+          <div className="card">
+            <p className="text-sm font-medium text-gray-500">
+              This Month&apos;s Revenue
+            </p>
+            <p className="mt-2 text-3xl font-bold text-gray-900">
+              {formatCurrency(monthRevenue)}
+            </p>
+            {revenueChange !== null ? (
+              <p
+                className={`mt-1 text-sm ${revenueChange >= 0 ? "text-green-600" : "text-red-600"}`}
+              >
+                {revenueChange >= 0 ? "+" : ""}
+                {revenueChange.toFixed(1)}% vs last month
+              </p>
+            ) : null}
+          </div>
+        )}
       </div>
 
       {/* Revenue breakdown */}
-      <div className="mt-8">
+      {canViewPayments && <div className="mt-8">
         <h2 className="mb-4 text-lg font-semibold text-gray-900">
           Revenue Breakdown (This Month)
         </h2>
@@ -453,10 +478,10 @@ export default async function DashboardPage() {
             </div>
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* Failed payments */}
-      {failedPayments && failedPayments.length > 0 && (
+      {canViewPayments && failedPayments && failedPayments.length > 0 && (
         <div className="mt-8">
           <h2 className="mb-4 text-lg font-semibold text-gray-900">
             Failed Payments
@@ -547,7 +572,7 @@ export default async function DashboardPage() {
                       Attended: {attended}/{confirmed} · {confirmed}/
                       {session.capacity} booked
                     </span>
-                    {classIdForLink ? (
+                    {canManageBookings && (classIdForLink ? (
                       <Link
                         href={`/calendar/${classIdForLink}/sessions/${session.id}`}
                         className="shrink-0 text-sm text-blue-600 hover:text-blue-800"
@@ -561,7 +586,7 @@ export default async function DashboardPage() {
                       >
                         View →
                       </Link>
-                    )}
+                    ))}
                   </div>
                 );
               })}

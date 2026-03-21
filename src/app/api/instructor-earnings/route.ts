@@ -78,8 +78,7 @@ export async function GET(request: Request) {
 
     const monthSessionIds = (monthSessions || []).map((s: { id: string }) => s.id);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let earnings: any[] = [];
+    let earnings: Record<string, unknown>[] = [];
     if (monthSessionIds.length > 0) {
       const { data: earningsData } = await adminSupabase
         .from("instructor_earnings")
@@ -105,20 +104,21 @@ export async function GET(request: Request) {
       .order("created_at", { ascending: false });
 
     // マージして重複排除
-    const earningIds = new Set(earnings.map((e: { id: string }) => e.id));
+    const earningIds = new Set(earnings.map((e) => e.id));
     const mergedEarnings = [
       ...earnings,
-      ...(noSessionEarnings || []).filter((e: { id: string }) => !earningIds.has(e.id)),
+      ...(noSessionEarnings || []).filter((e) => !earningIds.has(e.id)),
     ];
 
     // Calculate summary
     const items = mergedEarnings;
+    const num = (v: unknown) => (typeof v === "number" ? v : 0);
     const summary = {
-      totalGross: items.reduce((s: number, e: { gross_amount: number }) => s + e.gross_amount, 0),
-      totalStripeFee: items.reduce((s: number, e: { stripe_fee: number }) => s + e.stripe_fee, 0),
-      totalPlatformFee: items.reduce((s: number, e: { platform_fee: number }) => s + e.platform_fee, 0),
-      totalStudioFee: items.reduce((s: number, e: { studio_fee: number }) => s + e.studio_fee, 0),
-      totalPayout: items.reduce((s: number, e: { instructor_payout: number }) => s + e.instructor_payout, 0),
+      totalGross: items.reduce((s, e) => s + num(e.gross_amount), 0),
+      totalStripeFee: items.reduce((s, e) => s + num(e.stripe_fee), 0),
+      totalPlatformFee: items.reduce((s, e) => s + num(e.platform_fee), 0),
+      totalStudioFee: items.reduce((s, e) => s + num(e.studio_fee), 0),
+      totalPayout: items.reduce((s, e) => s + num(e.instructor_payout), 0),
       classCount: items.length,
     };
 

@@ -9,6 +9,8 @@ import MemberAdjustCredits from "@/components/members/member-adjust-credits";
 import MemberAttendanceHistory from "@/components/attendance/member-attendance-history";
 import SendGuardianInviteButton from "@/components/members/send-guardian-invite-button";
 import MemberSOAPNotes from "@/components/members/member-soap-notes";
+import { redirect } from "next/navigation";
+import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
 
 export default async function MemberDetailPage({
   params,
@@ -23,6 +25,12 @@ export default async function MemberDetailPage({
 
   if (!user) {
     notFound();
+  }
+
+  // マネージャー権限チェック
+  const permCheck = await checkManagerPermission("can_manage_members");
+  if (!permCheck.allowed) {
+    redirect("/dashboard");
   }
 
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
