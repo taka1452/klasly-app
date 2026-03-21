@@ -650,7 +650,7 @@ export type LinkClick = {
 export type SOAPNote = {
   id: string;
   studio_id: string;
-  instructor_id: string;
+  instructor_id: string | null;
   member_id: string;
   session_id: string | null;
   subjective: string | null;

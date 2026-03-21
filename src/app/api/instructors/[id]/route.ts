@@ -76,6 +76,20 @@ export async function DELETE(
       .update({ instructor_id: null })
       .eq("instructor_id", instructorId);
 
+    // SOAPノートの instructor_id を null にして記録を保持
+    await adminSupabase
+      .from("soap_notes")
+      .update({ instructor_id: null })
+      .eq("instructor_id", instructorId);
+
+    // class_sessions の instructor_id を null にする
+    await adminSupabase
+      .from("class_sessions")
+      .update({ instructor_id: null })
+      .eq("instructor_id", instructorId);
+
+    // instructor_earnings の記録は保持（履歴として重要）
+
     // instructors から削除
     const { error: deleteError } = await adminSupabase
       .from("instructors")

@@ -44,8 +44,13 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I connect Stripe to receive payments?",
           a: (
             <>
-              Go to <B>Settings → Stripe Connect</B> and click &quot;Connect with Stripe.&quot; You&apos;ll be redirected to Stripe&apos;s secure onboarding to enter your business details and bank account. Once completed, member payments go directly to your Stripe account.
-              <Tip>Stripe Connect must be set up before members can purchase credits or subscriptions.</Tip>
+              <Steps>
+                <li>Go to <B>Settings → Stripe Connect</B> and click <B>&quot;Connect with Stripe.&quot;</B></li>
+                <li>You&apos;ll be redirected to Stripe&apos;s secure onboarding — enter your business type, legal details, and bank account.</li>
+                <li>Once complete, you&apos;ll see a <B>✅ Stripe Connected</B> status. Member payments now go directly to your Stripe account.</li>
+              </Steps>
+              If setup is incomplete (e.g., you left Stripe&apos;s page mid-way), return to <B>Settings → Stripe Connect</B> and click <B>&quot;Continue Setup.&quot;</B> You&apos;ll also see a reminder on your Dashboard until setup is done.
+              <Tip>Stripe Connect must be set up before members can purchase credits, subscriptions, or studio passes.</Tip>
             </>
           ),
         },
@@ -331,6 +336,15 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             </>
           ),
         },
+        {
+          q: "How do I record drop-in attendance?",
+          a: (
+            <>
+              On the session attendance page, click the <B>Drop-in</B> tab. Search for the member and click <B>Add</B>. The member&apos;s credit will be deducted automatically. If the deduction was a mistake, click <B>Undo</B> to reverse it.
+              <Tip>Drop-in attendees are listed separately from booked members and are counted in the total attendance.</Tip>
+            </>
+          ),
+        },
       ],
     },
     {
@@ -397,7 +411,14 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I embed the schedule widget on my website?",
           a: (
             <>
-              Go to <B>Settings → Widget</B>. Copy the embed code and paste it into your website&apos;s HTML. The widget shows your public class schedule and allows visitors to view available sessions.
+              Go to <B>Settings → Widget</B> to set up and customize the embeddable schedule:
+              <Steps>
+                <li>Toggle <B>Enable Widget</B> to turn on the public schedule.</li>
+                <li>Choose a <B>Theme Color</B> (green, blue, purple, red, orange, pink, or teal).</li>
+                <li>Add your website&apos;s domain to the <B>Allowed Origins</B> list (e.g., yourstudio.com).</li>
+                <li>Copy the <B>embed code</B> and paste it into your website&apos;s HTML.</li>
+              </Steps>
+              <Tip>The widget works with any website builder — WordPress, Wix, Squarespace, or custom HTML. Only the studio owner can change widget settings.</Tip>
             </>
           ),
         },
@@ -540,7 +561,14 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do instructors access SOAP Notes?",
           a: (
             <>
-              Instructors can find SOAP Notes in their dashboard. Select a member, then navigate to the SOAP Notes section to view history or create a new note.
+              Instructors can find SOAP Notes in their sidebar under <B>SOAP Notes</B>. Select a member to view their history or create a new note:
+              <Steps>
+                <li>Click <B>SOAP Notes</B> in the sidebar, then select a member from the list.</li>
+                <li>Click <B>+ New Note</B> and fill in the Subjective, Objective, Assessment, and Plan fields.</li>
+                <li>Choose whether the note is <B>confidential</B> (visible only to you) or <B>shared</B> (also visible to the studio owner).</li>
+                <li>Click <B>Save</B>. The note is linked to the session date.</li>
+              </Steps>
+              <Tip>SOAP Notes must be enabled under Settings → Features before they appear in the sidebar.</Tip>
             </>
           ),
         },
@@ -562,6 +590,14 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               You can use <B>utm_source</B> (e.g., instagram, facebook, email), <B>utm_medium</B> (e.g., social, cpc, newsletter), and <B>utm_campaign</B> (e.g., spring_promo, grand_opening) to organize your tracking.
+            </>
+          ),
+        },
+        {
+          q: "Is there an easy way to build UTM links?",
+          a: (
+            <>
+              Yes. On the <B>Analytics</B> page, scroll down to the <B>Link Builder</B> section. Pick a preset (Instagram, Facebook, Email, Google) or type in custom source, medium, and campaign values. The tracking URL is generated automatically — click <B>Copy</B> to use it.
             </>
           ),
         },
@@ -859,6 +895,14 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             <>
               Yes. When Auto-distribute is OFF, you can edit each instructor&apos;s payout amount on the distribution review page before approving. The total cannot exceed the distributable amount.
               <Tip>Go to <B>Passes → Distributions</B> to review and adjust payouts.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "Can I manually assign a pass to a member?",
+          a: (
+            <>
+              Yes. As the studio owner, you can assign a pass to a member without requiring them to go through Stripe checkout. This is useful for complimentary memberships or manual billing arrangements. The assigned pass works the same as a self-subscribed pass — the member can book classes using it immediately.
             </>
           ),
         },
@@ -1784,6 +1828,27 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               No. Same features, same data, always up to date. The home screen version just gives you a full-screen experience without the browser toolbar.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Messages",
+      items: [
+        {
+          q: "How do I message my studio?",
+          a: (
+            <>
+              Go to <B>Messages</B> from the navigation menu. You can send and receive messages directly with your studio. Type your message and press <B>Enter</B> (or the send button) to send.
+            </>
+          ),
+        },
+        {
+          q: "Will I be notified about new messages?",
+          a: (
+            <>
+              Yes. A red badge appears on the <B>Messages</B> link when you have unread messages. Open the messages page to read and reply.
             </>
           ),
         },

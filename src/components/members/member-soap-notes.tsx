@@ -68,10 +68,10 @@ export default function MemberSOAPNotes({ memberId }: { memberId: string }) {
           {notes.map((note) => {
             const instructorName = (() => {
               const raw = note.instructors;
-              if (!raw) return "Unknown";
+              if (!raw) return "Former instructor";
               const profiles = (raw as { profiles?: { full_name?: string } }).profiles;
-              if (Array.isArray(profiles)) return (profiles[0] as { full_name?: string })?.full_name || "Unknown";
-              return profiles?.full_name || "Unknown";
+              if (Array.isArray(profiles)) return (profiles[0] as { full_name?: string })?.full_name || "Former instructor";
+              return profiles?.full_name || "Former instructor";
             })();
 
             const date = new Date(note.session_date).toLocaleDateString("en-US", {
