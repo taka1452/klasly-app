@@ -132,58 +132,71 @@ export default async function MessagesLayout({
         userEmail={user.email || ""}
       />
       <nav className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
-          <div className="flex gap-6">
-            <Link
-              href="/schedule"
-              className="text-sm font-medium text-gray-600 hover:text-gray-900"
-            >
-              Schedule
-            </Link>
-            <Link
-              href="/my-bookings"
-              className="text-sm font-medium text-gray-600 hover:text-gray-900"
-            >
-              My Bookings
-            </Link>
-            <Link
-              href="/purchase"
-              className="text-sm font-medium text-gray-600 hover:text-gray-900"
-            >
-              Purchase
-            </Link>
-            {showPasses && (
+        <div className="mx-auto max-w-4xl px-4 py-2 md:py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex gap-4 overflow-x-auto scrollbar-hide md:gap-6 -mx-4 px-4 md:mx-0 md:px-0">
               <Link
-                href="/my-passes"
-                className="text-sm font-medium text-gray-600 hover:text-gray-900"
+                href="/schedule"
+                className="shrink-0 text-sm font-medium text-gray-600 hover:text-gray-900"
               >
-                Passes
+                Schedule
               </Link>
-            )}
-            <Link
-              href="/my-payments"
-              className="text-sm font-medium text-gray-600 hover:text-gray-900"
-            >
-              Payments
-            </Link>
-            <Link
-              href="/messages"
-              className="text-sm font-semibold text-brand-700 hover:text-brand-900"
-            >
-              Messages
-            </Link>
-          </div>
-          {memberCredits !== null && (
-            <span className="text-sm text-gray-500">
-              Credits:{" "}
-              <span className={`font-semibold ${memberCredits === 0 ? "text-amber-600" : "text-gray-900"}`}>
-                {memberCredits === -1 ? "Unlimited" : memberCredits}
+              <Link
+                href="/my-bookings"
+                className="shrink-0 text-sm font-medium text-gray-600 hover:text-gray-900"
+              >
+                Bookings
+              </Link>
+              <Link
+                href="/purchase"
+                className="shrink-0 text-sm font-medium text-gray-600 hover:text-gray-900"
+              >
+                Purchase
+              </Link>
+              {showPasses && (
+                <Link
+                  href="/my-passes"
+                  className="shrink-0 text-sm font-medium text-gray-600 hover:text-gray-900"
+                >
+                  Passes
+                </Link>
+              )}
+              <Link
+                href="/my-payments"
+                className="shrink-0 text-sm font-medium text-gray-600 hover:text-gray-900"
+              >
+                Payments
+              </Link>
+              <Link
+                href="/messages"
+                className="shrink-0 text-sm font-semibold text-brand-700 hover:text-brand-900"
+              >
+                Messages
+              </Link>
+            </div>
+            {memberCredits !== null && (
+              <span className="ml-4 hidden shrink-0 text-sm text-gray-500 sm:inline">
+                Credits:{" "}
+                <span className={`font-semibold ${memberCredits === 0 ? "text-amber-600" : "text-gray-900"}`}>
+                  {memberCredits === -1 ? "Unlimited" : memberCredits}
+                </span>
               </span>
-            </span>
-          )}
+            )}
+          </div>
         </div>
       </nav>
-      <main className="mx-auto max-w-4xl px-4 py-6">{children}</main>
+      {/* Mobile credit bar */}
+      {memberCredits !== null && (
+        <div className="border-b border-gray-100 bg-white px-4 py-1.5 text-center sm:hidden">
+          <span className="text-xs text-gray-500">
+            Credits:{" "}
+            <span className={`font-bold text-sm ${memberCredits === 0 ? "text-amber-600" : "text-gray-900"}`}>
+              {memberCredits === -1 ? "Unlimited" : memberCredits}
+            </span>
+          </span>
+        </div>
+      )}
+      <main className="mx-auto max-w-4xl px-4 py-4 md:py-6">{children}</main>
     </div>
   );
 }

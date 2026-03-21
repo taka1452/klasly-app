@@ -28,9 +28,7 @@ export default function CalendarHeader({
   onViewChange,
 }: Props) {
   const label = formatHeaderLabel(view, currentDate);
-  const filteredOptions = isMobile
-    ? viewOptions.filter((o) => o.value !== "week")
-    : viewOptions;
+  const filteredOptions = viewOptions;
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 pb-4">

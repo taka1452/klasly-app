@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import CalendarEventCard from "./calendar-event-card";
+import BookingButton from "@/components/bookings/booking-button";
 import {
   type SessionData,
   getWeekDates,
@@ -11,6 +12,7 @@ import {
   getDayNameShort,
   formatDateLabel,
   formatYMD,
+  formatTimeShort,
   parseTime,
   assignOverlapColumns,
   HOUR_HEIGHT,
@@ -87,10 +89,105 @@ export default function CalendarWeekView({
   // Check if today is in the week
   const todayInWeek = weekDates.findIndex((d) => isToday(d));
 
+  // Build sorted sessions by day for mobile view
+  const weekSessionsByDay: { date: Date; dateStr: string; sessions: SessionData[] }[] = [];
+  for (const date of weekDates) {
+    const dateStr = formatYMD(date);
+    const daySessions = (sessionsByDate.get(dateStr) || []).sort((a, b) =>
+      a.start_time.localeCompare(b.start_time)
+    );
+    weekSessionsByDay.push({ date, dateStr, sessions: daySessions });
+  }
+
   return (
+    <>
+    {/* ===== Mobile: Card list by day ===== */}
+    <div className="space-y-4 md:hidden">
+      {weekSessionsByDay.map(({ date, dateStr, sessions: daySessions }) => {
+        const today = isToday(date);
+        const dayLabel = date.toLocaleDateString("en-US", {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+        });
+
+        if (daySessions.length === 0) return null;
+
+        return (
+          <div key={dateStr}>
+            <div className={`sticky top-0 z-10 px-1 py-1.5 text-sm font-semibold ${today ? "text-brand-700" : "text-gray-700"}`}>
+              {dayLabel}
+              {today && <span className="ml-2 text-xs font-normal text-brand-500">Today</span>}
+            </div>
+            <div className="space-y-2">
+              {daySessions.map((session) => {
+                const bk = bookings[session.id] || null;
+                const count = confirmedCounts[session.id] || 0;
+                const isFull = count >= session.capacity;
+
+                let borderColor = "border-l-brand-500";
+                if (bk?.status === "confirmed") borderColor = "border-l-green-500";
+                else if (bk?.status === "waitlist") borderColor = "border-l-amber-500";
+
+                return (
+                  <div
+                    key={session.id}
+                    className={`rounded-lg border border-gray-200 border-l-[3px] ${borderColor} bg-white p-3`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-base font-semibold text-gray-900 truncate">
+                          {session.class_name}
+                        </p>
+                        <p className="mt-0.5 text-sm text-gray-600">
+                          {formatTimeShort(session.start_time)} · {session.duration_minutes}min
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {session.instructor_name}
+                          {(session.room_name || session.location) && ` · ${session.room_name || session.location}`}
+                        </p>
+                        <p className="mt-1 text-xs text-gray-400">
+                          {count}/{session.capacity} booked
+                          {isFull && <span className="ml-1 text-amber-600">(Full)</span>}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-2">
+                      <BookingButton
+                        sessionId={session.id}
+                        capacity={session.capacity}
+                        memberId={memberId}
+                        existingBooking={bk}
+                        memberCredits={memberCredits}
+                        confirmedCount={count}
+                        canBook={canBook}
+                        requiresCredits={requiresCredits}
+                        payPerClass={payPerClass}
+                        classPrice={session.price_cents ?? classPrice}
+                        passInfo={passInfo}
+                        onSuccess={onBookingComplete}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Empty state for mobile */}
+      {weekSessionsByDay.every(({ sessions: s }) => s.length === 0) && (
+        <div className="rounded-lg border border-gray-200 bg-white p-8 text-center">
+          <p className="text-sm text-gray-500">No classes this week.</p>
+        </div>
+      )}
+    </div>
+
+    {/* ===== Desktop: Time grid ===== */}
     <div
       ref={containerRef}
-      className="overflow-auto rounded-lg border border-gray-200 bg-white"
+      className="hidden overflow-auto rounded-lg border border-gray-200 bg-white md:block"
       style={{ maxHeight: "calc(100vh - 220px)" }}
     >
       {/* Sticky header */}
@@ -233,5 +330,6 @@ export default function CalendarWeekView({
         })}
       </div>
     </div>
+    </>
   );
 }

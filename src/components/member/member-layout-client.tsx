@@ -107,6 +107,17 @@ export default function MemberLayoutClient({
             </div>
           </div>
         </nav>
+        {/* Mobile credit bar */}
+        {memberCredits !== null && (
+          <div className="border-b border-gray-100 bg-white px-4 py-1.5 text-center sm:hidden">
+            <span className="text-xs text-gray-500">
+              Credits:{" "}
+              <span className={`text-sm font-bold ${memberCredits === 0 ? "text-amber-600" : "text-gray-900"}`}>
+                {memberCredits === -1 ? "Unlimited" : memberCredits}
+              </span>
+            </span>
+          </div>
+        )}
         <main className="mx-auto max-w-6xl px-4 py-4 md:py-6">{children}</main>
       </div>
     </TourProvider>
