@@ -143,8 +143,16 @@ export default function WaiverSettingsClient({
       if (!res.ok) {
         throw new Error(data.error || "Failed to send");
       }
-      setBulkSuccess(data.sent ?? 0);
-      setTimeout(() => setBulkSuccess(null), 3000);
+      const sent = data.sent ?? 0;
+      const skipped = data.skippedMinors ?? 0;
+      setBulkSuccess(sent);
+      if (skipped > 0) {
+        setToastMessage({
+          text: `${sent} invite${sent !== 1 ? "s" : ""} sent. ${skipped} minor${skipped !== 1 ? "s" : ""} skipped (no guardian email on file).`,
+          variant: "success",
+        });
+      }
+      setTimeout(() => setBulkSuccess(null), 5000);
     } catch (err) {
       setToastMessage({ text: err instanceof Error ? err.message : "Failed to send invites", variant: "error" });
     } finally {

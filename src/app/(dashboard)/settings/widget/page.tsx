@@ -45,7 +45,7 @@ export default async function WidgetSettingsPage() {
       </p>
 
       <div className="mt-6">
-        <WidgetSettingsClient studioId={profile.studio_id} />
+        <WidgetSettingsClient studioId={profile.studio_id} isOwner={profile.role === "owner"} />
       </div>
     </div>
   );

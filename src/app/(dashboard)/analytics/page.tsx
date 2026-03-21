@@ -1,9 +1,119 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useFeature } from "@/lib/features/feature-context";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 import HelpTip from "@/components/ui/help-tip";
+
+function UTMLinkBuilder() {
+  const [source, setSource] = useState("");
+  const [medium, setMedium] = useState("");
+  const [campaign, setCampaign] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+  const buildUrl = useCallback(() => {
+    const params = new URLSearchParams();
+    if (source) params.set("utm_source", source);
+    if (medium) params.set("utm_medium", medium);
+    if (campaign) params.set("utm_campaign", campaign);
+    const qs = params.toString();
+    return qs ? `${baseUrl}/schedule?${qs}` : "";
+  }, [source, medium, campaign, baseUrl]);
+
+  const generatedUrl = buildUrl();
+
+  function handleCopy() {
+    if (!generatedUrl) return;
+    navigator.clipboard.writeText(generatedUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  const presets = [
+    { label: "Instagram", source: "instagram", medium: "social" },
+    { label: "Facebook", source: "facebook", medium: "social" },
+    { label: "Email", source: "newsletter", medium: "email" },
+    { label: "Google", source: "google", medium: "cpc" },
+  ];
+
+  return (
+    <div className="card">
+      <h2 className="text-lg font-semibold text-gray-900">Link Builder</h2>
+      <p className="mt-1 text-sm text-gray-500">
+        Generate tracking links for your booking page.
+      </p>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        {presets.map((p) => (
+          <button
+            key={p.label}
+            type="button"
+            onClick={() => { setSource(p.source); setMedium(p.medium); }}
+            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              source === p.source
+                ? "bg-brand-100 text-brand-700"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <div>
+          <label className="block text-xs font-medium text-gray-500">Source</label>
+          <input
+            type="text"
+            value={source}
+            onChange={(e) => setSource(e.target.value.trim())}
+            placeholder="instagram"
+            className="input-field mt-1"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-500">Medium</label>
+          <input
+            type="text"
+            value={medium}
+            onChange={(e) => setMedium(e.target.value.trim())}
+            placeholder="social"
+            className="input-field mt-1"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-500">Campaign</label>
+          <input
+            type="text"
+            value={campaign}
+            onChange={(e) => setCampaign(e.target.value.trim())}
+            placeholder="summer2025"
+            className="input-field mt-1"
+          />
+        </div>
+      </div>
+
+      {generatedUrl && (
+        <div className="mt-4">
+          <label className="block text-xs font-medium text-gray-500">Generated URL</label>
+          <div className="mt-1 flex items-center gap-2">
+            <code className="flex-1 overflow-x-auto rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700">
+              {generatedUrl}
+            </code>
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="shrink-0 rounded-lg bg-brand-500 px-3 py-2 text-xs font-medium text-white hover:bg-brand-600"
+            >
+              {copied ? "Copied!" : "Copy"}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 type TrafficSource = {
   name: string;
@@ -51,10 +161,15 @@ export default function AnalyticsPage() {
 
       {!utmEnabled ? (
         <div className="card">
-          <p className="text-sm text-gray-500">
-            UTM tracking is not enabled for your studio. Contact support to
-            enable traffic source analytics.
+          <p className="text-sm text-gray-600">
+            UTM tracking is not enabled for your studio.
           </p>
+          <p className="mt-2 text-sm text-gray-500">
+            Enable it in <strong>Settings → Features</strong> to start tracking where your members come from.
+          </p>
+          <a href="/settings/features" className="mt-3 inline-block text-sm font-medium text-brand-600 hover:text-brand-700">
+            Enable UTM Tracking →
+          </a>
         </div>
       ) : loading ? (
         <div className="flex justify-center py-12">
@@ -141,17 +256,8 @@ export default function AnalyticsPage() {
             </div>
           )}
 
-          {/* Tip */}
-          <div className="rounded-lg bg-blue-50 border border-blue-100 p-4">
-            <p className="text-sm text-blue-700">
-              💡 <strong>Tip:</strong> Add{" "}
-              <code className="rounded bg-blue-100 px-1.5 py-0.5 text-xs font-mono">
-                ?utm_source=instagram
-              </code>{" "}
-              to your booking link when sharing on social media to track where
-              your members come from.
-            </p>
-          </div>
+          {/* UTM Link Builder */}
+          <UTMLinkBuilder />
         </div>
       )}
     </div>

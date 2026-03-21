@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { useFeature } from "@/lib/features/feature-context";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 import type { CancellationPolicyTier } from "@/types/database";
 import HelpTip from "@/components/ui/help-tip";
 
@@ -37,6 +39,7 @@ function generatePolicyText(tiers: CancellationPolicyTier[]): string {
 
 export default function CreateEventPage() {
   const router = useRouter();
+  const { isEnabled } = useFeature();
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -66,6 +69,18 @@ export default function CreateEventPage() {
   // Step 5: Application Form
   type AppField = { id: string; label: string; type: string; required: boolean; placeholder: string; options: string };
   const [appFields, setAppFields] = useState<AppField[]>([]);
+
+  if (!isEnabled(FEATURE_KEYS.RETREAT_BOOKING)) {
+    return (
+      <div className="card py-12 text-center">
+        <p className="text-gray-500">Events &amp; Retreats feature is not enabled for your studio.</p>
+        <p className="mt-2 text-sm text-gray-400">Go to Settings → Features to enable it.</p>
+        <Link href="/settings/features" className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700">
+          Manage Features →
+        </Link>
+      </div>
+    );
+  }
 
   function addAppField() {
     setAppFields((f) => [...f, { id: `f${Date.now()}`, label: "", type: "text", required: false, placeholder: "", options: "" }]);

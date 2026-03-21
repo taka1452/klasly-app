@@ -91,14 +91,20 @@ export default function MessagesClient({
         setMessages(data.messages ?? []);
         setLoadingThread(false);
         // 既読にする
-        fetch(`/api/messages/${selectedId}`, { method: "PATCH" }).then(() => {
-          // 未読バッジをクリア
-          setConversations((prev) =>
-            prev.map((c) =>
-              c.memberId === selectedId ? { ...c, unreadCount: 0 } : c
-            )
-          );
-        });
+        fetch(`/api/messages/${selectedId}`, { method: "PATCH" })
+          .then((res) => {
+            if (res.ok) {
+              // 未読バッジをクリア
+              setConversations((prev) =>
+                prev.map((c) =>
+                  c.memberId === selectedId ? { ...c, unreadCount: 0 } : c
+                )
+              );
+            }
+          })
+          .catch(() => {
+            // 既読マーク失敗は致命的ではないためサイレントに処理
+          });
       })
       .catch(() => setLoadingThread(false));
   }, [selectedId]);
@@ -354,7 +360,7 @@ export default function MessagesClient({
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Type a message… (⌘+Enter to send)"
+                  placeholder={`Type a message\u2026 (${typeof navigator !== "undefined" && /Mac/.test(navigator.userAgent) ? "\u2318" : "Ctrl"}+Enter to send)`}
                   rows={2}
                   className="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
                   disabled={sending || isPending}

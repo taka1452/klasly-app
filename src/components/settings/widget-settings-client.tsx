@@ -7,6 +7,7 @@ import Toast from "@/components/ui/toast";
 
 type Props = {
   studioId: string;
+  isOwner?: boolean;
 };
 
 const THEME_OPTIONS = [
@@ -19,7 +20,7 @@ const THEME_OPTIONS = [
   { value: "teal", label: "Teal", color: "#0d9488" },
 ] as const;
 
-export default function WidgetSettingsClient({ studioId }: Props) {
+export default function WidgetSettingsClient({ studioId, isOwner = true }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -283,16 +284,22 @@ export default function WidgetSettingsClient({ studioId }: Props) {
       </div>
 
       {/* Save */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving}
-          className="btn-primary"
-        >
-          {saving ? "Saving..." : "Save Settings"}
-        </button>
-      </div>
+      {isOwner ? (
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="btn-primary"
+          >
+            {saving ? "Saving..." : "Save Settings"}
+          </button>
+        </div>
+      ) : (
+        <p className="text-sm text-gray-500">
+          Only the studio owner can modify widget settings.
+        </p>
+      )}
 
       {toastMessage && (
         <Toast message={toastMessage} onClose={() => setToastMessage(null)} />

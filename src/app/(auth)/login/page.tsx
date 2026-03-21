@@ -26,13 +26,21 @@ function LoginForm() {
     const err = searchParams.get("error");
     const msg = searchParams.get("msg");
     if (err === "auth_callback_failed") {
-      let displayMsg = "Sign in with Google failed. Please try again or use email/password.";
+      // 技術的なエラーメッセージをユーザーフレンドリーに変換
+      let decoded = "";
       if (msg) {
-        try {
-          displayMsg = decodeURIComponent(msg);
-        } catch {
-          displayMsg = msg;
-        }
+        try { decoded = decodeURIComponent(msg); } catch { decoded = msg; }
+      }
+      const lower = decoded.toLowerCase();
+      let displayMsg: string;
+      if (lower.includes("access_denied") || lower.includes("denied") || lower.includes("cancelled") || lower.includes("canceled")) {
+        displayMsg = "Google sign-in was cancelled. Please try again.";
+      } else if (lower.includes("temporarily_unavailable") || lower.includes("server_error")) {
+        displayMsg = "Google sign-in is temporarily unavailable. Please try again later or use email/password.";
+      } else if (lower.includes("invalid")) {
+        displayMsg = "Google sign-in failed due to an invalid request. Please try again.";
+      } else {
+        displayMsg = "Sign in with Google failed. Please try again or use email/password.";
       }
       setError(displayMsg);
     }
@@ -93,9 +101,10 @@ function LoginForm() {
 
     // ロールに応じた適切なページへリダイレクト（Google SSOと同じ挙動）
     const res = await fetch("/api/auth/redirect-destination");
-    const data = await res.json().catch(() => ({ url: "/" }));
-    const url: string = data?.url ?? "/";
-    router.push(url.startsWith("http") ? new URL(url).pathname : url);
+    const data = await res.json().catch(() => null);
+    const rawUrl = typeof data?.url === "string" ? data.url : "/";
+    const url = rawUrl.startsWith("http") ? new URL(rawUrl).pathname : rawUrl;
+    router.push(url.startsWith("/") ? url : "/");
     router.refresh();
   }
 

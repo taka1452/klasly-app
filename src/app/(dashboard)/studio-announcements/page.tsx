@@ -171,7 +171,10 @@ export default function StudioAnnouncementsPage() {
         {loading ? (
           <p className="mt-4 text-sm text-gray-500">Loading...</p>
         ) : announcements.length === 0 ? (
-          <p className="mt-4 text-sm text-gray-500">No announcements yet.</p>
+          <div className="mt-4 text-center py-6">
+            <p className="text-sm text-gray-500">No announcements yet.</p>
+            <p className="mt-1 text-xs text-gray-400">Create your first announcement above to notify your instructors and members.</p>
+          </div>
         ) : (
           <div className="mt-4 overflow-x-auto">
             <table className="w-full text-sm">

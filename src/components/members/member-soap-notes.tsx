@@ -59,6 +59,10 @@ export default function MemberSOAPNotes({ memberId }: { memberId: string }) {
 
       {notes.length === 0 && confidentialCount === 0 ? (
         <p className="mt-4 text-sm text-gray-500">No SOAP notes for this member.</p>
+      ) : notes.length === 0 && confidentialCount > 0 ? (
+        <p className="mt-4 text-sm text-gray-500">
+          This member has {confidentialCount} confidential note{confidentialCount > 1 ? "s" : ""} from their instructor(s). Confidential notes are only visible to the author.
+        </p>
       ) : (
         <div className="mt-4 space-y-3">
           {notes.map((note) => {

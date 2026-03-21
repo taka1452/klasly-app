@@ -172,19 +172,22 @@ function SetPasswordContent() {
         </button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-gray-500">
+      <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4 text-center">
+        <p className="text-sm text-gray-600">
+          Don&apos;t want to set a password now?
+        </p>
         <button
           type="button"
           onClick={handleSkip}
           disabled={skipLoading}
-          className="font-medium text-brand-600 hover:text-brand-700 disabled:opacity-70"
+          className="mt-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 disabled:opacity-70"
         >
-          {skipLoading ? "Skipping..." : "Skip for now"}
+          {skipLoading ? "Skipping..." : "Skip — I\u2019ll use Google Sign-In"}
         </button>
-        <span className="ml-1">
-          — you can set a password later from the login page (Forgot password).
-        </span>
-      </p>
+        <p className="mt-2 text-xs text-gray-400">
+          You can always set a password later via &quot;Forgot password&quot; on the login page.
+        </p>
+      </div>
     </div>
   );
 }

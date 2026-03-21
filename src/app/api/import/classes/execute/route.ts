@@ -211,6 +211,15 @@ export async function POST(request: Request) {
         ? (instructorEmailMap.get(instructorEmailRaw.toLowerCase().trim()) ?? null)
         : null;
 
+      // インストラクターメールが指定されたが見つからない場合、警告として記録
+      if (instructorEmailRaw && !instructorId) {
+        skipped.push({
+          row: i + 1,
+          name: getCell(row, mapping.name) || "",
+          reason: `Instructor email "${instructorEmailRaw}" not found — class will be created without instructor`,
+        });
+      }
+
       // ── Insert class ───────────────────────────────────────────────────────
       const { data: newClass, error: classError } = await adminSupabase
         .from("classes")
