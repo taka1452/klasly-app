@@ -140,36 +140,40 @@ export default function ScheduleView({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setWeekOffset((o) => o - 1)}
-              className="btn-secondary text-sm"
-            >
-              ← Previous Week
-            </button>
-            <button
-              type="button"
-              onClick={() => setWeekOffset((o) => o + 1)}
-              className="btn-secondary text-sm"
-            >
-              Next Week →
-            </button>
-            <button
-              type="button"
-              onClick={() => setWeekOffset(0)}
-              className="btn-secondary text-sm"
-            >
-              Today
-            </button>
-          </div>
-          <p className="text-sm font-medium text-gray-600">
-            Week of {weekStart.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setWeekOffset((o) => o - 1)}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100"
+            aria-label="Previous week"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            onClick={() => setWeekOffset(0)}
+            className="rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100"
+          >
+            Today
+          </button>
+          <button
+            type="button"
+            onClick={() => setWeekOffset((o) => o + 1)}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100"
+            aria-label="Next week"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+          <span className="ml-1 text-sm font-semibold text-gray-900">
+            {weekStart.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
             {" – "}
-            {weekDates[6].toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-          </p>
+            {weekDates[6].toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+          </span>
         </div>
         <button
           type="button"
