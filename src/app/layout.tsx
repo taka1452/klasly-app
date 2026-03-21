@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import Script from "next/script";
+import SWUpdater from "@/components/pwa/sw-updater";
+import OfflineBanner from "@/components/pwa/offline-banner";
 import "./globals.css";
 
 const inter = Inter({
@@ -31,7 +33,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={inter.className}>
-      <body>{children}</body>
+      <body>
+        <OfflineBanner />
+        {children}
+        <SWUpdater />
+      </body>
       <Script
         id="microsoft-clarity"
         strategy="afterInteractive"

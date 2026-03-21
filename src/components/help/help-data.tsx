@@ -62,6 +62,22 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             </>
           ),
         },
+        {
+          q: 'What is the "Update Available" notification?',
+          a: (
+            <>
+              When we release improvements to Klasly, you&apos;ll see a small notification at the bottom of your screen. Tap <B>Update Now</B> to get the latest version. Your data is never affected by updates.
+            </>
+          ),
+        },
+        {
+          q: 'Why do I see "You\'re offline" at the top of my screen?',
+          a: (
+            <>
+              This means your device has lost its internet connection. You can still view recently loaded pages like your schedule, but actions like making bookings or sending messages require an internet connection. The banner will disappear automatically when you&apos;re back online.
+            </>
+          ),
+        },
       ],
     },
     {
@@ -1530,6 +1546,22 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             <>
               Yes! Klasly is fully optimized for mobile devices. You can access all features — browsing schedules, booking classes, viewing payments, and messaging — directly from your phone&apos;s browser. On iPhone, the app also supports the notch and home bar areas for a seamless experience.
               <Tip>On mobile, the schedule defaults to Day view for easier one-handed browsing. Swipe the navigation tabs to see all menu options.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "Can I use Klasly without internet?",
+          a: (
+            <>
+              You can view your recently loaded schedule and class information even when offline. However, booking classes, making payments, and sending messages require an internet connection.
+            </>
+          ),
+        },
+        {
+          q: 'I see "Update Available" — what should I do?',
+          a: (
+            <>
+              Tap <B>Update Now</B> to refresh the app with the latest improvements. This won&apos;t affect your bookings or account.
             </>
           ),
         },
