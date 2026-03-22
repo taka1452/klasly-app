@@ -7,6 +7,7 @@ import DevRoleSwitcher from "@/components/ui/dev-role-switcher";
 import { getStudioFeatures } from "@/lib/features/check-feature";
 import { FeatureProvider } from "@/lib/features/feature-context";
 import AnnouncementBanner from "@/components/announcements/announcement-banner";
+import PushPrompt from "@/components/pwa/push-prompt";
 
 export default async function MemberLayout({
   children,
@@ -98,6 +99,7 @@ export default async function MemberLayout({
       >
         {children}
         <DevRoleSwitcher />
+        <PushPrompt studioId={profile?.studio_id ?? undefined} />
       </MemberLayoutClient>
     </FeatureProvider>
   );

@@ -78,6 +78,22 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             </>
           ),
         },
+        {
+          q: "What are push notifications?",
+          a: (
+            <>
+              Push notifications are alerts that appear on your members&apos; phones and computers — even when they&apos;re not using Klasly. Members receive reminders 1 hour before class, booking confirmations, and new messages. Members can enable or disable notifications in their settings.
+            </>
+          ),
+        },
+        {
+          q: "Do I need to set up push notifications?",
+          a: (
+            <>
+              No setup needed! Push notifications work automatically. When members visit your Klasly booking page, they&apos;ll be asked if they&apos;d like to receive notifications. They can change their preference anytime.
+            </>
+          ),
+        },
       ],
     },
     {
@@ -1562,6 +1578,30 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               Tap <B>Update Now</B> to refresh the app with the latest improvements. This won&apos;t affect your bookings or account.
+            </>
+          ),
+        },
+        {
+          q: "How do I enable push notifications?",
+          a: (
+            <>
+              When you first visit your studio&apos;s Klasly page, you&apos;ll see a prompt to enable notifications. Tap <B>Enable Notifications</B> to start receiving class reminders and booking updates. You can also enable them from <B>Settings</B> in the navigation.
+            </>
+          ),
+        },
+        {
+          q: "How do I turn off push notifications?",
+          a: (
+            <>
+              Go to <B>Settings</B> and toggle off <B>Push Notifications</B>. You can also disable specific notification types while keeping others on.
+            </>
+          ),
+        },
+        {
+          q: "I'm not receiving notifications on iPhone. What should I do?",
+          a: (
+            <>
+              On iPhone (iOS 16.4 or later), push notifications only work when Klasly is added to your Home Screen. Open Klasly in Safari, tap the <B>Share</B> button, then tap <B>Add to Home Screen</B>. After that, enable notifications when prompted.
             </>
           ),
         },

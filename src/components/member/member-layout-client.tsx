@@ -95,6 +95,12 @@ export default function MemberLayoutClient({
                 >
                   Messages
                 </Link>
+                <Link
+                  href="/notification-settings"
+                  className={`shrink-0 ${linkClass("/notification-settings")}`}
+                >
+                  Settings
+                </Link>
               </div>
               {memberCredits !== null && (
                 <span className="ml-4 hidden shrink-0 text-sm text-gray-500 sm:inline">

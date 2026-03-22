@@ -3,6 +3,8 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email/send";
 import { bookingCancelled, waitlistPromoted } from "@/lib/email/templates";
+import { sendPushNotification } from "@/lib/push/send";
+import { pushBookingCancelled, pushWaitlistPromoted } from "@/lib/push/templates";
 import { formatDate, formatTime } from "@/lib/utils";
 
 export async function POST(
@@ -164,6 +166,19 @@ export async function POST(
       const { subject, html } = bookingCancelled(emailPayload);
       await sendEmail({ to: memberProfile.email, subject, html });
     }
+    // Push notification: cancellation
+    if (member?.profile_id) {
+      sendPushNotification({
+        profileId: member.profile_id,
+        studioId: booking.studio_id,
+        type: "booking_cancellation",
+        payload: pushBookingCancelled({
+          className,
+          sessionDate: emailPayload.sessionDate,
+          startTime: emailPayload.startTime,
+        }),
+      }).catch((err) => console.error("Push notification failed:", err));
+    }
 
     // ウェイトリスト昇格（確認済み予約のキャンセルの場合）
     // Determine if credits are required for this studio
@@ -233,6 +248,19 @@ export async function POST(
               memberName: promotedProfile.full_name ?? "Member",
             });
             await sendEmail({ to: promotedProfile.email, subject, html });
+            // Push notification: waitlist promotion
+            if (waitlistMember.profile_id) {
+              sendPushNotification({
+                profileId: waitlistMember.profile_id,
+                studioId: booking.studio_id,
+                type: "waitlist_promotion",
+                payload: pushWaitlistPromoted({
+                  className,
+                  sessionDate: emailPayload.sessionDate,
+                  startTime: emailPayload.startTime,
+                }),
+              }).catch((err) => console.error("Push notification failed:", err));
+            }
           }
 
           break;

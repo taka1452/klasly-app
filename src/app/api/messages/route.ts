@@ -3,6 +3,8 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/admin/supabase";
 import { sendEmail } from "@/lib/email/send";
 import { messageNotification } from "@/lib/email/templates";
+import { sendPushNotification } from "@/lib/push/send";
+import { pushNewMessage } from "@/lib/push/templates";
 
 // ============================================================
 // GET /api/messages
@@ -234,6 +236,16 @@ export async function POST(request: NextRequest) {
       templateName: "message_notification",
     });
   }
+
+  // Push notification: new message
+  sendPushNotification({
+    profileId: recipient_id,
+    studioId,
+    type: "new_message",
+    payload: pushNewMessage({
+      senderName: senderProfile.full_name || senderProfile.email || "Studio",
+    }),
+  }).catch((err) => console.error("Push notification failed:", err));
 
   return NextResponse.json({ message }, { status: 201 });
 }

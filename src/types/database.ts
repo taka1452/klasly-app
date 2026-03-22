@@ -834,3 +834,47 @@ export type ReferralReward = {
   completed_at: string | null;
   created_at: string;
 };
+
+// ============================================
+// Push Notifications
+// ============================================
+
+export type PushSubscription = {
+  id: string;
+  profile_id: string;
+  studio_id: string | null;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  user_agent: string | null;
+  device_name: string | null;
+  is_active: boolean;
+  last_used_at: string;
+  failed_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type NotificationPreferences = {
+  id: string;
+  profile_id: string;
+  studio_id: string | null;
+  booking_confirmation: boolean;
+  booking_cancellation: boolean;
+  class_reminder: boolean;
+  waitlist_promotion: boolean;
+  new_message: boolean;
+  studio_announcement: boolean;
+  push_enabled: boolean;
+  email_enabled: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PushNotificationType =
+  | "booking_confirmation"
+  | "booking_cancellation"
+  | "class_reminder"
+  | "waitlist_promotion"
+  | "new_message"
+  | "studio_announcement";

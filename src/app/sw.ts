@@ -101,4 +101,96 @@ const serwist = new Serwist({
   },
 });
 
+// =============================================
+// Web Push 通知ハンドラー
+// =============================================
+
+// Push イベント: サーバーからの通知を受信して表示
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
+
+  try {
+    const data = event.data.json();
+
+    const options = {
+      body: data.body || "",
+      icon: data.icon || "/icons/icon-192x192.png",
+      badge: data.badge || "/icons/badge-72x72.png",
+      tag: data.tag || "klasly-notification",
+      renotify: true,
+      data: {
+        url: data.url || "/",
+        ...data.data,
+      },
+      actions: [
+        {
+          action: "open",
+          title: "Open",
+        },
+        {
+          action: "dismiss",
+          title: "Dismiss",
+        },
+      ],
+    } as NotificationOptions;
+
+    event.waitUntil(
+      self.registration.showNotification(data.title || "Klasly", options)
+    );
+  } catch {
+    // JSON パース失敗時はプレーンテキストとして表示
+    event.waitUntil(
+      self.registration.showNotification("Klasly", {
+        body: event.data?.text() ?? "",
+        icon: "/icons/icon-192x192.png",
+      })
+    );
+  }
+});
+
+// 通知クリック: 指定されたURLを開く
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  if (event.action === "dismiss") return;
+
+  const url = event.notification.data?.url || "/";
+
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clients) => {
+        // 既に開いているタブがあればそこにフォーカス
+        for (const client of clients) {
+          if (client.url.includes(url) && "focus" in client) {
+            return client.focus();
+          }
+        }
+        // なければ新しいタブで開く
+        return self.clients.openWindow(url);
+      })
+  );
+});
+
+// サブスクリプション変更時: 自動再登録
+self.addEventListener("pushsubscriptionchange", (event) => {
+  event.waitUntil(
+    fetch("/api/push/vapid-key")
+      .then((res) => res.json())
+      .then(({ publicKey }) =>
+        self.registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: publicKey,
+        })
+      )
+      .then((subscription) =>
+        fetch("/api/push/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(subscription),
+        })
+      )
+  );
+});
+
 serwist.addEventListeners();

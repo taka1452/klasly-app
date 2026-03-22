@@ -5,6 +5,12 @@ import {
   bookingCancelled,
   waitlistPromoted,
 } from "@/lib/email/templates";
+import { sendPushNotification } from "@/lib/push/send";
+import {
+  pushBookingConfirmation,
+  pushBookingCancelled,
+  pushWaitlistPromoted,
+} from "@/lib/push/templates";
 import { formatDate, formatTime } from "@/lib/utils";
 import { getRequiresCredits } from "@/lib/booking-utils";
 import { isFeatureEnabled } from "@/lib/features/check-feature";
@@ -240,6 +246,7 @@ export async function executeBookingAction({
 
   let promotedMemberEmail: string | null = null;
   let promotedMemberName: string | null = null;
+  let waitlistMemberProfileId: string | null = null;
 
   if (action === "book" || action === "rebook") {
     const { count: confirmedCount } = await adminSupabase
@@ -357,6 +364,13 @@ export async function executeBookingAction({
       if (status === "confirmed" && memberEmail) {
         const { subject, html } = bookingConfirmation(emailPayload);
         await sendEmail({ to: memberEmail, subject, html });
+        // Push notification
+        sendPushNotification({
+          profileId: member.profile_id,
+          studioId: member.studio_id,
+          type: "booking_confirmation",
+          payload: pushBookingConfirmation({ className, sessionDate, startTime }),
+        }).catch((err) => console.error("Push notification failed:", err));
       }
     } else {
       // book
@@ -401,6 +415,13 @@ export async function executeBookingAction({
       if (status === "confirmed" && memberEmail) {
         const { subject, html } = bookingConfirmation(emailPayload);
         await sendEmail({ to: memberEmail, subject, html });
+        // Push notification
+        sendPushNotification({
+          profileId: member.profile_id,
+          studioId: member.studio_id,
+          type: "booking_confirmation",
+          payload: pushBookingConfirmation({ className, sessionDate, startTime }),
+        }).catch((err) => console.error("Push notification failed:", err));
       }
     }
   } else if (action === "cancel") {
@@ -440,6 +461,13 @@ export async function executeBookingAction({
     if (memberEmail) {
       const { subject, html } = bookingCancelled(emailPayload);
       await sendEmail({ to: memberEmail, subject, html });
+      // Push notification: cancellation
+      sendPushNotification({
+        profileId: member.profile_id,
+        studioId: member.studio_id,
+        type: "booking_cancellation",
+        payload: pushBookingCancelled({ className, sessionDate, startTime }),
+      }).catch((err) => console.error("Push notification failed:", err));
     }
 
     // Waitlist promotion
@@ -478,6 +506,7 @@ export async function executeBookingAction({
         if (promoted?.email) {
           promotedMemberEmail = promoted.email;
           promotedMemberName = promoted.full_name ?? "Member";
+          waitlistMemberProfileId = waitlistMember.profile_id;
         }
 
         // Atomically deduct credit before promoting
@@ -504,6 +533,15 @@ export async function executeBookingAction({
         memberName: promotedMemberName,
       });
       await sendEmail({ to: promotedMemberEmail, subject, html });
+      // Push notification: waitlist promotion
+      if (waitlistMemberProfileId) {
+        sendPushNotification({
+          profileId: waitlistMemberProfileId,
+          studioId: member.studio_id,
+          type: "waitlist_promotion",
+          payload: pushWaitlistPromoted({ className, sessionDate, startTime }),
+        }).catch((err) => console.error("Push notification failed:", err));
+      }
     }
   } else if (action === "leave_waitlist") {
     const { data: existing } = await adminSupabase
