@@ -781,7 +781,7 @@ export default async function DashboardPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-gray-900 truncate">{a.label}</p>
                     <p className="text-xs text-gray-400">
-                      {formatDate(a.created_at)}
+                      {a.created_at ? formatDate(a.created_at.split("T")[0]) : ""}
                     </p>
                   </div>
                 </div>

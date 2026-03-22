@@ -163,7 +163,7 @@ export default async function MyBookingsPage() {
               const className =
                 (classesRef && !Array.isArray(classesRef)
                   ? (classesRef as { name?: string }).name
-                  : undefined) || "—";
+                  : undefined) || "Class";
               const confirmedCount =
                 confirmedBySession[booking.session_id] ?? 0;
 
@@ -245,7 +245,7 @@ export default async function MyBookingsPage() {
               const className =
                 (classesRef && !Array.isArray(classesRef)
                   ? (classesRef as { name?: string }).name
-                  : undefined) || "—";
+                  : undefined) || "Class";
               return (
                 <div
                   key={booking.id}

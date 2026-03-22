@@ -19,7 +19,8 @@ type InstructorClass = {
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-function formatTime(time: string) {
+function formatTime(time: string | null | undefined) {
+  if (!time) return "—";
   const [h, m] = time.split(":").map(Number);
   const ampm = h >= 12 ? "PM" : "AM";
   const h12 = h % 12 || 12;
@@ -101,7 +102,7 @@ export default function OwnerMyClassesPage() {
                   )}
                 </div>
                 <p className="mt-1 text-sm text-gray-500">
-                  {DAY_LABELS[cls.day_of_week]} &middot;{" "}
+                  {cls.day_of_week != null ? DAY_LABELS[cls.day_of_week] + " · " : ""}
                   {formatTime(cls.start_time)} &middot; {cls.duration_minutes}{" "}
                   min &middot; Cap: {cls.capacity}
                   {cls.rooms ? ` · ${cls.rooms.name}` : ""}
