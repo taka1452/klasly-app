@@ -2,12 +2,19 @@ import webpush from "web-push";
 import { createAdminClient } from "@/lib/admin/supabase";
 import type { PushNotificationType } from "@/types/database";
 
-// VAPID 設定
-webpush.setVapidDetails(
-  "mailto:support@klasly.app",
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+// VAPID 設定（遅延初期化 — ビルド時に環境変数がなくてもエラーにならない）
+let vapidConfigured = false;
+function ensureVapidConfigured() {
+  if (vapidConfigured) return;
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  if (!publicKey || !privateKey) {
+    console.warn("VAPID keys not set — push notifications will be skipped");
+    return;
+  }
+  webpush.setVapidDetails("mailto:support@klasly.app", publicKey, privateKey);
+  vapidConfigured = true;
+}
 
 type PushPayload = {
   title: string;
@@ -30,6 +37,9 @@ type SendPushParams = {
  * 指定ユーザーの全アクティブデバイスに Push 通知を送信
  */
 export async function sendPushNotification(params: SendPushParams) {
+  ensureVapidConfigured();
+  if (!vapidConfigured) return { sent: 0, skipped: "vapid_not_configured" };
+
   const { profileId, studioId, type, payload } = params;
   const supabase = createAdminClient();
 
