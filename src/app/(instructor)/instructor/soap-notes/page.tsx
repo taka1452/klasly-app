@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useFeature } from "@/lib/features/feature-context";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
+import ContextHelpLink from "@/components/help/context-help-link";
 
 type MemberItem = {
   id: string;
@@ -35,7 +36,10 @@ export default function SOAPNotesPage() {
   if (!isEnabled(FEATURE_KEYS.SOAP_NOTES)) {
     return (
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">SOAP Notes</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-gray-900">SOAP Notes</h1>
+          <ContextHelpLink href="/help/classes-scheduling/soap-notes" />
+        </div>
         <p className="mt-2 text-sm text-gray-500">This feature is not enabled for your studio.</p>
       </div>
     );
@@ -49,7 +53,10 @@ export default function SOAPNotesPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900">SOAP Notes</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-gray-900">SOAP Notes</h1>
+        <ContextHelpLink href="/help/classes-scheduling/soap-notes" />
+      </div>
       <p className="mt-1 mb-6 text-sm text-gray-500">
         Select a member to view or create session notes
       </p>

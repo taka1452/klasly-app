@@ -3,6 +3,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
+import ContextHelpLink from "@/components/help/context-help-link";
 import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
@@ -66,7 +67,10 @@ export default async function EventsListPage() {
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-xl font-bold text-gray-900 md:text-2xl">Events &amp; Retreats</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-xl font-bold text-gray-900 md:text-2xl">Events &amp; Retreats</h1>
+          <ContextHelpLink href="/help/events-retreats/create-retreat" />
+        </div>
         <Link href="/events/new" className="btn-primary">
           + Create Event
         </Link>

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { formatCurrency } from "@/lib/utils";
 import PaymentsTable from "@/components/payments/payments-table";
 import ExportCsvButton from "@/components/ui/export-csv-button";
+import ContextHelpLink from "@/components/help/context-help-link";
 import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
 
 export default async function PaymentsPage({
@@ -89,7 +90,10 @@ export default async function PaymentsPage({
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900">Payments</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900">Payments</h1>
+            <ContextHelpLink href="/help/payments/view-payment-history" />
+          </div>
           <p className="mt-1 text-sm text-gray-500">
             View payment history and revenue
           </p>

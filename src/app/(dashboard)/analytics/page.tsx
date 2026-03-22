@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useFeature } from "@/lib/features/feature-context";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 import HelpTip from "@/components/ui/help-tip";
+import ContextHelpLink from "@/components/help/context-help-link";
 
 function UTMLinkBuilder() {
   const [source, setSource] = useState("");
@@ -154,7 +155,10 @@ export default function AnalyticsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
+        <ContextHelpLink href="/help/analytics/view-analytics" />
+      </div>
       <p className="mt-1 mb-6 text-sm text-gray-500">
         Track your studio&apos;s performance
       </p>

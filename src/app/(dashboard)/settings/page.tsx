@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import ContextHelpLink from "@/components/help/context-help-link";
 import SettingsContent from "@/components/settings/settings-content";
 
 export const metadata: Metadata = {
@@ -77,7 +78,10 @@ export default async function SettingsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+        <ContextHelpLink href="/help/settings/manage-feature-flags" />
+      </div>
       <p className="mt-1 text-sm text-gray-500">
         Manage your studio, payments, and account
       </p>

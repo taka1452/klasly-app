@@ -1,315 +1,185 @@
 "use client";
 
-import { DM_Sans } from "next/font/google";
-import { useState, useMemo, useEffect } from "react";
-import { SECTIONS } from "@/components/help/help-data";
-import { SectionBlock } from "@/components/help/help-section";
-import { MailIcon, SearchIcon } from "@/components/help/help-icons";
+import Link from "next/link";
+import { helpCategories } from "@/data/help-categories";
+import HelpSearch from "@/components/help/help-search";
+import {
+  Rocket,
+  Calendar,
+  Users,
+  CreditCard,
+  FileCheck,
+  MessageSquare,
+  Building2,
+  Mountain,
+  BarChart3,
+  Settings,
+  BookOpen,
+  ArrowRight,
+} from "lucide-react";
 
-const dmSans = DM_Sans({
-  weight: ["400", "500", "600", "700"],
-  subsets: ["latin"],
-  display: "swap",
-});
+const ICON_MAP: Record<string, React.ReactNode> = {
+  Rocket: <Rocket className="h-6 w-6" />,
+  Calendar: <Calendar className="h-6 w-6" />,
+  Users: <Users className="h-6 w-6" />,
+  CreditCard: <CreditCard className="h-6 w-6" />,
+  FileCheck: <FileCheck className="h-6 w-6" />,
+  MessageSquare: <MessageSquare className="h-6 w-6" />,
+  Building2: <Building2 className="h-6 w-6" />,
+  Mountain: <Mountain className="h-6 w-6" />,
+  BarChart3: <BarChart3 className="h-6 w-6" />,
+  Settings: <Settings className="h-6 w-6" />,
+  BookOpen: <BookOpen className="h-6 w-6" />,
+};
 
-type Tab = "owner" | "instructor" | "member";
-
-const TABS: { key: Tab; label: string }[] = [
-  { key: "owner", label: "Studio Owners" },
-  { key: "instructor", label: "Instructors" },
-  { key: "member", label: "Members" },
+const quickActions = [
+  {
+    label: "Set up my studio for the first time",
+    href: "/help/getting-started/studio-setup-overview",
+  },
+  {
+    label: "Add my existing members",
+    href: "/help/members/import-members-csv",
+  },
+  {
+    label: "Accept payments online",
+    href: "/help/getting-started/connect-stripe",
+  },
+  {
+    label: "Let instructors manage their own classes",
+    href: "/help/collective-mode/collective-overview",
+  },
+  {
+    label: "Embed my schedule on my website",
+    href: "/help/settings/embed-wordpress-widget",
+  },
 ];
 
-function extractText(node: React.ReactNode): string {
-  if (typeof node === "string") return node;
-  if (typeof node === "number") return String(node);
-  if (!node) return "";
-  if (Array.isArray(node)) return node.map(extractText).join(" ");
-  if (typeof node === "object" && "props" in node) {
-    return extractText((node as React.ReactElement).props.children);
-  }
-  return "";
-}
+export default function HelpCenterPage() {
+  const ownerCategories = helpCategories
+    .filter((c) => c.id !== "member-guide")
+    .sort((a, b) => a.order - b.order);
 
-export default function KlaslyHelp() {
-  const [tab, setTab] = useState<Tab>("owner");
-  const [search, setSearch] = useState("");
-
-  const sections = SECTIONS[tab];
-
-  // Smooth scroll to anchor on page load or hash change
-  useEffect(() => {
-    function scrollToHash() {
-      const hash = window.location.hash.slice(1);
-      if (!hash) return;
-      // Small delay to allow DOM to render
-      setTimeout(() => {
-        const el = document.getElementById(hash);
-        if (el) {
-          el.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-      }, 100);
-    }
-    scrollToHash();
-    window.addEventListener("hashchange", scrollToHash);
-    return () => window.removeEventListener("hashchange", scrollToHash);
-  }, []);
-
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return sections;
-    return sections
-      .map((section) => ({
-        ...section,
-        items: section.items.filter(
-          (item) =>
-            item.q.toLowerCase().includes(q) ||
-            section.title.toLowerCase().includes(q) ||
-            extractText(item.a).toLowerCase().includes(q)
-        ),
-      }))
-      .filter((section) => section.items.length > 0);
-  }, [sections, search]);
+  const memberCategory = helpCategories.find((c) => c.id === "member-guide");
 
   return (
-    <div
-      className={dmSans.className}
-      style={{
-        minHeight: "100vh",
-        background: "#f7f7fa",
-      }}
-    >
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div
-        style={{
-          background: "#1a3a5c",
-          padding: "44px 24px 52px",
-          textAlign: "center",
-        }}
-      >
-        <p
-          style={{
-            fontSize: "12px",
-            fontWeight: 600,
-            letterSpacing: "1.5px",
-            textTransform: "uppercase",
-            color: "rgba(255,255,255,0.4)",
-            margin: "0 0 14px 0",
-          }}
-        >
+      <div className="bg-[#1a3a5c] px-6 pb-14 pt-12 text-center">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/40">
           Help Center
         </p>
-        <h1
-          style={{
-            fontSize: "clamp(26px, 4vw, 34px)",
-            fontWeight: 700,
-            color: "#fff",
-            margin: "0 0 8px 0",
-            lineHeight: 1.25,
-          }}
-        >
+        <h1 className="text-3xl font-bold text-white sm:text-4xl">
           How can we help?
         </h1>
-        <p
-          style={{
-            fontSize: "15px",
-            color: "rgba(255,255,255,0.55)",
-            margin: 0,
-          }}
-        >
+        <p className="mt-2 text-sm text-white/55">
           Guides and answers for using Klasly
         </p>
       </div>
 
-      {/* Tabs */}
-      <div
-        style={{
-          maxWidth: "680px",
-          margin: "-24px auto 0",
-          padding: "0 20px",
-          position: "relative",
-          zIndex: 1,
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            background: "#fff",
-            borderRadius: "8px",
-            border: "1px solid #e0e0e5",
-            padding: "3px",
-            boxShadow: "0 1px 8px rgba(0,0,0,0.05)",
-          }}
-        >
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => {
-                setTab(t.key);
-                setSearch("");
-              }}
-              style={{
-                flex: 1,
-                padding: "10px 12px",
-                border: "none",
-                borderRadius: "6px",
-                fontSize: "13px",
-                fontWeight: 600,
-                cursor: "pointer",
-                transition: "all 0.15s ease",
-                fontFamily: "'DM Sans', sans-serif",
-                background: tab === t.key ? "#1a3a5c" : "transparent",
-                color: tab === t.key ? "#fff" : "#888",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+      {/* Search */}
+      <div className="relative z-10 mx-auto -mt-6 max-w-xl px-5">
+        <HelpSearch />
       </div>
 
-      {/* Search + Content */}
-      <div
-        style={{
-          maxWidth: "680px",
-          margin: "0 auto",
-          padding: "24px 20px 60px",
-        }}
-      >
-        {/* Search */}
-        <div
-          style={{
-            position: "relative",
-            marginBottom: "16px",
-          }}
-        >
-          <div
-            style={{
-              position: "absolute",
-              left: "14px",
-              top: "50%",
-              transform: "translateY(-50%)",
-              color: "#aaa",
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
-            <SearchIcon />
+      <div className="mx-auto max-w-3xl px-5 pb-16 pt-10">
+        {/* Quick Actions */}
+        <div className="mb-10">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">
+            What do you want to do?
+          </h2>
+          <div className="space-y-1">
+            {quickActions.map((action) => (
+              <Link
+                key={action.href}
+                href={action.href}
+                className="flex items-center justify-between rounded-lg px-4 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-white hover:shadow-sm"
+              >
+                <span>{action.label}</span>
+                <ArrowRight className="h-4 w-4 text-gray-400" />
+              </Link>
+            ))}
           </div>
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search help topics..."
-            style={{
-              width: "100%",
-              padding: "12px 14px 12px 40px",
-              border: "1px solid #eaeaee",
-              borderRadius: "8px",
-              fontSize: "14px",
-              fontFamily: "'DM Sans', sans-serif",
-              background: "#fff",
-              outline: "none",
-              color: "#333",
-              boxSizing: "border-box",
-            }}
-          />
-          {search && (
-            <button
-              onClick={() => setSearch("")}
-              style={{
-                position: "absolute",
-                right: "12px",
-                top: "50%",
-                transform: "translateY(-50%)",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                color: "#aaa",
-                fontSize: "16px",
-                padding: "4px",
-                lineHeight: 1,
-              }}
-            >
-              &times;
-            </button>
-          )}
         </div>
 
-        {/* Sections */}
-        {filtered.length === 0 ? (
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: "10px",
-              border: "1px solid #eaeaee",
-              padding: "32px 24px",
-              textAlign: "center",
-            }}
-          >
-            <p style={{ fontSize: "14px", color: "#888", margin: 0 }}>
-              No results found for &quot;{search}&quot;. Try a different search term.
-            </p>
+        {/* Browse by topic */}
+        <div className="mb-10">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">
+            Browse by topic
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {ownerCategories.map((cat) => (
+              <Link
+                key={cat.id}
+                href={`/help/${cat.id}`}
+                className="flex items-start gap-4 rounded-xl border border-gray-200 bg-white p-5 transition-all hover:border-brand-300 hover:shadow-md"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+                  {ICON_MAP[cat.icon] ?? null}
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-semibold text-gray-900">
+                    {cat.title}
+                  </h3>
+                  <p className="mt-0.5 text-xs text-gray-500 leading-relaxed">
+                    {cat.description}
+                  </p>
+                </div>
+              </Link>
+            ))}
           </div>
-        ) : (
-          filtered.map((section, i) => (
-            <SectionBlock
-              key={`${tab}-${i}`}
-              title={section.title}
-              items={section.items}
-              tab={tab}
-            />
-          ))
+        </div>
+
+        {/* Member Guide */}
+        {memberCategory && (
+          <div>
+            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">
+              For Members
+            </h2>
+            <Link
+              href={`/help/${memberCategory.id}`}
+              className="flex items-start gap-4 rounded-xl border border-gray-200 bg-white p-5 transition-all hover:border-brand-300 hover:shadow-md"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+                {ICON_MAP[memberCategory.icon] ?? null}
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-sm font-semibold text-gray-900">
+                  {memberCategory.title}
+                </h3>
+                <p className="mt-0.5 text-xs text-gray-500 leading-relaxed">
+                  {memberCategory.description}
+                </p>
+              </div>
+            </Link>
+          </div>
         )}
 
         {/* Contact */}
-        <div
-          style={{
-            background: "#fff",
-            borderRadius: "10px",
-            border: "1px solid #eaeaee",
-            padding: "24px",
-            textAlign: "center",
-            marginTop: "4px",
-          }}
-        >
-          <p
-            style={{
-              fontSize: "15px",
-              fontWeight: 600,
-              color: "#1a1a2e",
-              margin: "0 0 4px 0",
-            }}
-          >
+        <div className="mt-10 rounded-xl border border-gray-200 bg-white p-6 text-center">
+          <p className="text-sm font-semibold text-gray-900">
             Still need help?
           </p>
-          <p
-            style={{
-              fontSize: "13.5px",
-              color: "#888",
-              margin: "0 0 16px 0",
-            }}
-          >
+          <p className="mt-1 text-xs text-gray-500">
             We&apos;re happy to help with any questions.
           </p>
           <a
             href="mailto:support@klasly.app"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "10px 22px",
-              background: "#1a3a5c",
-              color: "#fff",
-              borderRadius: "7px",
-              fontSize: "13.5px",
-              fontWeight: 600,
-              textDecoration: "none",
-              fontFamily: "'DM Sans', sans-serif",
-            }}
+            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#1a3a5c] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#15304d]"
           >
-            <MailIcon />
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
+              />
+            </svg>
             support@klasly.app
           </a>
         </div>

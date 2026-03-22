@@ -5,6 +5,7 @@ import Link from "next/link";
 import DashboardCalendar from "@/components/dashboard/calendar/dashboard-calendar";
 import ExportCsvButton from "@/components/ui/export-csv-button";
 import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
+import ContextHelpLink from "@/components/help/context-help-link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -46,7 +47,10 @@ export default async function SchedulePage() {
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Schedule</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-gray-900">Schedule</h1>
+            <ContextHelpLink href="/help/classes-scheduling/edit-cancel-session" />
+          </div>
           <p className="mt-1 text-sm text-gray-500">
             View all sessions and room bookings
           </p>

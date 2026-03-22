@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import ContextHelpLink from "@/components/help/context-help-link";
 
 type ConversationSummary = {
   memberId: string;
@@ -180,14 +181,17 @@ export default function MessagesClient({
         }`}
       >
         <div className="border-b border-gray-200 px-4 py-3">
-          <h2 className="text-base font-semibold text-gray-900">
-            Messages
-            {totalUnread > 0 && (
-              <span className="ml-2 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
-                {totalUnread}
-              </span>
-            )}
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-semibold text-gray-900">
+              Messages
+              {totalUnread > 0 && (
+                <span className="ml-2 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
+                  {totalUnread}
+                </span>
+              )}
+            </h2>
+            <ContextHelpLink href="/help/messaging/send-message-member" />
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto">
