@@ -126,9 +126,17 @@ export default function CreateEventPage() {
     setSaving(true);
     const supabase = createClient();
 
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setError("Not authenticated.");
+      setSaving(false);
+      return;
+    }
+
     const { data: profile } = await supabase
       .from("profiles")
       .select("studio_id")
+      .eq("id", user.id)
       .single();
     if (!profile?.studio_id) {
       setError("Could not find studio.");
