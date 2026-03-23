@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { formatCurrency } from "@/lib/utils";
 import PaymentsTable from "@/components/payments/payments-table";
 import ExportCsvButton from "@/components/ui/export-csv-button";
-import PageHeader from "@/components/ui/page-header";
+import ContextHelpLink from "@/components/help/context-help-link";
 import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
 
 export default async function PaymentsPage({
@@ -88,17 +88,16 @@ export default async function PaymentsPage({
 
   return (
     <div>
-      <PageHeader
-        title="Payments"
-        subtitle="View payment history and revenue"
-        helpHref="/help/payments/view-payment-history"
-        actions={
-          <ExportCsvButton
-            url={`/api/export/payments?from=${thirtyDaysAgo}&to=${today}`}
-            filename={`payments-${thirtyDaysAgo}-to-${today}.csv`}
-          />
-        }
-      />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-gray-500">View payment history and revenue</p>
+          <ContextHelpLink href="/help/payments/view-payment-history" />
+        </div>
+        <ExportCsvButton
+          url={`/api/export/payments?from=${thirtyDaysAgo}&to=${today}`}
+          filename={`payments-${thirtyDaysAgo}-to-${today}.csv`}
+        />
+      </div>
 
       <div className="mt-6 card">
         <h2 className="text-lg font-semibold text-gray-900">

@@ -78,16 +78,11 @@ export default async function InstructorsPage() {
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl md:text-2xl font-bold text-gray-900">Instructors</h1>
-              <ContextHelpLink href="/help/collective-mode/invite-instructor" />
-            </div>
-            <p className="mt-1 text-sm text-gray-500">
-              {(instructors || []).length} instructor
-              {(instructors || []).length !== 1 ? "s" : ""}
-            </p>
-          </div>
+          <p className="text-sm text-gray-500">
+            {(instructors || []).length} instructor
+            {(instructors || []).length !== 1 ? "s" : ""}
+          </p>
+          <ContextHelpLink href="/help/collective-mode/invite-instructor" />
           <FlowHintPanel flowType="instructors" />
         </div>
         <div className="flex flex-wrap gap-2">

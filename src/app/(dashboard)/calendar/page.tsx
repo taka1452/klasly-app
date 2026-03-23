@@ -46,14 +46,11 @@ export default async function SchedulePage() {
   return (
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-gray-900">Schedule</h1>
-            <ContextHelpLink href="/help/classes-scheduling/edit-cancel-session" />
-          </div>
-          <p className="mt-1 text-sm text-gray-500">
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-gray-500">
             View all sessions and room bookings
           </p>
+          <ContextHelpLink href="/help/classes-scheduling/edit-cancel-session" />
         </div>
         {canManageClasses && (
           <div className="flex gap-2">

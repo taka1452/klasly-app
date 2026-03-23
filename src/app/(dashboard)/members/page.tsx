@@ -83,15 +83,10 @@ export default async function MembersPage({
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-gray-900">Members</h1>
-              <ContextHelpLink href="/help/members/add-member" />
-            </div>
-            <p className="mt-1 text-sm text-gray-500">
-              {filteredMembers.length} member{filteredMembers.length !== 1 ? "s" : ""}
-            </p>
-          </div>
+          <p className="text-sm text-gray-500">
+            {filteredMembers.length} member{filteredMembers.length !== 1 ? "s" : ""}
+          </p>
+          <ContextHelpLink href="/help/members/add-member" />
           <FlowHintPanel flowType="members" />
           <FlowHintPanel flowType="member-invite" buttonLabel="Where to send invite?" />
         </div>

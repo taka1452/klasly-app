@@ -3,7 +3,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
-import PageHeader from "@/components/ui/page-header";
+import ContextHelpLink from "@/components/help/context-help-link";
 import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
 import EmptyState from "@/components/ui/empty-state";
 
@@ -67,15 +67,12 @@ export default async function EventsListPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Events & Retreats"
-        helpHref="/help/events-retreats/create-retreat"
-        actions={
-          <Link href="/events/new" className="btn-primary">
-            + Create Event
-          </Link>
-        }
-      />
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <ContextHelpLink href="/help/events-retreats/create-retreat" />
+        <Link href="/events/new" className="btn-primary">
+          + Create Event
+        </Link>
+      </div>
 
       {!events || events.length === 0 ? (
         <EmptyState
