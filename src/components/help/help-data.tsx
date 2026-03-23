@@ -321,6 +321,15 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
+          q: "How do I delete a room?",
+          a: (
+            <>
+              Go to <B>Rooms → Manage Rooms</B>, click <B>Edit</B> on the room you want to remove, then scroll down to the <B>Danger zone</B> section and click <B>Delete room</B>.
+              <Tip>If the room has upcoming sessions, you&apos;ll need to cancel or reassign them before you can delete it. Past session data is preserved.</Tip>
+            </>
+          ),
+        },
+        {
           q: "Can I see room bookings on the calendar?",
           a: (
             <>
