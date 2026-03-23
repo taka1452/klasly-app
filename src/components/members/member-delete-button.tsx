@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 
 export default function MemberDeleteButton({
   memberId,
@@ -10,7 +11,7 @@ export default function MemberDeleteButton({
   memberId: string;
 }) {
   const router = useRouter();
-  const [confirming, setConfirming] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -34,38 +35,26 @@ export default function MemberDeleteButton({
     router.refresh();
   }
 
-  if (!confirming) {
-    return (
+  return (
+    <>
       <button
-        onClick={() => setConfirming(true)}
+        onClick={() => setShowConfirm(true)}
         className="btn-danger mt-3 w-full text-sm"
       >
         Delete member
       </button>
-    );
-  }
-
-  return (
-    <div className="mt-3 space-y-2">
-      <p className="text-xs font-medium text-red-600">
-        Are you sure? This cannot be undone.
-      </p>
-      {error && <p className="text-xs text-red-600">{error}</p>}
-      <div className="flex gap-2">
-        <button
-          onClick={handleDelete}
-          disabled={loading}
-          className="btn-danger flex-1 text-sm"
-        >
-          {loading ? "Deleting..." : "Yes, delete"}
-        </button>
-        <button
-          onClick={() => setConfirming(false)}
-          className="btn-secondary flex-1 text-sm"
-        >
-          Cancel
-        </button>
-      </div>
-    </div>
+      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+      <ConfirmDialog
+        open={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={handleDelete}
+        title="Delete member"
+        description="Are you sure you want to delete this member? This action cannot be undone."
+        warning="All booking history for this member will be permanently removed."
+        confirmLabel="Yes, delete"
+        variant="danger"
+        loading={loading}
+      />
+    </>
   );
 }

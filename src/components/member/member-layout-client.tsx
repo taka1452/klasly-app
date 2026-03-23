@@ -6,6 +6,7 @@ import MemberHeader from "./member-header";
 import TourProvider from "@/components/tour/TourProvider";
 import { useFeature } from "@/lib/features/feature-context";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
+import MemberBottomNav from "@/components/ui/member-bottom-nav";
 
 type MemberLayoutClientProps = {
   userName: string;
@@ -124,7 +125,8 @@ export default function MemberLayoutClient({
             </span>
           </div>
         )}
-        <main className="mx-auto max-w-6xl px-4 py-4 md:py-6">{children}</main>
+        <main className="mx-auto max-w-6xl px-4 py-4 pb-20 md:pb-0 md:py-6">{children}</main>
+        <MemberBottomNav />
       </div>
     </TourProvider>
   );

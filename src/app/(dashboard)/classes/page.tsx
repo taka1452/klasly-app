@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import TemplateList from "@/components/classes/template-list";
 import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
-import ContextHelpLink from "@/components/help/context-help-link";
+import PageHeader from "@/components/ui/page-header";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -18,20 +18,16 @@ export default async function ClassesPage() {
 
   return (
     <div>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-gray-900">Classes</h1>
-            <ContextHelpLink href="/help/classes-scheduling/create-recurring-class" />
-          </div>
-          <p className="mt-1 text-sm text-gray-500">
-            Manage class templates
-          </p>
-        </div>
-        <Link href="/classes/new" className="btn-primary">
-          + New Template
-        </Link>
-      </div>
+      <PageHeader
+        title="Classes"
+        subtitle="Manage class templates"
+        helpHref="/help/classes-scheduling/create-recurring-class"
+        actions={
+          <Link href="/classes/new" className="btn-primary">
+            + New Template
+          </Link>
+        }
+      />
 
       <div className="mt-6">
         <TemplateList />

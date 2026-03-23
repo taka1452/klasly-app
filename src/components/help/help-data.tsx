@@ -484,10 +484,45 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
+          q: "How do I manage email notification preferences?",
+          a: (
+            <>
+              Go to <B>Settings &rarr; Notifications</B>. You can toggle individual email notification types on or off, including:
+              <Steps>
+                <li><B>Booking confirmations</B> &mdash; sent when you or a member books a class.</li>
+                <li><B>Cancellation notices</B> &mdash; sent when a booking is cancelled.</li>
+                <li><B>Class changes</B> &mdash; sent when a class time or details change.</li>
+                <li><B>Payment receipts</B> &mdash; sent when a payment is processed.</li>
+                <li><B>Waiver requests</B> &mdash; sent when a waiver needs signing.</li>
+                <li><B>New messages</B> &mdash; sent when you receive an in-app message.</li>
+                <li><B>Waitlist updates</B> &mdash; sent when promoted from a waitlist.</li>
+                <li><B>Event reminders</B> &mdash; sent for upcoming events and retreats.</li>
+              </Steps>
+              <Tip>Important account notifications like password resets and security alerts cannot be turned off.</Tip>
+            </>
+          ),
+        },
+        {
           q: "What are the help tips I see next to labels?",
           a: (
             <>
               The small <B>? icons</B> next to form labels and section headings are context help tips. Hover (or tap on mobile) to see a short explanation of the field. Many tips include a <B>Learn more</B> link that jumps to the relevant section of this help page.
+            </>
+          ),
+        },
+        {
+          q: "How do I navigate the settings pages?",
+          a: (
+            <>
+              All settings pages now include a <B>side navigation bar</B> grouped by category:
+              <Steps>
+                <li><B>Payments &amp; Billing</B> — Stripe Connect, Products &amp; Pricing, Subscription.</li>
+                <li><B>Scheduling</B> — Widget (Embed).</li>
+                <li><B>Forms &amp; Waivers</B> — Waiver Template.</li>
+                <li><B>Collective Mode</B> — Collective Setup, Rooms, Tiers, Payout (visible only in Collective Mode).</li>
+                <li><B>Studio</B> — Features, Referral, Notifications, Account, Support.</li>
+              </Steps>
+              <Tip>Click any item in the side nav to jump directly to that settings page. The active page is highlighted.</Tip>
             </>
           ),
         },
@@ -502,6 +537,22 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
                 <li>Delete all associated user accounts.</li>
               </Steps>
               <Tip>This action is irreversible. Make sure to export any data you need before deleting your account.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "Why do I see a confirmation dialog before deleting or deactivating?",
+          a: (
+            <>
+              Destructive actions like deleting a member, deleting an instructor, deactivating a class, cancelling a booking, or deleting your account now show a <B>confirmation dialog</B> before proceeding. This helps prevent accidental data loss. You can dismiss the dialog by clicking <B>Cancel</B> or pressing <B>Escape</B>.
+            </>
+          ),
+        },
+        {
+          q: "What do the detailed error messages mean?",
+          a: (
+            <>
+              When something goes wrong (e.g. a booking conflict, insufficient credits, or a payment failure), Klasly now shows a detailed error message with a <B>title</B>, <B>description</B>, and sometimes a <B>suggested action link</B> to help you resolve the issue quickly. You can dismiss the error by clicking the <B>X</B> button.
             </>
           ),
         },
@@ -1603,8 +1654,8 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "Can I use Klasly on my phone?",
           a: (
             <>
-              Yes! Klasly is fully optimized for mobile devices. You can access all features — browsing schedules, booking classes, viewing payments, and messaging — directly from your phone&apos;s browser. On iPhone, the app also supports the notch and home bar areas for a seamless experience.
-              <Tip>On mobile, the schedule defaults to Day view for easier one-handed browsing. Swipe the navigation tabs to see all menu options.</Tip>
+              Yes! Klasly is fully optimized for mobile devices. You can access all features — browsing schedules, booking classes, viewing payments, and messaging — directly from your phone&apos;s browser. On mobile, a <B>bottom navigation bar</B> gives you quick access to Schedule, Bookings, Credits, and Account. On iPhone, the app also supports the notch and home bar areas for a seamless experience.
+              <Tip>On mobile, the schedule defaults to Day view for easier one-handed browsing. Use the bottom navigation bar for quick access to key sections.</Tip>
             </>
           ),
         },

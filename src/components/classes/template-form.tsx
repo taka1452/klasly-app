@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import ErrorAlert from "@/components/ui/error-alert";
 
 type InstructorOption = { id: string; full_name: string; isMe?: boolean };
 
@@ -228,9 +229,7 @@ export default function TemplateForm({ templateId }: Props) {
     <div className="card max-w-xl">
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && (
-          <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
-            {error}
-          </div>
+          <ErrorAlert error={error} onDismiss={() => setError("")} />
         )}
 
         {/* Name */}

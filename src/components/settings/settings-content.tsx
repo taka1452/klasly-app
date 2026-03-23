@@ -7,6 +7,7 @@ import { useTourActions } from "@/components/tour/TourProvider";
 import Toast from "@/components/ui/toast";
 import FlowHintPanel from "@/components/ui/flow-hint-panel";
 import BookingSettingsCard from "@/components/settings/booking-settings-card";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 
 type Props = {
   fullName: string;
@@ -575,58 +576,24 @@ export default function SettingsContent({
               Permanently delete your account and all associated data.
             </p>
 
-            {!showDeleteConfirm ? (
-              <button
-                type="button"
-                onClick={() => { setShowDeleteConfirm(true); setDeleteConfirmInput(""); }}
-                className="btn-danger mt-4"
-              >
-                Delete my account
-              </button>
-            ) : (
-              <div className="mt-4 space-y-4 rounded-lg border border-red-200 bg-red-50 p-4">
-                <p className="text-sm font-medium text-red-800">
-                  This will permanently delete your account, studio, and all
-                  associated data (members, classes, bookings). This action
-                  cannot be undone.
-                </p>
-                {studioName && (
-                  <div>
-                    <label className="block text-sm text-red-700">
-                      Type <strong>{studioName}</strong> to confirm:
-                    </label>
-                    <input
-                      type="text"
-                      value={deleteConfirmInput}
-                      onChange={(e) => setDeleteConfirmInput(e.target.value)}
-                      placeholder={studioName}
-                      className="mt-1 w-full rounded-lg border border-red-300 bg-white px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-                      autoComplete="off"
-                    />
-                  </div>
-                )}
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={handleDelete}
-                    disabled={deleteLoading || (!!studioName && deleteConfirmInput !== studioName)}
-                    className="btn-danger disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {deleteLoading
-                      ? "Deleting..."
-                      : "Yes, delete everything"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowDeleteConfirm(false)}
-                    disabled={deleteLoading}
-                    className="btn-secondary"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
+            <button
+              type="button"
+              onClick={() => { setShowDeleteConfirm(true); setDeleteConfirmInput(""); }}
+              className="btn-danger mt-4"
+            >
+              Delete my account
+            </button>
+            <ConfirmDialog
+              open={showDeleteConfirm}
+              onClose={() => setShowDeleteConfirm(false)}
+              onConfirm={handleDelete}
+              title="Delete your account"
+              description="This will permanently delete your account, studio, and all associated data (members, classes, bookings). This action cannot be undone."
+              warning="All data will be permanently removed and cannot be recovered."
+              confirmLabel="Yes, delete everything"
+              variant="danger"
+              loading={deleteLoading}
+            />
           </div>}
         </div>
       </section>

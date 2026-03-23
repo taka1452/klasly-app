@@ -7,6 +7,7 @@ import { usePlanAccess } from "@/components/ui/plan-access-provider";
 import FlowHintPanel from "@/components/ui/flow-hint-panel";
 import HelpTip from "@/components/ui/help-tip";
 import HoneypotField from "@/components/ui/honeypot-field";
+import ErrorAlert from "@/components/ui/error-alert";
 
 export default function NewMemberForm() {
   const router = useRouter();
@@ -119,9 +120,7 @@ export default function NewMemberForm() {
         <form onSubmit={handleSubmit} className="space-y-5">
           <HoneypotField />
           {error && (
-            <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
-              {error}
-            </div>
+            <ErrorAlert error={error} onDismiss={() => setError("")} />
           )}
 
           <div>

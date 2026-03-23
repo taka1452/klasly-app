@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 
 export default function OwnerCancelButton({ bookingId }: { bookingId: string }) {
   const router = useRouter();
-  const [confirming, setConfirming] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -20,6 +21,7 @@ export default function OwnerCancelButton({ bookingId }: { bookingId: string }) 
         setLoading(false);
         return;
       }
+      setShowConfirm(false);
       router.refresh();
     } catch {
       setError("Something went wrong");
@@ -27,38 +29,26 @@ export default function OwnerCancelButton({ bookingId }: { bookingId: string }) 
     }
   }
 
-  if (confirming) {
-    return (
-      <div className="flex flex-col items-end gap-1">
-        {error && <p className="text-xs text-red-600">{error}</p>}
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => { setConfirming(false); setError(""); }}
-            className="text-xs text-gray-500 hover:text-gray-700"
-          >
-            Keep
-          </button>
-          <button
-            type="button"
-            onClick={handleCancel}
-            disabled={loading}
-            className="text-xs font-medium text-red-600 hover:text-red-800"
-          >
-            {loading ? "Cancelling…" : "Confirm cancel"}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <button
-      type="button"
-      onClick={() => setConfirming(true)}
-      className="text-sm text-gray-400 underline hover:text-red-600"
-    >
-      Cancel
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={() => setShowConfirm(true)}
+        className="text-sm text-gray-400 underline hover:text-red-600"
+      >
+        Cancel
+      </button>
+      {error && <p className="text-xs text-red-600">{error}</p>}
+      <ConfirmDialog
+        open={showConfirm}
+        onClose={() => { setShowConfirm(false); setError(""); }}
+        onConfirm={handleCancel}
+        title="Cancel booking"
+        description="Are you sure you want to cancel this booking? The member will be notified."
+        confirmLabel="Confirm cancel"
+        variant="warning"
+        loading={loading}
+      />
+    </>
   );
 }

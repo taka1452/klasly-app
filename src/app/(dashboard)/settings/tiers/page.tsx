@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import ErrorAlert from "@/components/ui/error-alert";
 
 type Tier = {
   id: string;
@@ -185,8 +186,8 @@ export default function TierManagementPage() {
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
-          {error}
+        <div className="mb-4">
+          <ErrorAlert error={error} onDismiss={() => setError("")} />
         </div>
       )}
       {success && (

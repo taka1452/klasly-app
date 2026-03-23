@@ -871,6 +871,22 @@ export type NotificationPreferences = {
   updated_at: string;
 };
 
+export type EmailNotificationPreferences = {
+  id: string;
+  profile_id: string;
+  studio_id: string;
+  email_booking_confirmation: boolean;
+  email_booking_cancellation: boolean;
+  email_class_changes: boolean;
+  email_payment_receipts: boolean;
+  email_waiver_requests: boolean;
+  email_new_messages: boolean;
+  email_waitlist_promotion: boolean;
+  email_event_reminders: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 export type PushNotificationType =
   | "booking_confirmation"
   | "booking_cancellation"

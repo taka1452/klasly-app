@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 
 export default function ClassDeactivateButton({
   classId,
@@ -10,7 +11,7 @@ export default function ClassDeactivateButton({
   classId: string;
 }) {
   const router = useRouter();
-  const [confirming, setConfirming] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -34,39 +35,25 @@ export default function ClassDeactivateButton({
     router.refresh();
   }
 
-  if (!confirming) {
-    return (
+  return (
+    <>
       <button
-        onClick={() => setConfirming(true)}
+        onClick={() => setShowConfirm(true)}
         className="btn-secondary mt-3 w-full border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
       >
         Deactivate class
       </button>
-    );
-  }
-
-  return (
-    <div className="mt-3 space-y-2">
-      <p className="text-xs font-medium text-amber-700">
-        Deactivating hides the class from the schedule. You can re-activate it
-        later by editing.
-      </p>
-      {error && <p className="text-xs text-red-600">{error}</p>}
-      <div className="flex gap-2">
-        <button
-          onClick={handleDeactivate}
-          disabled={loading}
-          className="btn-secondary flex-1 text-sm"
-        >
-          {loading ? "Deactivating..." : "Yes, deactivate"}
-        </button>
-        <button
-          onClick={() => setConfirming(false)}
-          className="btn-secondary flex-1 text-sm"
-        >
-          Cancel
-        </button>
-      </div>
-    </div>
+      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+      <ConfirmDialog
+        open={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={handleDeactivate}
+        title="Deactivate class"
+        description="Deactivating hides the class from the schedule. You can re-activate it later by editing."
+        confirmLabel="Yes, deactivate"
+        variant="warning"
+        loading={loading}
+      />
+    </>
   );
 }
