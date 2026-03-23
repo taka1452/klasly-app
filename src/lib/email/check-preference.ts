@@ -26,7 +26,7 @@ export async function shouldSendEmail(
 
   if (!data) return true;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const value = (data as any)[columnName] as boolean | undefined;
-  return value !== false;
+  // 動的カラム名アクセスのため、Supabaseの型推論を回避
+  const row = data as unknown as Record<string, boolean | undefined>;
+  return row[columnName] !== false;
 }
