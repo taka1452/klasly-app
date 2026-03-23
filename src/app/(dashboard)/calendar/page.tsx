@@ -60,16 +60,16 @@ export default async function SchedulePage() {
             <ExportCsvButton
               url="/api/export/classes"
               filename={`classes-${new Date().toISOString().slice(0, 10)}.csv`}
-              label="Export CSV"
+              label="Export"
             />
             <Link href="/calendar/import" className="btn-secondary">
-              Import CSV
+              Import
             </Link>
             <Link href="/classes" className="btn-secondary">
               Classes
             </Link>
             <Link href="/calendar/new" className="btn-primary">
-              + Add class
+              + Add
             </Link>
           </div>
         )}

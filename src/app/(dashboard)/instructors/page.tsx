@@ -90,23 +90,23 @@ export default async function InstructorsPage() {
           </div>
           <FlowHintPanel flowType="instructors" />
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <ExportCsvButton
             url="/api/export/instructors"
             filename={`instructors-${new Date().toISOString().slice(0, 10)}.csv`}
-            label="Export CSV"
+            label="Export"
           />
           <Link href="/instructors/earnings" className="btn-secondary">
-            Earnings Report
+            Earnings
           </Link>
           <Link href="/instructors/tax-report" className="btn-secondary">
-            Tax Report
+            Tax
           </Link>
           <Link href="/instructors/import" className="btn-secondary">
-            Import CSV
+            Import
           </Link>
           <Link href="/instructors/new" className="btn-primary">
-            + Add instructor
+            + Add
           </Link>
         </div>
       </div>

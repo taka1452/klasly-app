@@ -101,10 +101,10 @@ export default async function MembersPage({
             filename={`members-${new Date().toISOString().slice(0, 10)}.csv`}
           />
           <Link href="/members/import" className="btn-secondary">
-            Import CSV
+            Import
           </Link>
           <Link href="/members/new" className="btn-primary">
-            + Add member
+            + Add
           </Link>
         </div>
       </div>
