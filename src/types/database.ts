@@ -107,8 +107,8 @@ export type Instructor = {
   /** Stripe Connect アカウントID（インストラクター直接支払い用） */
   stripe_account_id: string | null;
   stripe_onboarding_complete: boolean;
-  /** レンタル契約タイプ: 'none' | 'fixed' | 'percentage' */
-  rental_type: string;
+  /** レンタル契約タイプ */
+  rental_type: "none" | "flat_monthly" | "per_class";
   /** レンタル料（cents） */
   rental_amount: number;
   created_at: string;
@@ -218,8 +218,8 @@ export type ClassSession = {
   location: string | null;
   /** 繰り返しグループID */
   recurrence_group_id: string | null;
-  /** 繰り返しルール: 'weekly' | null */
-  recurrence_rule: string | null;
+  /** 繰り返しルール */
+  recurrence_rule: "weekly" | null;
   created_at: string;
 };
 
@@ -251,8 +251,8 @@ export type WaiverTemplate = {
   studio_id: string;
   title: string;
   content: string;
-  /** 'standard' | 'minor' */
-  waiver_type: string;
+  /** Waiver種別 */
+  waiver_type: "standard" | "minor";
   created_at: string;
   updated_at: string;
 };
@@ -269,7 +269,7 @@ export type WaiverSignature = {
   // Minor Waiver
   guardian_name: string | null;
   guardian_email: string | null;
-  guardian_relationship: string | null; // 'parent' | 'legal_guardian'
+  guardian_relationship: "parent" | "legal_guardian" | null;
   is_minor: boolean;
   created_at: string;
 };
@@ -282,7 +282,7 @@ export type Product = {
   credits: number;
   price: number;
   currency: string;
-  billing_interval: string | null;
+  billing_interval: "month" | "year" | null;
   description: string | null;
   is_active: boolean;
   sort_order: number;
@@ -354,8 +354,8 @@ export type SupportTicket = {
   studio_id: string | null;
   subject: string;
   description: string | null;
-  status: string;
-  priority: string;
+  status: "open" | "in_progress" | "resolved" | "closed";
+  priority: "low" | "medium" | "high";
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -374,7 +374,7 @@ export type WebhookLog = {
   event_type: string;
   event_id: string | null;
   studio_id: string | null;
-  status: string;
+  status: "success" | "error" | "failure" | "partial";
   payload: Record<string, unknown> | null;
   error_message: string | null;
   created_at: string;
@@ -383,7 +383,7 @@ export type WebhookLog = {
 export type CronLog = {
   id: string;
   job_name: string;
-  status: string;
+  status: "success" | "error" | "failure" | "partial" | "running";
   affected_count: number;
   details: Record<string, unknown> | null;
   error_message: string | null;
@@ -397,7 +397,7 @@ export type EmailLog = {
   to_email: string;
   template: string;
   subject: string | null;
-  status: string;
+  status: "success" | "error" | "sent" | "failed";
   resend_id: string | null;
   error_message: string | null;
   created_at: string;
@@ -407,11 +407,11 @@ export type Coupon = {
   id: string;
   stripe_coupon_id: string;
   name: string;
-  discount_type: string;
+  discount_type: "percent" | "amount";
   discount_value: number;
-  duration: string;
+  duration: "once" | "repeating" | "forever";
   duration_months: number | null;
-  status: string;
+  status: "active" | "inactive";
   notes: string | null;
   created_by: string;
   created_at: string;
@@ -692,6 +692,17 @@ export type CancellationPolicyTier = {
   note: string;
 };
 
+export type ApplicationFieldType = "text" | "email" | "textarea" | "select" | "radio" | "checkbox" | "number" | "date";
+
+export type ApplicationField = {
+  id: string;
+  label: string;
+  type: ApplicationFieldType;
+  required: boolean;
+  placeholder?: string;
+  options?: string[];
+};
+
 export type EventStatus = "draft" | "published" | "sold_out" | "completed" | "cancelled";
 export type EventPaymentType = "full" | "installment";
 export type EventBookingStatus = "pending_payment" | "confirmed" | "completed" | "cancelled";
@@ -718,7 +729,7 @@ export type Event = {
   max_total_capacity: number | null;
   custom_form_id: string | null;
   /** カスタム申込フォームフィールド定義 */
-  application_fields: unknown[] | null;
+  application_fields: ApplicationField[] | null;
   created_at: string;
   updated_at: string;
 };
@@ -749,7 +760,7 @@ export type EventBooking = {
   payment_status: EventPaymentStatus;
   form_response_id: string | null;
   /** カスタム申込フォームへの回答データ */
-  application_responses: unknown | null;
+  application_responses: Record<string, string | boolean> | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -776,7 +787,7 @@ export type StudioPass = {
   name: string;
   description: string | null;
   price_cents: number;
-  billing_interval: string;
+  billing_interval: "month" | "year";
   max_classes_per_month: number | null;
   auto_distribute: boolean;
   stripe_price_id: string | null;
