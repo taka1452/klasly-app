@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/admin/supabase";
 import { createClient as createServerClient } from "@/lib/supabase/server";
+import { z } from "zod";
+import { parseBody } from "@/lib/api/parse-body";
 
 export async function GET() {
   try {
@@ -69,13 +71,22 @@ export async function POST(request: Request) {
     } = await serverSupabase.auth.getUser();
     const createdBy = user?.email ?? "admin";
 
-    const body = await request.json().catch(() => ({}));
-    const name = (body.name ?? "").trim();
-    const discountType = body.discount_type === "amount" ? "amount" : "percent";
-    const discountValue = Number(body.discount_value);
-    const duration = ["forever", "once", "repeating"].includes(body.duration) ? body.duration : "once";
-    const durationMonths = duration === "repeating" ? Math.max(1, parseInt(String(body.duration_months), 10) || 1) : null;
-    const notes = typeof body.notes === "string" ? body.notes.trim() : null;
+    const schema = z.object({
+      name: z.string(),
+      discount_type: z.enum(["percent", "amount"]).default("percent"),
+      discount_value: z.number(),
+      duration: z.enum(["forever", "once", "repeating"]).default("once"),
+      duration_months: z.number().optional(),
+      notes: z.string().optional(),
+    });
+    const body = await parseBody(request, schema);
+    if (body instanceof NextResponse) return body;
+    const name = body.name.trim();
+    const discountType = body.discount_type;
+    const discountValue = body.discount_value;
+    const duration = body.duration;
+    const durationMonths = duration === "repeating" ? Math.max(1, body.duration_months ?? 1) : null;
+    const notes = body.notes?.trim() ?? null;
 
     if (!name || (discountType === "percent" && (discountValue <= 0 || discountValue > 100)) || (discountType === "amount" && discountValue <= 0)) {
       return NextResponse.json({ error: "Invalid name or discount" }, { status: 400 });

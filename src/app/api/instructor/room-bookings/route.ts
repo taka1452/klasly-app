@@ -229,7 +229,7 @@ export async function POST(request: Request) {
         }
 
         if (usedMinutes + perBookingMinutes >= monthlyMinutes * 0.9 && usedMinutes < monthlyMinutes * 0.9) {
-          sendOverageWarningEmail(ctx.supabase, ctx.instructorId, ctx.studioId, usedMinutes + perBookingMinutes, monthlyMinutes, overageRateCents).catch(() => {});
+          sendOverageWarningEmail(ctx.supabase, ctx.instructorId, ctx.studioId, usedMinutes + perBookingMinutes, monthlyMinutes, overageRateCents).catch((err) => console.warn("[RoomBookings] Overage warning email failed:", err));
         }
       }
     }

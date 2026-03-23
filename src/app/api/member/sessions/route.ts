@@ -3,6 +3,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { isFeatureEnabled } from "@/lib/features/check-feature";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
+import { unwrapRelation } from "@/lib/supabase/relation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -206,7 +207,7 @@ export async function GET(request: NextRequest) {
 
       if (passSubs && passSubs.length > 0) {
         const sub = passSubs[0];
-        const pass = sub.studio_passes as unknown as { max_classes_per_month: number | null } | null;
+        const pass = unwrapRelation<{ max_classes_per_month: number | null }>(sub.studio_passes);
         const maxClasses = pass?.max_classes_per_month ?? null;
         const used = sub.classes_used_this_period ?? 0;
         const hasCapacity = maxClasses === null || used < maxClasses;

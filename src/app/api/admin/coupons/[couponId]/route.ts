@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/admin/supabase";
+import { z } from "zod";
+import { parseBody } from "@/lib/api/parse-body";
 
 export async function PATCH(
   request: Request,
@@ -11,8 +13,10 @@ export async function PATCH(
     const supabase = createAdminClient();
     const { couponId } = await params;
 
-    const body = await request.json().catch(() => ({}));
-    const status = body.status === "inactive" ? "inactive" : "active";
+    const schema = z.object({ status: z.enum(["active", "inactive"]).default("active") });
+    const body = await parseBody(request, schema);
+    if (body instanceof NextResponse) return body;
+    const status = body.status;
 
     const { error } = await supabase.from("coupons").update({ status }).eq("id", couponId);
 

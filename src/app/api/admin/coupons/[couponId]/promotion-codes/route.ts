@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/admin/supabase";
 import { getStripe } from "@/lib/stripe/server";
+import { z } from "zod";
+import { parseBody } from "@/lib/api/parse-body";
 
 export async function POST(
   request: Request,
@@ -22,9 +24,16 @@ export async function POST(
       return NextResponse.json({ error: "Coupon not found" }, { status: 404 });
     }
 
-    const body = await request.json().catch(() => ({}));
-    const code = (body.code ?? "").trim().toUpperCase().replace(/\s/g, "");
-    const maxRedemptions = body.max_redemptions != null ? parseInt(String(body.max_redemptions), 10) : null;
+    const schema = z.object({
+      code: z.string(),
+      max_redemptions: z.number().optional().nullable(),
+      expires_at: z.string().optional().nullable(),
+      first_time_only: z.boolean().optional(),
+    });
+    const body = await parseBody(request, schema);
+    if (body instanceof NextResponse) return body;
+    const code = body.code.trim().toUpperCase().replace(/\s/g, "");
+    const maxRedemptions = body.max_redemptions != null ? body.max_redemptions : null;
     const expiresAt = body.expires_at ? new Date(body.expires_at).getTime() / 1000 : null;
     const firstTimeOnly = body.first_time_only === true;
 

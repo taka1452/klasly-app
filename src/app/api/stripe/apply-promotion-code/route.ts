@@ -2,6 +2,8 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe/server";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { parseBody } from "@/lib/api/parse-body";
 
 /**
  * Studio owner applies a promotion code to their current subscription.
@@ -38,7 +40,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const body = await request.json().catch(() => ({}));
+    const schema = z.object({
+      promotion_code: z.string().optional(),
+      code: z.string().optional(),
+    });
+    const body = await parseBody(request, schema);
+    if (body instanceof NextResponse) return body;
     const code = (body.promotion_code ?? body.code ?? "").trim();
     if (!code) {
       return NextResponse.json({ error: "Promotion code is required" }, { status: 400 });

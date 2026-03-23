@@ -29,6 +29,19 @@ export async function GET() {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // マネージャーの場合はメンバー管理権限を検証（リファラルはメンバー獲得に関わる機能）
+    if (profile.role === "manager") {
+      const { data: mgr } = await adminDb
+        .from("managers")
+        .select("can_manage_members")
+        .eq("profile_id", user.id)
+        .eq("studio_id", profile.studio_id)
+        .single();
+      if (!mgr?.can_manage_members) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    }
+
     // 既存のコードを確認
     const { data: existing } = await adminDb
       .from("referral_codes")

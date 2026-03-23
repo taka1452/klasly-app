@@ -158,7 +158,7 @@ export async function GET(request: Request) {
       headStyles: { fillColor: [0, 116, 197] },
     });
 
-    const afterSummary = ((doc as unknown as Record<string, { finalY?: number }>).lastAutoTable)?.finalY ?? 80;
+    const afterSummary = (doc as { lastAutoTable?: { finalY?: number } }).lastAutoTable?.finalY ?? 80;
 
     // Instructor detail table
     autoTable(doc, {

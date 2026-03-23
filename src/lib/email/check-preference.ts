@@ -26,6 +26,7 @@ export async function shouldSendEmail(
 
   if (!data) return true;
 
-  const value = (data as unknown as Record<string, boolean | undefined>)[columnName];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const value = (data as any)[columnName] as boolean | undefined;
   return value !== false;
 }

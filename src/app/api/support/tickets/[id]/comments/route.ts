@@ -2,6 +2,8 @@ import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { parseBody } from "@/lib/api/parse-body";
 
 async function getStudioIdForUser(
   supabase: SupabaseClient,
@@ -60,8 +62,10 @@ export async function POST(
       return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
     }
 
-    const body = await request.json().catch(() => ({}));
-    const content = (body.content ?? "").trim();
+    const schema = z.object({ content: z.string() });
+    const body = await parseBody(request, schema);
+    if (body instanceof NextResponse) return body;
+    const content = body.content.trim();
 
     if (!content) {
       return NextResponse.json({ error: "Content is required" }, { status: 400 });

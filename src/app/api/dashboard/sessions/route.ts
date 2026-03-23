@@ -57,6 +57,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // マネージャーの場合はクラス管理権限を検証
+    if (profile.role === "manager") {
+      const { data: mgr } = await supabase
+        .from("managers")
+        .select("can_manage_classes")
+        .eq("profile_id", user.id)
+        .eq("studio_id", profile.studio_id)
+        .single();
+      if (!mgr?.can_manage_classes) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    }
+
     const studioId = profile.studio_id;
 
     // ── Fetch all sessions (classes + room bookings) from unified table ──

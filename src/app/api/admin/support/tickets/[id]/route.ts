@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/admin/supabase";
+import { z } from "zod";
+import { parseBody } from "@/lib/api/parse-body";
 
 export async function GET(
   _request: Request,
@@ -52,7 +54,12 @@ export async function PATCH(
     const supabase = createAdminClient();
     const { id } = await params;
 
-    const body = await request.json().catch(() => ({}));
+    const schema = z.object({
+      status: z.string().optional(),
+      priority: z.string().optional(),
+    });
+    const body = await parseBody(request, schema);
+    if (body instanceof NextResponse) return body;
     const updates: Record<string, unknown> = {};
     if (body.status !== undefined) updates.status = body.status;
     if (body.priority !== undefined) updates.priority = body.priority;

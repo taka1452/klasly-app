@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/admin/supabase";
 import { sendEmail } from "@/lib/email/send";
+import { z } from "zod";
+import { parseBody } from "@/lib/api/parse-body";
 
 export async function POST(
   request: Request,
@@ -12,8 +14,14 @@ export async function POST(
     const supabase = createAdminClient();
     const { studioId } = await params;
 
-    const body = await request.json().catch(() => ({}));
-    const subject = (body.subject ?? "").trim();
+    const schema = z.object({
+      subject: z.string(),
+      body: z.string().optional(),
+      html: z.string().optional(),
+    });
+    const body = await parseBody(request, schema);
+    if (body instanceof NextResponse) return body;
+    const subject = body.subject.trim();
     const bodyText = (body.body ?? body.html ?? "").trim();
 
     if (!subject || !bodyText) {

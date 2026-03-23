@@ -58,7 +58,7 @@ export default function MemberSOAPNotesPage() {
         );
         if (m) setMemberName(m.name);
       })
-      .catch(() => {});
+      .catch((err) => console.warn("[SOAPNotes] Failed to fetch member name:", err));
   }, [memberId, fetchNotes]);
 
   function resetForm() {

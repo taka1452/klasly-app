@@ -6,6 +6,8 @@ import { bookingCancelled, waitlistPromoted } from "@/lib/email/templates";
 import { sendPushNotification } from "@/lib/push/send";
 import { pushBookingCancelled, pushWaitlistPromoted } from "@/lib/push/templates";
 import { formatDate, formatTime } from "@/lib/utils";
+import { unwrapRelation } from "@/lib/supabase/relation";
+import { logger } from "@/lib/logger";
 
 export async function POST(
   _request: Request,
@@ -102,11 +104,11 @@ export async function POST(
 
         if (usageRows) {
           for (const usage of usageRows) {
-            const sub = usage.pass_subscriptions as unknown as {
+            const sub = unwrapRelation<{
               id: string;
               member_id: string;
               classes_used_this_period: number;
-            } | null;
+            }>(usage.pass_subscriptions);
             if (!sub || sub.member_id !== booking.member_id) continue;
 
             // Delete first, then decrement (sequential to avoid inconsistency)
@@ -115,7 +117,7 @@ export async function POST(
               .delete()
               .eq("id", usage.id);
             if (delErr) {
-              console.error("[cancel] pass_class_usage delete failed:", delErr.message);
+              logger.error("pass_class_usage delete failed on cancel", { error: delErr.message });
               break;
             }
             await adminSupabase.rpc("decrement_pass_usage", {
@@ -177,7 +179,7 @@ export async function POST(
           sessionDate: emailPayload.sessionDate,
           startTime: emailPayload.startTime,
         }),
-      }).catch((err) => console.error("Push notification failed:", err));
+      }).catch((err) => logger.warn("Push notification failed", { error: err instanceof Error ? err.message : String(err) }));
     }
 
     // ウェイトリスト昇格（確認済み予約のキャンセルの場合）
@@ -259,7 +261,7 @@ export async function POST(
                   sessionDate: emailPayload.sessionDate,
                   startTime: emailPayload.startTime,
                 }),
-              }).catch((err) => console.error("Push notification failed:", err));
+              }).catch((err) => logger.warn("Push notification failed", { error: err instanceof Error ? err.message : String(err) }));
             }
           }
 

@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
+import { z } from "zod";
+import { parseBody } from "@/lib/api/parse-body";
+import { validateCsrfToken } from "@/lib/api/csrf";
 
 /** Owner only. Replay: set onboarding_step = 0, do NOT touch onboarding_completed */
 export async function POST(request: Request) {
   try {
+    // CSRF protection
+    const csrfError = await validateCsrfToken(request);
+    if (csrfError) return csrfError;
+
     const serverSupabase = await createServerClient();
     const {
       data: { user },
@@ -37,8 +44,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const body = await request.json().catch(() => ({}));
-    const action = body?.action;
+    const schema = z.object({ action: z.enum(["replay", "mark_complete"]) });
+    const body = await parseBody(request, schema);
+    if (body instanceof NextResponse) return body;
+    const { action } = body;
 
     if (action === "replay") {
       const { error } = await adminSupabase

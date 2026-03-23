@@ -1,6 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { parseBody } from "@/lib/api/parse-body";
 
 /**
  * List support tickets for the current user's studio (owner only).
@@ -96,8 +98,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const body = await request.json().catch(() => ({}));
-    const subject = (body.subject ?? "").trim();
+    const schema = z.object({
+      subject: z.string(),
+      description: z.string().optional(),
+    });
+    const body = await parseBody(request, schema);
+    if (body instanceof NextResponse) return body;
+    const subject = body.subject.trim();
     const description = (body.description ?? "").trim();
 
     if (!subject) {

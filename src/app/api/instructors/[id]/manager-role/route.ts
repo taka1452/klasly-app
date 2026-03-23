@@ -1,6 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { parseBody } from "@/lib/api/parse-body";
 
 async function getOwnerContext() {
   const serverSupabase = await createServerClient();
@@ -82,8 +84,20 @@ export async function POST(
     const ctx = await getOwnerContext();
     if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const body = await request.json().catch(() => ({}));
-    const permissions = body.permissions || {};
+    const schema = z.object({
+      permissions: z.object({
+        canManageMembers: z.boolean().optional(),
+        canManageClasses: z.boolean().optional(),
+        canManageInstructors: z.boolean().optional(),
+        canManageBookings: z.boolean().optional(),
+        canManageRooms: z.boolean().optional(),
+        canViewPayments: z.boolean().optional(),
+        canSendMessages: z.boolean().optional(),
+      }).optional(),
+    });
+    const body = await parseBody(request, schema);
+    if (body instanceof NextResponse) return body;
+    const permissions = body.permissions ?? {};
 
     const { data: instructor } = await ctx.supabase
       .from("instructors")

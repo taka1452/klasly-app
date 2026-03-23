@@ -6,6 +6,7 @@ import { formatDate, formatTime } from "@/lib/utils";
 import { getPlanAccess } from "@/lib/plan-guard";
 import { getRequiresCredits } from "@/lib/booking-utils";
 import BookingButton from "@/components/bookings/booking-button";
+import { unwrapRelation } from "@/lib/supabase/relation";
 
 export default async function MyBookingsPage() {
   const serverSupabase = await createServerClient();
@@ -60,7 +61,7 @@ export default async function MyBookingsPage() {
 
     if (passSubs && passSubs.length > 0) {
       const sub = passSubs[0];
-      const pass = sub.studio_passes as unknown as { max_classes_per_month: number | null } | null;
+      const pass = unwrapRelation<{ max_classes_per_month: number | null }>(sub.studio_passes);
       const maxClasses = pass?.max_classes_per_month ?? null;
       const used = sub.classes_used_this_period ?? 0;
       const hasCapacity = maxClasses === null || used < maxClasses;

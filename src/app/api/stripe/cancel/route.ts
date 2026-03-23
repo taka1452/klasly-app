@@ -2,9 +2,16 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { stripe } from "@/lib/stripe/server";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { parseBody } from "@/lib/api/parse-body";
+import { validateCsrfToken } from "@/lib/api/csrf";
 
 export async function POST(request: Request) {
   try {
+    // CSRF protection — critical for subscription cancellation
+    const csrfError = await validateCsrfToken(request);
+    if (csrfError) return csrfError;
+
     const serverSupabase = await createServerClient();
     const {
       data: { user },
@@ -44,11 +51,13 @@ export async function POST(request: Request) {
       .single();
 
     const planStatus = studio?.plan_status ?? "active";
-    const body = (await request.json().catch(() => ({}))) as {
-      isTrialing?: boolean;
-      requestRefund?: boolean;
-    };
-    const isTrialing = body?.isTrialing ?? planStatus === "trialing";
+    const schema = z.object({
+      isTrialing: z.boolean().optional(),
+      requestRefund: z.boolean().optional(),
+    });
+    const body = await parseBody(request, schema);
+    if (body instanceof NextResponse) return body;
+    const isTrialing = body.isTrialing ?? planStatus === "trialing";
 
     // トライアルキャンセル: 「今後課金しない」だけにして、ステータスは trialing のまま
     if (isTrialing) {

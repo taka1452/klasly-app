@@ -1,4 +1,7 @@
-type AnySupabaseClient = import("@supabase/supabase-js").SupabaseClient<any>;
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { logger } from "@/lib/logger";
+
+type LogSupabaseClient = SupabaseClient;
 
 type WebhookLogInsert = {
   event_type: string;
@@ -14,7 +17,7 @@ type WebhookLogInsert = {
  * supabase は service role クライアントを渡す。
  */
 export async function insertWebhookLog(
-  supabase: AnySupabaseClient,
+  supabase: LogSupabaseClient,
   row: WebhookLogInsert
 ): Promise<void> {
   try {
@@ -27,7 +30,7 @@ export async function insertWebhookLog(
       error_message: row.error_message ?? null,
     });
   } catch (err) {
-    console.error("[Logs] insertWebhookLog failed:", err);
+    logger.error("insertWebhookLog failed", { eventType: row.event_type, error: err instanceof Error ? err.message : String(err) });
   }
 }
 
@@ -45,7 +48,7 @@ type CronLogInsert = {
  * Cron ジョブ結果を cron_logs に挿入する。
  */
 export async function insertCronLog(
-  supabase: AnySupabaseClient,
+  supabase: LogSupabaseClient,
   row: CronLogInsert
 ): Promise<void> {
   try {
@@ -60,7 +63,7 @@ export async function insertCronLog(
       completed_at: row.completed_at ?? now,
     });
   } catch (err) {
-    console.error("[Logs] insertCronLog failed:", err);
+    logger.error("insertCronLog failed", { jobName: row.job_name, error: err instanceof Error ? err.message : String(err) });
   }
 }
 
@@ -78,7 +81,7 @@ type EmailLogInsert = {
  * メール送信結果を email_logs に挿入する。
  */
 export async function insertEmailLog(
-  supabase: AnySupabaseClient,
+  supabase: LogSupabaseClient,
   row: EmailLogInsert
 ): Promise<void> {
   try {
@@ -92,6 +95,6 @@ export async function insertEmailLog(
       error_message: row.error_message ?? null,
     });
   } catch (err) {
-    console.error("[Logs] insertEmailLog failed:", err);
+    logger.error("insertEmailLog failed", { template: row.template, to: row.to_email, error: err instanceof Error ? err.message : String(err) });
   }
 }

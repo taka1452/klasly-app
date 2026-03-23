@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { unwrapRelation } from "@/lib/supabase/relation";
 
 export default async function MyPaymentsPage() {
   const serverSupabase = await createServerClient();
@@ -57,10 +58,9 @@ export default async function MyPaymentsPage() {
   function typeLabel(
     pt: string | undefined,
     t: string,
-    productRef?: { name: string } | { name: string }[] | null
+    productRef?: { name: string } | null
   ): string {
-    const productName = productRef == null ? null : Array.isArray(productRef) ? productRef[0] : productRef;
-    if (productName?.name) return productName.name;
+    if (productRef?.name) return productRef.name;
     const p = pt ?? t;
     if (p === "monthly") return "Monthly";
     if (p === "pack_5") return "5-Pack";
@@ -91,7 +91,7 @@ export default async function MyPaymentsPage() {
                       {typeLabel(
                         p.payment_type,
                         p.type,
-                        (p as unknown as { products?: { name: string } | { name: string }[] | null }).products
+                        unwrapRelation<{ name: string }>(p.products)
                       )}
                     </p>
                     <p className="mt-0.5 text-sm text-gray-500">
@@ -152,7 +152,7 @@ export default async function MyPaymentsPage() {
                         {typeLabel(
                           p.payment_type,
                           p.type,
-                          (p as unknown as { products?: { name: string } | { name: string }[] | null }).products
+                          unwrapRelation<{ name: string }>(p.products)
                         )}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3">

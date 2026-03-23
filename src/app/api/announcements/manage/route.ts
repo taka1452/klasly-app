@@ -24,6 +24,17 @@ async function getOwnerContext() {
   if (!profile || !profile.studio_id) return null;
   if (profile.role !== "owner" && profile.role !== "manager") return null;
 
+  // マネージャーの場合はメッセージ送信権限を検証
+  if (profile.role === "manager") {
+    const { data: mgr } = await supabase
+      .from("managers")
+      .select("can_send_messages")
+      .eq("profile_id", user.id)
+      .eq("studio_id", profile.studio_id)
+      .single();
+    if (!mgr?.can_send_messages) return null;
+  }
+
   return { supabase, userId: user.id, studioId: profile.studio_id };
 }
 

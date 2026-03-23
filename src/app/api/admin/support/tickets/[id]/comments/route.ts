@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/admin/supabase";
 import { createClient } from "@/lib/supabase/server";
+import { z } from "zod";
+import { parseBody } from "@/lib/api/parse-body";
 
 export async function POST(
   request: Request,
@@ -18,8 +20,10 @@ export async function POST(
     } = await serverSupabase.auth.getUser();
     const createdBy = user?.email ?? user?.id ?? "admin";
 
-    const body = await request.json().catch(() => ({}));
-    const content = (body.content ?? "").trim();
+    const schema = z.object({ content: z.string() });
+    const body = await parseBody(request, schema);
+    if (body instanceof NextResponse) return body;
+    const content = body.content.trim();
 
     if (!content) {
       return NextResponse.json({ error: "Content is required" }, { status: 400 });

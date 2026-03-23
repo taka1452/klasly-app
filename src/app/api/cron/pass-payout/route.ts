@@ -1,10 +1,10 @@
-// @ts-nocheck - Supabase generic type mismatch between createClient overloads
-import { createClient } from "@supabase/supabase-js";
 import { stripe } from "@/lib/stripe/server";
 import { NextResponse } from "next/server";
 import { insertCronLog } from "@/lib/admin/logs";
 import { sendEmail } from "@/lib/email/send";
 import { passDistributionPaid, passDistributionFailed } from "@/lib/email/templates";
+import { createTypedAdminClient, type AdminSupabaseClient } from "@/lib/supabase/admin-typed";
+import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -29,12 +29,12 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) {
+  let supabase: AdminSupabaseClient;
+  try {
+    supabase = createTypedAdminClient();
+  } catch {
     return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
   }
-
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey);
   const cronStartedAt = new Date().toISOString();
   let successCount = 0;
   let failCount = 0;
@@ -156,7 +156,7 @@ export async function GET(request: Request) {
         }
       } catch (err: unknown) {
         const errMsg = err instanceof Error ? err.message : "Transfer failed";
-        console.error(`[pass-payout] Transfer error for dist ${dist.id}:`, errMsg);
+        logger.error("Pass payout transfer failed", { distributionId: dist.id, error: errMsg });
 
         await supabase
           .from("pass_distributions")
@@ -179,7 +179,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: true, success: successCount, failed: failCount });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    console.error("[pass-payout] Error:", message);
+    logger.error("Pass payout cron failed", { error: message });
     await insertCronLog(supabase, {
       job_name: "pass-payout",
       status: "error",
@@ -191,7 +191,7 @@ export async function GET(request: Request) {
 }
 
 async function notifyOwnerOfFailure(
-  supabase: any,
+  supabase: AdminSupabaseClient,
   dist: { studio_id: string; instructor_id: string; payout_amount: number; period_start: string },
   errorMessage: string
 ) {
@@ -238,6 +238,6 @@ async function notifyOwnerOfFailure(
       });
     }
   } catch {
-    console.error("[pass-payout] Failed to notify owner of payout failure");
+    logger.error("Failed to notify owner of payout failure", { studioId: dist.studio_id });
   }
 }

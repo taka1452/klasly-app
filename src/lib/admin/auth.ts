@@ -1,19 +1,39 @@
-import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 
 const ADMIN_EMAILS_KEY = "ADMIN_EMAILS";
 
 /**
- * 環境変数 ADMIN_EMAILS（カンマ区切り）から管理者メールリストを取得
+ * 環境変数 ADMIN_EMAILS（カンマ区切り）から管理者メールリストを取得。
+ *
+ * 例: ADMIN_EMAILS="admin1@example.com, admin2@example.com, backup@example.com"
+ *
+ * ⚠ 単一メールのみの場合は単一障害点となるため、
+ *   最低2つ以上の管理者メールを設定することを推奨。
  */
 function getAdminEmails(): string[] {
   const raw = process.env[ADMIN_EMAILS_KEY];
-  if (!raw || typeof raw !== "string") return [];
-  return raw
+  if (!raw || typeof raw !== "string") {
+    console.warn(
+      "[Admin] ADMIN_EMAILS environment variable is not set. No admin access will be granted."
+    );
+    return [];
+  }
+
+  const emails = raw
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
+
+  if (emails.length === 0) {
+    console.warn("[Admin] ADMIN_EMAILS is set but contains no valid emails.");
+  } else if (emails.length === 1) {
+    console.warn(
+      "[Admin] Only one admin email configured. Consider adding a backup admin for redundancy."
+    );
+  }
+
+  return emails;
 }
 
 /**

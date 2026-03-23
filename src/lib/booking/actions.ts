@@ -15,6 +15,8 @@ import { formatDate, formatTime } from "@/lib/utils";
 import { getRequiresCredits } from "@/lib/booking-utils";
 import { isFeatureEnabled } from "@/lib/features/check-feature";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
+import { unwrapRelation } from "@/lib/supabase/relation";
+import { logger } from "@/lib/logger";
 
 type BookingAction = "book" | "rebook" | "cancel" | "leave_waitlist";
 
@@ -52,7 +54,7 @@ async function getActivePass(adminSupabase: SupabaseClient, memberId: string) {
 
   // Find first pass with remaining capacity
   for (const sub of passSubs) {
-    const pass = sub.studio_passes as unknown as { id: string; max_classes_per_month: number | null } | null;
+    const pass = unwrapRelation<{ id: string; max_classes_per_month: number | null }>(sub.studio_passes);
     if (!pass) continue;
 
     const maxClasses = pass.max_classes_per_month;
@@ -72,7 +74,7 @@ async function getActivePass(adminSupabase: SupabaseClient, memberId: string) {
 
   // All passes are at capacity
   const firstSub = passSubs[0];
-  const firstPass = firstSub.studio_passes as unknown as { id: string; max_classes_per_month: number | null } | null;
+  const firstPass = unwrapRelation<{ id: string; max_classes_per_month: number | null }>(firstSub.studio_passes);
   return {
     subscriptionId: firstSub.id,
     passId: firstPass?.id ?? "",
@@ -99,7 +101,7 @@ async function recordPassUsage(
     instructor_id: instructorId,
   });
   if (error) {
-    console.error("[recordPassUsage] insert failed:", error.message);
+    logger.error("recordPassUsage insert failed", { error: error.message });
     return;
   }
   // Atomically increment counter after successful insert
@@ -125,11 +127,11 @@ async function revertPassUsage(
   if (!usageRows) return;
 
   for (const usage of usageRows) {
-    const sub = usage.pass_subscriptions as unknown as {
+    const sub = unwrapRelation<{
       id: string;
       member_id: string;
       classes_used_this_period: number;
-    } | null;
+    }>(usage.pass_subscriptions);
     if (!sub || sub.member_id !== memberId) continue;
 
     // Delete usage record first, then atomically decrement counter
@@ -138,7 +140,7 @@ async function revertPassUsage(
       .delete()
       .eq("id", usage.id);
     if (delErr) {
-      console.error("[revertPassUsage] delete failed:", delErr.message);
+      logger.error("revertPassUsage delete failed", { error: delErr.message });
       break;
     }
     await adminSupabase.rpc("decrement_pass_usage", {
@@ -370,7 +372,7 @@ export async function executeBookingAction({
           studioId: member.studio_id,
           type: "booking_confirmation",
           payload: pushBookingConfirmation({ className, sessionDate, startTime }),
-        }).catch((err) => console.error("Push notification failed:", err));
+        }).catch((err) => logger.warn("Push notification failed", { error: err instanceof Error ? err.message : String(err) }));
       }
     } else {
       // book
@@ -421,7 +423,7 @@ export async function executeBookingAction({
           studioId: member.studio_id,
           type: "booking_confirmation",
           payload: pushBookingConfirmation({ className, sessionDate, startTime }),
-        }).catch((err) => console.error("Push notification failed:", err));
+        }).catch((err) => logger.warn("Push notification failed", { error: err instanceof Error ? err.message : String(err) }));
       }
     }
   } else if (action === "cancel") {
@@ -467,7 +469,7 @@ export async function executeBookingAction({
         studioId: member.studio_id,
         type: "booking_cancellation",
         payload: pushBookingCancelled({ className, sessionDate, startTime }),
-      }).catch((err) => console.error("Push notification failed:", err));
+      }).catch((err) => logger.warn("Push notification failed", { error: err instanceof Error ? err.message : String(err) }));
     }
 
     // Waitlist promotion
@@ -540,7 +542,7 @@ export async function executeBookingAction({
           studioId: member.studio_id,
           type: "waitlist_promotion",
           payload: pushWaitlistPromoted({ className, sessionDate, startTime }),
-        }).catch((err) => console.error("Push notification failed:", err));
+        }).catch((err) => logger.warn("Push notification failed", { error: err instanceof Error ? err.message : String(err) }));
       }
     }
   } else if (action === "leave_waitlist") {

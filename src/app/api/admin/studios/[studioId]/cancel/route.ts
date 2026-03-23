@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/admin/supabase";
 import { getStripe } from "@/lib/stripe/server";
+import { z } from "zod";
+import { parseBody } from "@/lib/api/parse-body";
 
 export async function POST(
   request: Request,
@@ -12,7 +14,9 @@ export async function POST(
     const supabase = createAdminClient();
     const { studioId } = await params;
 
-    const body = await request.json().catch(() => ({}));
+    const schema = z.object({ immediate: z.boolean().optional() });
+    const body = await parseBody(request, schema);
+    if (body instanceof NextResponse) return body;
     const immediate = body.immediate === true;
 
     const { data: studio } = await supabase

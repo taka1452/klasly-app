@@ -539,7 +539,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I delete my studio account?",
           a: (
             <>
-              Go to <B>Settings</B> and scroll to the bottom to find the <B>Delete Account</B> section. Deleting your account will:
+              Go to <B>Settings</B> and scroll to the <B>Danger Zone</B> section. To delete your account, you must type your <B>studio name</B> exactly to confirm. Deleting your account will:
               <Steps>
                 <li>Cancel all active Stripe subscriptions (studio plan, member plans, passes, and instructor memberships).</li>
                 <li>Permanently remove all studio data including classes, sessions, bookings, members, and instructors.</li>

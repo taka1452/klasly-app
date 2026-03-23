@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { unwrapRelation } from "@/lib/supabase/relation";
 
 type Room = { id: string; name: string; capacity: number | null };
 type CalEvent = {
@@ -564,7 +565,7 @@ export default function InstructorRoomCalendar() {
                   <option value="">— Room only (no class) —</option>
                   {templates.map((t) => {
                     const instrName = t.instructors?.profiles
-                      ? (Array.isArray(t.instructors.profiles) ? (t.instructors.profiles as unknown as { full_name: string }[])[0]?.full_name : t.instructors.profiles.full_name)
+                      ? unwrapRelation<{ full_name: string }>(t.instructors.profiles)?.full_name ?? null
                       : null;
                     return (
                       <option key={t.id} value={t.id}>

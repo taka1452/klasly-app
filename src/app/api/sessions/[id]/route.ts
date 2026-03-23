@@ -1,6 +1,7 @@
 import { getDashboardContext } from "@/lib/auth/dashboard-access";
 import { getInstructorContext } from "@/lib/auth/instructor-access";
 import { NextResponse } from "next/server";
+import { unwrapRelation } from "@/lib/supabase/relation";
 
 /**
  * PUT /api/sessions/[id]
@@ -488,10 +489,10 @@ async function autoCancelBookingsForSessions(
 
       if (usageRows) {
         for (const usage of usageRows) {
-          const sub = usage.pass_subscriptions as unknown as {
+          const sub = unwrapRelation<{
             id: string;
             member_id: string;
-          } | null;
+          }>(usage.pass_subscriptions);
           if (!sub || sub.member_id !== b.member_id) continue;
 
           await supabase

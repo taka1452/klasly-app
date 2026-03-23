@@ -46,6 +46,8 @@ export type Studio = {
   studio_fee_percentage: number;
   /** スタジオ手数料タイプ: 'percentage' | 'fixed' */
   studio_fee_type: "percentage" | "fixed";
+  /** スタジオのタイムゾーン */
+  timezone: string;
   // Admin
   admin_memo: string | null;
   /** true = デモ/テストスタジオ。KPI集計・スタジオ一覧からデフォルト除外 */
@@ -105,6 +107,10 @@ export type Instructor = {
   /** Stripe Connect アカウントID（インストラクター直接支払い用） */
   stripe_account_id: string | null;
   stripe_onboarding_complete: boolean;
+  /** レンタル契約タイプ: 'none' | 'fixed' | 'percentage' */
+  rental_type: string;
+  /** レンタル料（cents） */
+  rental_amount: number;
   created_at: string;
 };
 
@@ -245,6 +251,8 @@ export type WaiverTemplate = {
   studio_id: string;
   title: string;
   content: string;
+  /** 'standard' | 'minor' */
+  waiver_type: string;
   created_at: string;
   updated_at: string;
 };
@@ -709,6 +717,8 @@ export type Event = {
   cancellation_policy_text: string | null;
   max_total_capacity: number | null;
   custom_form_id: string | null;
+  /** カスタム申込フォームフィールド定義 */
+  application_fields: unknown[] | null;
   created_at: string;
   updated_at: string;
 };
@@ -738,6 +748,8 @@ export type EventBooking = {
   payment_type: EventPaymentType;
   payment_status: EventPaymentStatus;
   form_response_id: string | null;
+  /** カスタム申込フォームへの回答データ */
+  application_responses: unknown | null;
   notes: string | null;
   created_at: string;
   updated_at: string;

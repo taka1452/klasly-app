@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/admin/supabase";
 import { getStripe } from "@/lib/stripe/server";
+import { z } from "zod";
+import { parseBody } from "@/lib/api/parse-body";
 
 export async function PATCH(
   request: Request,
@@ -22,7 +24,9 @@ export async function PATCH(
       return NextResponse.json({ error: "Promotion code not found" }, { status: 404 });
     }
 
-    const body = await request.json().catch(() => ({}));
+    const schema = z.object({ is_active: z.boolean().optional() });
+    const body = await parseBody(request, schema);
+    if (body instanceof NextResponse) return body;
     const isActive = body.is_active !== false;
 
     const stripe = getStripe();

@@ -1,10 +1,11 @@
-// @ts-nocheck - Supabase generic type mismatch between createClient overloads
-import { createClient } from "@supabase/supabase-js";
 import { stripe } from "@/lib/stripe/server";
 import { NextResponse } from "next/server";
 import { insertCronLog } from "@/lib/admin/logs";
 import { sendEmail } from "@/lib/email/send";
 import { tierOverageCharged, tierOverageChargeFailed } from "@/lib/email/templates";
+import { createTypedAdminClient, type AdminSupabaseClient } from "@/lib/supabase/admin-typed";
+import { unwrapRelation } from "@/lib/supabase/relation";
+import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -31,12 +32,12 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) {
+  let supabase: AdminSupabaseClient;
+  try {
+    supabase = createTypedAdminClient();
+  } catch {
     return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
   }
-
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey);
   const cronStartedAt = new Date().toISOString();
   let chargedCount = 0;
   let failedCount = 0;
@@ -89,13 +90,12 @@ export async function GET(request: Request) {
       if (!memberships || memberships.length === 0) continue;
 
       for (const membership of memberships) {
-        const rawTier = membership.instructor_membership_tiers;
-        const tier = (Array.isArray(rawTier) ? rawTier[0] : rawTier) as {
+        const tier = unwrapRelation<{
           name: string;
           monthly_minutes: number;
           overage_rate_cents: number | null;
           allow_overage: boolean;
-        } | null;
+        }>(membership.instructor_membership_tiers);
 
         if (!tier) continue;
 
@@ -166,11 +166,10 @@ export async function GET(request: Request) {
           .eq("id", membership.instructor_id)
           .single();
 
-        const rawProfile = instructorProfile?.profiles;
-        const profile = (Array.isArray(rawProfile) ? rawProfile[0] : rawProfile) as {
+        const profile = unwrapRelation<{
           email: string;
           full_name: string;
-        } | null;
+        }>(instructorProfile?.profiles);
 
         // Attempt Stripe charge
         const customerId = membership.stripe_customer_id;
@@ -312,7 +311,7 @@ export async function GET(request: Request) {
 
 // Helper: send charge-failed email to studio owner
 async function sendChargeFailedEmail(
-  supabase: any,
+  supabase: AdminSupabaseClient,
   studio: { id: string; name: string },
   instructorProfile: { email: string; full_name: string } | null,
   monthName: string,
@@ -347,6 +346,6 @@ async function sendChargeFailedEmail(
       templateName: "tierOverageChargeFailed",
     });
   } catch {
-    console.error("[OverageBilling] Failed to send charge-failed email");
+    logger.error("Failed to send overage charge-failed email", { studioId: studio.id });
   }
 }

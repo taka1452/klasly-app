@@ -2,9 +2,14 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe/server";
+import { validateCsrfToken } from "@/lib/api/csrf";
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    // CSRF protection — critical for account deletion
+    const csrfError = await validateCsrfToken(request);
+    if (csrfError) return csrfError;
+
     const serverSupabase = await createServerClient();
     const {
       data: { user },

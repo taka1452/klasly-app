@@ -22,7 +22,7 @@ export default function AnnouncementBanner() {
           setUnread(data.unread);
         }
       })
-      .catch(() => {});
+      .catch((err) => console.warn("[Announcements] Failed to fetch unread:", err));
   }, []);
 
   if (dismissed || unread.length === 0) return null;
