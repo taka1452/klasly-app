@@ -8,6 +8,7 @@ import ExportCsvButton from "@/components/ui/export-csv-button";
 import FlowHintPanel from "@/components/ui/flow-hint-panel";
 import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
 import ContextHelpLink from "@/components/help/context-help-link";
+import EmptyState from "@/components/ui/empty-state";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -122,19 +123,16 @@ export default async function MembersPage({
               <p className="text-sm text-gray-500">No members match your search.</p>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50/50 px-6 py-16 text-center">
-              <p className="text-base font-medium text-gray-900">
-                No members yet. Add your first member or import from CSV.
-              </p>
-              <div className="mt-4 flex flex-wrap justify-center gap-3">
-                <Link href="/members/new" className="btn-primary">
-                  + Add member
-                </Link>
-                <Link href="/members/import" className="btn-secondary">
-                  Import from CSV
-                </Link>
-              </div>
-            </div>
+            <EmptyState
+              title="No members yet"
+              description="Add your first member, or import your existing member list from a spreadsheet."
+              actionLabel="+ Add member"
+              actionHref="/members/new"
+              secondaryLabel="Import from CSV"
+              secondaryHref="/members/import"
+              helpHref="/help/members/add-member"
+              helpLabel="How to add members"
+            />
           )
         ) : (
           <MembersListClient members={filteredMembers} />

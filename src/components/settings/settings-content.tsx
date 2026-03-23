@@ -302,6 +302,24 @@ export default function SettingsContent({
             </div>
           )}
 
+          {/* Collective Mode Setup — owner only */}
+          {isOwner && (
+            <div className="card">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Collective Mode Setup
+              </h3>
+              <p className="mt-2 text-sm text-gray-600">
+                Step-by-step guide for setting up your shared studio: rooms, tiers, fees, and instructor invitations.
+              </p>
+              <Link
+                href="/settings/collective-setup"
+                className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+              >
+                Open Setup Guide &rarr;
+              </Link>
+            </div>
+          )}
+
           {/* I Also Teach Classes — owner or manager with can_teach */}
           {(isOwner || canTeach) && (
             <div className="card">

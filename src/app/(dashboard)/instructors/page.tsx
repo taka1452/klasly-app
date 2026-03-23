@@ -115,8 +115,11 @@ export default async function InstructorsPage() {
         {(instructors || []).length === 0 ? (
           <EmptyState
             title="No instructors yet"
-            actionLabel="+ Add your first instructor"
+            description="Invite your instructors so they can view their schedule and manage attendance."
+            actionLabel="+ Invite instructor"
             actionHref="/instructors/new"
+            helpHref="/help/collective-mode/invite-instructor"
+            helpLabel="How to invite instructors"
           />
         ) : (
           <InstructorsListClient

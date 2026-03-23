@@ -733,7 +733,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I enable or disable features?",
           a: (
             <>
-              Go to <B>Settings &rarr; Features</B> to toggle optional features on or off. Available features include Online Classes, Digital Waivers, SOAP Notes, UTM Tracking, Events &amp; Retreats, and more.
+              Go to <B>Settings &rarr; Features</B> to toggle optional features on or off. Available features include Online Classes, Digital Waivers, SOAP Notes, UTM Tracking, Events &amp; Retreats, and more. At the top of the page, you&apos;ll see a <B>Recommended for your studio</B> banner showing popular features you haven&apos;t enabled yet.
               <Tip>You can also choose features during onboarding when you first create your studio.</Tip>
             </>
           ),
@@ -1153,6 +1153,41 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
       ],
     },
     {
+      title: "Collective Mode Setup",
+
+      items: [
+        {
+          q: "What is the Collective Mode Setup wizard?",
+          a: (
+            <>
+              The <B>Collective Mode Setup</B> page (found at <B>Settings &gt; Collective Mode Setup</B>) is a step-by-step checklist that guides you through configuring your shared studio. It tracks your progress across four steps: setting up rooms, defining membership tiers, configuring the studio fee, and inviting your first instructor.
+            </>
+          ),
+        },
+        {
+          q: "What are the four setup steps?",
+          a: (
+            <>
+              <Steps>
+                <li><B>Set up your rooms</B> &mdash; Define the physical spaces instructors can book (e.g., Main Studio, Practitioner Room).</li>
+                <li><B>Define membership tiers</B> &mdash; Create monthly tiers with different hour allowances and prices.</li>
+                <li><B>Set your Studio Fee</B> &mdash; Choose the percentage deducted from instructor transactions.</li>
+                <li><B>Invite your first instructor</B> &mdash; Send an email invitation so they can join, connect Stripe, and pick a tier.</li>
+              </Steps>
+            </>
+          ),
+        },
+        {
+          q: "How do I know which steps are complete?",
+          a: (
+            <>
+              Each completed step shows a green check mark and is visually dimmed. The page header shows a progress counter (e.g., 2/4 done). When all four steps are finished, a success banner confirms your Collective Mode is fully configured.
+            </>
+          ),
+        },
+      ],
+    },
+    {
       title: "Billing & Subscription",
 
       items: [
@@ -1261,6 +1296,14 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
                 <li><B>This week&apos;s overview</B> — a quick look at your upcoming week.</li>
               </Steps>
               Click on any session to view details or take attendance.
+            </>
+          ),
+        },
+        {
+          q: "What is the welcome message on the Dashboard?",
+          a: (
+            <>
+              If you haven&apos;t completed the onboarding tutorial yet, you&apos;ll see a <B>Welcome to Klasly</B> card at the top of your Dashboard. It explains what you can do from your instructor portal — Schedule, Attendance, Profile, and Earnings. The message disappears automatically once you complete the tutorial.
             </>
           ),
         },
@@ -1570,6 +1613,14 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               You can view your recently loaded schedule and class information even when offline. However, booking classes, making payments, and sending messages require an internet connection.
+            </>
+          ),
+        },
+        {
+          q: "What is the welcome message on the Schedule page?",
+          a: (
+            <>
+              If you haven&apos;t completed the onboarding tutorial yet, you&apos;ll see a <B>Welcome</B> card at the top of the Schedule page. It walks you through three steps: browse the schedule, book a class, and check your bookings. It also links to a detailed booking guide. The message disappears once you complete the tutorial.
             </>
           ),
         },

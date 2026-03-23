@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { HelpCircle } from "lucide-react";
 import { formatDate, formatTime } from "@/lib/utils";
 
 export default async function InstructorDashboardPage() {
@@ -22,11 +23,13 @@ export default async function InstructorDashboardPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, studio_id")
+    .select("full_name, studio_id, onboarding_completed")
     .eq("id", user.id)
     .single();
 
   if (!profile?.studio_id) redirect("/login");
+
+  const onboardingCompleted = (profile as { onboarding_completed?: boolean })?.onboarding_completed ?? true;
 
   const { data: instructor } = await supabase
     .from("instructors")
@@ -138,6 +141,39 @@ export default async function InstructorDashboardPage() {
 
   return (
     <div>
+      {/* First-time welcome message */}
+      {!onboardingCompleted && (
+        <div className="mb-6 rounded-xl border border-brand-200 bg-brand-50 p-5">
+          <h2 className="text-base font-semibold text-brand-900">
+            Welcome to Klasly!
+          </h2>
+          <p className="mt-1 text-sm text-brand-700 leading-relaxed">
+            Here&apos;s what you can do from your portal:
+          </p>
+          <ul className="mt-3 space-y-2 text-sm text-brand-700">
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-brand-400" />
+              <span><strong>Schedule</strong> — View your upcoming classes and create new ones</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-brand-400" />
+              <span><strong>Attendance</strong> — Check in members for each session</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-brand-400" />
+              <span><strong>Profile</strong> — Update your bio and specialties</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-brand-400" />
+              <span><strong>Earnings</strong> — Track your monthly revenue</span>
+            </li>
+          </ul>
+          <p className="mt-3 text-xs text-brand-600">
+            This message will disappear once you complete the tutorial.
+          </p>
+        </div>
+      )}
+
       <div className="mb-6">
         <h1 className="text-xl md:text-2xl font-bold text-gray-900">
           Welcome back, {instructorName}

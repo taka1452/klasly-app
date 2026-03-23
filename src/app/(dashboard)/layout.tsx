@@ -65,6 +65,8 @@ export default async function DashboardLayout({
     stripe_connect_onboarding_complete?: boolean | null;
     drop_in_price?: number | null;
     monthly_price?: number | null;
+    payout_model?: string | null;
+    studio_fee_percentage?: number | null;
   } | null;
 
   const onboardingCompleted =
@@ -92,50 +94,87 @@ export default async function DashboardLayout({
         label: "Complete the tutorial",
         done: onboardingCompleted,
         hint: "Take a quick tour to learn the dashboard.",
+        helpHref: "/help/getting-started/studio-setup-overview",
       },
       {
         id: "stripe-connect",
-        label: "Connect Stripe Connect",
+        label: "Connect Stripe",
         done: studio?.stripe_connect_onboarding_complete ?? false,
         href: "/settings/connect",
-        hint: "Required so members can pay for classes and packs online.",
+        hint: "Required so members can pay for classes online.",
+        helpHref: "/help/getting-started/connect-stripe",
       },
       {
         id: "create-class",
         label: "Create at least one class",
         done: (classesCount ?? 0) >= 1,
         href: "/calendar/new",
-        hint: "Add a recurring class (e.g. Yoga Monday 10am) so members can book.",
+        hint: "Add a recurring class so members can book.",
+        helpHref: "/help/classes-scheduling/create-recurring-class",
       },
       {
         id: "add-instructor",
         label: "Add an instructor",
         done: (instructorsCount ?? 0) >= 1,
         href: "/instructors/new",
-        hint: "Invite instructors to manage their classes and attendance.",
+        hint: "Invite instructors to manage their classes.",
+        helpHref: "/help/collective-mode/invite-instructor",
       },
       {
         id: "add-member",
         label: "Add a member",
         done: (membersCount ?? 0) >= 1,
         href: "/members/new",
-        hint: "Add members so they can book classes and purchase credits.",
+        hint: "Add or import members so they can start booking.",
+        helpHref: "/help/members/add-member",
       },
       {
         id: "pricing",
-        label: "Products & Pricing",
+        label: "Set up pricing",
         done: hasPricing,
         href: "/settings/pricing",
-        hint: "Create plans and packages (e.g. drop-in, class packs, monthly) for members to buy.",
+        hint: "Create plans and packages for members to buy.",
+        helpHref: "/help/payments/create-products",
       },
       {
         id: "widget",
         label: "Set up website widget",
         done: widgetEnabled,
         href: "/settings/widget",
-        hint: "Embed your class schedule on your website so visitors can browse and book.",
+        hint: "Embed your class schedule on your website.",
+        helpHref: "/help/settings/embed-wordpress-widget",
       },
     ];
+
+    // Collective Mode: add extra setup tasks
+    if (studio?.payout_model === "instructor_direct") {
+      const [{ count: roomsCount }, { count: tiersCount }] = await Promise.all([
+        adminSupabase.from("rooms").select("id", { count: "exact", head: true }).eq("studio_id", profile.studio_id),
+        adminSupabase.from("instructor_membership_tiers").select("id", { count: "exact", head: true }).eq("studio_id", profile.studio_id),
+      ]);
+
+      const classTaskIndex = setupTasks.findIndex(t => t.id === "create-class");
+      const collectiveTasks: SetupTask[] = [
+        {
+          id: "setup-rooms",
+          label: "Set up rooms",
+          done: (roomsCount ?? 0) >= 1,
+          href: "/settings/rooms",
+          hint: "Define the rooms instructors can book.",
+          helpHref: "/help/collective-mode/collective-room-management",
+        },
+        {
+          id: "setup-tiers",
+          label: "Define membership tiers",
+          done: (tiersCount ?? 0) >= 1,
+          href: "/settings/tiers",
+          hint: "Create monthly tiers for instructors.",
+          helpHref: "/help/collective-mode/collective-tiers",
+        },
+      ];
+
+      setupTasks.splice(classTaskIndex + 1, 0, ...collectiveTasks);
+    }
   }
 
   // stripe_subscription_idがなく、かつplan_statusがactiveでもtrialingでもない場合のみリダイレクト

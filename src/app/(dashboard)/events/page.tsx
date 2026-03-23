@@ -5,6 +5,7 @@ import Link from "next/link";
 import { formatDate } from "@/lib/utils";
 import ContextHelpLink from "@/components/help/context-help-link";
 import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
+import EmptyState from "@/components/ui/empty-state";
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   draft: { label: "Draft", cls: "bg-gray-100 text-gray-700" },
@@ -77,15 +78,14 @@ export default async function EventsListPage() {
       </div>
 
       {!events || events.length === 0 ? (
-        <div className="card py-16 text-center">
-          <p className="text-lg font-medium text-gray-500">No events yet</p>
-          <p className="mt-2 text-sm text-gray-400">
-            Create your first retreat, workshop, or multi-day event.
-          </p>
-          <Link href="/events/new" className="btn-primary mt-6 inline-block">
-            + Create Event
-          </Link>
-        </div>
+        <EmptyState
+          title="No events yet"
+          description="Create retreats, workshops, or multi-day events with room options and installment payments."
+          actionLabel="+ Create event"
+          actionHref="/events/new"
+          helpHref="/help/events-retreats/create-retreat"
+          helpLabel="How to create an event"
+        />
       ) : (
         <div className="card overflow-hidden p-0">
           <div className="divide-y divide-gray-200">

@@ -127,6 +127,34 @@ export default function FeaturesSettingsPage() {
     );
   }
 
+  // Suggested features: features that are not yet enabled
+  const SUGGESTED_FEATURES = [
+    {
+      key: "extension.online_classes",
+      name: "Online Classes",
+      description: "Add Zoom or Google Meet links to your classes",
+    },
+    {
+      key: "extension.minor_waiver",
+      name: "Minor Waiver",
+      description: "Send waivers to parents/guardians for under-18 members",
+    },
+    {
+      key: "extension.retreat_booking",
+      name: "Events & Retreats",
+      description: "Multi-day events with room options and installments",
+    },
+    {
+      key: "extension.soap_notes",
+      name: "SOAP Notes",
+      description: "Track treatment records for practitioners",
+    },
+  ];
+
+  const suggestedFeatures = SUGGESTED_FEATURES.filter(
+    (f) => !features[f.key]
+  );
+
   return (
     <div>
       <div className="mb-6">
@@ -141,6 +169,31 @@ export default function FeaturesSettingsPage() {
           Enable or disable optional features for your studio.
         </p>
       </div>
+
+      {/* Recommended features */}
+      {suggestedFeatures.length > 0 && (
+        <div className="mb-6 rounded-xl border border-brand-100 bg-brand-50/50 p-5">
+          <h3 className="text-sm font-semibold text-gray-800">
+            Recommended for your studio
+          </h3>
+          <p className="mt-1 text-xs text-gray-500">
+            Based on studios like yours, these features are popular:
+          </p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {suggestedFeatures.map((feature) => (
+              <div
+                key={feature.key}
+                className="flex items-start gap-3 rounded-lg bg-white border border-gray-100 p-3"
+              >
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-800">{feature.name}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{feature.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="space-y-3">
         {OPTIONAL_FEATURES.map((feat) => {
