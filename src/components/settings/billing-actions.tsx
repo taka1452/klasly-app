@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import ErrorAlert from "@/components/ui/error-alert";
 
 export type PaymentMethodInfo = {
   brand: string;
@@ -176,9 +177,7 @@ export default function BillingActions({
     <>
       {/* Global error banner */}
       {error && (
-        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
-          {error}
-        </div>
+        <ErrorAlert error={error} onDismiss={() => setError(null)} />
       )}
 
       {/* Switch Plan — only when active, not trialing */}

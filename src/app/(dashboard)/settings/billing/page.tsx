@@ -49,6 +49,7 @@ export default async function BillingPage() {
   let nextBillingDate: string | null = null;
   let subscriptionStart: number | null = null;
   let appliedCouponCode: string | null = null;
+  let stripeError: string | null = null;
   type PaymentMethodInfo = {
     brand: string;
     last4: string;
@@ -88,8 +89,12 @@ export default async function BillingPage() {
         ? (typeof discount.promotion_code === "object" ? (discount.promotion_code as { code?: string }).code ?? null : null)
         : null;
       if (promo) appliedCouponCode = promo;
-    } catch {
-      // ignore Stripe errors
+    } catch (err) {
+      // Capture Stripe errors for display
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.includes("No such customer") || msg.includes("No such subscription")) {
+        stripeError = "Your billing account could not be found in Stripe. This may happen if Stripe test data was reset. Please contact support to re-link your account.";
+      }
     }
   }
 
@@ -160,6 +165,21 @@ export default async function BillingPage() {
       </p>
 
       <div className="mt-8 space-y-6">
+        {/* Stripe account error */}
+        {stripeError && (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 p-4">
+            <div className="flex items-start gap-3">
+              <svg className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+              </svg>
+              <div>
+                <h3 className="text-sm font-semibold text-amber-800">Billing account issue</h3>
+                <p className="mt-1 text-sm text-amber-700">{stripeError}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Urgent alert for past_due or grace */}
         {studio.plan_status === "past_due" && (
           <div className="rounded-lg border border-red-300 bg-red-50 p-4">

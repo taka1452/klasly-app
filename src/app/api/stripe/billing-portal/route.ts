@@ -50,6 +50,22 @@ export async function POST(request: Request) {
       );
     }
 
+    // Verify the customer exists in Stripe before creating portal session
+    try {
+      await stripe.customers.retrieve(studio.stripe_customer_id);
+    } catch {
+      // Customer doesn't exist in Stripe — clear the stale ID and return a helpful error
+      await adminSupabase
+        .from("studios")
+        .update({ stripe_customer_id: null })
+        .eq("id", profile.studio_id);
+
+      return NextResponse.json(
+        { error: "Your billing account needs to be re-linked. Please contact support or restart the subscription setup." },
+        { status: 400 }
+      );
+    }
+
     const session = await stripe.billingPortal.sessions.create({
       customer: studio.stripe_customer_id,
       return_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/settings/billing`,
@@ -58,6 +74,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ url: session.url });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    // Don't expose raw Stripe error messages to the client
+    const isStripeError = message.includes("No such customer") || message.includes("No such subscription");
+    const userMessage = isStripeError
+      ? "Your billing account could not be found. Please contact support."
+      : message;
+    return NextResponse.json({ error: userMessage }, { status: 500 });
   }
 }
