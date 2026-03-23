@@ -102,6 +102,26 @@ export async function POST(request: Request) {
       );
     }
 
+    // Admin notification — fire-and-forget
+    try {
+      const adminEmailsRaw = process.env.ADMIN_EMAILS ?? "";
+      const adminEmails = adminEmailsRaw.split(",").map(e => e.trim()).filter(Boolean);
+      if (adminEmails.length > 0) {
+        const { newStudioSignupAdmin } = await import("@/lib/email/templates");
+        const { sendEmail } = await import("@/lib/email/send");
+        const { subject, html } = newStudioSignupAdmin({
+          studioName: name,
+          ownerEmail: user.email ?? "unknown",
+          createdAt: new Date().toISOString(),
+        });
+        await Promise.allSettled(
+          adminEmails.map(to => sendEmail({ to, subject, html, studioId: studio.id, templateName: "new_studio_signup_admin" }))
+        );
+      }
+    } catch {
+      // Admin notification failure must never block studio creation
+    }
+
     const waiverPresetId = body.waiverPresetId?.trim();
     if (waiverPresetId) {
       const preset = WAIVER_PRESETS.find((p) => p.id === waiverPresetId);

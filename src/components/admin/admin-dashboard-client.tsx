@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useAdminLocale } from "@/lib/admin/locale-context";
-import OnboardingStatsCard from "./OnboardingStatsCard";
+import RegistrationFunnel from "./RegistrationFunnel";
+import UserJourneyTable from "./UserJourneyTable";
 
 type AlertItem = { type: string; studioName: string; studioId: string; extra?: string };
 type ActivityItem = { at: string; type: "signed_up" | "paid" | "failed" | "canceled"; textKey: string; textParams?: Record<string, string | number> };
@@ -11,73 +12,104 @@ export default function AdminDashboardClient({
   totalStudios,
   activeCount,
   MRR,
+  ARR,
   pastDueCount,
   trialingCount,
   trialsEnding7d,
-  ARR,
-  activeCouponsCount,
+  newSignupsToday,
+  newSignupsWeek,
+  revenueThisMonth,
+  revenueLastMonth,
   alerts,
   activities,
 }: {
   totalStudios: number;
   activeCount: number;
   MRR: number;
+  ARR: number;
   pastDueCount: number;
   trialingCount: number;
   trialsEnding7d: number;
-  ARR: number;
-  activeCouponsCount: number;
+  newSignupsToday: number;
+  newSignupsWeek: number;
+  revenueThisMonth: number;
+  revenueLastMonth: number;
   alerts: AlertItem[];
   activities: ActivityItem[];
 }) {
   const { t, formatDateTime } = useAdminLocale();
 
+  const revenueGrowth = revenueLastMonth > 0
+    ? Math.round(((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100)
+    : 0;
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-white">{t("dashboard.title")}</h1>
 
+      {/* ── Row 1: Revenue & Core KPIs ── */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <KpiCard label={t("kpi.totalStudios")} value={totalStudios} />
+        <KpiCard label={t("kpi.active")} value={activeCount} />
+        <KpiCard label={t("kpi.mrr")} value={`$${MRR.toFixed(0)}`} />
+        <KpiCard label={t("kpi.arr")} value={`$${ARR.toFixed(0)}`} />
+      </div>
+
+      {/* ── Row 2: Revenue actuals + Trial/Payment KPIs ── */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {/* 売上実体 - 今月 */}
         <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
-          <p className="text-sm text-slate-400">{t("kpi.totalStudios")}</p>
-          <p className="mt-1 text-2xl font-bold text-white">{totalStudios}</p>
+          <p className="text-sm text-slate-400">Revenue (this month)</p>
+          <p className="mt-1 text-2xl font-bold text-white">
+            ${(revenueThisMonth / 100).toFixed(0)}
+          </p>
+          {revenueLastMonth > 0 && (
+            <p className={`mt-1 text-xs ${revenueGrowth >= 0 ? "text-green-400" : "text-red-400"}`}>
+              {revenueGrowth >= 0 ? "↑" : "↓"} {Math.abs(revenueGrowth)}% vs last month
+            </p>
+          )}
         </div>
-        <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
-          <p className="text-sm text-slate-400">{t("kpi.active")}</p>
-          <p className="mt-1 text-2xl font-bold text-white">{activeCount}</p>
+
+        <KpiCard
+          label={t("kpi.pastDue")}
+          value={pastDueCount}
+          highlight={pastDueCount > 0 ? "red" : undefined}
+        />
+        <KpiCard label={t("kpi.trialing")} value={trialingCount} />
+        <KpiCard label={t("kpi.trialsEnding7d")} value={trialsEnding7d} />
+      </div>
+
+      {/* ── Row 3: New Signups ── */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="rounded-lg border border-slate-700 bg-slate-800 p-4 lg:col-span-2">
+          <p className="text-sm text-slate-400">{t("kpi.newSignups")}</p>
+          <div className="mt-1 flex items-baseline gap-4">
+            <div>
+              <span className="text-2xl font-bold text-white">{newSignupsToday}</span>
+              <span className="ml-1 text-xs text-slate-500">{t("kpi.today")}</span>
+            </div>
+            <div>
+              <span className="text-xl font-bold text-slate-300">{newSignupsWeek}</span>
+              <span className="ml-1 text-xs text-slate-500">{t("kpi.thisWeek")}</span>
+            </div>
+          </div>
         </div>
-        <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
-          <p className="text-sm text-slate-400">{t("kpi.mrr")}</p>
-          <p className="mt-1 text-2xl font-bold text-white">${MRR.toFixed(0)}</p>
-        </div>
-        <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
-          <p className="text-sm text-slate-400">{t("kpi.pastDue")}</p>
-          <p className={`mt-1 text-2xl font-bold ${pastDueCount > 0 ? "text-red-400" : "text-white"}`}>
-            {pastDueCount}
+        {/* 先月売上 */}
+        <div className="rounded-lg border border-slate-700 bg-slate-800 p-4 lg:col-span-2">
+          <p className="text-sm text-slate-400">Revenue (last month)</p>
+          <p className="mt-1 text-2xl font-bold text-slate-300">
+            ${(revenueLastMonth / 100).toFixed(0)}
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
-          <p className="text-sm text-slate-400">{t("kpi.trialing")}</p>
-          <p className="mt-1 text-xl font-bold text-white">{trialingCount}</p>
-        </div>
-        <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
-          <p className="text-sm text-slate-400">{t("kpi.trialsEnding7d")}</p>
-          <p className="mt-1 text-xl font-bold text-white">{trialsEnding7d}</p>
-        </div>
-        <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
-          <p className="text-sm text-slate-400">{t("kpi.arr")}</p>
-          <p className="mt-1 text-xl font-bold text-white">${ARR.toFixed(0)}</p>
-        </div>
-        <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
-          <p className="text-sm text-slate-400">{t("kpi.activeCoupons")}</p>
-          <p className="mt-1 text-xl font-bold text-white">{activeCouponsCount}</p>
-        </div>
-      </div>
+      {/* ── Registration Funnel ── */}
+      <RegistrationFunnel />
 
-      <OnboardingStatsCard />
+      {/* ── User Journey Table ── */}
+      <UserJourneyTable />
 
+      {/* ── Alerts ── */}
       <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
         <h2 className="text-sm font-medium text-slate-300">{t("alerts.title")}</h2>
         {alerts.length === 0 ? (
@@ -93,13 +125,16 @@ export default function AdminDashboardClient({
                       ? "bg-red-900/50 text-red-200 hover:bg-red-900/70"
                       : a.type === "trial"
                         ? "bg-yellow-900/50 text-yellow-200 hover:bg-yellow-900/70"
-                        : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                        : a.type === "stale"
+                          ? "bg-amber-900/50 text-amber-200 hover:bg-amber-900/70"
+                          : "bg-slate-700 text-slate-300 hover:bg-slate-600"
                   }`}
                 >
                   {a.type === "past_due" && `${t("alerts.paymentFailed")}: ${a.studioName}`}
                   {a.type === "grace" && `${t("alerts.gracePeriod")}: ${a.studioName} – ${t("alerts.gracePeriodExtra", { days: parseInt(String(a.extra).replace(/\D/g, ""), 10) || 0 })}`}
                   {a.type === "trial" && `${t("alerts.trialEnding")}: ${a.studioName} – ${t("alerts.trialEndingExtra", { days: parseInt(String(a.extra).replace(/\D/g, ""), 10) || 0 })}`}
                   {a.type === "canceled" && `${t("alerts.recentlyCanceled")}: ${a.studioName}`}
+                  {a.type === "stale" && `${t("alerts.stale")}: ${a.studioName} – ${t("alerts.staleExtra", { days: parseInt(a.extra ?? "0", 10) })}`}
                 </Link>
               </li>
             ))}
@@ -107,6 +142,7 @@ export default function AdminDashboardClient({
         )}
       </div>
 
+      {/* ── Recent Activity ── */}
       <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
         <h2 className="text-sm font-medium text-slate-300">{t("dashboard.recentActivity")}</h2>
         <ul className="mt-3 space-y-2">
@@ -135,6 +171,29 @@ export default function AdminDashboardClient({
           )}
         </ul>
       </div>
+    </div>
+  );
+}
+
+function KpiCard({
+  label,
+  value,
+  highlight,
+}: {
+  label: string;
+  value: string | number;
+  highlight?: "red" | "green";
+}) {
+  const textColor = highlight === "red" && Number(value) > 0
+    ? "text-red-400"
+    : highlight === "green"
+      ? "text-green-400"
+      : "text-white";
+
+  return (
+    <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
+      <p className="text-sm text-slate-400">{label}</p>
+      <p className={`mt-1 text-2xl font-bold ${textColor}`}>{value}</p>
     </div>
   );
 }

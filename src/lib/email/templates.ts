@@ -997,3 +997,30 @@ export function tierOverageChargeFailed(params: {
     html: baseHtml(content),
   };
 }
+
+// ============================================================
+// Admin notifications
+// ============================================================
+
+export function newStudioSignupAdmin(params: {
+  studioName: string;
+  ownerEmail: string;
+  createdAt: string;
+}): { subject: string; html: string } {
+  const { studioName, ownerEmail, createdAt } = params;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:${BRAND_COLOR};">🆕 New Studio Signup</h2>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      A new studio has been created on Klasly.
+    </p>
+    <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-weight:600;color:${BRAND_COLOR};">${studioName}</p>
+      <p style="margin:8px 0 0;font-size:14px;">Owner: ${ownerEmail}</p>
+      <p style="margin:4px 0 0;font-size:14px;color:#6b7280;">Created: ${createdAt}</p>
+    </div>
+  `;
+  return {
+    subject: `🆕 New signup: ${studioName}`,
+    html: baseHtml(content),
+  };
+}

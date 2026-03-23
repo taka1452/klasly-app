@@ -565,6 +565,30 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             </>
           ),
         },
+        {
+          q: "What is the Registration Funnel on the admin dashboard?",
+          a: (
+            <>
+              The <B>Registration Funnel</B> shows how many users are at each stage of the signup journey: <B>Signed Up</B>, <B>Studio Created</B>, <B>Payment Complete</B>, <B>Tour Complete</B>, and <B>Active Use</B>. The conversion percentage between stages helps identify where users drop off.
+            </>
+          ),
+        },
+        {
+          q: "How does the User Journey table work?",
+          a: (
+            <>
+              The <B>User Journey</B> table lists each studio owner with their current stage, setup progress (classes, instructors, members, Stripe Connect), and creation date. You can filter by stage to find users who need attention. Click <B>View</B> to go to the studio detail page.
+            </>
+          ),
+        },
+        {
+          q: "Will I get notified when a new studio signs up?",
+          a: (
+            <>
+              Yes. When a new studio is created, an email notification is automatically sent to all admin email addresses configured in the <B>ADMIN_EMAILS</B> environment variable.
+            </>
+          ),
+        },
       ],
     },
     {
