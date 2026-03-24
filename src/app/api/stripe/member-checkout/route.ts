@@ -64,7 +64,7 @@ export async function POST(request: Request) {
 
     const { data: studio } = await adminSupabase
       .from("studios")
-      .select("id, stripe_connect_account_id, stripe_connect_onboarding_complete")
+      .select("id, stripe_connect_account_id, stripe_connect_onboarding_complete, currency")
       .eq("id", member.studio_id)
       .single();
 
@@ -134,7 +134,7 @@ export async function POST(request: Request) {
       credits: String(product.credits),
     };
 
-    const currency = (product.currency ?? "usd").toLowerCase();
+    const currency = (product.currency ?? studio.currency ?? "usd").toLowerCase();
     const amount = product.price;
 
     if (product.type === "subscription") {

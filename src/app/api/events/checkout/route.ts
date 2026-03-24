@@ -106,7 +106,7 @@ export async function POST(request: Request) {
     const { data: studio } = await adminSupabase
       .from("studios")
       .select(
-        "id, name, payout_model, studio_fee_percentage, studio_fee_type, stripe_connect_account_id, stripe_connect_onboarding_complete",
+        "id, name, payout_model, studio_fee_percentage, studio_fee_type, stripe_connect_account_id, stripe_connect_onboarding_complete, currency",
       )
       .eq("id", event.studio_id)
       .single();
@@ -261,7 +261,7 @@ export async function POST(request: Request) {
           line_items: [
             {
               price_data: {
-                currency: "usd",
+                currency: (studio.currency ?? "usd").toLowerCase(),
                 product_data: {
                   name: `${event.name} — ${option.name} (Installment 1/${installmentCount})`,
                 },
@@ -311,7 +311,7 @@ export async function POST(request: Request) {
           line_items: [
             {
               price_data: {
-                currency: "usd",
+                currency: (studio.currency ?? "usd").toLowerCase(),
                 product_data: {
                   name: `${event.name} — ${option.name}`,
                 },

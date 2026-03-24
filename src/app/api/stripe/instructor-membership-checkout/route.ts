@@ -96,7 +96,7 @@ export async function POST(request: Request) {
     // スタジオの Stripe Connect アカウント確認
     const { data: studio } = await adminSupabase
       .from("studios")
-      .select("id, stripe_connect_account_id, stripe_connect_onboarding_complete")
+      .select("id, stripe_connect_account_id, stripe_connect_onboarding_complete, currency")
       .eq("id", profile.studio_id)
       .single();
 
@@ -152,7 +152,7 @@ export async function POST(request: Request) {
         line_items: [
           {
             price_data: {
-              currency: "usd",
+              currency: (studio.currency ?? "usd").toLowerCase(),
               product_data: {
                 name: `Membership: ${tier.name}`,
                 description: `Monthly studio membership for room booking`,

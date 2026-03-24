@@ -8,6 +8,7 @@ import Toast from "@/components/ui/toast";
 import FlowHintPanel from "@/components/ui/flow-hint-panel";
 import BookingSettingsCard from "@/components/settings/booking-settings-card";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
+import { SUPPORTED_CURRENCIES } from "@/lib/currency";
 
 type Props = {
   fullName: string;
@@ -19,6 +20,7 @@ type Props = {
   role?: "owner" | "manager";
   canTeach?: boolean;
   studioName?: string;
+  studioCurrency?: string;
 };
 
 const WEEKS_OPTIONS = [4, 6, 8, 12];
@@ -33,6 +35,7 @@ export default function SettingsContent({
   role = "owner",
   canTeach = false,
   studioName = "",
+  studioCurrency = "usd",
 }: Props) {
   const isOwner = role === "owner";
   const router = useRouter();
@@ -48,9 +51,30 @@ export default function SettingsContent({
   const [instructorToggleLoading, setInstructorToggleLoading] = useState(false);
   const [genWeeks, setGenWeeks] = useState(sessionGenerationWeeks);
   const [genWeeksLoading, setGenWeeksLoading] = useState(false);
+  const [currency, setCurrency] = useState(studioCurrency);
+  const [currencyLoading, setCurrencyLoading] = useState(false);
 
   function showToast(msg: string) {
     setToastMessage(msg);
+  }
+
+  async function handleCurrencyChange(newCurrency: string) {
+    setCurrencyLoading(true);
+    try {
+      const res = await fetch("/api/studio/currency", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currency: newCurrency }),
+      });
+      if (!res.ok) throw new Error("Failed to update currency");
+      setCurrency(newCurrency);
+      showToast("Currency updated");
+      router.refresh();
+    } catch {
+      showToast("Failed to update currency");
+    } finally {
+      setCurrencyLoading(false);
+    }
   }
 
   async function handleExport() {
@@ -199,6 +223,31 @@ export default function SettingsContent({
               >
                 Stripe Connect →
               </Link>
+            </div>
+          )}
+
+          {/* Studio Currency — owner only */}
+          {isOwner && (
+            <div className="card">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Studio Currency
+              </h3>
+              <p className="mt-2 text-sm text-gray-600">
+                Set the currency for all member-facing pricing (classes, passes, events).
+                This must match your Stripe account&apos;s currency.
+              </p>
+              <select
+                value={currency}
+                onChange={(e) => handleCurrencyChange(e.target.value)}
+                disabled={currencyLoading}
+                className="input-field mt-3 max-w-xs"
+              >
+                {SUPPORTED_CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
             </div>
           )}
 

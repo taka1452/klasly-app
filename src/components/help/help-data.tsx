@@ -405,6 +405,15 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
+          q: "How do I change my studio's currency?",
+          a: (
+            <>
+              Go to <B>Settings → Studio Currency</B> and select your preferred currency from the dropdown. Supported currencies are USD, CAD, AUD, GBP, and EUR. This affects all member-facing pricing (classes, passes, events, memberships).
+              <Tip>Your studio currency must match your Stripe account&apos;s default currency. Your Klasly platform subscription remains in USD regardless of this setting.</Tip>
+            </>
+          ),
+        },
+        {
           q: "Where do member payments go?",
           a: (
             <>
@@ -525,7 +534,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             <>
               All settings pages now include a <B>side navigation bar</B> grouped by category:
               <Steps>
-                <li><B>Payments &amp; Billing</B> — Stripe Connect, Products &amp; Pricing, Subscription.</li>
+                <li><B>Payments &amp; Billing</B> — Studio Currency, Stripe Connect, Products &amp; Pricing, Subscription.</li>
                 <li><B>Scheduling</B> — Widget (Embed).</li>
                 <li><B>Forms &amp; Waivers</B> — Waiver Template.</li>
                 <li><B>Collective Mode</B> — Collective Setup, Rooms, Tiers, Payout (visible only in Collective Mode).</li>

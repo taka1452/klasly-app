@@ -48,6 +48,8 @@ export type Studio = {
   studio_fee_type: "percentage" | "fixed";
   /** スタジオのタイムゾーン */
   timezone: string;
+  /** スタジオの通貨コード (小文字: 'usd', 'cad', 'aud', 'gbp', 'eur') */
+  currency: string;
   // Admin
   admin_memo: string | null;
   /** true = デモ/テストスタジオ。KPI集計・スタジオ一覧からデフォルト除外 */

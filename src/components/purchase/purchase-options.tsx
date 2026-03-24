@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatCurrency } from "@/lib/utils";
 
 export type Product = {
   id: string;
@@ -18,12 +19,8 @@ type Props = {
   memberId: string;
 };
 
-function centsToDollars(cents: number): string {
-  return (cents / 100).toFixed(2);
-}
-
 function formatPrice(p: Product): string {
-  const amount = `$${centsToDollars(p.price)}`;
+  const amount = formatCurrency(p.price, p.currency);
   if (p.type === "subscription" && p.billing_interval) {
     return `${amount}/${p.billing_interval === "year" ? "yr" : "mo"}`;
   }

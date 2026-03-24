@@ -34,14 +34,22 @@ export default async function PricingPage() {
 
   if (!profile?.studio_id || (profile.role !== "owner" && profile.role !== "manager")) redirect("/");
 
-  const { data: products } = await supabase
-    .from("products")
-    .select("*")
-    .eq("studio_id", profile.studio_id)
-    .eq("is_active", true)
-    .order("sort_order", { ascending: true });
+  const [{ data: products }, { data: studioRow }] = await Promise.all([
+    supabase
+      .from("products")
+      .select("*")
+      .eq("studio_id", profile.studio_id)
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true }),
+    supabase
+      .from("studios")
+      .select("currency")
+      .eq("id", profile.studio_id)
+      .single(),
+  ]);
 
   const initialProducts = (products ?? []) as Product[];
+  const studioCurrency = (studioRow?.currency ?? "usd") as string;
 
   return (
     <div>
@@ -59,7 +67,7 @@ export default async function PricingPage() {
         Create and manage the plans and packages available to your members.
       </p>
 
-      <ProductManager initialProducts={initialProducts} />
+      <ProductManager initialProducts={initialProducts} studioCurrency={studioCurrency} />
     </div>
   );
 }

@@ -76,7 +76,7 @@ export async function POST(request: Request) {
     const { data: studio } = await adminSupabase
       .from("studios")
       .select(
-        "id, payout_model, studio_fee_percentage, studio_fee_type, stripe_connect_account_id, stripe_connect_onboarding_complete"
+        "id, payout_model, studio_fee_percentage, studio_fee_type, stripe_connect_account_id, stripe_connect_onboarding_complete, currency"
       )
       .eq("id", member.studio_id)
       .single();
@@ -87,7 +87,7 @@ export async function POST(request: Request) {
 
     // Determine price: session.price_cents > template.price_cents > drop-in product
     let amount: number;
-    let currency = "usd";
+    let currency = (studio.currency ?? "usd").toLowerCase();
     let productId: string | null = null;
     let productDescription: string | null = null;
 

@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     // Get studio Stripe Connect account
     const { data: studio } = await adminSupabase
       .from("studios")
-      .select("id, stripe_connect_account_id, stripe_connect_onboarding_complete")
+      .select("id, stripe_connect_account_id, stripe_connect_onboarding_complete, currency")
       .eq("id", profile.studio_id)
       .single();
 
@@ -85,7 +85,7 @@ export async function POST(request: Request) {
       {
         product: product.id,
         unit_amount: price_cents,
-        currency: "usd",
+        currency: (studio.currency ?? "usd").toLowerCase(),
         recurring: { interval: "month" },
       },
       connectOptions

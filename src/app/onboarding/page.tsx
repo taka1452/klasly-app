@@ -2,16 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { WAIVER_PRESETS } from "@/lib/waiver-presets";
-import { WaiverPresetIcon } from "@/components/waiver-preset-icon";
 
 export default function OnboardingPage() {
   const router = useRouter();
   const [studioName, setStudioName] = useState("");
-  const [studioEmail, setStudioEmail] = useState("");
-  const [studioPhone, setStudioPhone] = useState("");
-  const [waiverPresetId, setWaiverPresetId] = useState<string>(() => WAIVER_PRESETS[0]?.id ?? "general-fitness");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -40,18 +34,8 @@ export default function OnboardingPage() {
         }
 
         if (data.hasStudio) {
-          if (data.needsPlan) {
-            router.push("/onboarding/plan");
-          } else {
-            router.push("/dashboard");
-          }
+          router.push("/dashboard");
           return;
-        }
-
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!cancelled) {
-          setStudioEmail(user?.email || "");
         }
       } catch (err) {
         if (!cancelled) {
@@ -79,9 +63,6 @@ export default function OnboardingPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: studioName,
-        email: studioEmail || null,
-        phone: studioPhone || null,
-        waiverPresetId: waiverPresetId || undefined,
       }),
     });
 
@@ -100,7 +81,7 @@ export default function OnboardingPage() {
       return;
     }
 
-    router.push("/onboarding/features");
+    router.push("/onboarding/payout-model");
     router.refresh();
   }
 
@@ -124,7 +105,7 @@ export default function OnboardingPage() {
             Set up your studio
           </h2>
           <p className="mt-1 text-sm text-gray-500">
-            Tell us about your studio to get started
+            What&apos;s the name of your studio?
           </p>
         </div>
 
@@ -141,7 +122,7 @@ export default function OnboardingPage() {
                 htmlFor="studioName"
                 className="block text-sm font-medium text-gray-700"
               >
-                Studio name *
+                Studio name
               </label>
               <input
                 id="studioName"
@@ -150,91 +131,17 @@ export default function OnboardingPage() {
                 onChange={(e) => setStudioName(e.target.value)}
                 placeholder="Sunrise Yoga Studio"
                 required
+                autoFocus
                 className="input-field mt-1"
               />
-            </div>
-
-            <div>
-              <label
-                htmlFor="studioEmail"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Studio email
-              </label>
-              <input
-                id="studioEmail"
-                type="email"
-                value={studioEmail}
-                onChange={(e) => setStudioEmail(e.target.value)}
-                placeholder="hello@yourstudio.com"
-                className="input-field mt-1"
-              />
-              <p className="mt-1 text-xs text-gray-400">
-                Contact email for your studio (can be different from your account
-                email)
-              </p>
-            </div>
-
-            <div>
-              <label
-                htmlFor="studioPhone"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Phone number (optional)
-              </label>
-              <input
-                id="studioPhone"
-                type="tel"
-                value={studioPhone}
-                onChange={(e) => setStudioPhone(e.target.value)}
-                placeholder="+1 (555) 123-4567"
-                className="input-field mt-1"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Waiver template
-              </label>
-              <p className="mt-1 text-xs text-gray-500">
-                Choose a liability waiver template. You can edit it later in Settings.
-              </p>
-              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {WAIVER_PRESETS.map((preset) => (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    onClick={() => setWaiverPresetId(preset.id)}
-                    className={`flex flex-col items-center rounded-lg border-2 p-3 text-center transition ${
-                      waiverPresetId === preset.id
-                        ? "border-brand-600 bg-brand-50"
-                        : "border-gray-200 bg-white hover:border-gray-300"
-                    }`}
-                  >
-                    <WaiverPresetIcon presetId={preset.id} selected={waiverPresetId === preset.id} />
-                    <span className="mt-1 text-xs font-medium text-gray-900">
-                      {preset.name}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-lg bg-brand-50 p-4">
-              <p className="text-sm font-medium text-brand-800">
-                Next: Choose which features to enable for your studio
-              </p>
-              <p className="mt-1 text-xs text-brand-600">
-                You can always change these later in Settings.
-              </p>
             </div>
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !studioName.trim()}
               className="btn-primary w-full"
             >
-              {loading ? "Creating studio..." : "Create studio"}
+              {loading ? "Creating..." : "Continue"}
             </button>
           </form>
         </div>

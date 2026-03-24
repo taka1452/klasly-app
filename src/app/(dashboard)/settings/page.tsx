@@ -40,7 +40,7 @@ export default async function SettingsPage() {
   // スタジオ設定を取得
   const { data: studio } = await supabase
     .from("studios")
-    .select("name, booking_requires_credits, stripe_connect_onboarding_complete, session_generation_weeks")
+    .select("name, booking_requires_credits, stripe_connect_onboarding_complete, session_generation_weeks, currency")
     .eq("id", profile.studio_id)
     .single();
 
@@ -55,6 +55,8 @@ export default async function SettingsPage() {
   const sessionGenerationWeeks =
     (studio as { session_generation_weeks?: number } | null)
       ?.session_generation_weeks ?? 8;
+  const studioCurrency =
+    (studio as { currency?: string } | null)?.currency ?? "usd";
 
   // オーナー/マネージャーが自分をインストラクターとして登録しているか
   const { data: instructorRecord } = await supabase
@@ -96,6 +98,7 @@ export default async function SettingsPage() {
         role={profile.role as "owner" | "manager"}
         canTeach={canTeach}
         studioName={studioName}
+        studioCurrency={studioCurrency}
       />
     </div>
   );

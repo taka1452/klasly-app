@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Product } from "@/types/database";
 import Toast from "@/components/ui/toast";
+import { formatCurrency } from "@/lib/utils";
+import { getCurrencySymbol } from "@/lib/currency";
 
 function centsToDollars(cents: number): string {
   return (cents / 100).toFixed(2);
@@ -38,9 +40,10 @@ const emptyForm: FormState = {
 
 type ProductManagerProps = {
   initialProducts?: Product[];
+  studioCurrency?: string;
 };
 
-export default function ProductManager({ initialProducts = [] }: ProductManagerProps) {
+export default function ProductManager({ initialProducts = [], studioCurrency = "usd" }: ProductManagerProps) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [showInactive, setShowInactive] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -106,7 +109,7 @@ export default function ProductManager({ initialProducts = [] }: ProductManagerP
       return "Unlimited credits are only allowed for Subscription type.";
     }
     const priceCents = dollarsToCents(form.priceDollars);
-    if (priceCents < 1) return "Price must be at least $0.01.";
+    if (priceCents < 1) return `Price must be at least ${getCurrencySymbol(studioCurrency)}0.01.`;
     if (form.type === "subscription" && !form.creditsUnlimited && form.credits !== -1) {
       setCreditsWarning("Subscription with limited credits is allowed (e.g. 8 classes/month).");
     } else {
@@ -228,7 +231,7 @@ export default function ProductManager({ initialProducts = [] }: ProductManagerP
                         {p.credits === -1 ? "Unlimited" : p.credits}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-600">
-                        ${centsToDollars(p.price)}
+                        {formatCurrency(p.price, p.currency ?? studioCurrency)}
                         {p.type === "subscription" && p.billing_interval
                           ? `/${p.billing_interval === "year" ? "yr" : "mo"}`
                           : ""}
@@ -358,7 +361,7 @@ export default function ProductManager({ initialProducts = [] }: ProductManagerP
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Price ($)</label>
+                <label className="block text-sm font-medium text-gray-700">Price ({getCurrencySymbol(studioCurrency)})</label>
                 <input
                   type="number"
                   step="0.01"

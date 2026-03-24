@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { formatCurrency } from "@/lib/utils";
 
 type Payment = {
   id: string;
@@ -26,8 +27,8 @@ function formatDate(val: string | undefined | null): string {
   return new Date(val).toLocaleDateString();
 }
 
-function formatAmount(cents: number): string {
-  return `$${(cents / 100).toFixed(2)}`;
+function formatAmount(cents: number, currency?: string): string {
+  return formatCurrency(cents, currency ?? "usd");
 }
 
 function typeLabel(pt: string | undefined, t: string): string {
@@ -110,7 +111,7 @@ export default function PaymentsTable({
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-gray-900">{formatAmount(p.amount)}</p>
+                    <p className="font-semibold text-gray-900">{formatAmount(p.amount, p.currency)}</p>
                     <span
                       className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
                         p.status === "paid"
@@ -179,7 +180,7 @@ export default function PaymentsTable({
                         : "Studio"}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
-                      {formatAmount(p.amount)}
+                      {formatAmount(p.amount, p.currency)}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
                       {typeLabel(p.payment_type, p.type)}

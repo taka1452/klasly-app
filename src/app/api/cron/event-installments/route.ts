@@ -110,7 +110,7 @@ export async function GET(request: Request) {
         const { data: studio } = await supabase
           .from("studios")
           .select(
-            "id, name, payout_model, studio_fee_percentage, stripe_connect_account_id",
+            "id, name, payout_model, studio_fee_percentage, stripe_connect_account_id, currency",
           )
           .eq("id", event.studio_id)
           .single();
@@ -163,7 +163,7 @@ export async function GET(request: Request) {
         const pi = await stripe.paymentIntents.create(
           {
             amount: installment.amount_cents,
-            currency: "usd",
+            currency: (studio.currency ?? "usd").toLowerCase(),
             payment_method: installment.stripe_payment_method_id,
             off_session: true,
             confirm: true,

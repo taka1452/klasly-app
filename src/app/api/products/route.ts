@@ -99,13 +99,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // スタジオの通貨設定を取得
+    const { data: studioRow } = await adminSupabase
+      .from("studios")
+      .select("currency")
+      .eq("id", profile.studio_id)
+      .single();
+    const studioCurrency = (studioRow?.currency ?? "usd").toLowerCase();
+
     const body = await request.json();
     const {
       name,
       type,
       credits,
       price,
-      currency = "usd",
+      currency = studioCurrency,
       billing_interval,
       description,
       sort_order: bodySortOrder,

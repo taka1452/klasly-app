@@ -57,7 +57,7 @@ export async function GET(request: Request) {
     // Get all collective-mode studios with Stripe Connect
     const { data: studios } = await supabase
       .from("studios")
-      .select("id, name, stripe_connect_account_id, stripe_connect_onboarding_complete")
+      .select("id, name, stripe_connect_account_id, stripe_connect_onboarding_complete, currency")
       .eq("payout_model", "instructor_direct")
       .eq("stripe_connect_onboarding_complete", true)
       .not("stripe_connect_account_id", "is", null);
@@ -220,7 +220,7 @@ export async function GET(request: Request) {
           const paymentIntent = await stripe.paymentIntents.create(
             {
               amount: totalChargeCents,
-              currency: "usd",
+              currency: (studio.currency ?? "usd").toLowerCase(),
               customer: customerId,
               payment_method: pmId,
               off_session: true,
