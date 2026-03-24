@@ -6,18 +6,26 @@ export async function GET() {
   await requireAdmin();
   const supabase = createAdminClient();
 
-  // Stage 1: signed_up - profiles where role='owner'
-  const { count: signedUp } = await supabase
-    .from("profiles")
-    .select("id", { count: "exact", head: true })
-    .eq("role", "owner");
+  // Get demo studio IDs to exclude from all stages
+  const { data: demoStudios } = await supabase
+    .from("studios")
+    .select("id")
+    .eq("is_demo", true);
+  const demoIds = new Set((demoStudios || []).map((s) => s.id));
 
-  // Stage 2: studio_created - profiles where role='owner' AND studio_id IS NOT NULL
-  const { count: studioCreated } = await supabase
+  // Stage 1: signed_up - owners not linked to demo studios
+  const { data: allOwners } = await supabase
     .from("profiles")
-    .select("id", { count: "exact", head: true })
-    .eq("role", "owner")
-    .not("studio_id", "is", null);
+    .select("id, studio_id")
+    .eq("role", "owner");
+  const signedUp = (allOwners || []).filter(
+    (p) => !p.studio_id || !demoIds.has(p.studio_id)
+  ).length;
+
+  // Stage 2: studio_created - owners with studio_id, excluding demo
+  const studioCreated = (allOwners || []).filter(
+    (p) => p.studio_id && !demoIds.has(p.studio_id)
+  ).length;
 
   // Stage 3: payment_complete - studios with stripe_subscription_id, not demo
   const { count: paymentComplete } = await supabase
