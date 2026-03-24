@@ -19,8 +19,8 @@ export default async function AdminMetricsPage() {
     { count: emailsSent7d },
     { count: emailsFailed7d },
   ] = await Promise.all([
-    supabase.from("studios").select("id", { count: "exact", head: true }),
-    supabase.from("studios").select("id, subscription_period").in("plan_status", ["trialing", "active"]),
+    supabase.from("studios").select("id", { count: "exact", head: true }).eq("is_demo", false),
+    supabase.from("studios").select("id, subscription_period").in("plan_status", ["trialing", "active"]).eq("is_demo", false),
     supabase.from("webhook_logs").select("id", { count: "exact", head: true }).gte("created_at", oneDayAgo).eq("status", "success"),
     supabase.from("webhook_logs").select("id", { count: "exact", head: true }).gte("created_at", sevenDaysAgo).eq("status", "success"),
     supabase.from("webhook_logs").select("id", { count: "exact", head: true }).gte("created_at", sevenDaysAgo).eq("status", "failure"),
