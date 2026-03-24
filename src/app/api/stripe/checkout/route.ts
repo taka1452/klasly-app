@@ -2,8 +2,6 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { stripe } from "@/lib/stripe/server";
 import { NextResponse } from "next/server";
-import { ratelimit } from "@/lib/rate-limit";
-
 /*
  * Stripe: Create Product "Klasly Pro" with:
  * - Price 1: $19/month (recurring monthly)
@@ -13,11 +11,7 @@ import { ratelimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   try {
-    const ip = request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip") ?? "unknown";
-    const { success } = await ratelimit.limit(ip);
-    if (!success) {
-      return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
-    }
+    // Rate limiting is handled by middleware
     const serverSupabase = await createServerClient();
     const {
       data: { user },

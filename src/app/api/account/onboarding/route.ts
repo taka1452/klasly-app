@@ -3,15 +3,10 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { z } from "zod";
 import { parseBody } from "@/lib/api/parse-body";
-import { validateCsrfToken } from "@/lib/api/csrf";
-
 /** Owner only. Replay: set onboarding_step = 0, do NOT touch onboarding_completed */
 export async function POST(request: Request) {
   try {
-    // CSRF protection
-    const csrfError = await validateCsrfToken(request);
-    if (csrfError) return csrfError;
-
+    // CSRF protection is handled by middleware
     const serverSupabase = await createServerClient();
     const {
       data: { user },

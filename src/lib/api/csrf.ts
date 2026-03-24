@@ -7,14 +7,18 @@ const CSRF_HEADER_NAME = "x-csrf-token";
 const TOKEN_BYTES = 32;
 
 /**
- * CSRFトークンを生成し、HttpOnlyクッキーにセットする。
+ * CSRFトークンを生成し、クッキーにセットする。
  * Server Component / API GET ルートから呼び出し、トークン値をクライアントに返す。
+ *
+ * httpOnly: false — ダブルサブミットクッキーパターンでは
+ * クライアントがクッキー値を読み取り、ヘッダーにコピーする必要がある。
+ * CSRFトークンは秘密情報ではなく、同一オリジンからのみ送信されるため安全。
  */
 export async function generateCsrfToken(): Promise<string> {
   const token = randomBytes(TOKEN_BYTES).toString("hex");
   const cookieStore = await cookies();
   cookieStore.set(CSRF_COOKIE_NAME, token, {
-    httpOnly: true,
+    httpOnly: false,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
     path: "/",

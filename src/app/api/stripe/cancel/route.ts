@@ -4,14 +4,9 @@ import { stripe } from "@/lib/stripe/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { parseBody } from "@/lib/api/parse-body";
-import { validateCsrfToken } from "@/lib/api/csrf";
-
 export async function POST(request: Request) {
   try {
-    // CSRF protection — critical for subscription cancellation
-    const csrfError = await validateCsrfToken(request);
-    if (csrfError) return csrfError;
-
+    // CSRF protection is handled by middleware
     const serverSupabase = await createServerClient();
     const {
       data: { user },

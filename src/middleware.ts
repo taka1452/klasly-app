@@ -1,7 +1,26 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { validateCsrfInMiddleware } from "@/lib/api/csrf-middleware";
+import { checkRateLimit } from "@/lib/rate-limit-edge";
 
 export async function middleware(request: NextRequest) {
+  const isApiRoute = request.nextUrl.pathname.startsWith("/api/");
+
+  // ── API ルート: CSRF 検証 + レート制限 ──
+  if (isApiRoute) {
+    // 1. CSRF 検証（POST/PUT/PATCH/DELETE のみ、除外パスあり）
+    const csrfError = await validateCsrfInMiddleware(request);
+    if (csrfError) return csrfError;
+
+    // 2. レート制限（POST/PUT/PATCH/DELETE のみ）
+    const rateLimitError = await checkRateLimit(request);
+    if (rateLimitError) return rateLimitError;
+
+    // API ルートは認証チェック不要（各ルートで実施）
+    return NextResponse.next();
+  }
+
+  // ── ページルート: 認証チェック ──
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -92,7 +111,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // API ルートは除外（認証は各 API で処理）
-    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|api).*)",
+    // 静的ファイル以外すべて（API ルートも含む）
+    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|sw\\.js|manifest\\.json|icons/).*)",
   ],
 };
