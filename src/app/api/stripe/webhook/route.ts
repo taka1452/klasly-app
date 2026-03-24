@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { stripe } from "@/lib/stripe/server";
 import Stripe from "stripe";
 import { NextResponse } from "next/server";
@@ -15,7 +15,7 @@ export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   const body = await request.text();
-  let adminSupabase: ReturnType<typeof createClient<any>> | null = null;
+  let adminSupabase: SupabaseClient | null = null;
 
   try {
     const sig = request.headers.get("stripe-signature");
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       );
     }
 
-    adminSupabase = createClient<any>(
+    adminSupabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       serviceRoleKey
     );
@@ -887,7 +887,7 @@ export async function POST(request: Request) {
  */
 async function handlePassSubscriptionCheckout(
   session: Stripe.Checkout.Session,
-  adminSupabase: ReturnType<typeof createClient<any>>
+  adminSupabase: SupabaseClient
 ) {
   const memberId = session.metadata?.member_id;
   const studioPassId = session.metadata?.studio_pass_id;
@@ -942,7 +942,7 @@ async function handlePassSubscriptionCheckout(
  */
 async function handleInstructorMembershipCheckout(
   session: Stripe.Checkout.Session,
-  adminSupabase: ReturnType<typeof createClient<any>>
+  adminSupabase: SupabaseClient
 ) {
   const membershipId = session.metadata?.membership_id;
   if (!membershipId) return;
@@ -971,7 +971,7 @@ async function handleInstructorMembershipCheckout(
 async function handleInstructorDirectPayout(
   session: Stripe.Checkout.Session,
   connectedAccountId: string,
-  adminSupabase: ReturnType<typeof createClient<any>>
+  adminSupabase: SupabaseClient
 ) {
   const studioId = session.metadata?.studio_id;
   const memberId = session.metadata?.member_id;
@@ -1167,7 +1167,7 @@ async function handleInstructorDirectPayout(
 
 async function getStudioIdFromStripeEvent(
   event: Stripe.Event,
-  supabase: ReturnType<typeof createClient<any>>
+  supabase: SupabaseClient
 ): Promise<string | null> {
   try {
     const connectedAccountId = (event as Stripe.Event & { account?: string })
@@ -1255,7 +1255,7 @@ async function getStudioIdFromStripeEvent(
  */
 async function handleEventBookingCheckout(
   session: Stripe.Checkout.Session,
-  supabase: ReturnType<typeof createClient<any>>
+  supabase: SupabaseClient
 ) {
   const bookingId = session.metadata?.event_booking_id;
   const paymentType = session.metadata?.payment_type; // 'full' | 'installment'

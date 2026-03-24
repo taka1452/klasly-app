@@ -20,11 +20,13 @@ export async function POST(
   const corsHeaders = await getWidgetCorsHeaders(studioId, origin);
 
   try {
-    // Extract Bearer token
+    // Extract and validate Bearer token
     const authHeader = request.headers.get("authorization");
-    const token = authHeader?.replace("Bearer ", "");
+    const token = authHeader?.startsWith("Bearer ")
+      ? authHeader.slice(7)
+      : undefined;
 
-    if (!token) {
+    if (!token || token.length === 0) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401, headers: corsHeaders }

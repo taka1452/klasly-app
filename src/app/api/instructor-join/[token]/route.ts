@@ -199,11 +199,22 @@ export async function POST(
       }
     }
 
-    // Increment use count
-    await adminSupabase
+    // Atomically increment use_count with optimistic locking to prevent race conditions.
+    // Only update if use_count hasn't changed since we read it.
+    const { data: updatedToken, error: incrementError } = await adminSupabase
       .from("instructor_invite_tokens")
       .update({ use_count: invite.use_count + 1 })
-      .eq("id", invite.id);
+      .eq("id", invite.id)
+      .eq("use_count", invite.use_count) // optimistic lock: only update if unchanged
+      .select("id")
+      .maybeSingle();
+
+    if (incrementError || !updatedToken) {
+      return NextResponse.json(
+        { error: "This invite link was used by someone else. Please try again." },
+        { status: 409 }
+      );
+    }
 
     const roleLabel = joinRole === "manager" ? "a manager" : "an instructor";
     return NextResponse.json({
