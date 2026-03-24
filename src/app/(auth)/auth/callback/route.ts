@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
-import { getAppUrl } from "@/lib/app-url";
+import { getAppUrl, sanitizeRedirectPath } from "@/lib/app-url";
 
 async function getRedirectUrl(
   userId: string,
@@ -19,7 +19,7 @@ async function getRedirectUrl(
         serviceRoleKey
       )
     : null;
-  if (!adminSupabase) return next ? `${origin}${next}` : `${origin}/`;
+  if (!adminSupabase) return `${origin}${sanitizeRedirectPath(next)}`;
 
   const { data: profile } = await adminSupabase
     .from("profiles")
@@ -45,7 +45,7 @@ async function getRedirectUrl(
     if (template && member && !member.waiver_signed) return `${origin}/waiver`;
     return `${origin}/schedule`;
   }
-  return next ? `${origin}${next}` : `${origin}/`;
+  return `${origin}${sanitizeRedirectPath(next)}`;
 }
 
 export async function GET(request: Request) {
@@ -125,7 +125,7 @@ export async function GET(request: Request) {
         return NextResponse.redirect(url);
       }
 
-      return NextResponse.redirect(next ? `${origin}${next}` : `${origin}/`);
+      return NextResponse.redirect(`${origin}${sanitizeRedirectPath(next)}`);
     }
 
     const errMsg =
@@ -138,7 +138,7 @@ export async function GET(request: Request) {
 
   // コードなし（hash ベースの旧 implicit flow 用）→ クライアントコンポーネントページへ
   const processingUrl = new URL(`${origin}/auth/processing`);
-  if (next) processingUrl.searchParams.set("next", next);
+  if (next) processingUrl.searchParams.set("next", sanitizeRedirectPath(next));
   if (type) processingUrl.searchParams.set("type", type);
   return NextResponse.redirect(processingUrl.toString());
 }
