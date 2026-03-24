@@ -55,6 +55,16 @@ const ACCESS: Record<string, PlanAccess> = {
     canAccessSettings: true,
     isFullyLocked: false,
   },
+  expired: {
+    canView: true,
+    canCreate: false,
+    canEdit: false,
+    canExport: false,
+    canBook: false,
+    canPurchase: false,
+    canAccessSettings: true,
+    isFullyLocked: false,
+  },
   canceled: {
     canView: false,
     canCreate: false,

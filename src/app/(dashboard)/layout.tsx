@@ -4,6 +4,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import DashboardShell from "@/components/ui/dashboard-shell";
 import PlanLockScreen from "@/components/ui/plan-lock-screen";
 import PlanBanner from "@/components/ui/plan-banner";
+import TrialBanner from "@/components/ui/trial-banner";
 import { getPlanAccess } from "@/lib/plan-guard";
 import { isAdmin } from "@/lib/admin/auth";
 import type { SetupTask } from "@/components/ui/setup-task-list";
@@ -62,6 +63,7 @@ export default async function DashboardLayout({
     stripe_subscription_id?: string | null;
     plan_status?: string | null;
     grace_period_ends_at?: string | null;
+    trial_ends_at?: string | null;
     stripe_connect_onboarding_complete?: boolean | null;
     drop_in_price?: number | null;
     monthly_price?: number | null;
@@ -78,13 +80,14 @@ export default async function DashboardLayout({
 
   let setupTasks: SetupTask[] = [];
   if (profile.role === "owner" && profile.studio_id) {
-    const [{ count: classesCount }, { count: instructorsCount }, { count: membersCount }, { count: productsCount }, { data: widgetSettings }] =
+    const [{ count: classesCount }, { count: instructorsCount }, { count: membersCount }, { count: productsCount }, { data: widgetSettings }, { count: waiverCount }] =
       await Promise.all([
         adminSupabase.from("classes").select("id", { count: "exact", head: true }).eq("studio_id", profile.studio_id),
         adminSupabase.from("instructors").select("id", { count: "exact", head: true }).eq("studio_id", profile.studio_id),
         adminSupabase.from("members").select("id", { count: "exact", head: true }).eq("studio_id", profile.studio_id),
         adminSupabase.from("products").select("id", { count: "exact", head: true }).eq("studio_id", profile.studio_id).eq("is_active", true),
         adminSupabase.from("widget_settings").select("enabled").eq("studio_id", profile.studio_id).maybeSingle(),
+        adminSupabase.from("waiver_templates").select("id", { count: "exact", head: true }).eq("studio_id", profile.studio_id),
       ]);
     const hasPricing = (productsCount ?? 0) > 0;
     const widgetEnabled = (widgetSettings as { enabled?: boolean } | null)?.enabled ?? false;
@@ -137,12 +140,28 @@ export default async function DashboardLayout({
         helpHref: "/help/payments/create-products",
       },
       {
+        id: "waiver",
+        label: "Set up waiver template",
+        done: (waiverCount ?? 0) >= 1,
+        href: "/settings/waiver",
+        hint: "Create a liability waiver for members to sign.",
+        helpHref: "/help/settings/waiver-template",
+      },
+      {
         id: "widget",
         label: "Set up website widget",
         done: widgetEnabled,
         href: "/settings/widget",
         hint: "Embed your class schedule on your website.",
         helpHref: "/help/settings/embed-wordpress-widget",
+      },
+      {
+        id: "choose-plan",
+        label: "Choose a plan",
+        done: !!studio?.stripe_subscription_id,
+        href: "/settings/billing",
+        hint: "Your 30-day trial is active. Subscribe to keep your studio running.",
+        helpHref: "/help/settings/manage-subscription",
       },
     ];
 
@@ -177,17 +196,20 @@ export default async function DashboardLayout({
     }
   }
 
-  // stripe_subscription_idがなく、かつplan_statusがactiveでもtrialingでもない場合のみリダイレクト
-  // （管理者がDBで直接activeに設定したケースや、無料トライアル開始時を考慮）
-  const hasValidPlan =
-    studio?.stripe_subscription_id ||
-    studio?.plan_status === "active" ||
-    studio?.plan_status === "trialing";
-  if (!hasValidPlan) {
-    redirect("/onboarding/plan");
+  // プラン未設定でもダッシュボードにアクセス可能（トライアルバナーで誘導）
+  // オンボーディング未完了（スタジオ作成直後でcompleteを経由していない）場合のみリダイレクト
+  if (!studio?.plan_status || studio.plan_status === "none") {
+    redirect("/onboarding/complete");
   }
 
-  const planStatus = studio?.plan_status ?? "trialing";
+  // トライアル期限切れ判定: plan_status=trialing + Stripe未登録 + trial_ends_at 過去
+  const isTrialExpired =
+    studio?.plan_status === "trialing" &&
+    !studio?.stripe_subscription_id &&
+    studio?.trial_ends_at &&
+    new Date(studio.trial_ends_at) < new Date();
+
+  const planStatus = isTrialExpired ? "expired" : (studio?.plan_status ?? "trialing");
   const planAccess = getPlanAccess(planStatus);
 
   if (planAccess.isFullyLocked) {
@@ -196,6 +218,8 @@ export default async function DashboardLayout({
 
   const showBanner =
     planStatus === "past_due" || planStatus === "grace";
+  const showTrialBanner =
+    (planStatus === "trialing" || planStatus === "expired") && !studio?.stripe_subscription_id;
 
   const features = await getStudioFeatures(profile.studio_id);
 
@@ -238,6 +262,12 @@ export default async function DashboardLayout({
           <PlanBanner
             planStatus={planStatus}
             gracePeriodEndsAt={studio?.grace_period_ends_at ?? null}
+          />
+        ) : showTrialBanner ? (
+          <TrialBanner
+            planStatus={planStatus}
+            trialEndsAt={studio?.trial_ends_at ?? null}
+            hasSubscription={!!studio?.stripe_subscription_id}
           />
         ) : null
       }

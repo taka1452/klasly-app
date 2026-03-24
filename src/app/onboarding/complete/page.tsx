@@ -4,8 +4,11 @@ import { redirect } from "next/navigation";
 import { stripe } from "@/lib/stripe/server";
 
 /**
- * Stripe Checkout 完了後、session_id で DB を同期してからダッシュボードへリダイレクト
- * 「Go to Dashboard」クリック時にここを経由する
+ * オンボーディング完了ページ。
+ *
+ * 2つのケースを処理:
+ * 1. 新フロー: session_id なし → トライアルを自動開始してダッシュボードへ
+ * 2. 旧フロー/Stripe決済後: session_id あり → Stripe DB同期してダッシュボードへ
  */
 export default async function OnboardingCompletePage({
   searchParams,
@@ -39,6 +42,7 @@ export default async function OnboardingCompletePage({
   const sessionId = params.session_id;
 
   if (sessionId) {
+    // Stripe決済経由（Settings > Billing からプラン選択した場合）
     try {
       const session = await stripe.checkout.sessions.retrieve(sessionId, {
         expand: ["subscription"],
@@ -90,6 +94,28 @@ export default async function OnboardingCompletePage({
       }
     } catch {
       // エラー時もダッシュボードへ（Webhook で更新される可能性）
+    }
+  } else {
+    // 新フロー: Stripeなしでトライアル自動開始
+    const { data: studio } = await supabase
+      .from("studios")
+      .select("plan_status")
+      .eq("id", profile.studio_id)
+      .single();
+
+    // まだプランが設定されていない場合のみトライアルを開始
+    if (!studio?.plan_status || studio.plan_status === "none") {
+      const trialEndsAt = new Date();
+      trialEndsAt.setDate(trialEndsAt.getDate() + 30);
+
+      await supabase
+        .from("studios")
+        .update({
+          plan: "pro",
+          plan_status: "trialing",
+          trial_ends_at: trialEndsAt.toISOString(),
+        })
+        .eq("id", profile.studio_id);
     }
   }
 
