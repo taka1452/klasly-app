@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getDayName, formatTime } from "@/lib/utils";
+import { getDayName, formatTime, formatDuration } from "@/lib/utils";
 import type { Class } from "@/types/database";
 
 type ClassWithInstructor = Class & {
@@ -64,7 +64,7 @@ export default function WeeklySchedule({ classes }: Props) {
                       {getInstructorName(cls)}
                     </p>
                     <p className="text-xs text-gray-400">
-                      {cls.duration_minutes} min · {cls.capacity} spots
+                      {formatDuration(cls.duration_minutes)} · {cls.capacity} spots
                     </p>
                   </Link>
                 ))
@@ -109,7 +109,7 @@ export default function WeeklySchedule({ classes }: Props) {
                       {getInstructorName(cls)}
                     </p>
                     <p className="text-xs text-gray-400">
-                      {cls.duration_minutes} min · {cls.capacity} spots
+                      {formatDuration(cls.duration_minutes)} · {cls.capacity} spots
                     </p>
                   </button>
                 ))}

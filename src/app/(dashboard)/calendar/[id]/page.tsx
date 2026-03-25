@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getDayName, formatTime, formatDate } from "@/lib/utils";
+import { getDayName, formatTime, formatDate, formatDuration } from "@/lib/utils";
 import ClassEditForm from "@/components/classes/class-edit-form";
 import ClassDeactivateButton from "@/components/classes/class-deactivate-button";
 import FlowHintPanel from "@/components/ui/flow-hint-panel";
@@ -175,7 +175,7 @@ export default async function ClassDetailPage({
               <div>
                 <dt className="text-xs text-gray-400">Duration</dt>
                 <dd className="text-sm font-medium text-gray-900">
-                  {cls.duration_minutes} min
+                  {formatDuration(cls.duration_minutes)}
                 </dd>
               </div>
               <div>

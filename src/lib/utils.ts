@@ -57,6 +57,18 @@ export function formatTime(timeString: string): string {
 }
 
 /**
+ * 所要時間を "1h 30min" 形式にフォーマット
+ * 例: 90 → "1h 30min", 60 → "1h", 45 → "45min"
+ */
+export function formatDuration(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m}min`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}min`;
+}
+
+/**
  * プランタイプの表示名
  */
 export function getPlanLabel(planType: string): string {

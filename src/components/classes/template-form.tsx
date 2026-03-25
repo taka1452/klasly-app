@@ -17,6 +17,7 @@ type TemplateData = {
   class_type: "in_person" | "online" | "hybrid";
   location: string | null;
   online_link: string | null;
+  image_url: string | null;
   is_public: boolean;
   is_active: boolean;
   instructor_id: string | null;
@@ -38,13 +39,17 @@ export default function TemplateForm({ templateId }: Props) {
   const [classType, setClassType] = useState<"in_person" | "online" | "hybrid">(
     "in_person"
   );
-  const [durationMinutes, setDurationMinutes] = useState(60);
+  const [durationHours, setDurationHours] = useState(1);
+  const [durationMins, setDurationMins] = useState(0);
   const [capacity, setCapacity] = useState(15);
   const [priceDollars, setPriceDollars] = useState("");
   const [location, setLocation] = useState("");
   const [onlineLink, setOnlineLink] = useState("");
   const [instructorId, setInstructorId] = useState("");
   const [isPublic, setIsPublic] = useState(true);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
 
   const [instructors, setInstructors] = useState<InstructorOption[]>([]);
   const [error, setError] = useState("");
@@ -101,7 +106,8 @@ export default function TemplateForm({ templateId }: Props) {
         setName(t.name);
         setDescription(t.description || "");
         setClassType(t.class_type);
-        setDurationMinutes(t.duration_minutes);
+        setDurationHours(Math.floor(t.duration_minutes / 60));
+        setDurationMins(t.duration_minutes % 60);
         setCapacity(t.capacity);
         setPriceDollars(
           t.price_cents !== null && t.price_cents !== undefined
@@ -112,6 +118,10 @@ export default function TemplateForm({ templateId }: Props) {
         setOnlineLink(t.online_link || "");
         setInstructorId(t.instructor_id || "");
         setIsPublic(t.is_public ?? true);
+        if (t.image_url) {
+          setExistingImageUrl(t.image_url);
+          setImagePreview(t.image_url);
+        }
       } catch (err: unknown) {
         setError(
           err instanceof Error ? err.message : "Failed to load template"
@@ -130,6 +140,12 @@ export default function TemplateForm({ templateId }: Props) {
 
     if (!name.trim()) {
       setError("Name is required.");
+      setLoading(false);
+      return;
+    }
+
+    if (durationHours === 0 && durationMins === 0) {
+      setError("Duration must be greater than 0.");
       setLoading(false);
       return;
     }
@@ -155,7 +171,7 @@ export default function TemplateForm({ templateId }: Props) {
       name: name.trim(),
       description: description.trim() || null,
       class_type: classType,
-      duration_minutes: durationMinutes,
+      duration_minutes: durationHours * 60 + durationMins,
       capacity,
       price_cents: priceCents,
       location: classType !== "online" ? location.trim() || null : null,
@@ -182,6 +198,23 @@ export default function TemplateForm({ templateId }: Props) {
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "Failed to save template");
+      }
+
+      const savedTemplate = await res.json();
+      const savedId = templateId || savedTemplate.id;
+
+      // Upload image if selected
+      if (imageFile && savedId) {
+        const form = new FormData();
+        form.append("file", imageFile);
+        const imgRes = await fetch(`/api/class-templates/${savedId}/image`, {
+          method: "POST",
+          body: form,
+        });
+        if (!imgRes.ok) {
+          const imgData = await imgRes.json().catch(() => ({}));
+          console.error("Image upload failed:", imgData.error);
+        }
       }
 
       router.push("/classes");
@@ -324,18 +357,30 @@ export default function TemplateForm({ templateId }: Props) {
         <div className="grid gap-5 sm:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Duration (minutes)
+              Duration
             </label>
-            <input
-              type="number"
-              value={durationMinutes}
-              onChange={(e) =>
-                setDurationMinutes(parseInt(e.target.value, 10) || 60)
-              }
-              min={15}
-              max={180}
-              className="input-field mt-1"
-            />
+            <div className="mt-1 flex items-center gap-2">
+              <select
+                value={durationHours}
+                onChange={(e) => setDurationHours(parseInt(e.target.value, 10))}
+                className="input-field"
+              >
+                {[0, 1, 2, 3].map((h) => (
+                  <option key={h} value={h}>{h}</option>
+                ))}
+              </select>
+              <span className="text-sm text-gray-500">hr</span>
+              <select
+                value={durationMins}
+                onChange={(e) => setDurationMins(parseInt(e.target.value, 10))}
+                className="input-field"
+              >
+                {[0, 15, 30, 45].map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+              <span className="text-sm text-gray-500">min</span>
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
@@ -429,6 +474,56 @@ export default function TemplateForm({ templateId }: Props) {
               (visible to members on the schedule)
             </span>
           </label>
+        </div>
+
+        {/* Class Image */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Class Image (optional)
+          </label>
+          <div className="mt-2">
+            {imagePreview && (
+              <div className="mb-2 flex items-center gap-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={imagePreview}
+                  alt="Class preview"
+                  className="h-20 w-20 rounded-lg object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (existingImageUrl && templateId) {
+                      await fetch(`/api/class-templates/${templateId}/image`, { method: "DELETE" });
+                    }
+                    setImageFile(null);
+                    setImagePreview(null);
+                    setExistingImageUrl(null);
+                  }}
+                  className="text-sm text-red-600 hover:text-red-700"
+                >
+                  Remove
+                </button>
+              </div>
+            )}
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                if (file.size > 2 * 1024 * 1024) {
+                  setError("Image must be under 2MB");
+                  return;
+                }
+                setImageFile(file);
+                const reader = new FileReader();
+                reader.onload = () => setImagePreview(reader.result as string);
+                reader.readAsDataURL(file);
+              }}
+              className="text-sm text-gray-500 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-brand-700 hover:file:bg-brand-100"
+            />
+          </div>
         </div>
 
         {/* Buttons */}

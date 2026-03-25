@@ -157,6 +157,7 @@ export type ClassTemplate = {
   location: string | null;
   class_type: "in_person" | "online" | "hybrid";
   online_link: string | null;
+  image_url: string | null;
   is_active: boolean;
   is_public: boolean;
   created_at: string;

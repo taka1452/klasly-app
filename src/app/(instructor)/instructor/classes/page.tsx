@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { formatDuration } from "@/lib/utils";
 
 type InstructorClass = {
   id: string;
@@ -209,7 +210,7 @@ export default function InstructorClassesPage() {
                       )}
                     </div>
                     <p className="mt-1 text-sm text-gray-500">
-                      {DAY_LABELS[cls.day_of_week]} &middot; {formatTime(cls.start_time)} &middot; {cls.duration_minutes} min &middot; Cap: {cls.capacity}
+                      {DAY_LABELS[cls.day_of_week]} &middot; {formatTime(cls.start_time)} &middot; {formatDuration(cls.duration_minutes)} &middot; Cap: {cls.capacity}
                       {cls.rooms ? ` · ${cls.rooms.name}` : ""}
                     </p>
                   </div>

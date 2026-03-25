@@ -74,10 +74,12 @@ export async function GET(
           location,
           is_online,
           instructor_id,
+          template_id,
           instructors (
             id,
             profiles (full_name)
-          )
+          ),
+          class_templates (image_url)
         )
       `
       )
@@ -161,6 +163,9 @@ export async function GET(
       confirmedCount: availabilityMap[s.id] ?? 0,
       location: s.classes?.location ?? null,
       isOnline: onlineEnabled ? (s.is_online ?? s.classes?.is_online ?? false) : false,
+      imageUrl: (s.classes as Record<string, unknown>)?.class_templates
+        ? ((s.classes as Record<string, unknown>).class_templates as { image_url?: string | null })?.image_url ?? null
+        : null,
     }));
 
     return NextResponse.json(

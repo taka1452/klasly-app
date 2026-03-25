@@ -284,6 +284,30 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
+          q: "How do I set the class duration?",
+          a: (
+            <>
+              When creating or editing a class template, choose the duration using the <B>hours</B> and <B>minutes</B> selectors. For example, select &quot;1&quot; hour and &quot;30&quot; minutes for a 90-minute class. Durations are available in 15-minute increments.
+            </>
+          ),
+        },
+        {
+          q: "Can I add an image to my classes?",
+          a: (
+            <>
+              Yes! When creating or editing a class template, you can upload a photo or logo using the <B>Class Image</B> field. Supported formats are JPG, PNG, and WebP (max 2MB). This image will appear on your class list, your members&apos; booking page, and your WordPress widget.
+            </>
+          ),
+        },
+        {
+          q: "How do I find a specific class?",
+          a: (
+            <>
+              On the <B>Classes</B> page, use the search bar to find classes by name or instructor. You can also filter by day of the week using the day tabs, or sort by name, day, instructor, or creation date.
+            </>
+          ),
+        },
+        {
           q: "Can I import classes in bulk?",
           a: (
             <>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { formatDuration } from "@/lib/utils";
 import BookingButton from "@/components/bookings/booking-button";
 import { useFeature } from "@/lib/features/feature-context";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
@@ -165,7 +166,7 @@ export default function CalendarEventCard({
           </h3>
           <div className="mt-2 space-y-1 text-sm text-gray-600">
             <p>
-              {formatTimeShort(session.start_time)} – {endTimeStr} ({session.duration_minutes} min)
+              {formatTimeShort(session.start_time)} – {endTimeStr} ({formatDuration(session.duration_minutes)})
             </p>
             {session.instructor_name && (
               <p>Instructor: {session.instructor_name}</p>

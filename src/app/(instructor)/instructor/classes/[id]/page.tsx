@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { formatDate, formatTime } from "@/lib/utils";
+import { formatDate, formatTime, formatDuration } from "@/lib/utils";
 import InstructorClassEditForm from "@/components/instructor/instructor-class-edit-form";
 import Toast from "@/components/ui/toast";
 
@@ -252,7 +252,7 @@ export default function InstructorClassDetailPage() {
               </div>
               <div className="flex justify-between">
                 <dt className="text-gray-500">Duration</dt>
-                <dd className="font-medium text-gray-900">{cls.duration_minutes} min</dd>
+                <dd className="font-medium text-gray-900">{formatDuration(cls.duration_minutes)}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-gray-500">Capacity</dt>

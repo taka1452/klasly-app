@@ -44,7 +44,8 @@ export default function InstructorClassEditForm({
   const [description, setDescription] = useState(initialData.description);
   const [dayOfWeek, setDayOfWeek] = useState(initialData.dayOfWeek);
   const [startTime, setStartTime] = useState(initialData.startTime);
-  const [durationMinutes, setDurationMinutes] = useState(initialData.durationMinutes);
+  const [durationHours, setDurationHours] = useState(Math.floor(initialData.durationMinutes / 60));
+  const [durationMins, setDurationMins] = useState(initialData.durationMinutes % 60);
   const [capacity, setCapacity] = useState(initialData.capacity);
   const [roomId, setRoomId] = useState(initialData.roomId);
   const [isPublic, setIsPublic] = useState(initialData.isPublic);
@@ -80,7 +81,7 @@ export default function InstructorClassEditForm({
           description: description.trim() || null,
           day_of_week: dayOfWeek,
           start_time: startTime,
-          duration_minutes: durationMinutes,
+          duration_minutes: durationHours * 60 + durationMins,
           capacity,
           room_id: roomId || null,
           is_public: isPublic,
@@ -140,8 +141,17 @@ export default function InstructorClassEditForm({
 
       <div className="grid gap-5 sm:grid-cols-3">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Duration (min) *</label>
-          <input type="number" value={durationMinutes} onChange={(e) => setDurationMinutes(Number(e.target.value))} min={1} max={180} required className="input-field mt-1" />
+          <label className="block text-sm font-medium text-gray-700">Duration *</label>
+          <div className="mt-1 flex items-center gap-2">
+            <select value={durationHours} onChange={(e) => setDurationHours(parseInt(e.target.value, 10))} className="input-field">
+              {[0, 1, 2, 3].map((h) => (<option key={h} value={h}>{h}</option>))}
+            </select>
+            <span className="text-sm text-gray-500">hr</span>
+            <select value={durationMins} onChange={(e) => setDurationMins(parseInt(e.target.value, 10))} className="input-field">
+              {[0, 15, 30, 45].map((m) => (<option key={m} value={m}>{m}</option>))}
+            </select>
+            <span className="text-sm text-gray-500">min</span>
+          </div>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">Capacity *</label>

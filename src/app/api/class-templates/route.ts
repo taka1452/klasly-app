@@ -21,7 +21,7 @@ export async function GET() {
 
       const { data, error } = await dashCtx.supabase
         .from("class_templates")
-        .select("*, instructors(id, profiles(full_name))")
+        .select("*, instructors(id, profiles(full_name)), classes(day_of_week)")
         .eq("studio_id", dashCtx.studioId)
         .order("created_at", { ascending: false });
 
