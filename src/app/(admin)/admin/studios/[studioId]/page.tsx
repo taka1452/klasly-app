@@ -3,6 +3,7 @@ import { getStripe } from "@/lib/stripe/server";
 import Link from "next/link";
 import AdminStudioDetail from "@/components/admin/admin-studio-detail";
 import AdminStudioFeatures from "@/components/admin/admin-studio-features";
+import AdminStudioUserActivity from "@/components/admin/admin-studio-user-activity";
 
 const STRIPE_DASHBOARD = "https://dashboard.stripe.com";
 
@@ -152,6 +153,8 @@ export default async function AdminStudioDetailPage({
       />
 
       <AdminStudioFeatures studioId={studioId} />
+
+      <AdminStudioUserActivity studioId={studioId} />
 
       {/* Referral Info */}
       <div className="rounded-lg border border-slate-700 bg-slate-800 p-6">

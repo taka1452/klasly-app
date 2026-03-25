@@ -157,6 +157,13 @@ export const en = {
     internalNotes: "Internal notes...",
     studioNameMismatch: "Studio name does not match.",
     membersActivePaused: "Active {{active}} / Paused {{paused}} / Cancelled {{cancelled}}",
+    userActivity: "User Activity",
+    lastLogin: "Last Login",
+    active: "Active",
+    inactive: "Inactive",
+    dormant: "Dormant",
+    never: "Never",
+    noStaff: "No staff members found",
   },
   billing: {
     title: "Billing",

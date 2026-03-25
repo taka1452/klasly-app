@@ -591,6 +591,14 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
+          q: "How can I see if studio staff are actively using the platform?",
+          a: (
+            <>
+              On the <B>Studio Detail</B> page (Admin &gt; Studios &gt; click a studio), scroll to the <B>User Activity</B> section. It shows the last login time and activity status for each owner, manager, and instructor. Users are marked as <B>Active</B> (logged in within 30 days), <B>Inactive</B> (30-90 days), or <B>Dormant</B> (90+ days or never logged in).
+            </>
+          ),
+        },
+        {
           q: "Will I get notified when a new studio signs up?",
           a: (
             <>
