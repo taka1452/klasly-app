@@ -21,7 +21,7 @@ export async function GET() {
 
       const { data, error } = await dashCtx.supabase
         .from("class_templates")
-        .select("*, instructors(id, profiles(full_name)), classes(day_of_week)")
+        .select("*, instructors(id, profiles(full_name))")
         .eq("studio_id", dashCtx.studioId)
         .order("created_at", { ascending: false });
 
@@ -29,7 +29,31 @@ export async function GET() {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
-      return NextResponse.json(data || []);
+      // テンプレートごとのスケジュール曜日を取得
+      const templateIds = (data || []).map((t: { id: string }) => t.id);
+      let scheduleDays: Record<string, number[]> = {};
+      if (templateIds.length > 0) {
+        const { data: classes } = await dashCtx.supabase
+          .from("classes")
+          .select("template_id, day_of_week")
+          .in("template_id", templateIds);
+        if (classes) {
+          for (const c of classes) {
+            if (!c.template_id) continue;
+            if (!scheduleDays[c.template_id]) scheduleDays[c.template_id] = [];
+            if (!scheduleDays[c.template_id].includes(c.day_of_week)) {
+              scheduleDays[c.template_id].push(c.day_of_week);
+            }
+          }
+        }
+      }
+
+      const enriched = (data || []).map((t: { id: string }) => ({
+        ...t,
+        schedule_days: scheduleDays[t.id] || [],
+      }));
+
+      return NextResponse.json(enriched);
     }
 
     // Fallback: instructor context

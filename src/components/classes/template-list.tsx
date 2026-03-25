@@ -24,7 +24,7 @@ type Template = {
     id: string;
     profiles: { full_name: string } | null;
   } | null;
-  classes?: { day_of_week: number }[];
+  schedule_days?: number[];
 };
 
 const CLASS_TYPE_BADGE: Record<string, { label: string; className: string }> = {
@@ -57,9 +57,7 @@ function getInstructorName(template: Template): string | null {
 }
 
 function getScheduledDays(template: Template): number[] {
-  if (!template.classes || !Array.isArray(template.classes)) return [];
-  const days = new Set(template.classes.map((c) => c.day_of_week));
-  return Array.from(days).sort();
+  return template.schedule_days || [];
 }
 
 export default function TemplateList() {
