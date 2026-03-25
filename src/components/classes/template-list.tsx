@@ -76,15 +76,16 @@ function getScheduledDays(template: Template): number[] {
   return template.schedule_days || [];
 }
 
-// Sortable card wrapper
+// Sortable card wrapper with drag handle
 function SortableCard({
   template,
-  isDragEnabled,
   children,
 }: {
   template: Template;
-  isDragEnabled: boolean;
-  children: React.ReactNode;
+  children: (handleProps: {
+    listeners: ReturnType<typeof useSortable>["listeners"];
+    attributes: ReturnType<typeof useSortable>["attributes"];
+  }) => React.ReactNode;
 }) {
   const {
     attributes,
@@ -93,7 +94,7 @@ function SortableCard({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: template.id, disabled: !isDragEnabled });
+  } = useSortable({ id: template.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -103,8 +104,8 @@ function SortableCard({
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      {children}
+    <div ref={setNodeRef} style={style}>
+      {children({ listeners, attributes })}
     </div>
   );
 }
@@ -245,79 +246,100 @@ export default function TemplateList() {
     );
   }
 
-  const cardList = filtered.map((t) => {
+  function renderCard(
+    t: Template,
+    dragHandle?: {
+      listeners: ReturnType<typeof useSortable>["listeners"];
+      attributes: ReturnType<typeof useSortable>["attributes"];
+    }
+  ) {
     const badge = CLASS_TYPE_BADGE[t.class_type] || CLASS_TYPE_BADGE.in_person;
     const instructorName = getInstructorName(t);
 
     return (
       <div
-        key={t.id}
-        className={`card transition-shadow hover:shadow-md ${isDragEnabled ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"}`}
-        onClick={() => {
-          if (!isDragEnabled) router.push(`/classes/${t.id}`);
-        }}
+        className="card relative flex cursor-pointer transition-shadow hover:shadow-md"
+        onClick={() => router.push(`/classes/${t.id}`)}
       >
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-3">
-            {t.image_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={t.image_url} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" />
-            ) : (
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-              </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-3">
+              {t.image_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={t.image_url} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" />
+              ) : (
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                </div>
+              )}
+              <h3 className="text-base font-semibold text-gray-900 line-clamp-1">
+                {t.name}
+              </h3>
+            </div>
+            {!t.is_active && (
+              <span className="inline-flex shrink-0 items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
+                Inactive
+              </span>
             )}
-            <h3 className="text-base font-semibold text-gray-900 line-clamp-1">
-              {t.name}
-            </h3>
           </div>
-          {!t.is_active && (
-            <span className="inline-flex shrink-0 items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
-              Inactive
+
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-gray-600">
+            <span>{formatDuration(t.duration_minutes)}</span>
+            <span className="text-gray-300">|</span>
+            <span>{formatPrice(t.price_cents)}</span>
+            <span className="text-gray-300">|</span>
+            <span>{t.capacity} spots</span>
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span
+              className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${badge.className}`}
+            >
+              {badge.label}
             </span>
-          )}
+            {instructorName && (
+              <span className="text-xs text-gray-500">{instructorName}</span>
+            )}
+          </div>
+
+          <div className="mt-4 flex items-center justify-between">
+            <span
+              className={`text-xs font-medium ${
+                t.is_active ? "text-green-600" : "text-gray-400"
+              }`}
+            >
+              {t.is_active ? "Active" : "Inactive"}
+            </span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/calendar/${t.id}`);
+              }}
+              className="btn-secondary text-xs"
+            >
+              Schedule
+            </button>
+          </div>
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-gray-600">
-          <span>{formatDuration(t.duration_minutes)}</span>
-          <span className="text-gray-300">|</span>
-          <span>{formatPrice(t.price_cents)}</span>
-          <span className="text-gray-300">|</span>
-          <span>{t.capacity} spots</span>
-        </div>
-
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span
-            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${badge.className}`}
+        {/* Drag handle */}
+        {dragHandle && (
+          <div
+            className="flex w-8 shrink-0 touch-none items-center justify-center border-l border-gray-100 ml-3 -mr-2 cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500"
+            onClick={(e) => e.stopPropagation()}
+            {...dragHandle.attributes}
+            {...dragHandle.listeners}
           >
-            {badge.label}
-          </span>
-          {instructorName && (
-            <span className="text-xs text-gray-500">{instructorName}</span>
-          )}
-        </div>
-
-        <div className="mt-4 flex items-center justify-between">
-          <span
-            className={`text-xs font-medium ${
-              t.is_active ? "text-green-600" : "text-gray-400"
-            }`}
-          >
-            {t.is_active ? "Active" : "Inactive"}
-          </span>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/calendar/${t.id}`);
-            }}
-            className="btn-secondary text-xs"
-          >
-            Schedule
-          </button>
-        </div>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+              <circle cx="9" cy="5" r="1.5" /><circle cx="15" cy="5" r="1.5" />
+              <circle cx="9" cy="12" r="1.5" /><circle cx="15" cy="12" r="1.5" />
+              <circle cx="9" cy="19" r="1.5" /><circle cx="15" cy="19" r="1.5" />
+            </svg>
+          </div>
+        )}
       </div>
     );
-  });
+  }
 
   return (
     <div className="space-y-4">
@@ -329,12 +351,6 @@ export default function TemplateList() {
         dayFilter={dayFilter}
         onDayFilterChange={setDayFilter}
       />
-
-      {isDragEnabled && (
-        <p className="text-xs text-gray-400">
-          Drag and drop cards to reorder. Click a card name to view details.
-        </p>
-      )}
 
       {filtered.length === 0 ? (
         <div className="card text-center py-12">
@@ -352,8 +368,8 @@ export default function TemplateList() {
           >
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {filtered.map((t) => (
-                <SortableCard key={t.id} template={t} isDragEnabled>
-                  {cardList.find((c) => c.key === t.id)}
+                <SortableCard key={t.id} template={t}>
+                  {(handleProps) => renderCard(t, handleProps)}
                 </SortableCard>
               ))}
             </div>
@@ -361,7 +377,9 @@ export default function TemplateList() {
         </DndContext>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {cardList}
+          {filtered.map((t) => (
+            <div key={t.id}>{renderCard(t)}</div>
+          ))}
         </div>
       )}
     </div>
