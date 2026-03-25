@@ -5,6 +5,7 @@ import { Search } from "lucide-react";
 const DAYS = ["All", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 const SORT_OPTIONS = [
+  { value: "custom", label: "Custom Order" },
   { value: "name-asc", label: "Name (A-Z)" },
   { value: "name-desc", label: "Name (Z-A)" },
   { value: "day", label: "Day of Week" },

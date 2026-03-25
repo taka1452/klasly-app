@@ -23,7 +23,7 @@ export async function GET() {
         .from("class_templates")
         .select("*, instructors(id, profiles(full_name))")
         .eq("studio_id", dashCtx.studioId)
-        .order("created_at", { ascending: false });
+        .order("sort_order", { ascending: true });
 
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
@@ -147,6 +147,16 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
 
+      // 新規テンプレートを末尾に追加するため、現在の最大sort_orderを取得
+      const { data: maxRow } = await dashCtx.supabase
+        .from("class_templates")
+        .select("sort_order")
+        .eq("studio_id", dashCtx.studioId)
+        .order("sort_order", { ascending: false })
+        .limit(1)
+        .single();
+      const nextSortOrder = (maxRow?.sort_order ?? 0) + 1;
+
       const { data, error } = await dashCtx.supabase
         .from("class_templates")
         .insert({
@@ -162,6 +172,7 @@ export async function POST(request: Request) {
           online_link: online_link || null,
           is_public: is_public ?? true,
           is_active: true,
+          sort_order: nextSortOrder,
         })
         .select("*, instructors(id, profiles(full_name))")
         .single();

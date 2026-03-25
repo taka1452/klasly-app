@@ -308,6 +308,14 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
+          q: "Can I reorder my classes?",
+          a: (
+            <>
+              Yes! On the <B>Classes</B> page, select <B>Custom Order</B> from the sort dropdown. Then drag and drop class cards to rearrange them. Your custom order is saved automatically and persists across sessions.
+            </>
+          ),
+        },
+        {
           q: "Can I import classes in bulk?",
           a: (
             <>
