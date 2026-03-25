@@ -63,7 +63,7 @@ export default function DashboardShell({
       onboardingStartedAt={onboardingStartedAt}
       userId={userId}
     >
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-dvh bg-gray-50">
       <button
         type="button"
         aria-label="Close menu"
@@ -83,13 +83,13 @@ export default function DashboardShell({
         managerPermissions={managerPermissions}
       />
 
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col">
         <Header
           userName={userName}
           userEmail={userEmail}
           onSidebarToggle={() => setSidebarOpen((o) => !o)}
         />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+        <main className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
           {banner && <div className="mb-6">{banner}</div>}
           {planAccess ? (
             <PlanAccessProvider planAccess={planAccess}>
