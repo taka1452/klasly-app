@@ -8,6 +8,7 @@ import {
   DndContext,
   closestCenter,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -118,7 +119,8 @@ export default function TemplateList() {
   const [dayFilter, setDayFilter] = useState<number | null>(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } })
   );
 
   useEffect(() => {
@@ -306,7 +308,7 @@ export default function TemplateList() {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              router.push(`/classes/${t.id}/schedule`);
+              router.push(`/calendar/${t.id}`);
             }}
             className="btn-secondary text-xs"
           >
