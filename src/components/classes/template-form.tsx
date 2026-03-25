@@ -506,23 +506,27 @@ export default function TemplateForm({ templateId }: Props) {
                 </button>
               </div>
             )}
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                if (file.size > 2 * 1024 * 1024) {
-                  setError("Image must be under 2MB");
-                  return;
-                }
-                setImageFile(file);
-                const reader = new FileReader();
-                reader.onload = () => setImagePreview(reader.result as string);
-                reader.readAsDataURL(file);
-              }}
-              className="text-sm text-gray-500 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-brand-700 hover:file:bg-brand-100"
-            />
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700 hover:bg-brand-100">
+              Upload Image
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="sr-only"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  if (file.size > 2 * 1024 * 1024) {
+                    setError("Image must be under 2MB");
+                    return;
+                  }
+                  setImageFile(file);
+                  const reader = new FileReader();
+                  reader.onload = () => setImagePreview(reader.result as string);
+                  reader.readAsDataURL(file);
+                }}
+              />
+            </label>
+            <span className="text-xs text-gray-400">JPG, PNG, WebP · Max 2MB</span>
           </div>
         </div>
 
