@@ -488,7 +488,8 @@ export default function TemplateForm({ templateId }: Props) {
                 <img
                   src={imagePreview}
                   alt="Class preview"
-                  className="h-20 w-20 rounded-lg object-cover"
+                  className="h-20 w-20 min-w-[5rem] rounded-lg object-cover"
+                  style={{ width: 80, height: 80 }}
                 />
                 <button
                   type="button"
