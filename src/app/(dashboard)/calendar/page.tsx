@@ -1,9 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import DashboardCalendar from "@/components/dashboard/calendar/dashboard-calendar";
-import ExportCsvButton from "@/components/ui/export-csv-button";
+import ScheduleActions from "@/components/dashboard/calendar/schedule-actions";
 import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
 import ContextHelpLink from "@/components/help/context-help-link";
 import type { Metadata } from "next";
@@ -52,29 +51,14 @@ export default async function SchedulePage() {
           </p>
           <ContextHelpLink href="/help/classes-scheduling/edit-cancel-session" />
         </div>
-        {canManageClasses && (
-          <div className="flex gap-2">
-            <ExportCsvButton
-              url="/api/export/classes"
-              filename={`classes-${new Date().toISOString().slice(0, 10)}.csv`}
-              label="Export"
-            />
-            <Link href="/calendar/import" className="btn-secondary">
-              Import
-            </Link>
-            <Link href="/classes" className="btn-secondary">
-              Classes
-            </Link>
-            <Link href="/calendar/new" className="btn-primary">
-              + Add
-            </Link>
-          </div>
-        )}
+        {canManageClasses && <ScheduleActions />}
       </div>
 
-      <div className="mt-6">
-        <DashboardCalendar />
-      </div>
+      {!canManageClasses && (
+        <div className="mt-6">
+          <DashboardCalendar />
+        </div>
+      )}
     </div>
   );
 }
