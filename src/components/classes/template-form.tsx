@@ -57,33 +57,17 @@ export default function TemplateForm({ templateId }: Props) {
   const [fetching, setFetching] = useState(!!templateId);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // Fetch instructors
+  // Fetch instructors via API (avoids RLS issues with direct client)
   useEffect(() => {
     async function fetchInstructors() {
       try {
-        const { createClient } = await import("@/lib/supabase/client");
-        const supabase = createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("studio_id")
-          .eq("id", user?.id)
-          .single();
-        if (!profile?.studio_id) return;
-        const { data } = await supabase
-          .from("instructors")
-          .select("id, profile_id, profiles(full_name)")
-          .eq("studio_id", profile.studio_id)
-          .order("created_at", { ascending: false });
-        const list = (data || []).map((i) => {
-          const p = i.profiles as { full_name?: string } | null;
-          const raw = Array.isArray(p) ? p[0] : p;
-          const isMe = i.profile_id === user?.id;
-          return { id: i.id, full_name: raw?.full_name || "\u2014", isMe };
-        });
-        list.sort((a, b) => (a.isMe ? -1 : b.isMe ? 1 : 0));
+        const res = await fetch("/api/dashboard/instructors");
+        if (!res.ok) return;
+        const data: { id: string; name: string }[] = await res.json();
+        const list: InstructorOption[] = data.map((i) => ({
+          id: i.id,
+          full_name: i.name,
+        }));
         setInstructors(list);
       } catch {
         // non-critical
