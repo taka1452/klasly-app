@@ -14,8 +14,7 @@ export async function GET() {
   const { data, error } = await ctx.supabase
     .from("instructors")
     .select("id, profiles(full_name)")
-    .eq("studio_id", ctx.studioId)
-    .eq("is_active", true);
+    .eq("studio_id", ctx.studioId);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
