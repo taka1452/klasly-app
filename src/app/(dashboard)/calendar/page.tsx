@@ -44,20 +44,22 @@ export default async function SchedulePage() {
 
   return (
     <div>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <p className="text-sm text-gray-500">
-            View all sessions and room bookings
-          </p>
-          <ContextHelpLink href="/help/classes-scheduling/edit-cancel-session" />
-        </div>
-        {canManageClasses && <ScheduleActions />}
-      </div>
-
-      {!canManageClasses && (
-        <div className="mt-6">
-          <DashboardCalendar />
-        </div>
+      {canManageClasses ? (
+        <ScheduleActions />
+      ) : (
+        <>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <p className="text-sm text-gray-500">
+                View all sessions and room bookings
+              </p>
+              <ContextHelpLink href="/help/classes-scheduling/edit-cancel-session" />
+            </div>
+          </div>
+          <div className="mt-6">
+            <DashboardCalendar />
+          </div>
+        </>
       )}
     </div>
   );
