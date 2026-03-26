@@ -3,6 +3,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import DashboardCalendar from "@/components/dashboard/calendar/dashboard-calendar";
 import ScheduleActions from "@/components/dashboard/calendar/schedule-actions";
+import CalendarLegend from "@/components/dashboard/calendar/calendar-legend";
 import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
 import ContextHelpLink from "@/components/help/context-help-link";
 import type { Metadata } from "next";
@@ -56,7 +57,10 @@ export default async function SchedulePage() {
               <ContextHelpLink href="/help/classes-scheduling/edit-cancel-session" />
             </div>
           </div>
-          <div className="mt-6">
+          <div className="mt-4">
+            <CalendarLegend />
+          </div>
+          <div className="mt-4">
             <DashboardCalendar />
           </div>
         </>

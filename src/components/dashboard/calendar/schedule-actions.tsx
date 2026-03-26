@@ -5,6 +5,7 @@ import Link from "next/link";
 import ExportCsvButton from "@/components/ui/export-csv-button";
 import DashboardCalendar from "./dashboard-calendar";
 import AddSessionModal from "./add-session-modal";
+import CalendarLegend from "./calendar-legend";
 import ContextHelpLink from "@/components/help/context-help-link";
 
 export default function ScheduleActions() {
@@ -46,7 +47,11 @@ export default function ScheduleActions() {
         </div>
       </div>
 
-      <div className="mt-6">
+      <div className="mt-4">
+        <CalendarLegend />
+      </div>
+
+      <div className="mt-4">
         <DashboardCalendar key={refreshKey} />
       </div>
 

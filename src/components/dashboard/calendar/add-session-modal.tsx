@@ -8,10 +8,16 @@ type Template = {
   name: string;
   duration_minutes: number;
   capacity: number;
+  instructor_id: string | null;
   instructor_name: string | null;
 };
 
 type Room = {
+  id: string;
+  name: string;
+};
+
+type Instructor = {
   id: string;
   name: string;
 };
@@ -25,6 +31,7 @@ type Props = {
 export default function AddSessionModal({ open, onClose, onCreated }: Props) {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -35,12 +42,13 @@ export default function AddSessionModal({ open, onClose, onCreated }: Props) {
   const [date, setDate] = useState("");
   const [startTime, setStartTime] = useState("09:00");
   const [roomId, setRoomId] = useState("");
+  const [instructorId, setInstructorId] = useState("");
   const [repeat, setRepeat] = useState<"single" | "weekly">("single");
   const [repeatWeeks, setRepeatWeeks] = useState(4);
 
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // Fetch templates and rooms
+  // Fetch templates, rooms, and instructors
   useEffect(() => {
     if (!open) return;
     setLoading(true);
@@ -54,14 +62,18 @@ export default function AddSessionModal({ open, onClose, onCreated }: Props) {
       fetch("/api/dashboard/rooms").then((r) =>
         r.ok ? r.json() : []
       ),
+      fetch("/api/dashboard/instructors").then((r) =>
+        r.ok ? r.json() : []
+      ),
     ])
-      .then(([templatesData, roomsData]) => {
+      .then(([templatesData, roomsData, instructorsData]) => {
         const mapped: Template[] = (
           Array.isArray(templatesData) ? templatesData : []
         )
           .filter((t: Record<string, unknown>) => t.is_active)
           .map((t: Record<string, unknown>) => {
             const instr = t.instructors as {
+              id?: string;
               profiles?: { full_name?: string } | { full_name?: string }[];
             } | null;
             let instrName: string | null = null;
@@ -76,6 +88,7 @@ export default function AddSessionModal({ open, onClose, onCreated }: Props) {
               name: t.name as string,
               duration_minutes: t.duration_minutes as number,
               capacity: t.capacity as number,
+              instructor_id: (t.instructor_id as string) || null,
               instructor_name: instrName,
             };
           });
@@ -88,6 +101,14 @@ export default function AddSessionModal({ open, onClose, onCreated }: Props) {
           name: r.name as string,
         }));
         setRooms(roomsList);
+
+        const instrList: Instructor[] = (
+          Array.isArray(instructorsData) ? instructorsData : []
+        ).map((i: Record<string, unknown>) => ({
+          id: i.id as string,
+          name: i.name as string,
+        }));
+        setInstructors(instrList);
 
         // Set default date to today
         const today = new Date().toISOString().split("T")[0];
@@ -106,12 +127,24 @@ export default function AddSessionModal({ open, onClose, onCreated }: Props) {
       setDate("");
       setStartTime("09:00");
       setRoomId("");
+      setInstructorId("");
       setRepeat("single");
       setRepeatWeeks(4);
       setError("");
       setSuccess("");
     }
   }, [open]);
+
+  // When template changes, auto-set instructor
+  function handleTemplateChange(newTemplateId: string) {
+    setTemplateId(newTemplateId);
+    const tmpl = templates.find((t) => t.id === newTemplateId);
+    if (tmpl?.instructor_id) {
+      setInstructorId(tmpl.instructor_id);
+    } else {
+      setInstructorId("");
+    }
+  }
 
   // ESC to close
   useEffect(() => {
@@ -124,6 +157,7 @@ export default function AddSessionModal({ open, onClose, onCreated }: Props) {
   }, [open, onClose]);
 
   const selectedTemplate = templates.find((t) => t.id === templateId);
+  const selectedInstructor = instructors.find((i) => i.id === instructorId);
 
   const endTimeDisplay = (() => {
     if (!selectedTemplate || !startTime) return "";
@@ -158,6 +192,7 @@ export default function AddSessionModal({ open, onClose, onCreated }: Props) {
           date,
           start_time: startTime,
           room_id: roomId || undefined,
+          instructor_id: instructorId || undefined,
           repeat,
           repeat_weeks: repeat === "weekly" ? repeatWeeks : undefined,
         }),
@@ -200,7 +235,7 @@ export default function AddSessionModal({ open, onClose, onCreated }: Props) {
       />
       <div
         ref={modalRef}
-        className="relative mx-4 w-full max-w-lg rounded-xl bg-white p-6 shadow-xl"
+        className="relative mx-4 w-full max-w-lg rounded-xl bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto"
       >
         <button
           type="button"
@@ -242,7 +277,7 @@ export default function AddSessionModal({ open, onClose, onCreated }: Props) {
               </label>
               <select
                 value={templateId}
-                onChange={(e) => setTemplateId(e.target.value)}
+                onChange={(e) => handleTemplateChange(e.target.value)}
                 className="input w-full"
                 required
               >
@@ -256,6 +291,27 @@ export default function AddSessionModal({ open, onClose, onCreated }: Props) {
                 ))}
               </select>
             </div>
+
+            {/* Instructor selector */}
+            {instructors.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Instructor
+                </label>
+                <select
+                  value={instructorId}
+                  onChange={(e) => setInstructorId(e.target.value)}
+                  className="input w-full"
+                >
+                  <option value="">No instructor</option>
+                  {instructors.map((i) => (
+                    <option key={i.id} value={i.id}>
+                      {i.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Date */}
             <div>
@@ -376,8 +432,12 @@ export default function AddSessionModal({ open, onClose, onCreated }: Props) {
               <div className="rounded-lg bg-gray-50 p-3 text-sm text-gray-600">
                 <span className="font-medium text-gray-900">
                   {selectedTemplate.name}
-                </span>{" "}
-                — {startTime}
+                </span>
+                {selectedInstructor && (
+                  <span className="text-gray-500"> with {selectedInstructor.name}</span>
+                )}
+                {" — "}
+                {startTime}
                 {endTimeDisplay ? `–${endTimeDisplay}` : ""},{" "}
                 {repeat === "weekly"
                   ? `${repeatWeeks} weeks starting ${date}`

@@ -22,6 +22,7 @@ export async function POST(request: Request) {
       price_cents,
       location,
       online_link,
+      instructor_id: bodyInstructorId,
       repeat = "single",
       repeat_weeks = 4,
     } = body;
@@ -138,10 +139,19 @@ export async function POST(request: Request) {
       templateLocation = template.location;
       templateOnlineLink = template.online_link;
 
-      // For dashboard context, use template's instructor_id
-      if (authSource === "dashboard" && template.instructor_id) {
-        resolvedInstructorId = template.instructor_id;
+      // For dashboard context, allow explicit instructor_id override, else use template's
+      if (authSource === "dashboard") {
+        if (bodyInstructorId) {
+          resolvedInstructorId = bodyInstructorId;
+        } else if (template.instructor_id) {
+          resolvedInstructorId = template.instructor_id;
+        }
       }
+    }
+
+    // For dashboard context without template, allow explicit instructor_id
+    if (authSource === "dashboard" && !resolvedInstructorId && bodyInstructorId) {
+      resolvedInstructorId = bodyInstructorId;
     }
 
     // --- Calculate end_time ---
