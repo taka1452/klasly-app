@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { X, CalendarPlus } from "lucide-react";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { X, CalendarPlus, AlertTriangle } from "lucide-react";
 
 type Template = {
   id: string;
@@ -10,6 +10,7 @@ type Template = {
   capacity: number;
   instructor_id: string | null;
   instructor_name: string | null;
+  room_id: string | null;
 };
 
 type Room = {
@@ -22,13 +23,20 @@ type Instructor = {
   name: string;
 };
 
+type RoomConflict = {
+  title: string;
+  start_time: string;
+  end_time: string;
+};
+
 type Props = {
   open: boolean;
   onClose: () => void;
   onCreated: () => void;
+  defaultTemplateId?: string;
 };
 
-export default function AddSessionModal({ open, onClose, onCreated }: Props) {
+export default function AddSessionModal({ open, onClose, onCreated, defaultTemplateId }: Props) {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [instructors, setInstructors] = useState<Instructor[]>([]);
@@ -45,6 +53,11 @@ export default function AddSessionModal({ open, onClose, onCreated }: Props) {
   const [instructorId, setInstructorId] = useState("");
   const [repeat, setRepeat] = useState<"single" | "weekly">("single");
   const [repeatWeeks, setRepeatWeeks] = useState(4);
+
+  // Room conflict check state
+  const [roomConflict, setRoomConflict] = useState<RoomConflict | null>(null);
+  const [checkingRoom, setCheckingRoom] = useState(false);
+  const conflictTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -90,6 +103,7 @@ export default function AddSessionModal({ open, onClose, onCreated }: Props) {
               capacity: t.capacity as number,
               instructor_id: (t.instructor_id as string) || null,
               instructor_name: instrName,
+              room_id: (t.room_id as string) || null,
             };
           });
         setTemplates(mapped);
@@ -113,12 +127,22 @@ export default function AddSessionModal({ open, onClose, onCreated }: Props) {
         // Set default date to today
         const today = new Date().toISOString().split("T")[0];
         setDate(today);
+
+        // If defaultTemplateId provided, pre-select it
+        if (defaultTemplateId) {
+          const tmpl = mapped.find((t) => t.id === defaultTemplateId);
+          if (tmpl) {
+            setTemplateId(tmpl.id);
+            if (tmpl.instructor_id) setInstructorId(tmpl.instructor_id);
+            if (tmpl.room_id) setRoomId(tmpl.room_id);
+          }
+        }
       })
       .catch(() => {
         setError("Failed to load data");
       })
       .finally(() => setLoading(false));
-  }, [open]);
+  }, [open, defaultTemplateId]);
 
   // Reset on close
   useEffect(() => {
@@ -132,10 +156,12 @@ export default function AddSessionModal({ open, onClose, onCreated }: Props) {
       setRepeatWeeks(4);
       setError("");
       setSuccess("");
+      setRoomConflict(null);
+      setCheckingRoom(false);
     }
   }, [open]);
 
-  // When template changes, auto-set instructor
+  // When template changes, auto-set instructor and room
   function handleTemplateChange(newTemplateId: string) {
     setTemplateId(newTemplateId);
     const tmpl = templates.find((t) => t.id === newTemplateId);
@@ -144,7 +170,86 @@ export default function AddSessionModal({ open, onClose, onCreated }: Props) {
     } else {
       setInstructorId("");
     }
+    if (tmpl?.room_id) {
+      setRoomId(tmpl.room_id);
+    } else {
+      setRoomId("");
+    }
   }
+
+  // Room conflict check
+  const checkRoomConflict = useCallback(async (
+    checkRoomId: string,
+    checkDate: string,
+    checkStartTime: string,
+    durationMinutes: number
+  ) => {
+    if (!checkRoomId || !checkDate || !checkStartTime || !durationMinutes) {
+      setRoomConflict(null);
+      return;
+    }
+
+    // Calculate end time
+    const [h, m] = checkStartTime.split(":").map(Number);
+    const totalMin = h * 60 + m + durationMinutes;
+    const endH = Math.floor(totalMin / 60);
+    const endM = totalMin % 60;
+    const endTime = `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
+
+    setCheckingRoom(true);
+    try {
+      const res = await fetch(`/api/instructor/room-availability?date=${checkDate}`);
+      if (!res.ok) {
+        setRoomConflict(null);
+        return;
+      }
+      const data = await res.json();
+      const events = data.events || [];
+
+      // Check for overlapping events on this room
+      const conflict = events.find((evt: { room_id: string; start_time: string; end_time: string; title: string }) => {
+        if (evt.room_id !== checkRoomId) return false;
+        const evtStart = evt.start_time.slice(0, 5);
+        const evtEnd = evt.end_time.slice(0, 5);
+        return evtStart < endTime && evtEnd > checkStartTime;
+      });
+
+      if (conflict) {
+        setRoomConflict({
+          title: conflict.title,
+          start_time: conflict.start_time.slice(0, 5),
+          end_time: conflict.end_time.slice(0, 5),
+        });
+      } else {
+        setRoomConflict(null);
+      }
+    } catch {
+      setRoomConflict(null);
+    } finally {
+      setCheckingRoom(false);
+    }
+  }, []);
+
+  // Debounced conflict check when room/date/time changes
+  useEffect(() => {
+    if (conflictTimerRef.current) {
+      clearTimeout(conflictTimerRef.current);
+    }
+
+    const tmpl = templates.find((t) => t.id === templateId);
+    if (!roomId || !date || !startTime || !tmpl) {
+      setRoomConflict(null);
+      return;
+    }
+
+    conflictTimerRef.current = setTimeout(() => {
+      checkRoomConflict(roomId, date, startTime, tmpl.duration_minutes);
+    }, 500);
+
+    return () => {
+      if (conflictTimerRef.current) clearTimeout(conflictTimerRef.current);
+    };
+  }, [roomId, date, startTime, templateId, templates, checkRoomConflict]);
 
   // ESC to close
   useEffect(() => {
@@ -181,6 +286,10 @@ export default function AddSessionModal({ open, onClose, onCreated }: Props) {
       setError("Please select a date");
       return;
     }
+    if (roomConflict) {
+      setError("Cannot create session: room has a scheduling conflict");
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -209,7 +318,7 @@ export default function AddSessionModal({ open, onClose, onCreated }: Props) {
       const skippedCount = data.skipped?.length || 0;
       let msg = `${count} session${count > 1 ? "s" : ""} created!`;
       if (skippedCount > 0) {
-        msg += ` (${skippedCount} skipped due to conflicts)`;
+        msg += ` (${skippedCount} skipped due to room conflicts)`;
       }
       setSuccess(msg);
 
@@ -373,6 +482,22 @@ export default function AddSessionModal({ open, onClose, onCreated }: Props) {
                     </option>
                   ))}
                 </select>
+
+                {/* Room conflict alert */}
+                {checkingRoom && (
+                  <p className="mt-1 text-xs text-gray-400">Checking availability...</p>
+                )}
+                {roomConflict && !checkingRoom && (
+                  <div className="mt-2 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3">
+                    <AlertTriangle className="h-4 w-4 shrink-0 text-red-500 mt-0.5" />
+                    <div className="text-sm text-red-700">
+                      <p className="font-medium">Room not available</p>
+                      <p className="text-red-600">
+                        &ldquo;{roomConflict.title}&rdquo; is booked {roomConflict.start_time}–{roomConflict.end_time}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -465,7 +590,7 @@ export default function AddSessionModal({ open, onClose, onCreated }: Props) {
               </button>
               <button
                 type="submit"
-                disabled={submitting || !templateId || !date}
+                disabled={submitting || !templateId || !date || !!roomConflict}
                 className="btn-primary disabled:opacity-50"
               >
                 {submitting

@@ -149,6 +149,7 @@ export type ClassTemplate = {
   id: string;
   studio_id: string;
   instructor_id: string | null;
+  room_id: string | null;
   name: string;
   description: string | null;
   duration_minutes: number;

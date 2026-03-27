@@ -251,7 +251,8 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I add sessions to a class?",
           a: (
             <>
-              Click <B>+ Add</B> on the <B>Schedule</B> page to open the Add Session dialog. Select an existing class, assign an instructor, pick a date and time, and choose <B>Single</B> or <B>Weekly</B> repeat. Owners and managers can assign any instructor — the class template&apos;s default instructor is pre-selected but can be changed.
+              Click <B>+ Add</B> on the <B>Schedule</B> page to open the Add Session dialog. Select an existing class, assign an instructor, pick a date and time, and choose <B>Single</B> or <B>Weekly</B> repeat. Owners and managers can assign any instructor — the class template&apos;s default instructor and default room are pre-selected but can be changed.
+              <Tip>If the selected room is already booked at the chosen time, you&apos;ll see a conflict alert showing the existing booking. The session cannot be created until the conflict is resolved by choosing a different room, time, or date.</Tip>
             </>
           ),
         },
@@ -272,13 +273,15 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "What are class templates?",
           a: (
             <>
-              Class templates are reusable blueprints for your classes. Each template stores the class name, description, duration, capacity, class type (in-person, online, or hybrid), optional pricing, and assigned instructor. Templates make it faster to create new classes without re-entering the same details each time.
+              Class templates are reusable blueprints for your classes. Each template stores the class name, description, duration, capacity, class type (in-person, online, or hybrid), optional pricing, assigned instructor, and default room. Templates make it faster to create new classes without re-entering the same details each time.
               <Steps>
                 <li>Go to <B>Classes</B> in the sidebar to see all templates in a grid view.</li>
-                <li>Click <B>+ New Template</B> to create one. Fill in the name, class type, duration, capacity, price, and instructor.</li>
+                <li>Click <B>+ New Template</B> to create one. Fill in the name, class type, duration, capacity, price, instructor, and default room.</li>
+                <li>After creating a template, you can click <B>Schedule Now</B> to immediately schedule a session, or go back to the class list.</li>
                 <li>Click any template card to edit its details, or click <B>Schedule</B> to create a session from it.</li>
                 <li>Templates can be deactivated from the edit page &mdash; they won&apos;t appear in the list but can be restored later.</li>
               </Steps>
+              <Tip>When you set a default room on a template, it will be automatically pre-selected when scheduling sessions.</Tip>
               <Tip>Instructors can also create and manage their own templates. Owners and managers can see and edit all templates for the studio.</Tip>
             </>
           ),
@@ -344,7 +347,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
               Go to <B>Rooms</B> from the sidebar. The default view shows a <B>Room Usage</B> timeline for the day, with all rooms and their bookings. To add or edit rooms, click <B>Manage Rooms</B>.
               <Steps>
                 <li><B>Add rooms</B> — click &quot;Manage Rooms → + Add room&quot; and enter name, capacity, and description.</li>
-                <li><B>Assign rooms to classes</B> — when creating or editing a class, select a room from the dropdown.</li>
+                <li><B>Assign rooms to classes</B> — when creating or editing a class template, select a default room from the dropdown. This room will be pre-selected when scheduling sessions.</li>
                 <li><B>View room usage</B> — the Rooms page shows all room bookings and class sessions in a daily timeline view.</li>
               </Steps>
               If you also teach classes (owner-instructor), a <B>Book Room</B> tab appears on the Rooms page so you can create room bookings directly.

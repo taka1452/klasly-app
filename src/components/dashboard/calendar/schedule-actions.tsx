@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import ExportCsvButton from "@/components/ui/export-csv-button";
 import DashboardCalendar from "./dashboard-calendar";
@@ -9,12 +10,31 @@ import CalendarLegend from "./calendar-legend";
 import ContextHelpLink from "@/components/help/context-help-link";
 
 export default function ScheduleActions() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [modalOpen, setModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [scheduleTemplateId, setScheduleTemplateId] = useState<string | undefined>();
+
+  // Auto-open modal if ?schedule=TEMPLATE_ID is in URL
+  useEffect(() => {
+    const scheduleId = searchParams.get("schedule");
+    if (scheduleId) {
+      setScheduleTemplateId(scheduleId);
+      setModalOpen(true);
+      // Clean up URL param
+      router.replace("/calendar", { scroll: false });
+    }
+  }, [searchParams, router]);
 
   const handleCreated = useCallback(() => {
     setRefreshKey((k) => k + 1);
   }, []);
+
+  function handleClose() {
+    setModalOpen(false);
+    setScheduleTemplateId(undefined);
+  }
 
   return (
     <>
@@ -57,8 +77,9 @@ export default function ScheduleActions() {
 
       <AddSessionModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={handleClose}
         onCreated={handleCreated}
+        defaultTemplateId={scheduleTemplateId}
       />
     </>
   );

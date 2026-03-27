@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -46,7 +47,9 @@ export default async function SchedulePage() {
   return (
     <div>
       {canManageClasses ? (
-        <ScheduleActions />
+        <Suspense fallback={null}>
+          <ScheduleActions />
+        </Suspense>
       ) : (
         <>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

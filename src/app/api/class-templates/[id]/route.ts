@@ -91,6 +91,7 @@ export async function PUT(request: Request, context: RouteContext) {
       online_link,
       is_public,
       instructor_id,
+      room_id,
     } = body;
 
     // --- Validation ---
@@ -167,6 +168,7 @@ export async function PUT(request: Request, context: RouteContext) {
       if (online_link !== undefined) updates.online_link = online_link || null;
       if (is_public !== undefined) updates.is_public = is_public;
       if (instructor_id !== undefined) updates.instructor_id = instructor_id || null;
+      if (room_id !== undefined) updates.room_id = room_id || null;
 
       if (Object.keys(updates).length === 0) {
         return NextResponse.json(
@@ -225,6 +227,7 @@ export async function PUT(request: Request, context: RouteContext) {
     if (class_type !== undefined) updates.class_type = class_type;
     if (online_link !== undefined) updates.online_link = online_link || null;
     if (is_public !== undefined) updates.is_public = is_public;
+    if (room_id !== undefined) updates.room_id = room_id || null;
     // Instructors cannot change instructor_id
 
     if (Object.keys(updates).length === 0) {

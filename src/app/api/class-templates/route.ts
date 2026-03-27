@@ -102,6 +102,7 @@ export async function POST(request: Request) {
       online_link,
       is_public,
       instructor_id,
+      room_id,
     } = body;
 
     // --- Validation ---
@@ -162,6 +163,7 @@ export async function POST(request: Request) {
         .insert({
           studio_id: dashCtx.studioId,
           instructor_id: instructor_id || null,
+          room_id: room_id || null,
           name: name.trim(),
           description: description || null,
           duration_minutes,
@@ -196,6 +198,7 @@ export async function POST(request: Request) {
       .insert({
         studio_id: instrCtx.studioId,
         instructor_id: instrCtx.instructorId,
+        room_id: room_id || null,
         name: name.trim(),
         description: description || null,
         duration_minutes,

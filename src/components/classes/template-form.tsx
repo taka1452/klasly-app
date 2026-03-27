@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ErrorAlert from "@/components/ui/error-alert";
+import { CalendarPlus, CheckCircle } from "lucide-react";
 
 type InstructorOption = { id: string; full_name: string; isMe?: boolean };
+type RoomOption = { id: string; name: string };
 
 type TemplateData = {
   id: string;
@@ -21,6 +23,7 @@ type TemplateData = {
   is_public: boolean;
   is_active: boolean;
   instructor_id: string | null;
+  room_id: string | null;
   instructors: {
     id: string;
     profiles: { full_name: string } | null;
@@ -46,34 +49,51 @@ export default function TemplateForm({ templateId }: Props) {
   const [location, setLocation] = useState("");
   const [onlineLink, setOnlineLink] = useState("");
   const [instructorId, setInstructorId] = useState("");
+  const [roomId, setRoomId] = useState("");
   const [isPublic, setIsPublic] = useState(true);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
 
   const [instructors, setInstructors] = useState<InstructorOption[]>([]);
+  const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(!!templateId);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // Fetch instructors via API (avoids RLS issues with direct client)
+  // State for post-creation "Schedule Now" flow
+  const [createdId, setCreatedId] = useState<string | null>(null);
+
+  // Fetch instructors and rooms via API
   useEffect(() => {
-    async function fetchInstructors() {
+    async function fetchData() {
       try {
-        const res = await fetch("/api/dashboard/instructors");
-        if (!res.ok) return;
-        const data: { id: string; name: string }[] = await res.json();
-        const list: InstructorOption[] = data.map((i) => ({
-          id: i.id,
-          full_name: i.name,
-        }));
-        setInstructors(list);
+        const [instrRes, roomsRes] = await Promise.all([
+          fetch("/api/dashboard/instructors"),
+          fetch("/api/dashboard/rooms"),
+        ]);
+
+        if (instrRes.ok) {
+          const data: { id: string; name: string }[] = await instrRes.json();
+          setInstructors(data.map((i) => ({ id: i.id, full_name: i.name })));
+        }
+
+        if (roomsRes.ok) {
+          const roomsData = await roomsRes.json();
+          const list: RoomOption[] = (
+            Array.isArray(roomsData) ? roomsData : roomsData?.rooms || []
+          ).map((r: Record<string, unknown>) => ({
+            id: r.id as string,
+            name: r.name as string,
+          }));
+          setRooms(list);
+        }
       } catch {
         // non-critical
       }
     }
-    fetchInstructors();
+    fetchData();
   }, []);
 
   // Fetch existing template for edit mode
@@ -101,6 +121,7 @@ export default function TemplateForm({ templateId }: Props) {
         setLocation(t.location || "");
         setOnlineLink(t.online_link || "");
         setInstructorId(t.instructor_id || "");
+        setRoomId(t.room_id || "");
         setIsPublic(t.is_public ?? true);
         if (t.image_url) {
           setExistingImageUrl(t.image_url);
@@ -164,6 +185,7 @@ export default function TemplateForm({ templateId }: Props) {
           ? onlineLink.trim() || null
           : null,
       instructor_id: instructorId || null,
+      room_id: classType !== "online" ? roomId || null : null,
       is_public: isPublic,
     };
 
@@ -201,8 +223,14 @@ export default function TemplateForm({ templateId }: Props) {
         }
       }
 
-      router.push("/classes");
-      router.refresh();
+      if (templateId) {
+        // Edit mode: go back to classes list
+        router.push("/classes");
+        router.refresh();
+      } else {
+        // Create mode: show "Schedule Now" option
+        setCreatedId(savedId);
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to save template");
     } finally {
@@ -237,6 +265,35 @@ export default function TemplateForm({ templateId }: Props) {
       <div className="card max-w-xl">
         <div className="flex items-center justify-center py-8">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-600 border-t-transparent" />
+        </div>
+      </div>
+    );
+  }
+
+  // Post-creation success screen with "Schedule Now" option
+  if (createdId) {
+    return (
+      <div className="card max-w-xl">
+        <div className="flex flex-col items-center py-8 text-center">
+          <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">
+            Class template created!
+          </h2>
+          <p className="text-sm text-gray-500 mb-6">
+            Would you like to schedule a session now?
+          </p>
+          <div className="flex gap-3">
+            <Link
+              href={`/calendar?schedule=${createdId}`}
+              className="btn-primary inline-flex items-center gap-2"
+            >
+              <CalendarPlus className="h-4 w-4" />
+              Schedule Now
+            </Link>
+            <Link href="/classes" className="btn-secondary">
+              Back to Classes
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -417,6 +474,31 @@ export default function TemplateForm({ templateId }: Props) {
               placeholder="Main studio"
               className="input-field mt-1"
             />
+          </div>
+        )}
+
+        {/* Room (in-person/hybrid, optional) */}
+        {classType !== "online" && rooms.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Default Room{" "}
+              <span className="font-normal text-gray-400">(optional)</span>
+            </label>
+            <select
+              value={roomId}
+              onChange={(e) => setRoomId(e.target.value)}
+              className="input-field mt-1"
+            >
+              <option value="">No room</option>
+              {rooms.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-gray-500">
+              This room will be pre-selected when scheduling sessions.
+            </p>
           </div>
         )}
 
