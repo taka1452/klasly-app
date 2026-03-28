@@ -14,9 +14,32 @@ type OptionDraft = {
   description: string;
   priceDollars: string;
   capacity: string;
+  earlyBirdDollars: string;
+  earlyBirdDeadline: string;
 };
 
-const STEPS = ["Basic Info", "Room Options", "Payment", "Cancellation Policy", "Application Form"];
+type ScheduleItemDraft = {
+  day_number: number;
+  start_time: string;
+  end_time: string;
+  title: string;
+  description: string;
+};
+
+type PackingItemDraft = {
+  item: string;
+  category: string;
+};
+
+const STEPS = [
+  "Basic Info",
+  "Gallery & Details",
+  "Room Options",
+  "Schedule",
+  "Payment",
+  "Cancellation Policy",
+  "Application Form",
+];
 
 function generatePolicyText(tiers: CancellationPolicyTier[]): string {
   if (tiers.length === 0) return "";
@@ -54,19 +77,31 @@ export default function CreateEventPage() {
   const [imageUrl, setImageUrl] = useState("");
   const [isPublic, setIsPublic] = useState(true);
 
-  // Step 2: Options
+  // Step 2: Gallery & Details (NEW)
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [newGalleryUrl, setNewGalleryUrl] = useState("");
+  const [packingList, setPackingList] = useState<PackingItemDraft[]>([]);
+  const [accessInfo, setAccessInfo] = useState("");
+  const [locationLat, setLocationLat] = useState("");
+  const [locationLng, setLocationLng] = useState("");
+  const [waitlistEnabled, setWaitlistEnabled] = useState(false);
+
+  // Step 3: Options
   const [options, setOptions] = useState<OptionDraft[]>([
-    { name: "", description: "", priceDollars: "", capacity: "10" },
+    { name: "", description: "", priceDollars: "", capacity: "10", earlyBirdDollars: "", earlyBirdDeadline: "" },
   ]);
 
-  // Step 3: Payment
+  // Step 4: Schedule (NEW)
+  const [scheduleItems, setScheduleItems] = useState<ScheduleItemDraft[]>([]);
+
+  // Step 5: Payment
   const [paymentType, setPaymentType] = useState<"full" | "installment">("full");
 
-  // Step 4: Cancellation
+  // Step 6: Cancellation
   const [policyTiers, setPolicyTiers] = useState<CancellationPolicyTier[]>([]);
   const [policyText, setPolicyText] = useState("");
 
-  // Step 5: Application Form
+  // Step 7: Application Form
   type AppField = { id: string; label: string; type: string; required: boolean; placeholder: string; options: string };
   const [appFields, setAppFields] = useState<AppField[]>([]);
 
@@ -82,6 +117,43 @@ export default function CreateEventPage() {
     );
   }
 
+  // Gallery helpers
+  function addGalleryImage() {
+    if (newGalleryUrl.trim()) {
+      setGalleryImages((g) => [...g, newGalleryUrl.trim()]);
+      setNewGalleryUrl("");
+    }
+  }
+  function removeGalleryImage(i: number) {
+    setGalleryImages((g) => g.filter((_, idx) => idx !== i));
+  }
+
+  // Packing list helpers
+  function addPackingItem() {
+    setPackingList((p) => [...p, { item: "", category: "" }]);
+  }
+  function removePackingItem(i: number) {
+    setPackingList((p) => p.filter((_, idx) => idx !== i));
+  }
+  function updatePackingItem(i: number, field: keyof PackingItemDraft, value: string) {
+    setPackingList((p) => p.map((item, idx) => (idx === i ? { ...item, [field]: value } : item)));
+  }
+
+  // Schedule helpers
+  function addScheduleItem() {
+    const dayNum = scheduleItems.length > 0
+      ? scheduleItems[scheduleItems.length - 1].day_number
+      : 1;
+    setScheduleItems((s) => [...s, { day_number: dayNum, start_time: "", end_time: "", title: "", description: "" }]);
+  }
+  function removeScheduleItem(i: number) {
+    setScheduleItems((s) => s.filter((_, idx) => idx !== i));
+  }
+  function updateScheduleItem(i: number, field: keyof ScheduleItemDraft, value: string | number) {
+    setScheduleItems((s) => s.map((item, idx) => (idx === i ? { ...item, [field]: value } : item)));
+  }
+
+  // App form helpers
   function addAppField() {
     setAppFields((f) => [...f, { id: `f${Date.now()}`, label: "", type: "text", required: false, placeholder: "", options: "" }]);
   }
@@ -92,8 +164,9 @@ export default function CreateEventPage() {
     setAppFields((f) => f.map((af, idx) => (idx === i ? { ...af, [field]: value } : af)));
   }
 
+  // Option helpers
   function addOption() {
-    setOptions((o) => [...o, { name: "", description: "", priceDollars: "", capacity: "10" }]);
+    setOptions((o) => [...o, { name: "", description: "", priceDollars: "", capacity: "10", earlyBirdDollars: "", earlyBirdDeadline: "" }]);
   }
   function removeOption(i: number) {
     setOptions((o) => o.filter((_, idx) => idx !== i));
@@ -102,6 +175,7 @@ export default function CreateEventPage() {
     setOptions((o) => o.map((opt, idx) => (idx === i ? { ...opt, [field]: value } : opt)));
   }
 
+  // Cancellation helpers
   function addTier() {
     setPolicyTiers((t) => [...t, { days_before: 30, refund_percent: 100, fee_cents: 0, note: "" }]);
   }
@@ -171,6 +245,16 @@ export default function CreateEventPage() {
             ? { options: f.options.split(",").map((o) => o.trim()).filter(Boolean) }
             : {}),
         })),
+        // New LP enhancement fields
+        gallery_images: galleryImages.length > 0 ? galleryImages : [],
+        packing_list: packingList.filter((p) => p.item.trim()).map((p) => ({
+          item: p.item.trim(),
+          ...(p.category.trim() ? { category: p.category.trim() } : {}),
+        })),
+        access_info: accessInfo.trim() || null,
+        location_lat: locationLat ? parseFloat(locationLat) : null,
+        location_lng: locationLng ? parseFloat(locationLng) : null,
+        waitlist_enabled: waitlistEnabled,
       })
       .select("id")
       .single();
@@ -181,7 +265,7 @@ export default function CreateEventPage() {
       return;
     }
 
-    // Insert options
+    // Insert options (with early bird)
     const validOptions = options.filter((o) => o.name.trim());
     if (validOptions.length > 0) {
       const optionsToInsert = validOptions.map((o, idx) => ({
@@ -191,9 +275,27 @@ export default function CreateEventPage() {
         price_cents: Math.round(parseFloat(o.priceDollars || "0") * 100),
         capacity: parseInt(o.capacity || "10", 10),
         sort_order: idx,
+        early_bird_price_cents: o.earlyBirdDollars ? Math.round(parseFloat(o.earlyBirdDollars) * 100) : null,
+        early_bird_deadline: o.earlyBirdDeadline || null,
       }));
 
       await supabase.from("event_options").insert(optionsToInsert);
+    }
+
+    // Insert schedule items
+    const validScheduleItems = scheduleItems.filter((s) => s.title.trim());
+    if (validScheduleItems.length > 0) {
+      const itemsToInsert = validScheduleItems.map((s, idx) => ({
+        event_id: event.id,
+        day_number: s.day_number,
+        start_time: s.start_time || null,
+        end_time: s.end_time || null,
+        title: s.title.trim(),
+        description: s.description.trim() || null,
+        sort_order: idx,
+      }));
+
+      await supabase.from("event_schedule_items").insert(itemsToInsert);
     }
 
     router.push(`/events/${event.id}/manage`);
@@ -204,6 +306,11 @@ export default function CreateEventPage() {
     ...options.map((o) => parseFloat(o.priceDollars || "0")),
     0,
   );
+
+  // Calculate number of days for schedule
+  const daysCount = startDate && endDate
+    ? Math.ceil((new Date(endDate + "T00:00:00").getTime() - new Date(startDate + "T00:00:00").getTime()) / (1000 * 60 * 60 * 24)) + 1
+    : 1;
 
   return (
     <div>
@@ -221,7 +328,7 @@ export default function CreateEventPage() {
             key={s}
             type="button"
             onClick={() => setStep(i)}
-            className={`flex-1 rounded-lg px-2 py-2 text-xs font-medium transition ${
+            className={`flex-1 rounded-lg px-1 py-2 text-xs font-medium transition ${
               i === step
                 ? "bg-brand-600 text-white"
                 : i < step
@@ -229,7 +336,8 @@ export default function CreateEventPage() {
                   : "bg-gray-100 text-gray-500"
             }`}
           >
-            {i + 1}. {s}
+            <span className="hidden sm:inline">{i + 1}. {s}</span>
+            <span className="sm:hidden">{i + 1}</span>
           </button>
         ))}
       </div>
@@ -271,17 +379,14 @@ export default function CreateEventPage() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Image URL</label>
+              <label className="block text-sm font-medium text-gray-700">Cover Image URL</label>
               <input type="url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://example.com/retreat-image.jpg" className="input-field mt-1" />
-              <p className="mt-1 text-xs text-gray-400">Paste a link to your cover image.</p>
+              <p className="mt-1 text-xs text-gray-400">Main hero image for your event page.</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Visibility
-                <HelpTip
-                  text="Private events are only visible to logged-in members. Use for corporate retreats."
-                  helpSlug="events-retreats"
-                />
+                <HelpTip text="Private events are only visible to logged-in members. Use for corporate retreats." helpSlug="events-retreats" />
               </label>
               <div className="mt-1 flex gap-4">
                 <label className="flex items-center gap-2 text-sm text-gray-700">
@@ -297,11 +402,137 @@ export default function CreateEventPage() {
           </div>
         )}
 
-        {/* Step 2: Room Options */}
+        {/* Step 2: Gallery & Details (NEW) */}
         {step === 1 && (
+          <div className="space-y-6">
+            {/* Gallery */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Photo Gallery</label>
+              <p className="mt-1 text-xs text-gray-400">Add multiple photos to showcase your retreat venue and activities.</p>
+              {galleryImages.length > 0 && (
+                <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                  {galleryImages.map((url, i) => (
+                    <div key={i} className="group relative aspect-[4/3] overflow-hidden rounded-lg">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={url} alt={`Gallery ${i + 1}`} className="h-full w-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removeGalleryImage(i)}
+                        className="absolute right-1 top-1 rounded-full bg-black/50 p-1 text-white opacity-0 transition group-hover:opacity-100"
+                      >
+                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="mt-2 flex gap-2">
+                <input
+                  type="url"
+                  value={newGalleryUrl}
+                  onChange={(e) => setNewGalleryUrl(e.target.value)}
+                  placeholder="https://example.com/photo.jpg"
+                  className="input-field flex-1"
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addGalleryImage(); } }}
+                />
+                <button type="button" onClick={addGalleryImage} className="btn-secondary text-sm whitespace-nowrap">
+                  + Add
+                </button>
+              </div>
+            </div>
+
+            {/* Packing List */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700">What to Bring</label>
+              <p className="mt-1 text-xs text-gray-400">List items guests should bring. Optionally group by category.</p>
+              {packingList.map((item, i) => (
+                <div key={i} className="mt-2 flex gap-2">
+                  <input
+                    type="text"
+                    value={item.item}
+                    onChange={(e) => updatePackingItem(i, "item", e.target.value)}
+                    placeholder="Yoga mat"
+                    className="input-field flex-1"
+                  />
+                  <input
+                    type="text"
+                    value={item.category}
+                    onChange={(e) => updatePackingItem(i, "category", e.target.value)}
+                    placeholder="Category (optional)"
+                    className="input-field w-36"
+                  />
+                  <button type="button" onClick={() => removePackingItem(i)} className="text-xs text-red-500 hover:text-red-700">
+                    Remove
+                  </button>
+                </div>
+              ))}
+              <button type="button" onClick={addPackingItem} className="btn-secondary mt-2 text-sm">
+                + Add Item
+              </button>
+            </div>
+
+            {/* Access Info */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Getting There / Access Info</label>
+              <textarea
+                value={accessInfo}
+                onChange={(e) => setAccessInfo(e.target.value)}
+                rows={3}
+                placeholder="Nearest airport, shuttle service, parking info..."
+                className="input-field mt-1"
+              />
+            </div>
+
+            {/* Map Coordinates */}
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Latitude (optional)</label>
+                <input
+                  type="number"
+                  value={locationLat}
+                  onChange={(e) => setLocationLat(e.target.value)}
+                  placeholder="-8.5069"
+                  step="any"
+                  className="input-field mt-1"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Longitude (optional)</label>
+                <input
+                  type="number"
+                  value={locationLng}
+                  onChange={(e) => setLocationLng(e.target.value)}
+                  placeholder="115.2625"
+                  step="any"
+                  className="input-field mt-1"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-gray-400">Coordinates enable an embedded Google Map on your event page. You can find these on Google Maps.</p>
+
+            {/* Waitlist */}
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={waitlistEnabled}
+                  onChange={(e) => setWaitlistEnabled(e.target.checked)}
+                  className="rounded accent-brand-600"
+                />
+                Enable waitlist when sold out
+              </label>
+              <p className="mt-1 text-xs text-gray-400">Guests can join a waitlist when all options are full.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Room Options */}
+        {step === 2 && (
           <div className="space-y-4">
             <p className="text-sm text-gray-500">
-              Add room types or ticket tiers. Each option can have its own price and capacity.
+              Add room types or ticket tiers. Each option can have its own price, capacity, and optional early bird pricing.
             </p>
             {options.map((opt, i) => (
               <div key={i} className="rounded-lg border border-gray-200 p-4 space-y-3">
@@ -331,6 +562,20 @@ export default function CreateEventPage() {
                     <input type="number" value={opt.capacity} onChange={(e) => updateOption(i, "capacity", e.target.value)} placeholder="10" min="1" className="input-field mt-1" />
                   </div>
                 </div>
+                {/* Early Bird */}
+                <div className="rounded-lg bg-green-50 p-3">
+                  <p className="text-xs font-medium text-green-700 mb-2">Early Bird Pricing (optional)</p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500">Early Bird Price ($)</label>
+                      <input type="number" value={opt.earlyBirdDollars} onChange={(e) => updateOption(i, "earlyBirdDollars", e.target.value)} placeholder="1200" min="0" step="0.01" className="input-field mt-1" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500">Deadline</label>
+                      <input type="datetime-local" value={opt.earlyBirdDeadline} onChange={(e) => updateOption(i, "earlyBirdDeadline", e.target.value)} className="input-field mt-1" />
+                    </div>
+                  </div>
+                </div>
               </div>
             ))}
             <button type="button" onClick={addOption} className="btn-secondary text-sm">
@@ -339,16 +584,79 @@ export default function CreateEventPage() {
           </div>
         )}
 
-        {/* Step 3: Payment */}
-        {step === 2 && (
+        {/* Step 4: Schedule (NEW) */}
+        {step === 3 && (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-500">
+              Create a daily timetable for your retreat. This will be shown on the event page.
+              {startDate && endDate && (
+                <span className="ml-1 font-medium">({daysCount} days)</span>
+              )}
+            </p>
+            {scheduleItems.length === 0 ? (
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center">
+                <p className="text-sm text-gray-500">No schedule yet. Add activities to create a daily timetable.</p>
+                <button type="button" onClick={addScheduleItem} className="btn-secondary mt-4 text-sm">
+                  + Add Activity
+                </button>
+              </div>
+            ) : (
+              <>
+                {scheduleItems.map((item, i) => (
+                  <div key={i} className="rounded-lg border border-gray-200 p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">Activity {i + 1}</span>
+                      <button type="button" onClick={() => removeScheduleItem(i)} className="text-xs text-red-500 hover:text-red-700">
+                        Remove
+                      </button>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-4">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500">Day</label>
+                        <select
+                          value={item.day_number}
+                          onChange={(e) => updateScheduleItem(i, "day_number", parseInt(e.target.value, 10))}
+                          className="input-field mt-1"
+                        >
+                          {Array.from({ length: Math.max(daysCount, 1) }, (_, d) => (
+                            <option key={d + 1} value={d + 1}>Day {d + 1}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500">Start Time</label>
+                        <input type="time" value={item.start_time} onChange={(e) => updateScheduleItem(i, "start_time", e.target.value)} className="input-field mt-1" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500">End Time</label>
+                        <input type="time" value={item.end_time} onChange={(e) => updateScheduleItem(i, "end_time", e.target.value)} className="input-field mt-1" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500">Title *</label>
+                        <input type="text" value={item.title} onChange={(e) => updateScheduleItem(i, "title", e.target.value)} placeholder="Morning Yoga" className="input-field mt-1" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500">Description</label>
+                      <input type="text" value={item.description} onChange={(e) => updateScheduleItem(i, "description", e.target.value)} placeholder="Gentle flow to start the day" className="input-field mt-1" />
+                    </div>
+                  </div>
+                ))}
+                <button type="button" onClick={addScheduleItem} className="btn-secondary text-sm">
+                  + Add Activity
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Step 5: Payment */}
+        {step === 4 && (
           <div className="space-y-5">
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Payment Type
-                <HelpTip
-                  text="Installment splits the total into 3 equal payments: at booking, 30 days later, and 60 days later."
-                  helpSlug="events-retreats"
-                />
+                <HelpTip text="Installment splits the total into 3 equal payments: at booking, 30 days later, and 60 days later." helpSlug="events-retreats" />
               </label>
               <div className="mt-2 space-y-2">
                 <label className="flex items-start gap-3 rounded-lg border border-gray-200 p-4 cursor-pointer hover:bg-gray-50">
@@ -370,9 +678,7 @@ export default function CreateEventPage() {
             {paymentType === "installment" && maxPrice > 0 && (
               <div className="rounded-lg bg-blue-50 p-4">
                 <p className="text-sm font-medium text-blue-800">Payment Preview</p>
-                <p className="mt-1 text-xs text-blue-700">
-                  For the ${maxPrice.toFixed(0)} option:
-                </p>
+                <p className="mt-1 text-xs text-blue-700">For the ${maxPrice.toFixed(0)} option:</p>
                 <ul className="mt-2 space-y-1 text-xs text-blue-700">
                   <li>1st payment (at booking): ${(maxPrice / 3).toFixed(2)}</li>
                   <li>2nd payment (after 30 days): ${(maxPrice / 3).toFixed(2)}</li>
@@ -383,15 +689,12 @@ export default function CreateEventPage() {
           </div>
         )}
 
-        {/* Step 4: Cancellation Policy */}
-        {step === 3 && (
+        {/* Step 6: Cancellation Policy */}
+        {step === 5 && (
           <div className="space-y-5">
             <p className="text-sm text-gray-500 inline-flex items-center gap-1">
               Define refund tiers based on how far in advance a guest cancels.
-              <HelpTip
-                text="Set refund rules by time before the event. Each retreat can have its own policy."
-                helpSlug="events-retreats"
-              />
+              <HelpTip text="Set refund rules by time before the event. Each retreat can have its own policy." helpSlug="events-retreats" />
             </p>
             {policyTiers.map((tier, i) => (
               <div key={i} className="rounded-lg border border-gray-200 p-4 space-y-3">
@@ -438,8 +741,8 @@ export default function CreateEventPage() {
           </div>
         )}
 
-        {/* Step 5: Application Form */}
-        {step === 4 && (
+        {/* Step 7: Application Form */}
+        {step === 6 && (
           <div className="space-y-4">
             <p className="text-sm text-gray-500">
               Add custom questions for guests to answer when booking (e.g. dietary restrictions, experience level).

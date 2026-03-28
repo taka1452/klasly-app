@@ -940,10 +940,12 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I create a retreat?",
           a: (
             <>
-              Go to <B>Events &amp; Retreats</B> and click <B>&quot;Create Event.&quot;</B> Follow the 5-step form:
+              Go to <B>Events &amp; Retreats</B> and click <B>&quot;Create Event.&quot;</B> Follow the 7-step form:
               <Steps>
-                <li><B>Basic Info</B> — name, dates, location.</li>
-                <li><B>Room Options</B> — tiers with pricing &amp; capacity.</li>
+                <li><B>Basic Info</B> — name, dates, location, cover image, visibility.</li>
+                <li><B>Gallery &amp; Details</B> — photo gallery, packing list, access/travel info, map coordinates, waitlist toggle.</li>
+                <li><B>Room Options</B> — tiers with pricing, capacity, and optional early bird pricing with deadline.</li>
+                <li><B>Schedule</B> — daily timetable with activities, times, and descriptions.</li>
                 <li><B>Payment Settings</B> — full or installment.</li>
                 <li><B>Cancellation Policy</B>.</li>
                 <li><B>Custom Form</B> (optional).</li>
@@ -987,7 +989,47 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "What is the Application Form?",
           a: (
             <>
-              In Step 5 of the event creator (or editor), you can add custom questions that guests must answer during checkout. Supported field types include short text, long text, dropdown, radio buttons, and checkboxes. Mark fields as required to ensure guests provide the information before completing their booking. Responses are saved with each booking record.
+              In Step 7 of the event creator (or editor), you can add custom questions that guests must answer during checkout. Supported field types include short text, long text, dropdown, radio buttons, and checkboxes. Mark fields as required to ensure guests provide the information before completing their booking. Responses are saved with each booking record.
+            </>
+          ),
+        },
+        {
+          q: "What is early bird pricing?",
+          a: (
+            <>
+              Early bird pricing lets you offer a discounted price on room options before a deadline. In <B>Step 3 (Room Options)</B>, set an early bird price and deadline for each option. Before the deadline, guests see the discounted price; after the deadline, the regular price applies automatically. The event page shows both prices with a countdown.
+            </>
+          ),
+        },
+        {
+          q: "How does the photo gallery work?",
+          a: (
+            <>
+              In <B>Step 2 (Gallery &amp; Details)</B>, paste image URLs to build a photo gallery for your retreat page. Images display in a grid and can be viewed in a full-screen lightbox. The first gallery image is also used as a fallback for social media sharing if no cover image is set.
+            </>
+          ),
+        },
+        {
+          q: "How do I add a daily schedule/timetable?",
+          a: (
+            <>
+              In <B>Step 4 (Schedule)</B>, add activities for each day of the retreat. Set the day number, start/end times, title, and optional description. The timetable appears on the public event page as an expandable accordion grouped by day.
+            </>
+          ),
+        },
+        {
+          q: "What is the waitlist for events?",
+          a: (
+            <>
+              Enable <B>&quot;waitlist when sold out&quot;</B> in Step 2 to let guests join a waitlist when all spots are taken. When a booking is cancelled and a spot opens, guests on the waitlist are notified via email.
+            </>
+          ),
+        },
+        {
+          q: "Can guests book for a group?",
+          a: (
+            <>
+              Yes. During checkout, guests can select the number of people in their group and provide names and emails for each additional member. The total price is calculated as the option price multiplied by the group size. Capacity is checked to ensure enough spots are available for the entire group.
             </>
           ),
         },
