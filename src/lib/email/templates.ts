@@ -1080,3 +1080,60 @@ export function newStudioSignupAdmin(params: {
     html: baseHtml(content),
   };
 }
+
+// ============================================
+// Appointment templates
+// ============================================
+
+type AppointmentParams = {
+  memberName: string;
+  instructorName: string;
+  appointmentType: string;
+  date: string;
+  startTime: string;
+  studioName: string;
+};
+
+export function appointmentConfirmation(params: AppointmentParams) {
+  const { memberName, instructorName, appointmentType, date, startTime, studioName } = params;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">Appointment Confirmed</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${memberName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      Your appointment has been confirmed:
+    </p>
+    <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-weight:600;color:${BRAND_COLOR};">${appointmentType}</p>
+      <p style="margin:8px 0 0;font-size:14px;">with ${instructorName}</p>
+      <p style="margin:4px 0 0;font-size:14px;">${date} · ${startTime}</p>
+      <p style="margin:4px 0 0;font-size:14px;color:#6b7280;">${studioName}</p>
+    </div>
+    <p style="margin:0;font-size:14px;">We look forward to seeing you!</p>
+  `;
+  return {
+    subject: `Appointment Confirmed - ${appointmentType}`,
+    html: baseHtml(content),
+  };
+}
+
+export function appointmentCancelled(params: AppointmentParams & { cancelledBy: string }) {
+  const { memberName, instructorName, appointmentType, date, startTime, studioName, cancelledBy } = params;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#991b1b;">Appointment Cancelled</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${memberName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      Your appointment has been cancelled${cancelledBy ? ` by ${cancelledBy}` : ""}:
+    </p>
+    <div style="background:#fef2f2;border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-weight:600;color:#991b1b;">${appointmentType}</p>
+      <p style="margin:8px 0 0;font-size:14px;">with ${instructorName}</p>
+      <p style="margin:4px 0 0;font-size:14px;">${date} · ${startTime}</p>
+      <p style="margin:4px 0 0;font-size:14px;color:#6b7280;">${studioName}</p>
+    </div>
+    <p style="margin:0;font-size:14px;">You can book another appointment anytime.</p>
+  `;
+  return {
+    subject: `Appointment Cancelled - ${appointmentType}`,
+    html: baseHtml(content),
+  };
+}

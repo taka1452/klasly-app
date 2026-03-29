@@ -76,6 +76,8 @@ export const FEATURE_KEYS = {
   SOAP_NOTES: "extension.soap_notes",
   /** Online class support (Zoom/Meet link) */
   ONLINE_CLASSES: "extension.online_classes",
+  /** 1-on-1 appointment booking */
+  APPOINTMENTS: "extension.appointments",
 
   // ============================================
   // Payout Phase 3 features
@@ -132,6 +134,7 @@ export const DEFAULT_FEATURES: Record<FeatureKey, boolean> = {
   [FEATURE_KEYS.UTM_TRACKING]: false,
   [FEATURE_KEYS.SOAP_NOTES]: false,
   [FEATURE_KEYS.ONLINE_CLASSES]: false,
+  [FEATURE_KEYS.APPOINTMENTS]: false,
 
   // Payout Phase 3: default OFF
   [FEATURE_KEYS.CLASS_FEE_OVERRIDE]: false,
@@ -172,6 +175,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   [FEATURE_KEYS.UTM_TRACKING]: "UTM Tracking",
   [FEATURE_KEYS.SOAP_NOTES]: "SOAP Notes",
   [FEATURE_KEYS.ONLINE_CLASSES]: "Online Classes",
+  [FEATURE_KEYS.APPOINTMENTS]: "Appointments",
 
   [FEATURE_KEYS.CLASS_FEE_OVERRIDE]: "Class Fee Override",
   [FEATURE_KEYS.FEE_SCHEDULES]: "Fee Schedules",
@@ -220,6 +224,7 @@ export const FEATURE_CATEGORIES = {
       FEATURE_KEYS.UTM_TRACKING,
       FEATURE_KEYS.SOAP_NOTES,
       FEATURE_KEYS.ONLINE_CLASSES,
+      FEATURE_KEYS.APPOINTMENTS,
     ],
   },
   payout: {

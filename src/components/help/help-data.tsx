@@ -744,6 +744,50 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
       ],
     },
     {
+      title: "Appointments",
+      items: [
+        {
+          q: "What is the Appointments feature?",
+          a: (
+            <>
+              Appointments enable 1-on-1 booking between members and instructors. Instructors set their weekly availability, and members can book time slots for private sessions, consultations, or treatments.
+              <Tip>Enable Appointments under <B>Settings &rarr; Features</B> before instructors can set their availability.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "How do instructors set their availability?",
+          a: (
+            <>
+              Instructors set their weekly schedule from the <B>Availability</B> page in their sidebar:
+              <Steps>
+                <li>Go to <B>Availability</B> in the instructor sidebar.</li>
+                <li>For each day of the week, click <B>+ Add Slot</B> and set start and end times.</li>
+                <li>Remove any unwanted slots with the X button.</li>
+                <li>Click <B>Save</B> to update the schedule.</li>
+              </Steps>
+            </>
+          ),
+        },
+        {
+          q: "How are appointment slots calculated?",
+          a: (
+            <>
+              Available slots are generated based on the instructor&apos;s weekly availability, minus any existing appointments or class sessions. Slot intervals are every 15 minutes, and buffer time between appointments is respected based on the appointment type settings.
+            </>
+          ),
+        },
+        {
+          q: "How does appointment cancellation work?",
+          a: (
+            <>
+              Members, instructors, and owners can cancel appointments. If credits were deducted at booking time, they are automatically refunded upon cancellation. Both parties receive a cancellation email notification.
+            </>
+          ),
+        },
+      ],
+    },
+    {
       title: "Traffic Sources (UTM Tracking)",
       items: [
         {
@@ -870,7 +914,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I enable or disable features?",
           a: (
             <>
-              Go to <B>Settings &rarr; Features</B> to toggle optional features on or off. Available features include Online Classes, Digital Waivers, SOAP Notes, UTM Tracking, Events &amp; Retreats, and more. At the top of the page, you&apos;ll see a <B>Recommended for your studio</B> banner showing popular features you haven&apos;t enabled yet.
+              Go to <B>Settings &rarr; Features</B> to toggle optional features on or off. Available features include Online Classes, Digital Waivers, SOAP Notes, UTM Tracking, Appointments, Events &amp; Retreats, and more. At the top of the page, you&apos;ll see a <B>Recommended for your studio</B> banner showing popular features you haven&apos;t enabled yet.
               <Tip>You can also choose features during onboarding when you first create your studio.</Tip>
             </>
           ),
@@ -1151,6 +1195,49 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
                 <li><B>Failed</B> — the payout could not be sent (e.g., instructor&apos;s Stripe account is not connected or incomplete). You will receive an email notification.</li>
               </Steps>
               <Tip>Once approved, payouts cannot be undone. Review amounts carefully before approving.</Tip>
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Appointments",
+      items: [
+        {
+          q: "What are Appointments?",
+          a: (
+            <>
+              Appointments let you offer 1-on-1 bookable services (e.g., private sessions, consultations, massage therapy). You define appointment types with a duration, price, and optional buffer time between sessions.
+            </>
+          ),
+        },
+        {
+          q: "How do I create an appointment type?",
+          a: (
+            <>
+              <Steps>
+                <li>Go to <B>Appointments</B> in the sidebar.</li>
+                <li>Click <B>+ Create New Type</B>.</li>
+                <li>Enter a name, optional description, duration, price, and buffer time.</li>
+                <li>Click <B>Create</B>.</li>
+              </Steps>
+              <Tip>Buffer time adds a gap between back-to-back appointments for preparation or breaks.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "How do I edit or deactivate an appointment type?",
+          a: (
+            <>
+              On the <B>Appointments</B> page, click <B>Edit</B> on any type to change its details. To stop accepting bookings for a type without deleting it, click <B>Deactivate</B>. You can reactivate it later from the Inactive section.
+            </>
+          ),
+        },
+        {
+          q: "What is buffer time?",
+          a: (
+            <>
+              Buffer time is an automatic gap added after each appointment. For example, if you set a 15-minute buffer on a 60-minute appointment, the next available slot will start 75 minutes after the previous one begins. This gives you time to prepare between clients.
             </>
           ),
         },
@@ -1756,6 +1843,35 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
         },
       ],
     },
+    {
+      title: "Appointments",
+      items: [
+        {
+          q: "How do I set my availability for appointments?",
+          a: (
+            <>
+              Go to <B>Availability</B> in your sidebar. For each day of the week, add one or more time slots indicating when you are available for 1-on-1 appointments. Click <B>Save</B> when done.
+            </>
+          ),
+        },
+        {
+          q: "Where can I see my upcoming appointments?",
+          a: (
+            <>
+              Click <B>My Appointments</B> in your sidebar to view all upcoming and past appointments. You can filter by date range and status.
+            </>
+          ),
+        },
+        {
+          q: "Can I cancel an appointment?",
+          a: (
+            <>
+              Yes. Open the appointment details and click <B>Cancel</B>. If the member paid with credits, they will be automatically refunded. Both you and the member will receive a cancellation email.
+            </>
+          ),
+        },
+      ],
+    },
   ],
 
   member: [
@@ -2194,6 +2310,27 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
                 <li><B>Studio announcements</B> — messages from your studio (e.g., schedule changes, events, reminders).</li>
               </Steps>
               Click <B>&quot;View Updates&quot;</B> to read the full message, or dismiss it with the ✕ button.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Appointments",
+      items: [
+        {
+          q: "How do I book a 1-on-1 appointment?",
+          a: (
+            <>
+              If your studio offers appointments, select an instructor and appointment type, pick an available date and time slot, then confirm your booking. You will receive a confirmation email with the details.
+            </>
+          ),
+        },
+        {
+          q: "Can I cancel my appointment?",
+          a: (
+            <>
+              Yes. Open your appointment from your appointments list and click <B>Cancel</B>. If you paid with credits, they will be refunded automatically. You will receive a cancellation confirmation email.
             </>
           ),
         },
