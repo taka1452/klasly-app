@@ -50,41 +50,22 @@ export default function WidgetSessionCard({
   const spotsLeft = session.capacity - session.confirmedCount;
   const isFull = spotsLeft <= 0;
 
-  // Determine spot badge style
-  let spotBadgeClass = "bg-gray-100 text-gray-600";
-  let spotText = `${spotsLeft} spots left`;
-  if (isFull) {
-    spotBadgeClass = "bg-red-100 text-red-700";
-    spotText = "Full";
-  } else if (spotsLeft <= 3) {
-    spotBadgeClass = "bg-orange-100 text-orange-700";
-    spotText = `${spotsLeft} left`;
-  }
-
   function renderButton() {
-    if (!isLoggedIn) {
-      return (
-        <button
-          type="button"
-          onClick={() => onBook(session.id)}
-          className="rounded-lg px-3 py-1.5 text-xs font-medium text-white"
-          style={{ backgroundColor: theme.primary }}
-        >
-          Sign in to book
-        </button>
-      );
-    }
+    // Not logged in: no button on individual cards (sign-in is in footer)
+    if (!isLoggedIn) return null;
 
     if (booking) {
       if (booking.status === "confirmed") {
         return (
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-green-600">Booked</span>
+            <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold text-white" style={{ backgroundColor: theme.primary }}>
+              Booked
+            </span>
             <button
               type="button"
               onClick={() => onCancel(session.id)}
               disabled={loading}
-              className="text-xs text-gray-500 underline hover:text-red-600 disabled:opacity-50"
+              className="text-[10px] text-gray-400 underline hover:text-red-500 disabled:opacity-50"
             >
               Cancel
             </button>
@@ -97,7 +78,7 @@ export default function WidgetSessionCard({
             type="button"
             onClick={() => onLeaveWaitlist(session.id)}
             disabled={loading}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            className="rounded-full border border-gray-300 px-2 py-0.5 text-[10px] font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
           >
             Leave waitlist
           </button>
@@ -109,7 +90,7 @@ export default function WidgetSessionCard({
             type="button"
             onClick={() => onRebook(session.id)}
             disabled={loading || (memberCredits === 0 && !isFull)}
-            className="rounded-lg px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+            className="rounded-full px-2.5 py-0.5 text-[10px] font-medium text-white disabled:opacity-50"
             style={{ backgroundColor: theme.primary }}
           >
             Re-book
@@ -121,7 +102,7 @@ export default function WidgetSessionCard({
     // No existing booking
     if (memberCredits === 0 && !isFull) {
       return (
-        <span className="text-xs text-amber-600">No credits</span>
+        <span className="text-[10px] text-amber-600">No credits</span>
       );
     }
 
@@ -130,7 +111,7 @@ export default function WidgetSessionCard({
         type="button"
         onClick={() => onBook(session.id)}
         disabled={loading}
-        className="rounded-lg px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+        className="rounded-full px-2.5 py-0.5 text-[10px] font-medium text-white disabled:opacity-50"
         style={{
           backgroundColor: isFull ? "#6b7280" : theme.primary,
         }}
@@ -140,29 +121,40 @@ export default function WidgetSessionCard({
     );
   }
 
+  // Spot badge
+  let spotColor = "text-gray-400";
+  if (isFull) {
+    spotColor = "text-red-500";
+  } else if (spotsLeft <= 3) {
+    spotColor = "text-orange-500";
+  }
+
   return (
-    <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md">
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <h4 className="truncate text-sm font-semibold text-gray-900">
+    <div className="rounded-lg border border-gray-100 bg-white p-2.5 transition-shadow hover:shadow-sm">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-xs font-semibold text-gray-900">
             {session.isOnline && <span title="Online">📹 </span>}
             {session.className}
-          </h4>
-          <span
-            className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${spotBadgeClass}`}
-          >
-            {spotText}
-          </span>
+          </p>
+          <p className="mt-0.5 text-[11px] text-gray-500">
+            {formatTime(session.startTime)}
+            {session.durationMinutes > 0 && ` · ${session.durationMinutes}min`}
+          </p>
+          {session.instructorName && (
+            <p className="mt-0.5 text-[10px] text-gray-400">{session.instructorName}</p>
+          )}
         </div>
-        <p className="mt-0.5 text-xs text-gray-500">
-          {formatTime(session.startTime)}
-          {session.durationMinutes > 0 && ` · ${session.durationMinutes}min`}
-        </p>
-        {session.instructorName && (
-          <p className="text-xs text-gray-400">{session.instructorName}</p>
+        <div className="shrink-0">{renderButton()}</div>
+      </div>
+      <div className="mt-1.5 flex items-center justify-between">
+        <span className={`text-[10px] font-medium ${spotColor}`}>
+          {isFull ? "Full" : `${spotsLeft} spots left`}
+        </span>
+        {session.location && (
+          <span className="text-[10px] text-gray-300">{session.location}</span>
         )}
       </div>
-      <div className="ml-3 shrink-0">{renderButton()}</div>
     </div>
   );
 }
