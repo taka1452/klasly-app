@@ -212,6 +212,61 @@ export async function POST(
       console.error("[EventCancel] Failed to send cancellation email:", e);
     }
 
+    // --- Auto-promote from waitlist ---
+    try {
+      // Find the oldest waitlisted booking for the same option
+      const { data: waitlistEntry } = await supabase
+        .from("event_bookings")
+        .select("id, guest_name, guest_email, event_option_id")
+        .eq("event_id", booking.event_id)
+        .eq("event_option_id", booking.event_option_id)
+        .eq("booking_status", "waitlisted")
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (waitlistEntry) {
+        // Check if event has waitlist enabled
+        const { data: evt } = await supabase
+          .from("events")
+          .select("waitlist_enabled, name, start_date, end_date")
+          .eq("id", booking.event_id)
+          .single();
+
+        if (evt?.waitlist_enabled) {
+          // Promote: update status to confirmed
+          await supabase
+            .from("event_bookings")
+            .update({ booking_status: "confirmed", updated_at: new Date().toISOString() })
+            .eq("id", waitlistEntry.id);
+
+          // Get option name for email
+          const { data: opt } = await supabase
+            .from("event_options")
+            .select("name")
+            .eq("id", waitlistEntry.event_option_id)
+            .single();
+
+          // Send promotion email
+          const { eventWaitlistPromoted } = await import("@/lib/email/templates");
+          await sendEmail({
+            to: waitlistEntry.guest_email,
+            subject: `You're in! — ${evt.name}`,
+            html: eventWaitlistPromoted({
+              guestName: waitlistEntry.guest_name,
+              eventName: evt.name,
+              optionName: opt?.name || "",
+              startDate: evt.start_date,
+              endDate: evt.end_date,
+            }),
+          });
+        }
+      }
+    } catch (promoErr) {
+      console.error("[EventCancel] waitlist promotion error:", promoErr);
+      // Don't fail the cancellation if promotion fails
+    }
+
     return NextResponse.json({ success: true, refunded: refundAmount });
   } catch (err: unknown) {
     console.error("[EventCancel] error:", err);

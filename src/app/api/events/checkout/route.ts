@@ -103,7 +103,10 @@ export async function POST(request: Request) {
       (sum, b) => sum + (b.group_size || 1), 0
     );
     const remaining = option.capacity - totalBooked;
-    if (remaining < groupSize) {
+    const isWaitlist = remaining < groupSize;
+
+    // If sold out and waitlist not enabled, reject
+    if (isWaitlist && !event.waitlist_enabled) {
       return NextResponse.json(
         { error: remaining <= 0 ? "This option is sold out" : `Only ${remaining} spots left` },
         { status: 409 },
@@ -205,6 +208,64 @@ export async function POST(request: Request) {
         ? "installment"
         : "full";
 
+    // --- WAITLIST PATH: no payment needed ---
+    if (isWaitlist) {
+      const { data: wlBooking, error: wlError } = await adminSupabase
+        .from("event_bookings")
+        .insert({
+          event_id,
+          event_option_id,
+          member_id: memberId,
+          guest_name,
+          guest_email,
+          guest_phone: guest_phone || null,
+          booking_status: "waitlisted",
+          total_amount_cents: totalAmountCents,
+          payment_type: effectivePaymentType,
+          payment_status: "unpaid",
+          group_size: groupSize,
+          group_members: groupMembers,
+          ...(application_responses ? { application_responses } : {}),
+        })
+        .select("id")
+        .single();
+
+      if (wlError || !wlBooking) {
+        console.error("[EventCheckout] waitlist insert error:", wlError);
+        return NextResponse.json({ error: "Failed to join waitlist" }, { status: 500 });
+      }
+
+      // Send waitlist confirmation email
+      try {
+        const { eventWaitlistConfirmation } = await import("@/lib/email/templates");
+        await sendEmail({
+          to: guest_email,
+          subject: `Waitlist Confirmed — ${event.name}`,
+          html: eventWaitlistConfirmation({
+            guestName: guest_name,
+            eventName: event.name,
+            optionName: option.name,
+            startDate: event.start_date,
+            endDate: event.end_date,
+          }),
+        });
+      } catch (emailErr) {
+        console.error("[EventCheckout] waitlist email error:", emailErr);
+      }
+
+      const origin =
+        request.headers.get("origin") ||
+        process.env.NEXT_PUBLIC_APP_URL ||
+        "https://app.klasly.app";
+
+      return NextResponse.json({
+        url: `${origin}/events/${event_id}/checkout/success?booking_id=${wlBooking.id}`,
+        booking_id: wlBooking.id,
+        waitlisted: true,
+      });
+    }
+
+    // --- NORMAL PAYMENT PATH ---
     const { data: booking, error: bookingError } = await adminSupabase
       .from("event_bookings")
       .insert({

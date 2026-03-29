@@ -1021,7 +1021,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "What is the waitlist for events?",
           a: (
             <>
-              Enable <B>&quot;waitlist when sold out&quot;</B> in Step 2 to let guests join a waitlist when all spots are taken. When a booking is cancelled and a spot opens, guests on the waitlist are notified via email.
+              Enable <B>&quot;waitlist when sold out&quot;</B> in Step 2 to let guests join a waitlist when all spots are taken. When a booking is cancelled and a spot opens, the first person on the waitlist is <B>automatically promoted</B> to confirmed and notified via email. You can also <B>manually promote</B> waitlisted guests from the bookings table using the &quot;Promote&quot; button.
             </>
           ),
         },
@@ -2007,6 +2007,22 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               The first installment is charged at booking. The second is auto-charged 30 days later, and the third 60 days later. You&apos;ll receive a reminder email 7 days before each charge. No action is needed &mdash; payments are processed automatically.
+            </>
+          ),
+        },
+        {
+          q: "What happens if an event option is full?",
+          a: (
+            <>
+              If an event option has no remaining spots, you can join the <B>waitlist</B>. During checkout, the payment step is skipped &mdash; no charge is made. You&apos;ll see a confirmation that you&apos;re on the waitlist, and you&apos;ll be emailed when a spot opens up. Payment is only required once you&apos;re promoted from the waitlist.
+            </>
+          ),
+        },
+        {
+          q: "Can I add an event to my Google Calendar?",
+          a: (
+            <>
+              Yes! After completing a confirmed booking, the success page shows an <B>Add to Google Calendar</B> button. Clicking it opens Google Calendar with the event name, dates, and location pre-filled. This button is not shown for waitlisted bookings.
             </>
           ),
         },

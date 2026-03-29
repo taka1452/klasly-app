@@ -56,6 +56,7 @@ export default function EventCheckoutPage() {
   const router = useRouter();
   const eventId = params.id as string;
   const preselectedOption = searchParams.get("option");
+  const isWaitlist = searchParams.get("waitlist") === "true";
 
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -157,9 +158,13 @@ export default function EventCheckoutPage() {
   }, [groupSize]);
 
   const hasAppFields = (event?.application_fields ?? []).length > 0;
-  const stepLabels = hasAppFields
-    ? ["Select Option", "Your Info", "Application", "Payment"]
-    : ["Select Option", "Your Info", "Payment"];
+  const stepLabels = isWaitlist
+    ? hasAppFields
+      ? ["Select Option", "Your Info", "Application", "Confirm"]
+      : ["Select Option", "Your Info", "Confirm"]
+    : hasAppFields
+      ? ["Select Option", "Your Info", "Application", "Payment"]
+      : ["Select Option", "Your Info", "Payment"];
   const paymentStep = hasAppFields ? 4 : 3;
   const appStep = hasAppFields ? 3 : -1;
 
@@ -207,6 +212,7 @@ export default function EventCheckoutPage() {
           group_size: groupSize,
           group_members: groupSize > 1 ? groupMembers : [],
           ...(hasAppFields ? { application_responses: appResponses } : {}),
+          ...(isWaitlist ? { waitlist: true } : {}),
         }),
       });
 
@@ -214,6 +220,12 @@ export default function EventCheckoutPage() {
       if (!res.ok) {
         setError(data.error || "Checkout failed");
         setSubmitting(false);
+        return;
+      }
+
+      // Waitlisted bookings skip Stripe — redirect directly to success
+      if (data.waitlisted && data.url) {
+        window.location.href = data.url;
         return;
       }
 
@@ -259,6 +271,13 @@ export default function EventCheckoutPage() {
         {event.start_date} – {event.end_date}
         {event.location_name && ` · ${event.location_name}`}
       </p>
+
+      {/* Waitlist notice */}
+      {isWaitlist && (
+        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          This option is currently full. You can join the waitlist and we&apos;ll notify you when a spot opens.
+        </div>
+      )}
 
       {/* Step indicators */}
       <div className="mt-6 mb-8 flex gap-2">
@@ -607,44 +626,74 @@ export default function EventCheckoutPage() {
         </div>
       )}
 
-      {/* STEP: Payment */}
+      {/* STEP: Payment / Confirm (waitlist) */}
       {step === paymentStep && selectedOpt && (
         <div className="space-y-6">
-          <h2 className="text-lg font-semibold text-gray-900">Payment</h2>
+          <h2 className="text-lg font-semibold text-gray-900">
+            {isWaitlist ? "Confirm Waitlist" : "Payment"}
+          </h2>
 
-          {/* Order Summary */}
-          <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Order Summary</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">{selectedOpt.name}</span>
-                <span className="text-gray-600">{formatPrice(unitPriceCents)}</span>
-              </div>
-              {hasEarlyBird && (
+          {/* Waitlist confirmation summary */}
+          {isWaitlist && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
+              <h3 className="text-sm font-medium text-amber-800 mb-2">Waitlist Summary</h3>
+              <div className="space-y-2 text-sm text-amber-700">
                 <div className="flex justify-between">
-                  <span className="text-green-600 text-xs">
-                    <span className="inline-block rounded-full bg-green-100 px-2 py-0.5 font-semibold">Early Bird</span>
-                  </span>
-                  <span className="text-xs text-gray-400 line-through">
-                    {formatPrice(selectedOpt.price_cents)}
-                  </span>
+                  <span>Option</span>
+                  <span className="font-medium">{selectedOpt.name}</span>
                 </div>
-              )}
-              {groupSize > 1 && (
-                <div className="flex justify-between text-gray-500">
-                  <span>x {groupSize} guests</span>
-                  <span></span>
+                {groupSize > 1 && (
+                  <div className="flex justify-between">
+                    <span>Guests</span>
+                    <span className="font-medium">{groupSize}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span>Contact</span>
+                  <span className="font-medium">{guestEmail}</span>
                 </div>
-              )}
-              <div className="border-t border-gray-200 pt-2 flex justify-between font-semibold">
-                <span className="text-gray-900">Total</span>
-                <span className="text-gray-900">{totalDisplay}</span>
+              </div>
+              <p className="mt-3 text-xs text-amber-600">
+                No payment is required now. You will be notified by email when a spot opens up.
+              </p>
+            </div>
+          )}
+
+          {/* Order Summary (non-waitlist) */}
+          {!isWaitlist && (
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">Order Summary</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">{selectedOpt.name}</span>
+                  <span className="text-gray-600">{formatPrice(unitPriceCents)}</span>
+                </div>
+                {hasEarlyBird && (
+                  <div className="flex justify-between">
+                    <span className="text-green-600 text-xs">
+                      <span className="inline-block rounded-full bg-green-100 px-2 py-0.5 font-semibold">Early Bird</span>
+                    </span>
+                    <span className="text-xs text-gray-400 line-through">
+                      {formatPrice(selectedOpt.price_cents)}
+                    </span>
+                  </div>
+                )}
+                {groupSize > 1 && (
+                  <div className="flex justify-between text-gray-500">
+                    <span>x {groupSize} guests</span>
+                    <span></span>
+                  </div>
+                )}
+                <div className="border-t border-gray-200 pt-2 flex justify-between font-semibold">
+                  <span className="text-gray-900">Total</span>
+                  <span className="text-gray-900">{totalDisplay}</span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Payment choice for installment events */}
-          {event.payment_type === "installment" && (
+          {/* Payment choice for installment events (non-waitlist only) */}
+          {!isWaitlist && event.payment_type === "installment" && (
             <div className="space-y-3">
               <h3 className="text-sm font-medium text-gray-700">Payment Method</h3>
               <label
@@ -706,8 +755,8 @@ export default function EventCheckoutPage() {
             </div>
           )}
 
-          {/* Cancellation Policy */}
-          {event.cancellation_policy_text && (
+          {/* Cancellation Policy (non-waitlist only) */}
+          {!isWaitlist && event.cancellation_policy_text && (
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
               <h3 className="text-sm font-medium text-amber-800 mb-2">
                 Cancellation Policy
@@ -729,7 +778,7 @@ export default function EventCheckoutPage() {
             </div>
           )}
 
-          {/* Pay button */}
+          {/* Submit button */}
           <div className="flex justify-between pt-2">
             <button
               onClick={() => setStep(hasAppFields ? appStep : 2)}
@@ -738,21 +787,29 @@ export default function EventCheckoutPage() {
               ← Back
             </button>
             <button
-              disabled={!canSubmit || submitting}
+              disabled={(!isWaitlist && !canSubmit) || submitting}
               onClick={handleSubmit}
-              className="rounded-lg bg-blue-600 px-8 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+              className={`rounded-lg px-8 py-2.5 text-sm font-semibold text-white disabled:bg-gray-300 disabled:cursor-not-allowed ${
+                isWaitlist
+                  ? "bg-amber-600 hover:bg-amber-700"
+                  : "bg-blue-600 hover:bg-blue-700"
+              }`}
             >
               {submitting
                 ? "Processing..."
-                : paymentChoice === "installment" && event.payment_type === "installment"
-                  ? `Pay $${(firstInstallment / 100).toFixed(2)} today`
-                  : `Pay ${totalDisplay}`}
+                : isWaitlist
+                  ? "Join Waitlist"
+                  : paymentChoice === "installment" && event.payment_type === "installment"
+                    ? `Pay $${(firstInstallment / 100).toFixed(2)} today`
+                    : `Pay ${totalDisplay}`}
             </button>
           </div>
 
-          <p className="text-center text-xs text-gray-400">
-            You will be redirected to Stripe to complete your payment securely.
-          </p>
+          {!isWaitlist && (
+            <p className="text-center text-xs text-gray-400">
+              You will be redirected to Stripe to complete your payment securely.
+            </p>
+          )}
         </div>
       )}
     </div>

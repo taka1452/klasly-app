@@ -30,7 +30,7 @@ export async function GET(
 
   const { data: booking } = await supabase
     .from("event_bookings")
-    .select("id, event_id, event_option_id, total_amount_cents, payment_type")
+    .select("id, event_id, event_option_id, total_amount_cents, payment_type, booking_status, guest_email")
     .eq("id", bookingId)
     .eq("event_id", eventId)
     .single();
@@ -41,7 +41,7 @@ export async function GET(
 
   const { data: event } = await supabase
     .from("events")
-    .select("name, start_date, end_date")
+    .select("name, start_date, end_date, location_name")
     .eq("id", eventId)
     .single();
 
@@ -64,8 +64,11 @@ export async function GET(
     option_name: option?.name ?? "",
     start_date: event?.start_date ?? "",
     end_date: event?.end_date ?? "",
+    location_name: event?.location_name ?? null,
     total_amount_cents: booking.total_amount_cents,
     payment_type: booking.payment_type,
+    booking_status: booking.booking_status ?? "confirmed",
+    guest_email: booking.guest_email ?? "",
     schedule: schedule ?? [],
   });
 }

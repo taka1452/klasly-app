@@ -23,6 +23,7 @@ type BookingRow = {
 const TABS = [
   { key: "all", label: "All" },
   { key: "confirmed", label: "Confirmed" },
+  { key: "waitlisted", label: "Waitlisted" },
   { key: "completed", label: "Completed" },
   { key: "cancelled", label: "Cancelled" },
 ] as const;
@@ -46,6 +47,21 @@ export function EventBookingFilters({
     activeTab === "all"
       ? bookings
       : bookings.filter((b) => b.booking_status === activeTab);
+
+  async function handlePromote(bookingId: string) {
+    if (!confirm("Promote this guest from the waitlist? They will be notified by email.")) return;
+    try {
+      const res = await fetch(`/api/events/bookings/${bookingId}/promote`, { method: "POST" });
+      if (res.ok) {
+        window.location.reload();
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to promote");
+      }
+    } catch {
+      alert("Failed to promote");
+    }
+  }
 
   return (
     <div className="card">
@@ -174,6 +190,15 @@ export function EventBookingFilters({
                     </td>
                   )}
                   <td className="py-2">
+                    {booking.booking_status === "waitlisted" && (
+                      <button
+                        type="button"
+                        onClick={() => handlePromote(booking.id)}
+                        className="mr-2 text-xs font-medium text-green-600 hover:text-green-800"
+                      >
+                        Promote
+                      </button>
+                    )}
                     <Link
                       href={`/events/${eventId}/bookings/${booking.id}`}
                       className="text-xs font-medium text-blue-600 hover:text-blue-800"

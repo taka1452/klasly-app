@@ -700,6 +700,62 @@ export function eventPaymentCompleted(params: {
 }
 
 // ============================================================
+// Event Waitlist
+// ============================================================
+
+export function eventWaitlistConfirmation(params: {
+  guestName: string;
+  eventName: string;
+  optionName: string;
+  startDate: string;
+  endDate: string;
+}) {
+  const { guestName, eventName, optionName, startDate, endDate } = params;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:${BRAND_COLOR};">Waitlist Confirmed</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${guestName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      You've been added to the waitlist for:
+    </p>
+    <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-weight:600;color:${BRAND_COLOR};">${eventName}</p>
+      <p style="margin:8px 0 0;font-size:14px;">${optionName}</p>
+      <p style="margin:4px 0 0;font-size:14px;color:#6b7280;">${startDate} – ${endDate}</p>
+    </div>
+    <p style="margin:0;font-size:14px;line-height:1.5;">
+      We'll notify you by email if a spot opens up. No payment is required until you're promoted from the waitlist.
+    </p>
+  `;
+  return baseHtml(content);
+}
+
+export function eventWaitlistPromoted(params: {
+  guestName: string;
+  eventName: string;
+  optionName: string;
+  startDate: string;
+  endDate: string;
+}) {
+  const { guestName, eventName, optionName, startDate, endDate } = params;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#059669;">You're in!</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${guestName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      Great news! A spot opened up and you've been moved from the waitlist:
+    </p>
+    <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-weight:600;color:${BRAND_COLOR};">${eventName}</p>
+      <p style="margin:8px 0 0;font-size:14px;">${optionName}</p>
+      <p style="margin:4px 0 0;font-size:14px;color:#6b7280;">${startDate} – ${endDate}</p>
+    </div>
+    <p style="margin:0;font-size:14px;line-height:1.5;">
+      Your booking is now confirmed. The event organizer will contact you regarding payment details.
+    </p>
+  `;
+  return baseHtml(content);
+}
+
+// ============================================================
 // Pass Distribution
 // ============================================================
 
