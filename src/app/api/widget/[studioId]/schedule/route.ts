@@ -55,7 +55,7 @@ export async function GET(
     const startDate = startOfWeek.toISOString().split("T")[0];
     const endDate = endOfWeek.toISOString().split("T")[0];
 
-    // Fetch sessions for the week with class + instructor info
+    // Fetch sessions for the week with template + instructor info
     const { data: sessions, error: sessionsError } = await supabase
       .from("class_sessions")
       .select(
@@ -66,20 +66,22 @@ export async function GET(
         capacity,
         is_cancelled,
         is_online,
-        classes (
-          id,
+        title,
+        duration_minutes,
+        location,
+        price_cents,
+        session_type,
+        class_templates (
           name,
           description,
           duration_minutes,
           location,
           is_online,
-          instructor_id,
-          template_id,
-          instructors (
-            id,
-            profiles (full_name)
-          ),
-          class_templates (image_url)
+          image_url
+        ),
+        instructors (
+          id,
+          profiles (full_name)
         )
       `
       )
@@ -133,40 +135,43 @@ export async function GET(
       capacity: number;
       is_cancelled: boolean;
       is_online?: boolean;
-      classes?: {
-        id?: string;
+      title?: string;
+      duration_minutes?: number;
+      location?: string;
+      price_cents?: number;
+      session_type?: string;
+      class_templates?: {
         name?: string;
         description?: string;
         duration_minutes?: number;
         location?: string;
         is_online?: boolean;
-        instructor_id?: string;
-        instructors?: {
-          id?: string;
-          profiles?: { full_name?: string };
-        };
-      };
+        image_url?: string | null;
+      } | null;
+      instructors?: {
+        id?: string;
+        profiles?: { full_name?: string };
+      } | null;
     };
 
     const onlineEnabled = await isFeatureEnabled(studioId, FEATURE_KEYS.ONLINE_CLASSES);
 
-    const formattedSessions = (sessions as SessionRow[] || []).map((s) => ({
-      id: s.id,
-      date: s.session_date,
-      startTime: s.start_time,
-      className: s.classes?.name ?? "Class",
-      description: s.classes?.description ?? "",
-      instructorName:
-        s.classes?.instructors?.profiles?.full_name ?? "",
-      durationMinutes: s.classes?.duration_minutes ?? 60,
-      capacity: s.capacity,
-      confirmedCount: availabilityMap[s.id] ?? 0,
-      location: s.classes?.location ?? null,
-      isOnline: onlineEnabled ? (s.is_online ?? s.classes?.is_online ?? false) : false,
-      imageUrl: (s.classes as Record<string, unknown>)?.class_templates
-        ? ((s.classes as Record<string, unknown>).class_templates as { image_url?: string | null })?.image_url ?? null
-        : null,
-    }));
+    const formattedSessions = (sessions as SessionRow[] || [])
+      .filter((s) => s.session_type !== "room_only")
+      .map((s) => ({
+        id: s.id,
+        date: s.session_date,
+        startTime: s.start_time,
+        className: s.title || s.class_templates?.name || "Class",
+        description: s.class_templates?.description ?? "",
+        instructorName: s.instructors?.profiles?.full_name ?? "",
+        durationMinutes: s.duration_minutes || s.class_templates?.duration_minutes || 60,
+        capacity: s.capacity,
+        confirmedCount: availabilityMap[s.id] ?? 0,
+        location: s.location || s.class_templates?.location || null,
+        isOnline: onlineEnabled ? (s.is_online ?? s.class_templates?.is_online ?? false) : false,
+        imageUrl: s.class_templates?.image_url ?? null,
+      }));
 
     return NextResponse.json(
       {
