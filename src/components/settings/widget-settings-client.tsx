@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { csrfFetch } from "@/lib/api/csrf-client";
 import FlowHintPanel from "@/components/ui/flow-hint-panel";
 import Toast from "@/components/ui/toast";
 
@@ -52,7 +53,7 @@ export default function WidgetSettingsClient({ studioId, isOwner = true }: Props
   async function handleSave() {
     setSaving(true);
     try {
-      const res = await fetch("/api/studio/widget-settings", {
+      const res = await csrfFetch("/api/studio/widget-settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled, themeColor, allowedOrigins }),

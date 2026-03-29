@@ -21,7 +21,7 @@ const nextConfig = {
           "img-src 'self' data: https: blob:",
           "font-src 'self'",
           "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://www.clarity.ms",
-          "frame-src https://js.stripe.com",
+          "frame-src 'self' https://js.stripe.com",
           "frame-ancestors 'none'",
           "base-uri 'self'",
           "form-action 'self'",
