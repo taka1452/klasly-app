@@ -50,13 +50,17 @@ export default function WidgetSettingsClient({ studioId, isOwner = true }: Props
     load();
   }, []);
 
-  async function handleSave() {
+  async function saveSettings(overrides?: { enabled?: boolean; themeColor?: string; allowedOrigins?: string[] }) {
     setSaving(true);
     try {
       const res = await csrfFetch("/api/studio/widget-settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enabled, themeColor, allowedOrigins }),
+        body: JSON.stringify({
+          enabled: overrides?.enabled ?? enabled,
+          themeColor: overrides?.themeColor ?? themeColor,
+          allowedOrigins: overrides?.allowedOrigins ?? allowedOrigins,
+        }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -70,6 +74,16 @@ export default function WidgetSettingsClient({ studioId, isOwner = true }: Props
     } finally {
       setSaving(false);
     }
+  }
+
+  async function handleToggleEnabled() {
+    const newEnabled = !enabled;
+    setEnabled(newEnabled);
+    await saveSettings({ enabled: newEnabled });
+  }
+
+  async function handleSave() {
+    await saveSettings();
   }
 
   function handleAddDomain() {
@@ -136,7 +150,7 @@ export default function WidgetSettingsClient({ studioId, isOwner = true }: Props
             type="button"
             role="switch"
             aria-checked={enabled}
-            onClick={() => setEnabled(!enabled)}
+            onClick={handleToggleEnabled}
             className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 ${
               enabled ? "bg-brand-600" : "bg-gray-200"
             }`}
@@ -161,7 +175,10 @@ export default function WidgetSettingsClient({ studioId, isOwner = true }: Props
             <button
               key={theme.value}
               type="button"
-              onClick={() => setThemeColor(theme.value)}
+              onClick={() => {
+                setThemeColor(theme.value);
+                saveSettings({ themeColor: theme.value });
+              }}
               className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2 text-sm font-medium transition-colors ${
                 themeColor === theme.value
                   ? "border-gray-900 bg-gray-50"
