@@ -308,10 +308,10 @@ export default function EditEventPage() {
   async function handleSave(status: "draft" | "published") {
     setError("");
     if (status === "published") {
-      if (!name.trim()) { setError("Event name is required."); return; }
-      if (!startDate || !endDate) { setError("Start and end dates are required."); return; }
+      if (!name.trim()) { setError("Event name is required. (Step 1: Basic Info)"); setStep(0); return; }
+      if (!startDate || !endDate) { setError("Start and end dates are required. (Step 1: Basic Info)"); setStep(0); return; }
       const validOptions = options.filter((o) => o.name.trim());
-      if (validOptions.length === 0) { setError("At least one option is required."); return; }
+      if (validOptions.length === 0) { setError("At least one room option with a name is required. (Step 3: Room Options)"); setStep(2); return; }
     }
 
     setSaving(true);
