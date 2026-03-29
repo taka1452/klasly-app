@@ -32,6 +32,7 @@ export default function WidgetSettingsClient({ studioId, isOwner = true }: Props
   const [allowedOrigins, setAllowedOrigins] = useState<string[]>([]);
   const [newDomain, setNewDomain] = useState("");
   const [copied, setCopied] = useState(false);
+  const [previewType, setPreviewType] = useState<"schedule" | "events">("schedule");
 
   // Fetch settings on mount
   useEffect(() => {
@@ -102,18 +103,21 @@ export default function WidgetSettingsClient({ studioId, isOwner = true }: Props
   }
 
   function handleCopyCode() {
-    const code = getEmbedCode();
+    const code = getEmbedCode(previewType);
     navigator.clipboard.writeText(code).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
   }
 
-  function getEmbedCode() {
+  function getEmbedCode(type: "schedule" | "events" = "schedule") {
     const baseUrl =
       typeof window !== "undefined"
         ? window.location.origin
         : "https://app.klasly.app";
+    if (type === "events") {
+      return `<script src="${baseUrl}/widget.js" data-studio="${studioId}" data-type="events" data-theme="${themeColor}"></script>`;
+    }
     return `<script src="${baseUrl}/widget.js" data-studio="${studioId}" data-theme="${themeColor}"></script>`;
   }
 
@@ -199,12 +203,33 @@ export default function WidgetSettingsClient({ studioId, isOwner = true }: Props
       <div className="card">
         <h2 className="text-base font-semibold text-gray-900">Embed Code</h2>
         <p className="mt-1 text-sm text-gray-500">
-          Copy this code and paste it into your website&apos;s HTML where you
-          want the schedule to appear.
+          Copy this code and paste it into your website&apos;s HTML.
         </p>
-        <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+
+        {/* Widget Type Tabs */}
+        <div className="mt-4 flex gap-1 rounded-lg bg-gray-100 p-1">
+          {([
+            { key: "schedule" as const, label: "Schedule" },
+            { key: "events" as const, label: "Events / Retreats" },
+          ]).map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setPreviewType(tab.key)}
+              className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                previewType === tab.key
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
           <code className="block whitespace-pre-wrap break-all text-xs text-gray-800">
-            {getEmbedCode()}
+            {getEmbedCode(previewType)}
           </code>
         </div>
         <button
@@ -290,11 +315,12 @@ export default function WidgetSettingsClient({ studioId, isOwner = true }: Props
       <div className="card">
         <h2 className="text-base font-semibold text-gray-900">Preview</h2>
         <p className="mt-1 text-sm text-gray-500">
-          See how your widget will look when embedded.
+          See how your {previewType === "events" ? "events" : "schedule"} widget will look when embedded.
         </p>
         <div className="mt-4 overflow-hidden rounded-lg border border-gray-200">
           <iframe
-            src={`/widget/${studioId}?theme=${themeColor}`}
+            key={`${previewType}-${themeColor}`}
+            src={`/widget/${studioId}${previewType === "events" ? "/events" : ""}?theme=${themeColor}`}
             className="h-[500px] w-full border-0"
             title="Widget preview"
           />

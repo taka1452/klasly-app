@@ -493,17 +493,18 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
-          q: "How do I embed the schedule widget on my website?",
+          q: "How do I embed the widget on my website?",
           a: (
             <>
-              Go to <B>Settings → Widget</B> to set up and customize the embeddable schedule:
+              Go to <B>Settings → Widget</B> to set up your embeddable widgets:
               <Steps>
-                <li>Toggle <B>Enable Widget</B> to turn on the public schedule.</li>
-                <li>Choose a <B>Theme Color</B> (green, blue, purple, red, orange, pink, or teal).</li>
-                <li>Add your website&apos;s domain to the <B>Allowed Origins</B> list (e.g., yourstudio.com).</li>
+                <li>Toggle <B>Enable Widget</B> to turn on the widget.</li>
+                <li>Choose a <B>Theme Color</B>.</li>
+                <li>Select the <B>widget type</B>: <B>Schedule</B> (class bookings) or <B>Events / Retreats</B> (upcoming events).</li>
+                <li>Add your website&apos;s domain to the <B>Allowed Origins</B> list.</li>
                 <li>Copy the <B>embed code</B> and paste it into your website&apos;s HTML.</li>
               </Steps>
-              <Tip>The widget works with any website builder — WordPress, Wix, Squarespace, or custom HTML. Only the studio owner can change widget settings.</Tip>
+              <Tip>You can embed both widgets on different pages. The events widget shows upcoming retreats with prices, availability, and direct booking links.</Tip>
             </>
           ),
         },
