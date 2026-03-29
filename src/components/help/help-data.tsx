@@ -1998,7 +1998,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I book a retreat?",
           a: (
             <>
-              Visit the event page, select a room or option, then choose your payment method (full or 3 installments). Some events include an application form with additional questions you need to fill out before checkout. Complete checkout with your card &mdash; you&apos;ll receive a confirmation email.
+              Visit the event page, select a room or option, then choose your payment method (full or 3 installments). If early bird pricing is active, you&apos;ll see the discounted price with a green badge and the deadline. To book for a group, set the number of guests and fill in each member&apos;s name and email. Some events include an application form with additional questions you need to fill out before checkout. Complete checkout with your card &mdash; you&apos;ll receive a confirmation email.
             </>
           ),
         },

@@ -55,7 +55,7 @@ export default async function EventManagePage({
   const { data: bookings } = await supabase
     .from("event_bookings")
     .select(
-      "id, event_option_id, guest_name, guest_email, booking_status, total_amount_cents, payment_type, payment_status, created_at, application_responses",
+      "id, event_option_id, guest_name, guest_email, booking_status, total_amount_cents, payment_type, payment_status, created_at, application_responses, group_size, group_members",
     )
     .eq("event_id", id)
     .order("created_at", { ascending: false });
@@ -94,7 +94,7 @@ export default async function EventManagePage({
   const optionBookingCounts = activeBookings.reduce(
     (acc, b) => {
       if (b.event_option_id) {
-        acc[b.event_option_id] = (acc[b.event_option_id] || 0) + 1;
+        acc[b.event_option_id] = (acc[b.event_option_id] || 0) + ((b as { group_size?: number }).group_size || 1);
       }
       return acc;
     },
@@ -120,6 +120,8 @@ export default async function EventManagePage({
       installment_paid: progress?.paid ?? 0,
       installment_total: progress?.total ?? 0,
       application_responses: (booking as { application_responses?: Record<string, string | boolean> }).application_responses ?? null,
+      group_size: (booking as { group_size?: number }).group_size || 1,
+      group_members: (booking as { group_members?: { name: string; email: string }[] }).group_members || [],
     };
   });
 

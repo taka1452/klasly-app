@@ -11,6 +11,8 @@ type EventOption = {
   price_cents: number;
   capacity: number;
   remaining: number;
+  early_bird_price_cents: number | null;
+  early_bird_deadline: string | null;
 };
 
 type AppFieldDef = {
@@ -35,6 +37,19 @@ type EventData = {
   options: EventOption[];
 };
 
+function formatPrice(cents: number): string {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
+function isEarlyBird(opt: EventOption): boolean {
+  if (opt.early_bird_price_cents == null || !opt.early_bird_deadline) return false;
+  return new Date(opt.early_bird_deadline) > new Date();
+}
+
+function getEffectivePrice(opt: EventOption): number {
+  return isEarlyBird(opt) ? opt.early_bird_price_cents! : opt.price_cents;
+}
+
 export default function EventCheckoutPage() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -57,6 +72,10 @@ export default function EventCheckoutPage() {
   const [paymentChoice, setPaymentChoice] = useState<"full" | "installment">("full");
   const [agreedToPolicy, setAgreedToPolicy] = useState(false);
   const [appResponses, setAppResponses] = useState<Record<string, string | boolean>>({});
+
+  // Group booking state
+  const [groupSize, setGroupSize] = useState(1);
+  const [groupMembers, setGroupMembers] = useState<{ name: string; email: string }[]>([]);
 
   useEffect(() => {
     async function load() {
@@ -98,7 +117,17 @@ export default function EventCheckoutPage() {
   }, [eventId, preselectedOption]);
 
   const selectedOpt = event?.options.find((o) => o.id === selectedOption);
-  const totalCents = selectedOpt?.price_cents ?? 0;
+
+  // Early bird + group pricing
+  const now = new Date();
+  const hasEarlyBird =
+    selectedOpt?.early_bird_price_cents != null &&
+    selectedOpt?.early_bird_deadline &&
+    new Date(selectedOpt.early_bird_deadline) > now;
+  const unitPriceCents = hasEarlyBird
+    ? selectedOpt!.early_bird_price_cents!
+    : (selectedOpt?.price_cents ?? 0);
+  const totalCents = unitPriceCents * groupSize;
   const totalDisplay = `$${(totalCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 
   const installmentCount = event?.installment_count || 3;
@@ -115,6 +144,18 @@ export default function EventCheckoutPage() {
     return dates;
   }
 
+  // Sync groupMembers array when groupSize changes
+  useEffect(() => {
+    setGroupMembers((prev) => {
+      const extra = groupSize - 1;
+      if (extra <= 0) return [];
+      if (prev.length === extra) return prev;
+      const next = [...prev];
+      while (next.length < extra) next.push({ name: "", email: "" });
+      return next.slice(0, extra);
+    });
+  }, [groupSize]);
+
   const hasAppFields = (event?.application_fields ?? []).length > 0;
   const stepLabels = hasAppFields
     ? ["Select Option", "Your Info", "Application", "Payment"]
@@ -122,8 +163,8 @@ export default function EventCheckoutPage() {
   const paymentStep = hasAppFields ? 4 : 3;
   const appStep = hasAppFields ? 3 : -1;
 
-  const canProceedStep1 = !!selectedOption && selectedOpt && selectedOpt.remaining > 0;
-  const canProceedStep2 = guestName.trim() !== "" && guestEmail.trim() !== "";
+  const canProceedStep1 = !!selectedOption && selectedOpt && selectedOpt.remaining > 0 && groupSize >= 1 && groupSize <= (selectedOpt?.remaining ?? 1);
+  const canProceedStep2 = guestName.trim() !== "" && guestEmail.trim() !== "" && groupMembers.every((m) => m.name.trim() !== "" && m.email.trim() !== "");
 
   function validateAppFields(): boolean {
     if (!hasAppFields || !event?.application_fields) return true;
@@ -163,6 +204,8 @@ export default function EventCheckoutPage() {
           guest_phone: guestPhone || null,
           payment_choice:
             event.payment_type === "installment" ? paymentChoice : "full",
+          group_size: groupSize,
+          group_members: groupSize > 1 ? groupMembers : [],
           ...(hasAppFields ? { application_responses: appResponses } : {}),
         }),
       });
@@ -201,10 +244,6 @@ export default function EventCheckoutPage() {
   }
 
   if (!event) return null;
-
-  const totalSteps = event.cancellation_policy_text ? 3 : 2;
-  // Step 1: Option + Info, Step 2: Payment, Step 3: Policy (if exists)
-  // Simplified: Step 1=Option, Step 2=Info, Step 3=Payment+Policy
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
@@ -254,6 +293,11 @@ export default function EventCheckoutPage() {
           <h2 className="text-lg font-semibold text-gray-900">Choose your option</h2>
           {event.options.map((opt) => {
             const isSoldOut = opt.remaining <= 0;
+            const earlyBird = isEarlyBird(opt);
+            const effectivePrice = getEffectivePrice(opt);
+            const deadlineDate = opt.early_bird_deadline
+              ? new Date(opt.early_bird_deadline).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+              : null;
             return (
               <label
                 key={opt.id}
@@ -272,7 +316,13 @@ export default function EventCheckoutPage() {
                       name="option"
                       value={opt.id}
                       checked={selectedOption === opt.id}
-                      onChange={() => !isSoldOut && setSelectedOption(opt.id)}
+                      onChange={() => {
+                        if (!isSoldOut) {
+                          setSelectedOption(opt.id);
+                          // Reset group size if it exceeds remaining for this option
+                          if (groupSize > opt.remaining) setGroupSize(Math.max(1, opt.remaining));
+                        }
+                      }}
                       disabled={isSoldOut}
                       className="mt-1"
                     />
@@ -291,12 +341,29 @@ export default function EventCheckoutPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-xl font-bold text-gray-900">
-                      ${(opt.price_cents / 100).toLocaleString()}
-                    </p>
+                    {earlyBird ? (
+                      <>
+                        <p className="text-sm text-gray-400 line-through">
+                          ${(opt.price_cents / 100).toLocaleString()}
+                        </p>
+                        <p className="text-xl font-bold text-gray-900">
+                          ${(effectivePrice / 100).toLocaleString()}
+                        </p>
+                        <span className="mt-1 inline-block rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
+                          Early Bird
+                        </span>
+                        {deadlineDate && (
+                          <p className="mt-0.5 text-xs text-green-600">Until {deadlineDate}</p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-xl font-bold text-gray-900">
+                        ${(opt.price_cents / 100).toLocaleString()}
+                      </p>
+                    )}
                     {event.payment_type === "installment" && (
                       <p className="text-xs text-gray-500">
-                        or {installmentCount} x ${Math.floor(opt.price_cents / 100 / installmentCount).toLocaleString()}
+                        or {installmentCount} x ${Math.floor(effectivePrice / 100 / installmentCount).toLocaleString()}
                       </p>
                     )}
                   </div>
@@ -304,6 +371,34 @@ export default function EventCheckoutPage() {
               </label>
             );
           })}
+
+          {/* Group Size Selector */}
+          {selectedOpt && selectedOpt.remaining > 1 && (
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">Group Booking</h3>
+              <div className="flex items-center gap-4">
+                <label className="text-sm text-gray-600">Number of guests</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={selectedOpt.remaining}
+                  value={groupSize}
+                  onChange={(e) => {
+                    const val = Math.max(1, Math.min(selectedOpt.remaining, parseInt(e.target.value) || 1));
+                    setGroupSize(val);
+                  }}
+                  className="w-20 rounded-lg border border-gray-300 px-3 py-2 text-sm text-center"
+                />
+                <span className="text-xs text-gray-400">max {selectedOpt.remaining}</span>
+              </div>
+              {groupSize > 1 && (
+                <div className="mt-3 rounded-lg bg-blue-50 px-3 py-2 text-sm text-blue-700">
+                  Total: {formatPrice(unitPriceCents)} x {groupSize} = <span className="font-semibold">{totalDisplay}</span>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="flex justify-end pt-4">
             <button
               disabled={!canProceedStep1}
@@ -359,6 +454,53 @@ export default function EventCheckoutPage() {
               placeholder="Optional"
             />
           </div>
+
+          {/* Group Member Fields */}
+          {groupSize > 1 && (
+            <div className="space-y-4 pt-2">
+              <h3 className="text-sm font-semibold text-gray-700">
+                Additional Group Members ({groupSize - 1})
+              </h3>
+              {groupMembers.map((member, idx) => (
+                <div key={idx} className="rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-3">
+                  <p className="text-xs font-medium text-gray-500">Guest {idx + 2}</p>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Full Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={member.name}
+                      onChange={(e) => {
+                        const updated = [...groupMembers];
+                        updated[idx] = { ...updated[idx], name: e.target.value };
+                        setGroupMembers(updated);
+                      }}
+                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                      placeholder="Guest full name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Email <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      value={member.email}
+                      onChange={(e) => {
+                        const updated = [...groupMembers];
+                        updated[idx] = { ...updated[idx], email: e.target.value };
+                        setGroupMembers(updated);
+                      }}
+                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                      placeholder="guest@email.com"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           <div className="flex justify-between pt-4">
             <button
               onClick={() => setStep(1)}
@@ -473,9 +615,31 @@ export default function EventCheckoutPage() {
           {/* Order Summary */}
           <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
             <h3 className="text-sm font-medium text-gray-700 mb-3">Order Summary</h3>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">{selectedOpt.name}</span>
-              <span className="font-semibold text-gray-900">{totalDisplay}</span>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">{selectedOpt.name}</span>
+                <span className="text-gray-600">{formatPrice(unitPriceCents)}</span>
+              </div>
+              {hasEarlyBird && (
+                <div className="flex justify-between">
+                  <span className="text-green-600 text-xs">
+                    <span className="inline-block rounded-full bg-green-100 px-2 py-0.5 font-semibold">Early Bird</span>
+                  </span>
+                  <span className="text-xs text-gray-400 line-through">
+                    {formatPrice(selectedOpt.price_cents)}
+                  </span>
+                </div>
+              )}
+              {groupSize > 1 && (
+                <div className="flex justify-between text-gray-500">
+                  <span>x {groupSize} guests</span>
+                  <span></span>
+                </div>
+              )}
+              <div className="border-t border-gray-200 pt-2 flex justify-between font-semibold">
+                <span className="text-gray-900">Total</span>
+                <span className="text-gray-900">{totalDisplay}</span>
+              </div>
             </div>
           </div>
 

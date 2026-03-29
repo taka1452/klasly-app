@@ -16,6 +16,8 @@ type BookingRow = {
   installment_paid: number;
   installment_total: number;
   application_responses: Record<string, string | boolean> | null;
+  group_size: number;
+  group_members: { name: string; email: string }[];
 };
 
 const TABS = [
@@ -97,9 +99,16 @@ export function EventBookingFilters({
                 <React.Fragment key={booking.id}>
                 <tr>
                   <td className="py-2 pr-4">
-                    <p className="font-medium text-gray-900">
-                      {booking.guest_name}
-                    </p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-medium text-gray-900">
+                        {booking.guest_name}
+                      </p>
+                      {booking.group_size > 1 && (
+                        <span className="rounded-full bg-purple-100 px-1.5 py-0.5 text-[10px] font-medium text-purple-700">
+                          ×{booking.group_size}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-gray-500">
                       {booking.guest_email}
                     </p>
@@ -151,7 +160,7 @@ export function EventBookingFilters({
                   </td>
                   {hasAppFields && (
                     <td className="py-2 pr-4">
-                      {booking.application_responses ? (
+                      {booking.application_responses || booking.group_members.length > 0 ? (
                         <button
                           type="button"
                           onClick={() => setExpandedId(expandedId === booking.id ? null : booking.id)}
@@ -173,20 +182,36 @@ export function EventBookingFilters({
                     </Link>
                   </td>
                 </tr>
-                {expandedId === booking.id && booking.application_responses && (
+                {expandedId === booking.id && (booking.application_responses || booking.group_members.length > 0) && (
                   <tr>
                     <td colSpan={hasAppFields ? 8 : 7} className="pb-3 pt-0 px-4">
-                      <div className="rounded-lg bg-gray-50 p-3 space-y-1">
-                        {Object.entries(booking.application_responses).map(([fieldId, answer]) => (
-                          <div key={fieldId} className="flex gap-2 text-xs">
-                            <span className="font-medium text-gray-600 min-w-[120px]">
-                              {appFieldLabels[fieldId] || fieldId}:
-                            </span>
-                            <span className="text-gray-900">
-                              {typeof answer === "boolean" ? (answer ? "Yes" : "No") : String(answer)}
-                            </span>
+                      <div className="rounded-lg bg-gray-50 p-3 space-y-2">
+                        {booking.group_members.length > 0 && (
+                          <div>
+                            <p className="text-xs font-medium text-gray-600 mb-1">Group Members:</p>
+                            <div className="space-y-0.5">
+                              {booking.group_members.map((m, i) => (
+                                <p key={i} className="text-xs text-gray-900">
+                                  {m.name} · <span className="text-gray-500">{m.email}</span>
+                                </p>
+                              ))}
+                            </div>
                           </div>
-                        ))}
+                        )}
+                        {booking.application_responses && Object.keys(booking.application_responses).length > 0 && (
+                          <div className="space-y-1">
+                            {Object.entries(booking.application_responses).map(([fieldId, answer]) => (
+                              <div key={fieldId} className="flex gap-2 text-xs">
+                                <span className="font-medium text-gray-600 min-w-[120px]">
+                                  {appFieldLabels[fieldId] || fieldId}:
+                                </span>
+                                <span className="text-gray-900">
+                                  {typeof answer === "boolean" ? (answer ? "Yes" : "No") : String(answer)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </td>
                   </tr>

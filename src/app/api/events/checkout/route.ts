@@ -41,7 +41,12 @@ export async function POST(request: Request) {
       guest_phone,
       payment_choice, // 'full' | 'installment'
       application_responses,
+      group_size: rawGroupSize,
+      group_members: rawGroupMembers,
     } = body;
+
+    const groupSize = Math.max(1, parseInt(rawGroupSize || "1", 10));
+    const groupMembers = Array.isArray(rawGroupMembers) ? rawGroupMembers : [];
 
     if (!event_id || !event_option_id || !guest_email || !guest_name) {
       return NextResponse.json(
@@ -87,17 +92,20 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Capacity check
-    const { count: bookedCount } = await adminSupabase
+    // 3. Capacity check (accounting for group_size)
+    const { data: existingBookings } = await adminSupabase
       .from("event_bookings")
-      .select("id", { count: "exact", head: true })
+      .select("group_size")
       .eq("event_option_id", event_option_id)
       .in("booking_status", ["pending_payment", "confirmed", "completed"]);
 
-    const remaining = option.capacity - (bookedCount ?? 0);
-    if (remaining <= 0) {
+    const totalBooked = (existingBookings || []).reduce(
+      (sum, b) => sum + (b.group_size || 1), 0
+    );
+    const remaining = option.capacity - totalBooked;
+    if (remaining < groupSize) {
       return NextResponse.json(
-        { error: "This option is sold out" },
+        { error: remaining <= 0 ? "This option is sold out" : `Only ${remaining} spots left` },
         { status: 409 },
       );
     }
@@ -126,7 +134,14 @@ export async function POST(request: Request) {
       .single();
     const platformFeePercent = parseFloat(feeRow?.value ?? "0") / 100;
 
-    const totalAmountCents = option.price_cents;
+    // Determine unit price (early bird or regular)
+    const now = new Date();
+    const hasEarlyBird = option.early_bird_price_cents != null
+      && option.early_bird_deadline
+      && new Date(option.early_bird_deadline) > now;
+    const unitPriceCents = hasEarlyBird ? option.early_bird_price_cents : option.price_cents;
+    const totalAmountCents = unitPriceCents * groupSize;
+
     const platformFee =
       platformFeePercent > 0
         ? Math.round(totalAmountCents * platformFeePercent)
@@ -203,6 +218,8 @@ export async function POST(request: Request) {
         total_amount_cents: totalAmountCents,
         payment_type: effectivePaymentType,
         payment_status: "unpaid",
+        group_size: groupSize,
+        group_members: groupMembers,
         ...(application_responses ? { application_responses } : {}),
       })
       .select("id")
@@ -263,7 +280,7 @@ export async function POST(request: Request) {
               price_data: {
                 currency: (studio.currency ?? "usd").toLowerCase(),
                 product_data: {
-                  name: `${event.name} — ${option.name} (Installment 1/${installmentCount})`,
+                  name: `${event.name} — ${option.name}${groupSize > 1 ? ` × ${groupSize}` : ""} (Installment 1/${installmentCount})`,
                 },
                 unit_amount: firstAmount,
               },
@@ -313,7 +330,7 @@ export async function POST(request: Request) {
               price_data: {
                 currency: (studio.currency ?? "usd").toLowerCase(),
                 product_data: {
-                  name: `${event.name} — ${option.name}`,
+                  name: `${event.name} — ${option.name}${groupSize > 1 ? ` × ${groupSize}` : ""}`,
                 },
                 unit_amount: totalAmountCents,
               },
