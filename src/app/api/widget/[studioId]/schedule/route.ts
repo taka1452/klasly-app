@@ -71,7 +71,7 @@ export async function GET(
         location,
         price_cents,
         session_type,
-        class_templates (
+        class_templates!template_id (
           name,
           description,
           duration_minutes,
@@ -79,7 +79,7 @@ export async function GET(
           is_online,
           image_url
         ),
-        instructors (
+        instructors!instructor_id (
           id,
           profiles (full_name)
         )
@@ -87,7 +87,7 @@ export async function GET(
       )
       .eq("studio_id", studioId)
       .eq("is_cancelled", false)
-      .eq("is_public", true)
+      .neq("is_public", false)
       .gte("session_date", startDate)
       .lte("session_date", endDate)
       .order("session_date", { ascending: true })
@@ -96,10 +96,12 @@ export async function GET(
     if (sessionsError) {
       console.error("[widget/schedule] sessions query error:", sessionsError);
       return NextResponse.json(
-        { error: "Failed to fetch schedule" },
+        { error: "Failed to fetch schedule", detail: sessionsError.message, code: sessionsError.code },
         { status: 500, headers: corsHeaders }
       );
     }
+
+    console.log(`[widget/schedule] studioId=${studioId}, range=${startDate}~${endDate}, found=${(sessions || []).length} sessions`);
 
     // Get availability counts via DB function
     const sessionIds = (sessions || []).map((s: { id: string }) => s.id);
