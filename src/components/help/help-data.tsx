@@ -504,7 +504,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
                 <li>Add your website&apos;s domain to the <B>Allowed Origins</B> list.</li>
                 <li>Copy the <B>embed code</B> and paste it into your website&apos;s HTML.</li>
               </Steps>
-              <Tip>You can embed both widgets on different pages. The events widget shows upcoming retreats with prices, availability, and direct booking links.</Tip>
+              <Tip>You can embed all three widgets on different pages. The events widget shows upcoming retreats, and the passes widget displays membership plans with subscribe buttons.</Tip>
             </>
           ),
         },

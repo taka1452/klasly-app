@@ -32,7 +32,7 @@ export default function WidgetSettingsClient({ studioId, isOwner = true }: Props
   const [allowedOrigins, setAllowedOrigins] = useState<string[]>([]);
   const [newDomain, setNewDomain] = useState("");
   const [copied, setCopied] = useState(false);
-  const [previewType, setPreviewType] = useState<"schedule" | "events">("schedule");
+  const [previewType, setPreviewType] = useState<"schedule" | "events" | "buy-now">("schedule");
 
   // Fetch settings on mount
   useEffect(() => {
@@ -110,15 +110,15 @@ export default function WidgetSettingsClient({ studioId, isOwner = true }: Props
     });
   }
 
-  function getEmbedCode(type: "schedule" | "events" = "schedule") {
+  function getEmbedCode(type: "schedule" | "events" | "buy-now" = "schedule") {
     const baseUrl =
       typeof window !== "undefined"
         ? window.location.origin
         : "https://app.klasly.app";
-    if (type === "events") {
-      return `<script src="${baseUrl}/widget.js" data-studio="${studioId}" data-type="events" data-theme="${themeColor}"></script>`;
+    if (type === "schedule") {
+      return `<script src="${baseUrl}/widget.js" data-studio="${studioId}" data-theme="${themeColor}"></script>`;
     }
-    return `<script src="${baseUrl}/widget.js" data-studio="${studioId}" data-theme="${themeColor}"></script>`;
+    return `<script src="${baseUrl}/widget.js" data-studio="${studioId}" data-type="${type}" data-theme="${themeColor}"></script>`;
   }
 
   if (loading) {
@@ -210,7 +210,8 @@ export default function WidgetSettingsClient({ studioId, isOwner = true }: Props
         <div className="mt-4 flex gap-1 rounded-lg bg-gray-100 p-1">
           {([
             { key: "schedule" as const, label: "Schedule" },
-            { key: "events" as const, label: "Events / Retreats" },
+            { key: "events" as const, label: "Events" },
+            { key: "buy-now" as const, label: "Passes" },
           ]).map((tab) => (
             <button
               key={tab.key}
@@ -315,12 +316,12 @@ export default function WidgetSettingsClient({ studioId, isOwner = true }: Props
       <div className="card">
         <h2 className="text-base font-semibold text-gray-900">Preview</h2>
         <p className="mt-1 text-sm text-gray-500">
-          See how your {previewType === "events" ? "events" : "schedule"} widget will look when embedded.
+          See how your {previewType === "events" ? "events" : previewType === "buy-now" ? "passes" : "schedule"} widget will look when embedded.
         </p>
         <div className="mt-4 overflow-hidden rounded-lg border border-gray-200">
           <iframe
             key={`${previewType}-${themeColor}`}
-            src={`/widget/${studioId}${previewType === "events" ? "/events" : ""}?theme=${themeColor}`}
+            src={`/widget/${studioId}${previewType === "events" ? "/events" : previewType === "buy-now" ? "/buy" : ""}?theme=${themeColor}`}
             className="h-[500px] w-full border-0"
             title="Widget preview"
           />

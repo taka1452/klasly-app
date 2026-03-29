@@ -25,6 +25,8 @@
   var widgetPath = "/widget/" + encodeURIComponent(studioId);
   if (widgetType === "events") {
     widgetPath += "/events";
+  } else if (widgetType === "buy-now") {
+    widgetPath += "/buy";
   }
   // Default "schedule" uses the base widget path
 
@@ -44,7 +46,8 @@
   iframe.style.borderRadius = "12px";
   iframe.style.backgroundColor = "transparent";
   iframe.setAttribute("allow", "popups");
-  iframe.setAttribute("title", "Klasly " + (widgetType === "events" ? "Events" : "Booking") + " Widget");
+  var titleMap = { events: "Events", "buy-now": "Passes", schedule: "Booking" };
+  iframe.setAttribute("title", "Klasly " + (titleMap[widgetType] || "Booking") + " Widget");
   iframe.setAttribute("loading", "lazy");
 
   // Listen for resize messages from the iframe
