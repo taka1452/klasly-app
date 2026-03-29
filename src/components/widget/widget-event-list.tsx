@@ -11,8 +11,11 @@ type EventData = {
   start_date: string;
   end_date: string;
   location_name: string | null;
+  location_address: string | null;
   image_url: string | null;
   waitlist_enabled: boolean;
+  payment_type: string;
+  installment_count: number;
   options: {
     id: string;
     name: string;
@@ -24,6 +27,10 @@ type EventData = {
   }[];
   min_price_cents: number;
   total_remaining: number;
+  has_schedule: boolean;
+  schedule_count: number;
+  has_packing_list: boolean;
+  has_access_info: boolean;
 };
 
 type EventsResponse = {

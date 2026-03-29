@@ -47,7 +47,7 @@ export async function GET(
     const today = new Date().toISOString().slice(0, 10);
     const { data: events } = await supabase
       .from("events")
-      .select("id, name, description, start_date, end_date, location_name, image_url, status, waitlist_enabled")
+      .select("id, name, description, start_date, end_date, location_name, location_address, image_url, status, waitlist_enabled, packing_list, access_info, payment_type, installment_count")
       .eq("studio_id", studioId)
       .eq("status", "published")
       .eq("is_public", true)
@@ -87,6 +87,16 @@ export async function GET(
       }
     });
 
+    // Get schedule item counts per event
+    const { data: scheduleItems } = await supabase
+      .from("event_schedule_items")
+      .select("event_id, id")
+      .in("event_id", eventIds);
+    const scheduleCountByEvent: Record<string, number> = {};
+    (scheduleItems || []).forEach((s) => {
+      scheduleCountByEvent[s.event_id] = (scheduleCountByEvent[s.event_id] || 0) + 1;
+    });
+
     const now = new Date();
     const enrichedEvents = events.map((event) => {
       const eventOptions = (options || [])
@@ -112,6 +122,8 @@ export async function GET(
       }));
       const totalRemaining = eventOptions.reduce((sum, o) => sum + Math.max(0, o.remaining), 0);
 
+      const packingItems = Array.isArray(event.packing_list) ? event.packing_list.length : 0;
+
       return {
         id: event.id,
         name: event.name,
@@ -119,12 +131,19 @@ export async function GET(
         start_date: event.start_date,
         end_date: event.end_date,
         location_name: event.location_name,
+        location_address: event.location_address,
         image_url: event.image_url,
         status: event.status,
         waitlist_enabled: event.waitlist_enabled,
+        payment_type: event.payment_type,
+        installment_count: event.installment_count,
         options: eventOptions,
         min_price_cents: minPrice === Infinity ? 0 : minPrice,
         total_remaining: totalRemaining,
+        has_schedule: (scheduleCountByEvent[event.id] || 0) > 0,
+        schedule_count: scheduleCountByEvent[event.id] || 0,
+        has_packing_list: packingItems > 0,
+        has_access_info: !!event.access_info,
       };
     });
 
