@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useFeature } from "@/lib/features/feature-context";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
+import { csrfFetch } from "@/lib/api/csrf-client";
 
 type SlotData = {
   id?: string;
@@ -74,7 +75,7 @@ export default function InstructorAvailabilityPage() {
     setSaving(true);
     setMessage(null);
     try {
-      const res = await fetch("/api/instructor/availability", {
+      const res = await csrfFetch("/api/instructor/availability", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

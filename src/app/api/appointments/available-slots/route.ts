@@ -95,12 +95,13 @@ export async function GET(request: Request) {
     }
 
     // 2. Get existing confirmed appointments for this instructor + date
+    //    Also join appointment_types to get buffer_minutes for each appointment
     const { data: existingAppointments } = await adminDb
       .from("appointments")
-      .select("start_time, end_time")
+      .select("start_time, end_time, appointment_type_id, appointment_types(buffer_minutes)")
       .eq("instructor_id", instructorId)
       .eq("appointment_date", date)
-      .in("status", ["confirmed", "pending"]);
+      .in("status", ["confirmed"]);
 
     // 3. Get existing class sessions for this instructor + date
     const { data: existingSessions } = await adminDb
@@ -115,7 +116,9 @@ export async function GET(request: Request) {
 
     if (existingAppointments) {
       for (const apt of existingAppointments) {
-        busyIntervals.push([timeToMinutes(apt.start_time), timeToMinutes(apt.end_time)]);
+        // Add buffer_minutes to the end of each existing appointment's busy interval
+        const aptBuffer = (apt as unknown as { appointment_types?: { buffer_minutes?: number } }).appointment_types?.buffer_minutes ?? 0;
+        busyIntervals.push([timeToMinutes(apt.start_time), timeToMinutes(apt.end_time) + aptBuffer]);
       }
     }
 

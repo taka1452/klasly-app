@@ -65,6 +65,11 @@ CREATE INDEX IF NOT EXISTS idx_appointments_instructor_date
 CREATE INDEX IF NOT EXISTS idx_appointments_member
   ON appointments(member_id, appointment_date);
 
+-- Prevent double-booking the same instructor at the same time
+CREATE UNIQUE INDEX IF NOT EXISTS idx_appointments_no_double_booking
+  ON appointments(instructor_id, appointment_date, start_time)
+  WHERE status IN ('confirmed');
+
 -- ============================================================
 -- RLS Policies
 -- ============================================================

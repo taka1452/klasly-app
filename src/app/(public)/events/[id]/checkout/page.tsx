@@ -168,7 +168,7 @@ export default function EventCheckoutPage() {
   const paymentStep = hasAppFields ? 4 : 3;
   const appStep = hasAppFields ? 3 : -1;
 
-  const canProceedStep1 = !!selectedOption && selectedOpt && selectedOpt.remaining > 0 && groupSize >= 1 && groupSize <= (selectedOpt?.remaining ?? 1);
+  const canProceedStep1 = !!selectedOption && selectedOpt && groupSize >= 1 && (isWaitlist || (selectedOpt.remaining > 0 && groupSize <= (selectedOpt?.remaining ?? 1)));
   const canProceedStep2 = guestName.trim() !== "" && guestEmail.trim() !== "" && groupMembers.every((m) => m.name.trim() !== "" && m.email.trim() !== "");
 
   function validateAppFields(): boolean {
@@ -323,7 +323,7 @@ export default function EventCheckoutPage() {
                 className={`block cursor-pointer rounded-xl border-2 p-5 transition ${
                   selectedOption === opt.id
                     ? "border-blue-500 bg-blue-50"
-                    : isSoldOut
+                    : isSoldOut && !isWaitlist
                       ? "border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed"
                       : "border-gray-200 hover:border-gray-300"
                 }`}
@@ -336,13 +336,13 @@ export default function EventCheckoutPage() {
                       value={opt.id}
                       checked={selectedOption === opt.id}
                       onChange={() => {
-                        if (!isSoldOut) {
+                        if (!isSoldOut || isWaitlist) {
                           setSelectedOption(opt.id);
-                          // Reset group size if it exceeds remaining for this option
-                          if (groupSize > opt.remaining) setGroupSize(Math.max(1, opt.remaining));
+                          // Reset group size if it exceeds remaining for this option (only for non-waitlist)
+                          if (!isWaitlist && groupSize > opt.remaining) setGroupSize(Math.max(1, opt.remaining));
                         }
                       }}
-                      disabled={isSoldOut}
+                      disabled={isSoldOut && !isWaitlist}
                       className="mt-1"
                     />
                     <div>

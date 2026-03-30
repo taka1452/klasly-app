@@ -171,7 +171,7 @@ export default function MemberAppointmentsPage() {
             Your 1-on-1 appointment bookings
           </p>
         </div>
-        <Link href="/appointments/book" className="btn-primary">
+        <Link href="/my-appointments/book" className="btn-primary">
           Book Appointment
         </Link>
       </div>
@@ -335,7 +335,7 @@ export default function MemberAppointmentsPage() {
             <div className="mt-6 card">
               <p className="text-sm text-gray-500">No appointments yet.</p>
               <Link
-                href="/appointments/book"
+                href="/my-appointments/book"
                 className="btn-primary mt-4 inline-block"
               >
                 Book your first appointment
@@ -349,7 +349,7 @@ export default function MemberAppointmentsPage() {
                 No upcoming appointments.
               </p>
               <Link
-                href="/appointments/book"
+                href="/my-appointments/book"
                 className="btn-primary mt-4 inline-block"
               >
                 Book an appointment

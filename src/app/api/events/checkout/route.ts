@@ -45,8 +45,15 @@ export async function POST(request: Request) {
       group_members: rawGroupMembers,
     } = body;
 
-    const groupSize = Math.max(1, parseInt(rawGroupSize || "1", 10));
+    const groupSize = parseInt(rawGroupSize || "1", 10);
     const groupMembers = Array.isArray(rawGroupMembers) ? rawGroupMembers : [];
+
+    if (isNaN(groupSize) || groupSize < 1 || groupSize > 50) {
+      return NextResponse.json(
+        { error: "Invalid group size (must be between 1 and 50)" },
+        { status: 400 },
+      );
+    }
 
     if (!event_id || !event_option_id || !guest_email || !guest_name) {
       return NextResponse.json(

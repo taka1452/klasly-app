@@ -217,7 +217,7 @@ export async function POST(
       // Find the oldest waitlisted booking for the same option
       const { data: waitlistEntry } = await supabase
         .from("event_bookings")
-        .select("id, guest_name, guest_email, event_option_id")
+        .select("id, guest_name, guest_email, event_option_id, group_size")
         .eq("event_id", booking.event_id)
         .eq("event_option_id", booking.event_option_id)
         .eq("booking_status", "waitlisted")
@@ -226,40 +226,64 @@ export async function POST(
         .maybeSingle();
 
       if (waitlistEntry) {
-        // Check if event has waitlist enabled
-        const { data: evt } = await supabase
-          .from("events")
-          .select("waitlist_enabled, name, start_date, end_date")
-          .eq("id", booking.event_id)
+        // Check that the waitlisted booking's group_size fits within remaining capacity
+        const { data: optionData } = await supabase
+          .from("event_options")
+          .select("capacity")
+          .eq("id", waitlistEntry.event_option_id)
           .single();
 
-        if (evt?.waitlist_enabled) {
-          // Promote: update status to confirmed
-          await supabase
-            .from("event_bookings")
-            .update({ booking_status: "confirmed", updated_at: new Date().toISOString() })
-            .eq("id", waitlistEntry.id);
+        const { data: activeBookings } = await supabase
+          .from("event_bookings")
+          .select("group_size")
+          .eq("event_option_id", waitlistEntry.event_option_id)
+          .in("booking_status", ["pending_payment", "confirmed", "completed"]);
 
-          // Get option name for email
-          const { data: opt } = await supabase
-            .from("event_options")
-            .select("name")
-            .eq("id", waitlistEntry.event_option_id)
+        const totalBooked = (activeBookings || []).reduce(
+          (sum: number, b: { group_size: number | null }) => sum + (b.group_size || 1), 0
+        );
+        const remainingCapacity = (optionData?.capacity ?? 0) - totalBooked;
+        const waitlistGroupSize = waitlistEntry.group_size || 1;
+
+        if (waitlistGroupSize > remainingCapacity) {
+          // Not enough capacity for this waitlisted booking — skip promotion
+          console.log(`[EventCancel] waitlist entry ${waitlistEntry.id} needs ${waitlistGroupSize} spots but only ${remainingCapacity} available, skipping promotion`);
+        } else {
+          // Check if event has waitlist enabled
+          const { data: evt } = await supabase
+            .from("events")
+            .select("waitlist_enabled, name, start_date, end_date")
+            .eq("id", booking.event_id)
             .single();
 
-          // Send promotion email
-          const { eventWaitlistPromoted } = await import("@/lib/email/templates");
-          await sendEmail({
-            to: waitlistEntry.guest_email,
-            subject: `You're in! — ${evt.name}`,
-            html: eventWaitlistPromoted({
-              guestName: waitlistEntry.guest_name,
-              eventName: evt.name,
-              optionName: opt?.name || "",
-              startDate: evt.start_date,
-              endDate: evt.end_date,
-            }),
-          });
+          if (evt?.waitlist_enabled) {
+            // Promote: update status to confirmed
+            await supabase
+              .from("event_bookings")
+              .update({ booking_status: "confirmed", updated_at: new Date().toISOString() })
+              .eq("id", waitlistEntry.id);
+
+            // Get option name for email
+            const { data: opt } = await supabase
+              .from("event_options")
+              .select("name")
+              .eq("id", waitlistEntry.event_option_id)
+              .single();
+
+            // Send promotion email
+            const { eventWaitlistPromoted } = await import("@/lib/email/templates");
+            await sendEmail({
+              to: waitlistEntry.guest_email,
+              subject: `You're in! — ${evt.name}`,
+              html: eventWaitlistPromoted({
+                guestName: waitlistEntry.guest_name,
+                eventName: evt.name,
+                optionName: opt?.name || "",
+                startDate: evt.start_date,
+                endDate: evt.end_date,
+              }),
+            });
+          }
         }
       }
     } catch (promoErr) {

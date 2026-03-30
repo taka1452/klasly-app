@@ -42,6 +42,10 @@ export async function GET(request: Request) {
 
   try {
     // 1時間後の時間帯を計算
+    // KNOWN LIMITATION: This comparison uses UTC times (from the server / new Date())
+    // against start_time values stored as local times (without timezone info) in the DB.
+    // This means reminders may fire at the wrong time for studios not in the UTC timezone.
+    // A full fix requires storing timezone per studio and doing timezone-aware comparison.
     const now = new Date();
     const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
     const todayStr = now.toISOString().split("T")[0];

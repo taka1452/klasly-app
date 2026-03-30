@@ -113,7 +113,7 @@ export async function POST(request: Request) {
       .select("start_time, end_time")
       .eq("instructor_id", instructor_id)
       .eq("appointment_date", date)
-      .in("status", ["confirmed", "pending"]);
+      .in("status", ["confirmed"]);
 
     const appointmentConflict = existingAppointments?.some((apt) => {
       const aptStart = timeToMinutes(apt.start_time);
@@ -183,7 +183,8 @@ export async function POST(request: Request) {
         }
         creditDeducted = true;
       } else {
-        paymentMethod = "credit";
+        // Non-credit studio with price > 0: owner collects payment separately
+        paymentMethod = "free";
       }
     }
 
@@ -225,23 +226,25 @@ export async function POST(request: Request) {
       .eq("id", profile.studio_id)
       .single();
 
-    // Send confirmation email
-    const email = appointmentConfirmation({
-      memberName: profile.full_name || "Member",
-      instructorName: instructorProfile?.full_name || "Instructor",
-      appointmentType: appointmentType.name,
-      date,
-      startTime: start_time,
-      studioName: studio?.name || "Studio",
-    });
+    // Send confirmation email (only if user has an email)
+    if (user.email) {
+      const email = appointmentConfirmation({
+        memberName: profile.full_name || "Member",
+        instructorName: instructorProfile?.full_name || "Instructor",
+        appointmentType: appointmentType.name,
+        date,
+        startTime: start_time,
+        studioName: studio?.name || "Studio",
+      });
 
-    await sendEmail({
-      to: user.email!,
-      subject: email.subject,
-      html: email.html,
-      studioId: profile.studio_id,
-      templateName: "appointment_confirmation",
-    });
+      await sendEmail({
+        to: user.email,
+        subject: email.subject,
+        html: email.html,
+        studioId: profile.studio_id,
+        templateName: "appointment_confirmation",
+      });
+    }
 
     return NextResponse.json({ appointment });
   } catch (err) {

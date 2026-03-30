@@ -260,11 +260,11 @@ export default function EditEventPage() {
       const supabase = createClient();
       const { data } = await supabase
         .from("event_bookings")
-        .select("option_id")
+        .select("event_option_id")
         .eq("event_id", id)
-        .not("status", "eq", "cancelled");
+        .not("booking_status", "eq", "cancelled");
       if (data) {
-        const ids = new Set(data.map((b) => b.option_id).filter(Boolean) as string[]);
+        const ids = new Set(data.map((b) => b.event_option_id).filter(Boolean) as string[]);
         setOptionsWithBookings(ids);
       }
     }
