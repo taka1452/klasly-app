@@ -9,6 +9,11 @@ import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 export default function NewRoomPage() {
   const router = useRouter();
   const { isEnabled } = useFeature();
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [capacity, setCapacity] = useState<number | "">("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   if (!isEnabled(FEATURE_KEYS.ROOM_MANAGEMENT)) {
     return (
@@ -17,11 +22,6 @@ export default function NewRoomPage() {
       </div>
     );
   }
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [capacity, setCapacity] = useState<number | "">("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
