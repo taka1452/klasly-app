@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { useFeature } from "@/lib/features/feature-context";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 type RoomOption = { id: string; name: string; capacity: number | null };
 
@@ -19,6 +21,8 @@ const DAY_OPTIONS = [
 
 export default function InstructorNewClassPage() {
   const router = useRouter();
+  const { isEnabled } = useFeature();
+  const onlineEnabled = isEnabled(FEATURE_KEYS.ONLINE_CLASSES);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -242,7 +246,7 @@ export default function InstructorNewClassPage() {
               Class Type
             </label>
             <div className="mt-2 flex gap-4">
-              {(["in-person", "online", "hybrid"] as const).map((type) => (
+              {(["in-person", ...(onlineEnabled ? ["online", "hybrid"] : [])] as ("in-person" | "online" | "hybrid")[]).map((type) => (
                 <label key={type} className="flex items-center gap-2 text-sm">
                   <input
                     type="radio"
@@ -258,7 +262,7 @@ export default function InstructorNewClassPage() {
           </div>
 
           {/* Online Link */}
-          {showOnlineLink && (
+          {onlineEnabled && showOnlineLink && (
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Online Link (Zoom, Google Meet, etc.)

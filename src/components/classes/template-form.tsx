@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ErrorAlert from "@/components/ui/error-alert";
 import { CalendarPlus, CheckCircle } from "lucide-react";
+import { useFeature } from "@/lib/features/feature-context";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 type InstructorOption = { id: string; full_name: string; isMe?: boolean };
 type RoomOption = { id: string; name: string };
@@ -36,6 +38,8 @@ type Props = {
 
 export default function TemplateForm({ templateId }: Props) {
   const router = useRouter();
+  const { isEnabled } = useFeature();
+  const onlineEnabled = isEnabled(FEATURE_KEYS.ONLINE_CLASSES);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -351,31 +355,35 @@ export default function TemplateForm({ templateId }: Props) {
               />
               In-person
             </label>
-            <label className="flex items-center gap-2 text-sm text-gray-700">
-              <input
-                type="radio"
-                name="classType"
-                checked={classType === "online"}
-                onChange={() => setClassType("online")}
-                className="text-brand-600"
-              />
-              Online
-            </label>
-            <label className="flex items-center gap-2 text-sm text-gray-700">
-              <input
-                type="radio"
-                name="classType"
-                checked={classType === "hybrid"}
-                onChange={() => setClassType("hybrid")}
-                className="text-brand-600"
-              />
-              Hybrid
-            </label>
+            {onlineEnabled && (
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="radio"
+                  name="classType"
+                  checked={classType === "online"}
+                  onChange={() => setClassType("online")}
+                  className="text-brand-600"
+                />
+                Online
+              </label>
+            )}
+            {onlineEnabled && (
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="radio"
+                  name="classType"
+                  checked={classType === "hybrid"}
+                  onChange={() => setClassType("hybrid")}
+                  className="text-brand-600"
+                />
+                Hybrid
+              </label>
+            )}
           </div>
         </div>
 
         {/* Online Link (online/hybrid) */}
-        {(classType === "online" || classType === "hybrid") && (
+        {onlineEnabled && (classType === "online" || classType === "hybrid") && (
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Online Link (Zoom, Google Meet, etc.)

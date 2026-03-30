@@ -1,6 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { isFeatureEnabled } from "@/lib/features/check-feature";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 async function getInstructorContext() {
   const serverSupabase = await createServerClient();
@@ -31,6 +33,10 @@ async function getInstructorContext() {
     .single();
 
   if (!instructor) return null;
+
+  // Feature flag check
+  const enabled = await isFeatureEnabled(profile.studio_id, FEATURE_KEYS.SOAP_NOTES);
+  if (!enabled) return null;
 
   return { supabase, instructorId: instructor.id };
 }

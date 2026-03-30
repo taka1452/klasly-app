@@ -1,5 +1,7 @@
 import { getInstructorContext } from "@/lib/auth/instructor-access";
 import { NextResponse } from "next/server";
+import { isFeatureEnabled } from "@/lib/features/check-feature";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 /**
  * Backward-compatible wrapper around class_sessions for room booking
@@ -16,6 +18,11 @@ export async function PATCH(
     const ctx = await getInstructorContext();
     if (!ctx) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const roomEnabled = await isFeatureEnabled(ctx.studioId, FEATURE_KEYS.ROOM_MANAGEMENT);
+    if (!roomEnabled) {
+      return NextResponse.json({ error: "Feature not enabled" }, { status: 403 });
     }
 
     // 自分のセッションか確認
@@ -118,6 +125,11 @@ export async function DELETE(
     const ctx = await getInstructorContext();
     if (!ctx) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const roomEnabledDel = await isFeatureEnabled(ctx.studioId, FEATURE_KEYS.ROOM_MANAGEMENT);
+    if (!roomEnabledDel) {
+      return NextResponse.json({ error: "Feature not enabled" }, { status: 403 });
     }
 
     const { data: existing } = await ctx.supabase

@@ -1,6 +1,8 @@
 import { getInstructorContext } from "@/lib/auth/instructor-access";
 import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { isFeatureEnabled } from "@/lib/features/check-feature";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 /**
  * Backward-compatible wrapper around class_sessions.
@@ -16,6 +18,11 @@ export async function GET(request: Request) {
     const ctx = await getInstructorContext();
     if (!ctx) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const roomEnabled = await isFeatureEnabled(ctx.studioId, FEATURE_KEYS.ROOM_MANAGEMENT);
+    if (!roomEnabled) {
+      return NextResponse.json({ error: "Feature not enabled" }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -58,6 +65,11 @@ export async function POST(request: Request) {
     const ctx = await getInstructorContext();
     if (!ctx) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const roomEnabledPost = await isFeatureEnabled(ctx.studioId, FEATURE_KEYS.ROOM_MANAGEMENT);
+    if (!roomEnabledPost) {
+      return NextResponse.json({ error: "Feature not enabled" }, { status: 403 });
     }
 
     const body = await request.json();

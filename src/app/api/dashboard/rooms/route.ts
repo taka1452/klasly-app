@@ -1,5 +1,7 @@
 import { getDashboardContext } from "@/lib/auth/dashboard-access";
 import { NextResponse } from "next/server";
+import { isFeatureEnabled } from "@/lib/features/check-feature";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 /**
  * GET /api/dashboard/rooms
@@ -9,6 +11,11 @@ export async function GET() {
   const ctx = await getDashboardContext();
   if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const roomEnabled = await isFeatureEnabled(ctx.studioId, FEATURE_KEYS.ROOM_MANAGEMENT);
+  if (!roomEnabled) {
+    return NextResponse.json({ error: "Feature not enabled" }, { status: 403 });
   }
 
   const { data, error } = await ctx.supabase

@@ -1,10 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
 import { ScheduleDateEditor } from "@/components/events/schedule-date-editor";
 import EventCancelSection from "@/components/events/event-cancel-section";
+import { isFeatureEnabled } from "@/lib/features/check-feature";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 const PAYMENT_STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   unpaid: { label: "Unpaid", cls: "bg-gray-100 text-gray-600" },
@@ -55,6 +57,9 @@ export default async function BookingDetailPage({
     .eq("id", user.id)
     .single();
   if (!profile?.studio_id) notFound();
+
+  const retreatEnabled = await isFeatureEnabled(profile.studio_id, FEATURE_KEYS.RETREAT_BOOKING);
+  if (!retreatEnabled) redirect("/dashboard");
 
   // Verify event belongs to studio
   const { data: event } = await supabase

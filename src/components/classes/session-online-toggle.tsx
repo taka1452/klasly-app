@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useFeature } from "@/lib/features/feature-context";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 type Props = {
   sessionId: string;
@@ -17,10 +19,14 @@ export default function SessionOnlineToggle({
   initialOnlineLink,
   classOnlineLink,
 }: Props) {
+  const { isEnabled } = useFeature();
+  const onlineEnabled = isEnabled(FEATURE_KEYS.ONLINE_CLASSES);
   const [isOnline, setIsOnline] = useState<boolean>(initialIsOnline ?? false);
   const [onlineLink, setOnlineLink] = useState(initialOnlineLink ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  if (!onlineEnabled) return null;
 
   async function handleSave() {
     setSaving(true);

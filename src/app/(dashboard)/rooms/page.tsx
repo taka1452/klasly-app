@@ -5,6 +5,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import RoomsPageClient from "@/components/dashboard/rooms-page-client";
 import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
+import { isFeatureEnabled } from "@/lib/features/check-feature";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 export const metadata: Metadata = {
   title: "Rooms - Klasly",
@@ -43,6 +45,9 @@ export default async function RoomsPage() {
   if (!profile?.studio_id) {
     redirect("/onboarding");
   }
+
+  const roomMgmtEnabled = await isFeatureEnabled(profile.studio_id, FEATURE_KEYS.ROOM_MANAGEMENT);
+  if (!roomMgmtEnabled) redirect("/dashboard");
 
   // Check if owner is also an instructor
   const { data: instrRec } = await supabase

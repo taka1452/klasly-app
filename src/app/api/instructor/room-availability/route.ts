@@ -1,6 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
+import { isFeatureEnabled } from "@/lib/features/check-feature";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -49,6 +51,11 @@ export async function GET(request: NextRequest) {
     }
 
     const studioId = profile.studio_id;
+
+    const roomEnabled = await isFeatureEnabled(studioId, FEATURE_KEYS.ROOM_MANAGEMENT);
+    if (!roomEnabled) {
+      return NextResponse.json({ error: "Feature not enabled" }, { status: 403 });
+    }
 
     // Get instructor record (may be null for owner/manager without instructor record)
     const { data: instructor } = await supabase

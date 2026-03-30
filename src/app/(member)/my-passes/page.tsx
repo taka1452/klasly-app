@@ -3,6 +3,8 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { getPlanAccess } from "@/lib/plan-guard";
 import MemberPasses from "@/components/passes/member-passes";
+import { isFeatureEnabled } from "@/lib/features/check-feature";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 export default async function MemberPassesPage() {
   const serverSupabase = await createServerClient();
@@ -32,6 +34,15 @@ export default async function MemberPassesPage() {
         <p className="text-sm text-gray-500">
           You are not a member of any studio. Contact your studio to get access.
         </p>
+      </div>
+    );
+  }
+
+  const passEnabled = await isFeatureEnabled(member.studio_id, FEATURE_KEYS.STUDIO_PASS);
+  if (!passEnabled) {
+    return (
+      <div className="card">
+        <p className="text-sm text-gray-500">Membership passes are not available for this studio.</p>
       </div>
     );
   }

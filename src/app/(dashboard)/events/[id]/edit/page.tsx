@@ -6,6 +6,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { CancellationPolicyTier } from "@/types/database";
 import HelpTip from "@/components/ui/help-tip";
+import { useFeature } from "@/lib/features/feature-context";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 type OptionDraft = {
   id?: string;
@@ -63,6 +65,7 @@ function generatePolicyText(tiers: CancellationPolicyTier[]): string {
 export default function EditEventPage() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
+  const { isEnabled } = useFeature();
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -431,6 +434,14 @@ export default function EditEventPage() {
   const daysCount = startDate && endDate
     ? Math.ceil((new Date(endDate + "T00:00:00").getTime() - new Date(startDate + "T00:00:00").getTime()) / (1000 * 60 * 60 * 24)) + 1
     : 1;
+
+  if (!isEnabled(FEATURE_KEYS.RETREAT_BOOKING)) {
+    return (
+      <div className="card">
+        <p className="text-sm text-gray-500">Retreat booking is not enabled.</p>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

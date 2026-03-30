@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/admin/supabase";
+import { isFeatureEnabled } from "@/lib/features/check-feature";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 // ============================================================
 // GET /api/studio/widget-settings
@@ -27,6 +29,11 @@ export async function GET() {
 
     if (!profile?.studio_id || (profile.role !== "owner" && profile.role !== "manager")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const widgetEnabled = await isFeatureEnabled(profile.studio_id, FEATURE_KEYS.EMBED_WIDGET);
+    if (!widgetEnabled) {
+      return NextResponse.json({ error: "Feature not enabled" }, { status: 403 });
     }
 
     const { data: settings } = await adminDb
@@ -75,6 +82,11 @@ export async function PUT(request: NextRequest) {
     // ウィジェット設定変更はオーナーのみ
     if (!profile?.studio_id || profile.role !== "owner") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const widgetEnabledPut = await isFeatureEnabled(profile.studio_id, FEATURE_KEYS.EMBED_WIDGET);
+    if (!widgetEnabledPut) {
+      return NextResponse.json({ error: "Feature not enabled" }, { status: 403 });
     }
 
     const body = await request.json();

@@ -3,9 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import HelpTip from "@/components/ui/help-tip";
+import { useFeature } from "@/lib/features/feature-context";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 export default function NewPassPage() {
   const router = useRouter();
+  const { isEnabled } = useFeature();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
@@ -61,6 +64,14 @@ export default function NewPassPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (!isEnabled(FEATURE_KEYS.STUDIO_PASS)) {
+    return (
+      <div className="card">
+        <p className="text-sm text-gray-500">Studio passes are not enabled.</p>
+      </div>
+    );
   }
 
   return (

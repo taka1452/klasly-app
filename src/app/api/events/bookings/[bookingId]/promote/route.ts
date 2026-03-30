@@ -3,6 +3,8 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/admin/supabase";
 import { sendEmail } from "@/lib/email/send";
 import { eventWaitlistPromoted } from "@/lib/email/templates";
+import { isFeatureEnabled } from "@/lib/features/check-feature";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 export async function POST(
   _request: Request,
@@ -35,6 +37,11 @@ export async function POST(
     .single();
 
   if (!event) return NextResponse.json({ error: "Event not found" }, { status: 404 });
+
+  const retreatEnabled = await isFeatureEnabled(event.studio_id, FEATURE_KEYS.RETREAT_BOOKING);
+  if (!retreatEnabled) {
+    return NextResponse.json({ error: "Feature not available" }, { status: 404 });
+  }
 
   const { data: profile } = await adminDb
     .from("profiles")

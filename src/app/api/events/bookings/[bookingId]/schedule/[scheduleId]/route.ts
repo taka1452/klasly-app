@@ -1,6 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { isFeatureEnabled } from "@/lib/features/check-feature";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 export const runtime = "nodejs";
 
@@ -82,6 +84,11 @@ export async function PUT(
 
   if (!event) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const retreatEnabled = await isFeatureEnabled(event.studio_id, FEATURE_KEYS.RETREAT_BOOKING);
+  if (!retreatEnabled) {
+    return NextResponse.json({ error: "Feature not available" }, { status: 404 });
   }
 
   // Verify schedule exists and is pending

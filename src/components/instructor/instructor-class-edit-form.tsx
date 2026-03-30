@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Toast from "@/components/ui/toast";
+import { useFeature } from "@/lib/features/feature-context";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 type RoomOption = { id: string; name: string };
 
@@ -40,6 +42,8 @@ export default function InstructorClassEditForm({
   rooms,
   onSaved,
 }: Props) {
+  const { isEnabled } = useFeature();
+  const onlineEnabled = isEnabled(FEATURE_KEYS.ONLINE_CLASSES);
   const [name, setName] = useState(initialData.name);
   const [description, setDescription] = useState(initialData.description);
   const [dayOfWeek, setDayOfWeek] = useState(initialData.dayOfWeek);
@@ -180,13 +184,15 @@ export default function InstructorClassEditForm({
           <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} className="h-4 w-4 rounded border-gray-300" />
           Public (visible to members)
         </label>
-        <label className="flex items-center gap-2 text-sm text-gray-700">
-          <input type="checkbox" checked={isOnline} onChange={(e) => setIsOnline(e.target.checked)} className="h-4 w-4 rounded border-gray-300" />
-          Online class
-        </label>
+        {onlineEnabled && (
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input type="checkbox" checked={isOnline} onChange={(e) => setIsOnline(e.target.checked)} className="h-4 w-4 rounded border-gray-300" />
+            Online class
+          </label>
+        )}
       </div>
 
-      {isOnline && (
+      {onlineEnabled && isOnline && (
         <div>
           <label className="block text-sm font-medium text-gray-700">Online link</label>
           <input type="url" value={onlineLink} onChange={(e) => setOnlineLink(e.target.value)} placeholder="https://zoom.us/..." className="input-field mt-1" />

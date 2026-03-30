@@ -134,7 +134,19 @@ export default function AnalyticsPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  const analyticsEnabled = isEnabled(FEATURE_KEYS.ANALYTICS);
   const utmEnabled = isEnabled(FEATURE_KEYS.UTM_TRACKING);
+
+  if (!analyticsEnabled) {
+    return (
+      <div>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
+        </div>
+        <p className="mt-2 text-sm text-gray-500">This feature is not enabled for your studio.</p>
+      </div>
+    );
+  }
 
   useEffect(() => {
     if (!utmEnabled) {

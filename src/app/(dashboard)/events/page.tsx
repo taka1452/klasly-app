@@ -6,6 +6,8 @@ import { formatDate } from "@/lib/utils";
 import ContextHelpLink from "@/components/help/context-help-link";
 import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
 import EmptyState from "@/components/ui/empty-state";
+import { isFeatureEnabled } from "@/lib/features/check-feature";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   draft: { label: "Draft", cls: "bg-gray-100 text-gray-700" },
@@ -39,6 +41,9 @@ export default async function EventsListPage() {
     .eq("id", user.id)
     .single();
   if (!profile?.studio_id) notFound();
+
+  const retreatEnabled = await isFeatureEnabled(profile.studio_id, FEATURE_KEYS.RETREAT_BOOKING);
+  if (!retreatEnabled) redirect("/dashboard");
 
   const { data: events } = await supabase
     .from("events")

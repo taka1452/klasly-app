@@ -3,6 +3,8 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import WidgetSettingsClient from "@/components/settings/widget-settings-client";
+import { isFeatureEnabled } from "@/lib/features/check-feature";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 export const metadata: Metadata = {
   title: "Widget Settings - Klasly",
@@ -35,6 +37,9 @@ export default async function WidgetSettingsPage() {
   if (!profile?.studio_id || (profile?.role !== "owner" && profile?.role !== "manager")) {
     redirect("/");
   }
+
+  const widgetEnabled = await isFeatureEnabled(profile.studio_id, FEATURE_KEYS.EMBED_WIDGET);
+  if (!widgetEnabled) redirect("/dashboard");
 
   return (
     <div>

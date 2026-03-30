@@ -1,6 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { isFeatureEnabled } from "@/lib/features/check-feature";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 export async function GET() {
   try {
@@ -26,6 +28,11 @@ export async function GET() {
 
     if (!profile?.studio_id || !["owner", "manager"].includes(profile.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const analyticsEnabled = await isFeatureEnabled(profile.studio_id, FEATURE_KEYS.ANALYTICS);
+    if (!analyticsEnabled) {
+      return NextResponse.json({ error: "Feature not enabled" }, { status: 403 });
     }
 
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();

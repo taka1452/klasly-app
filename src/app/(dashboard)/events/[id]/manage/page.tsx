@@ -1,9 +1,11 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
 import { EventBookingFilters } from "@/components/events/event-booking-filters";
+import { isFeatureEnabled } from "@/lib/features/check-feature";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   draft: { label: "Draft", cls: "bg-gray-100 text-gray-700" },
@@ -37,6 +39,9 @@ export default async function EventManagePage({
     .eq("id", user.id)
     .single();
   if (!profile?.studio_id) notFound();
+
+  const retreatEnabled = await isFeatureEnabled(profile.studio_id, FEATURE_KEYS.RETREAT_BOOKING);
+  if (!retreatEnabled) redirect("/dashboard");
 
   const { data: event } = await supabase
     .from("events")

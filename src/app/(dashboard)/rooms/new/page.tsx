@@ -3,9 +3,20 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useFeature } from "@/lib/features/feature-context";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 export default function NewRoomPage() {
   const router = useRouter();
+  const { isEnabled } = useFeature();
+
+  if (!isEnabled(FEATURE_KEYS.ROOM_MANAGEMENT)) {
+    return (
+      <div className="card text-center py-12">
+        <p className="text-gray-500">Room Management is not enabled for your studio.</p>
+      </div>
+    );
+  }
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [capacity, setCapacity] = useState<number | "">("");

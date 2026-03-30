@@ -1,5 +1,7 @@
 import { getDashboardContext } from "@/lib/auth/dashboard-access";
 import { NextRequest, NextResponse } from "next/server";
+import { isFeatureEnabled } from "@/lib/features/check-feature";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 // DELETE: ルーム削除（権限チェック付き）
 export async function DELETE(request: NextRequest) {
@@ -7,6 +9,11 @@ export async function DELETE(request: NextRequest) {
     const ctx = await getDashboardContext();
     if (!ctx) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const roomEnabled = await isFeatureEnabled(ctx.studioId, FEATURE_KEYS.ROOM_MANAGEMENT);
+    if (!roomEnabled) {
+      return NextResponse.json({ error: "Feature not enabled" }, { status: 403 });
     }
 
     if (ctx.role === "manager" && !ctx.permissions?.can_manage_rooms) {
@@ -83,6 +90,11 @@ export async function POST(request: Request) {
     const ctx = await getDashboardContext();
     if (!ctx) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const roomEnabledPost = await isFeatureEnabled(ctx.studioId, FEATURE_KEYS.ROOM_MANAGEMENT);
+    if (!roomEnabledPost) {
+      return NextResponse.json({ error: "Feature not enabled" }, { status: 403 });
     }
 
     // マネージャーの場合、can_manage_rooms 権限を確認

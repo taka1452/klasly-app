@@ -1,7 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { isFeatureEnabled } from "@/lib/features/check-feature";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 export const metadata: Metadata = {
   title: "Manage Rooms - Klasly",
@@ -27,6 +30,9 @@ export default async function ManageRoomsPage() {
     .single();
 
   if (!profile?.studio_id) return null;
+
+  const roomMgmtEnabled = await isFeatureEnabled(profile.studio_id, FEATURE_KEYS.ROOM_MANAGEMENT);
+  if (!roomMgmtEnabled) redirect("/dashboard");
 
   const { data: rooms } = await supabase
     .from("rooms")

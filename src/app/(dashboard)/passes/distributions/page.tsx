@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useFeature } from "@/lib/features/feature-context";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 type Distribution = {
   id: string;
@@ -30,6 +32,7 @@ function formatCents(cents: number): string {
 }
 
 export default function DistributionsPage() {
+  const { isEnabled } = useFeature();
   const now = new Date();
   // Default to previous month
   const defaultMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -135,6 +138,14 @@ export default function DistributionsPage() {
   const firstPassInfo = passIds.length > 0 && data?.passInfo?.[passIds[0]]
     ? data.passInfo[passIds[0]]
     : null;
+
+  if (!isEnabled(FEATURE_KEYS.STUDIO_PASS)) {
+    return (
+      <div className="card">
+        <p className="text-sm text-gray-500">Studio passes are not enabled.</p>
+      </div>
+    );
+  }
 
   return (
     <div>
