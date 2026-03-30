@@ -31,6 +31,7 @@ export default function MemberLayoutClient({
 }: MemberLayoutClientProps) {
   const { isEnabled } = useFeature();
   const showPasses = isEnabled(FEATURE_KEYS.STUDIO_PASS);
+  const showAppointments = isEnabled(FEATURE_KEYS.APPOINTMENTS);
   const pathname = usePathname();
 
   const linkClass = (href: string) =>
@@ -70,6 +71,14 @@ export default function MemberLayoutClient({
                 >
                   Bookings
                 </Link>
+                {showAppointments && (
+                  <Link
+                    href="/my-appointments"
+                    className={`shrink-0 ${linkClass("/my-appointments")}`}
+                  >
+                    Appointments
+                  </Link>
+                )}
                 <Link
                   href="/purchase"
                   className={`shrink-0 ${linkClass("/purchase")}`}

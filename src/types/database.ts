@@ -919,6 +919,7 @@ export type PushNotificationType =
   | "booking_confirmation"
   | "booking_cancellation"
   | "class_reminder"
+  | "appointment_reminder"
   | "waitlist_promotion"
   | "new_message"
   | "studio_announcement";

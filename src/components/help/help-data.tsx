@@ -1241,6 +1241,14 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             </>
           ),
         },
+        {
+          q: "How do I view all appointment bookings?",
+          a: (
+            <>
+              On the <B>Appointments</B> page, click the <B>Bookings</B> tab. You can see all bookings across your studio in a table with member, instructor, type, date, time, status, and price columns. Use the date filter (Today, This Week, This Month, All) and status filter to narrow results.
+            </>
+          ),
+        },
       ],
     },
     {
@@ -1870,6 +1878,30 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             </>
           ),
         },
+        {
+          q: "How do I mark an appointment as completed?",
+          a: (
+            <>
+              On the <B>My Appointments</B> page, find a confirmed upcoming appointment and click the <B>Complete</B> button. This marks the session as done and updates the appointment status.
+            </>
+          ),
+        },
+        {
+          q: "Can I add a SOAP note from an appointment?",
+          a: (
+            <>
+              Yes. If the SOAP Notes feature is enabled, you will see an <B>Add SOAP Note</B> link on confirmed and completed appointments. Clicking it pre-fills the member and appointment information in the SOAP note form.
+            </>
+          ),
+        },
+        {
+          q: "Will I get a reminder before an appointment?",
+          a: (
+            <>
+              Members receive a push notification reminder approximately 1 hour before their appointment. Instructors can view their upcoming appointments on the <B>My Appointments</B> page.
+            </>
+          ),
+        },
       ],
     },
   ],
@@ -2322,7 +2354,22 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I book a 1-on-1 appointment?",
           a: (
             <>
-              If your studio offers appointments, select an instructor and appointment type, pick an available date and time slot, then confirm your booking. You will receive a confirmation email with the details.
+              If your studio offers appointments, go to <B>Appointments</B> in the top navigation and click <B>Book Appointment</B>. The booking process has four steps:
+              <Steps>
+                <li>Select an instructor from the available list.</li>
+                <li>Choose a service type (shows duration and price).</li>
+                <li>Pick a date from the next 14 days, then select an available time slot.</li>
+                <li>Review the summary and click <B>Book Now</B> to confirm.</li>
+              </Steps>
+              You will receive a confirmation email with the details.
+            </>
+          ),
+        },
+        {
+          q: "How do I view my appointments?",
+          a: (
+            <>
+              Go to <B>Appointments</B> in the top navigation. Your appointments are split into two sections: <B>Upcoming</B> (confirmed, future appointments) and <B>Past</B> (completed, cancelled, or no-show). Each card shows the service type, instructor name, date, time, and status.
             </>
           ),
         },
@@ -2330,7 +2377,23 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "Can I cancel my appointment?",
           a: (
             <>
-              Yes. Open your appointment from your appointments list and click <B>Cancel</B>. If you paid with credits, they will be refunded automatically. You will receive a cancellation confirmation email.
+              Yes. Go to <B>Appointments</B>, find the appointment in the <B>Upcoming</B> section, and click <B>Cancel</B>. If you paid with credits, they will be refunded automatically. You will receive a cancellation confirmation email.
+            </>
+          ),
+        },
+        {
+          q: "Can I add my appointment to Google Calendar?",
+          a: (
+            <>
+              Yes. Each upcoming appointment has an <B>Add to Calendar</B> button that opens Google Calendar with the appointment details pre-filled.
+            </>
+          ),
+        },
+        {
+          q: "What if no time slots are available?",
+          a: (
+            <>
+              If no time slots appear for a selected date, the instructor may not be available that day. Try selecting a different date within the next 14 days. If no dates work, contact your studio for assistance.
             </>
           ),
         },

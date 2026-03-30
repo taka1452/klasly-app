@@ -19,6 +19,70 @@ type AppointmentType = {
   created_at: string;
 };
 
+type Booking = {
+  id: string;
+  appointment_date: string;
+  start_time: string;
+  end_time: string;
+  status: "confirmed" | "completed" | "cancelled" | "no_show";
+  price_cents: number;
+  created_at: string;
+  appointment_types: { id: string; name: string; duration_minutes: number } | null;
+  members: {
+    id: string;
+    profile_id: string;
+    profiles: { full_name: string } | null;
+  } | null;
+  instructors: {
+    id: string;
+    profile_id: string;
+    profiles: { full_name: string } | null;
+  } | null;
+};
+
+type DateFilter = "today" | "week" | "month" | "all";
+type StatusFilter = "all" | "confirmed" | "completed" | "cancelled" | "no_show";
+
+const STATUS_STYLES: Record<string, string> = {
+  confirmed: "bg-green-100 text-green-700",
+  completed: "bg-blue-100 text-blue-700",
+  cancelled: "bg-red-100 text-red-700",
+  no_show: "bg-gray-100 text-gray-500",
+};
+
+function formatTime(time: string) {
+  const [h, m] = time.split(":").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 || 12;
+  return `${h12}:${String(m).padStart(2, "0")} ${ampm}`;
+}
+
+function formatDate(dateStr: string) {
+  const d = new Date(dateStr + "T00:00:00");
+  return d.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function getDateRange(filter: DateFilter): { from: string; to: string } | null {
+  if (filter === "all") return null;
+  const now = new Date();
+  const todayStr = now.toISOString().split("T")[0];
+
+  if (filter === "today") {
+    return { from: todayStr, to: todayStr };
+  }
+  if (filter === "week") {
+    const weekEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    return { from: todayStr, to: weekEnd.toISOString().split("T")[0] };
+  }
+  // month
+  const monthEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  return { from: todayStr, to: monthEnd.toISOString().split("T")[0] };
+}
+
 export default function AppointmentsPage() {
   const { isEnabled } = useFeature();
   const [tab, setTab] = useState<"types" | "bookings">("types");
@@ -26,6 +90,13 @@ export default function AppointmentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [toggling, setToggling] = useState<string | null>(null);
+
+  // Bookings state
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookingsLoading, setBookingsLoading] = useState(false);
+  const [bookingsError, setBookingsError] = useState("");
+  const [dateFilter, setDateFilter] = useState<DateFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   const fetchTypes = useCallback(async () => {
     try {
@@ -44,9 +115,43 @@ export default function AppointmentsPage() {
     }
   }, []);
 
+  const fetchBookings = useCallback(async () => {
+    setBookingsLoading(true);
+    setBookingsError("");
+    try {
+      const params = new URLSearchParams();
+      const range = getDateRange(dateFilter);
+      if (range) {
+        params.set("date_from", range.from);
+        params.set("date_to", range.to);
+      }
+      if (statusFilter !== "all") {
+        params.set("status", statusFilter);
+      }
+      const res = await fetch(`/api/appointments?${params.toString()}`);
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setBookingsError(data.error || "Failed to load bookings.");
+        return;
+      }
+      const data = await res.json();
+      setBookings(data.appointments ?? []);
+    } catch {
+      setBookingsError("An unexpected error occurred.");
+    } finally {
+      setBookingsLoading(false);
+    }
+  }, [dateFilter, statusFilter]);
+
   useEffect(() => {
     fetchTypes();
   }, [fetchTypes]);
+
+  useEffect(() => {
+    if (tab === "bookings") {
+      fetchBookings();
+    }
+  }, [tab, fetchBookings]);
 
   async function handleToggleActive(type: AppointmentType) {
     setToggling(type.id);
@@ -296,14 +401,131 @@ export default function AppointmentsPage() {
 
       {tab === "bookings" && (
         <div className="mt-6">
-          <div className="card py-12 text-center">
-            <p className="text-gray-500">
-              Appointment bookings will be available in the next update.
-            </p>
-            <p className="mt-1 text-sm text-gray-400">
-              Once clients start booking appointments, you will see them here.
-            </p>
+          {/* Date filter */}
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex gap-1 rounded-lg bg-gray-50 p-1">
+              {(
+                [
+                  { value: "today", label: "Today" },
+                  { value: "week", label: "This Week" },
+                  { value: "month", label: "This Month" },
+                  { value: "all", label: "All" },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setDateFilter(opt.value)}
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                    dateFilter === opt.value
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Status filter */}
+            <div className="flex gap-1 rounded-lg bg-gray-50 p-1">
+              {(
+                [
+                  { value: "all", label: "All" },
+                  { value: "confirmed", label: "Confirmed" },
+                  { value: "completed", label: "Completed" },
+                  { value: "cancelled", label: "Cancelled" },
+                  { value: "no_show", label: "No Show" },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setStatusFilter(opt.value)}
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                    statusFilter === opt.value
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {bookingsLoading && (
+            <div className="py-12 text-center text-sm text-gray-400">
+              Loading bookings...
+            </div>
+          )}
+
+          {bookingsError && (
+            <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+              {bookingsError}
+            </div>
+          )}
+
+          {!bookingsLoading && !bookingsError && bookings.length === 0 && (
+            <div className="card py-12 text-center">
+              <p className="text-gray-500">No bookings found.</p>
+              <p className="mt-1 text-sm text-gray-400">
+                Bookings will appear here once members start booking appointments.
+              </p>
+            </div>
+          )}
+
+          {!bookingsLoading && bookings.length > 0 && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200 text-xs font-medium uppercase tracking-wider text-gray-500">
+                    <th className="px-4 py-3">Member</th>
+                    <th className="px-4 py-3">Instructor</th>
+                    <th className="px-4 py-3">Type</th>
+                    <th className="px-4 py-3">Date</th>
+                    <th className="px-4 py-3">Time</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3 text-right">Price</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {bookings.map((b) => (
+                    <tr key={b.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 font-medium text-gray-900">
+                        {b.members?.profiles?.full_name ?? "—"}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {b.instructors?.profiles?.full_name ?? "—"}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {b.appointment_types?.name ?? "—"}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {formatDate(b.appointment_date)}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {formatTime(b.start_time)} &ndash;{" "}
+                        {formatTime(b.end_time)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                            STATUS_STYLES[b.status] ?? "bg-gray-100 text-gray-500"
+                          }`}
+                        >
+                          {b.status.replace("_", " ")}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right text-gray-700">
+                        {b.price_cents > 0
+                          ? `$${(b.price_cents / 100).toFixed(2)}`
+                          : "Free"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
     </div>

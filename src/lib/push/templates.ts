@@ -58,6 +58,19 @@ export function pushNewMessage(params: { senderName: string }): PushTemplate {
   };
 }
 
+export function pushAppointmentReminder(params: {
+  appointmentType: string;
+  instructorName: string;
+  startTime: string;
+}): PushTemplate {
+  return {
+    title: "Appointment in 1 hour",
+    body: `${params.appointmentType} with ${params.instructorName} at ${params.startTime}`,
+    url: "/member/appointments",
+    tag: `appt-reminder-${params.startTime}-${Date.now()}`,
+  };
+}
+
 export function pushStudioAnnouncement(params: {
   studioName: string;
   message: string;
