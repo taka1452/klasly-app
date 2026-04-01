@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, description, price_cents, max_classes_per_month } = body;
+    const { name, description, price_cents, max_classes_per_month, pass_type, expires_after_days, class_template_ids } = body;
 
     if (!name || typeof price_cents !== "number" || price_cents <= 0) {
       return NextResponse.json(
@@ -101,12 +101,23 @@ export async function POST(request: Request) {
         price_cents,
         max_classes_per_month: max_classes_per_month ?? null,
         stripe_price_id: price.id,
+        pass_type: pass_type ?? "monthly",
+        expires_after_days: expires_after_days ?? null,
       })
       .select()
       .single();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    // Save class template restrictions if provided
+    if (pass && Array.isArray(class_template_ids) && class_template_ids.length > 0) {
+      await adminSupabase
+        .from("pass_class_templates")
+        .insert(
+          class_template_ids.map((tid: string) => ({ pass_id: pass.id, template_id: tid }))
+        );
     }
 
     return NextResponse.json(pass);

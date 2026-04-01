@@ -152,9 +152,10 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { recipient_id, content } = body as {
+  const { recipient_id, content, subject } = body as {
     recipient_id: string;
     content: string;
+    subject?: string;
   };
 
   if (!recipient_id || !content?.trim()) {
@@ -202,6 +203,7 @@ export async function POST(request: NextRequest) {
       sender_id: user.id,
       recipient_id,
       content: content.trim(),
+      subject: subject?.trim() || null,
     })
     .select()
     .single();

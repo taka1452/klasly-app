@@ -78,6 +78,14 @@ export default function MessagesClient({
   const [sendError, setSendError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  // Compose new message state
+  const [showCompose, setShowCompose] = useState(false);
+  const [composeRecipient, setComposeRecipient] = useState("");
+  const [composeSubject, setComposeSubject] = useState("");
+  const [composeBody, setComposeBody] = useState("");
+  const [composeSending, setComposeSending] = useState(false);
+  const [composeError, setComposeError] = useState<string | null>(null);
+
   const selectedConv = conversations.find((c) => c.memberId === selectedId);
 
   // スレッド取得 + 既読マーク
@@ -163,6 +171,56 @@ export default function MessagesClient({
     }
   }
 
+  async function handleComposeSend() {
+    if (!composeRecipient || !composeBody.trim() || composeSending) return;
+    setComposeSending(true);
+    setComposeError(null);
+
+    try {
+      const res = await fetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipient_id: composeRecipient,
+          content: composeBody.trim(),
+          subject: composeSubject.trim() || undefined,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setComposeError(data.error || "Failed to send");
+        setComposeSending(false);
+        return;
+      }
+
+      // Close modal and switch to that conversation
+      setShowCompose(false);
+      setComposeRecipient("");
+      setComposeSubject("");
+      setComposeBody("");
+      setSelectedId(composeRecipient);
+
+      // Update conversation list
+      const recipient = conversations.find((c) => c.memberId === composeRecipient);
+      if (recipient) {
+        setConversations((prev) =>
+          prev.map((c) =>
+            c.memberId === composeRecipient
+              ? { ...c, lastMessage: composeBody.trim(), lastMessageAt: new Date().toISOString() }
+              : c
+          )
+        );
+      }
+
+      startTransition(() => { router.refresh(); });
+    } catch {
+      setComposeError("Network error. Please try again.");
+    } finally {
+      setComposeSending(false);
+    }
+  }
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
       e.preventDefault();
@@ -173,6 +231,7 @@ export default function MessagesClient({
   const totalUnread = conversations.reduce((s, c) => s + c.unreadCount, 0);
 
   return (
+    <>
     <div className="flex h-[calc(100vh-120px)] min-h-[500px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
       {/* ===== 左カラム: 会話リスト ===== */}
       <div
@@ -181,16 +240,31 @@ export default function MessagesClient({
         }`}
       >
         <div className="border-b border-gray-200 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <h2 className="text-base font-semibold text-gray-900">
-              Messages
-              {totalUnread > 0 && (
-                <span className="ml-2 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
-                  {totalUnread}
-                </span>
-              )}
-            </h2>
-            <ContextHelpLink href="/help/messaging/send-message-member" />
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-semibold text-gray-900">
+                Messages
+                {totalUnread > 0 && (
+                  <span className="ml-2 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
+                    {totalUnread}
+                  </span>
+                )}
+              </h2>
+              <ContextHelpLink href="/help/messaging/send-message-member" />
+            </div>
+            {role === "owner" && (
+              <button
+                type="button"
+                onClick={() => { setShowCompose(true); setComposeError(null); }}
+                className="flex items-center gap-1 rounded-lg bg-brand-500 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-brand-600 transition-colors"
+                title="New Message"
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                New
+              </button>
+            )}
           </div>
         </div>
 
@@ -421,5 +495,91 @@ export default function MessagesClient({
         )}
       </div>
     </div>
+
+    {/* Compose Modal */}
+      {showCompose && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setShowCompose(false)}
+          />
+          <div className="relative mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <button
+              type="button"
+              onClick={() => setShowCompose(false)}
+              className="absolute right-4 top-4 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <h3 className="mb-4 text-base font-semibold text-gray-900">New Message</h3>
+
+            {composeError && (
+              <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{composeError}</p>
+            )}
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">To</label>
+                <select
+                  value={composeRecipient}
+                  onChange={(e) => setComposeRecipient(e.target.value)}
+                  className="input-field text-sm"
+                >
+                  <option value="">Select a member...</option>
+                  {conversations.map((c) => (
+                    <option key={c.memberId} value={c.memberId}>
+                      {c.memberName}{c.memberEmail ? ` (${c.memberEmail})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Subject (optional)</label>
+                <input
+                  type="text"
+                  value={composeSubject}
+                  onChange={(e) => setComposeSubject(e.target.value)}
+                  placeholder="e.g. Class schedule update"
+                  className="input-field text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Message</label>
+                <textarea
+                  value={composeBody}
+                  onChange={(e) => setComposeBody(e.target.value)}
+                  rows={4}
+                  placeholder="Type your message..."
+                  className="input-field resize-none text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="mt-4 flex gap-3">
+              <button
+                type="button"
+                onClick={handleComposeSend}
+                disabled={!composeRecipient || !composeBody.trim() || composeSending}
+                className="btn-primary flex-1 disabled:opacity-40"
+              >
+                {composeSending ? "Sending..." : "Send Message"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowCompose(false)}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

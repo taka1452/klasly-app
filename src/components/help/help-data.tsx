@@ -235,7 +235,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How does the Schedule calendar work?",
           a: (
             <>
-              The <B>Schedule</B> page shows all upcoming sessions in a calendar format with Day, Week, and Month views. You can navigate between dates and click any session to go to its detail page. Sessions are color-coded:
+              The <B>Schedule</B> page shows all upcoming sessions in a calendar format with Day, Week, Month, and <B>List</B> views. You can navigate between dates and click any session to go to its detail page. Sessions are color-coded:
               <Steps>
                 <li><B>Blue</B> — normal public sessions.</li>
                 <li><B>Violet</B> — private sessions.</li>
@@ -244,6 +244,15 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
                 <li><B>Teal</B> — instructor room bookings (shown with a &quot;Room&quot; badge).</li>
               </Steps>
               Each card shows the class name, time, instructor, and booking count. Classes with a room show a teal room badge. Online classes display a camera icon. A red line indicates the current time. A collapsible color legend is shown above the calendar for quick reference.
+              <Tip>The calendar week starts on <B>Sunday</B>. Use <B>List view</B> for a scrollable, date-by-date breakdown of all upcoming sessions.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "Can I create a session by clicking on the calendar?",
+          a: (
+            <>
+              Yes. In <B>Week</B> and <B>Day</B> views on the Schedule page, click any empty time slot to open the Add Session dialog with the date and time pre-filled. This is the fastest way to schedule a new session.
             </>
           ),
         },
@@ -335,6 +344,32 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             </>
           ),
         },
+        {
+          q: "Can I set an end date for recurring sessions?",
+          a: (
+            <>
+              Yes. When creating or editing a class template, you can set a <B>Recurrence End Date</B>. Sessions will stop being generated after that date. This is useful for seasonal classes or courses with a fixed end date.
+              <Tip>Existing sessions already generated past the end date are not automatically deleted — you can cancel them individually if needed.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "What is Transition Time?",
+          a: (
+            <>
+              <B>Transition Time</B> is a buffer added between consecutive sessions on the calendar. For example, a 15-minute transition on a 60-minute class means the next session cannot start until 75 minutes after the previous one begins. This prevents back-to-back bookings with no time to prepare. Set it on the class template (5, 10, 15, or 30 minutes).
+            </>
+          ),
+        },
+        {
+          q: "Can I cancel or skip a specific session date?",
+          a: (
+            <>
+              Yes. On the <B>Classes → [Class Template]</B> page, scroll down to <B>Upcoming Sessions</B>. Each session has a <B>Cancel</B> button. Cancelling a session marks it as cancelled — members with bookings receive notifications and their credits are refunded.
+              <Tip>Cancelling a single session does not affect other sessions in the recurring series.</Tip>
+            </>
+          ),
+        },
       ],
     },
     {
@@ -344,14 +379,27 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I manage rooms?",
           a: (
             <>
-              Go to <B>Rooms</B> from the sidebar. The default view shows a <B>Room Usage</B> timeline for the day, with all rooms and their bookings. To add or edit rooms, click <B>Manage Rooms</B>.
+              Go to <B>Rooms</B> from the sidebar. The default view shows a <B>Room Usage</B> timeline with Day, Week, and Month views. To add or edit rooms, click <B>Manage Rooms</B>.
               <Steps>
                 <li><B>Add rooms</B> — click &quot;Manage Rooms → + Add room&quot; and enter name, capacity, and description.</li>
                 <li><B>Assign rooms to classes</B> — when creating or editing a class template, select a default room from the dropdown. This room will be pre-selected when scheduling sessions.</li>
-                <li><B>View room usage</B> — the Rooms page shows all room bookings and class sessions in a daily timeline view.</li>
+                <li><B>View room usage</B> — switch between Day, Week, and Month views to see room usage across different time ranges.</li>
               </Steps>
               If you also teach classes (owner-instructor), a <B>Book Room</B> tab appears on the Rooms page so you can create room bookings directly.
               <Tip>Room bookings also appear on the Schedule calendar (in teal), so you can see classes and room usage together.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "What are the different room timeline views?",
+          a: (
+            <>
+              The <B>Rooms</B> page has three views:
+              <Steps>
+                <li><B>Day view</B> — detailed hourly timeline for today showing all rooms and their bookings side by side.</li>
+                <li><B>Week view</B> — shows bookings across the current week, grouped by day.</li>
+                <li><B>Month view</B> — calendar grid showing booking counts per day. Click any day to jump to the Day view for that date.</li>
+              </Steps>
             </>
           ),
         },
@@ -381,12 +429,14 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I view bookings for a session?",
           a: (
             <>
-              Go to <B>Bookings</B> from the sidebar, then click on a session. You&apos;ll see:
+              Go to <B>Bookings</B> from the sidebar. Sessions are shown in a list for the current month. You can:
               <Steps>
-                <li><B>Confirmed members</B> — members with a reserved spot.</li>
-                <li><B>Waitlist</B> — members waiting for a spot to open.</li>
+                <li>Use the <B>All / Class+Room / Room Only</B> tabs to filter by session type.</li>
+                <li>Use the status filter chips: <B>All / Confirmed / Cancelled / Waitlisted</B>.</li>
+                <li>Use the <B>search bar</B> to find sessions by class name, instructor, or room.</li>
+                <li>Click any session row to open a <B>detail modal</B> showing booking counts and a link to the full detail page.</li>
               </Steps>
-              You can cancel bookings on behalf of members from this page.
+              Use the arrow buttons to navigate between months. Click <B>Export CSV</B> to download the month&apos;s booking data.
             </>
           ),
         },
@@ -1092,13 +1142,29 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
+          q: "What types of passes can I create?",
+          a: (
+            <>
+              When creating a pass, choose one of three types:
+              <Steps>
+                <li><B>Monthly Unlimited</B> — recurring monthly subscription with unlimited or capped classes per month. This is the standard pass type.</li>
+                <li><B>Class Pack</B> — a fixed number of classes purchased as a one-time or recurring bundle.</li>
+                <li><B>Drop-in</B> — single session access pass.</li>
+              </Steps>
+              You can also set an <B>expiry</B> (30, 60, 90, 180 days or 1 year) and restrict which classes the pass applies to using the <B>Applicable Classes</B> selector.
+            </>
+          ),
+        },
+        {
           q: "How do I create a pass?",
           a: (
             <>
               <Steps>
                 <li>Go to <B>Passes</B> in the sidebar.</li>
                 <li>Click <B>+ Create Pass</B>.</li>
-                <li>Enter a name, description, monthly price, and choose unlimited or limited classes per month.</li>
+                <li>Choose a <B>pass type</B> (Monthly Unlimited, Class Pack, or Drop-in).</li>
+                <li>Enter a name, description, price, and optionally set an expiry and applicable classes.</li>
+                <li>For Monthly Unlimited, choose unlimited or limited classes per month.</li>
                 <li>Click <B>Create</B>. A Stripe product and recurring price are created automatically.</li>
               </Steps>
               <Tip>Stripe Connect must be set up before you can create passes.</Tip>
@@ -1338,7 +1404,11 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I send a message to a member?",
           a: (
             <>
-              Go to <B>Messages</B> in the sidebar. You&apos;ll see a list of all your studio members. Click on a member to open the conversation and type your message.
+              Go to <B>Messages</B> in the sidebar. You have two ways to start a conversation:
+              <Steps>
+                <li><B>Click a member</B> from the conversation list on the left to open their thread and type your message.</li>
+                <li>Click the <B>+ New</B> button at the top of the conversation list to open a compose dialog. Select a recipient, add an optional subject, write your message, and click <B>Send Message</B>.</li>
+              </Steps>
               <Tip>You can also start a conversation from a member&apos;s profile page.</Tip>
             </>
           ),
@@ -1994,11 +2064,12 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             <>
               Go to <B>Schedule</B> (your default page). You can:
               <Steps>
-                <li>Switch between <B>Day</B>, <B>Week</B>, and <B>Month</B> views using the buttons at the top.</li>
+                <li>Switch between <B>Day</B>, <B>Week</B>, <B>Month</B>, and <B>List</B> views using the buttons at the top.</li>
                 <li>Navigate between dates using the arrow buttons or the <B>Today</B> button.</li>
                 <li>Click on any class to see details (time, instructor, capacity).</li>
                 <li>Click <B>Book</B> to reserve your spot.</li>
               </Steps>
+              <Tip>The calendar week starts on Sunday. Use <B>List view</B> for a simple date-by-date list of all upcoming classes.</Tip>
               <Tip>You need at least 1 credit to book a class, or an active monthly subscription for unlimited bookings.</Tip>
             </>
           ),
@@ -2184,7 +2255,13 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "What are Studio Passes?",
           a: (
             <>
-              Studio Passes are monthly membership plans offered by your studio. Each pass has a monthly price and may include unlimited or a set number of classes per month.
+              Studio Passes are membership plans offered by your studio. There are three types:
+              <Steps>
+                <li><B>Monthly Unlimited</B> — recurring monthly subscription with unlimited or capped classes per month.</li>
+                <li><B>Class Pack</B> — a bundle of classes for a fixed price.</li>
+                <li><B>Drop-in</B> — single session access.</li>
+              </Steps>
+              Some passes may be restricted to specific classes, or have an expiry date. Your studio owner sets up which passes are available.
             </>
           ),
         },
