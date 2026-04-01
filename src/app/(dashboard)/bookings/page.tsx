@@ -1,12 +1,11 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { formatDate, formatTime } from "@/lib/utils";
 import EmptyState from "@/components/ui/empty-state";
 import ExportCsvButton from "@/components/ui/export-csv-button";
 import type { Metadata } from "next";
 import BookingsMonthNav from "./bookings-month-nav";
+import BookingsClient from "@/components/bookings/bookings-client";
 import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
 
 export const metadata: Metadata = {
@@ -74,7 +73,13 @@ export default async function BookingsPage({
 
   const { data: sessions } = await supabase
     .from("class_sessions")
-    .select("id, session_date, start_time, capacity, is_cancelled, is_online, classes(name)")
+    .select(`
+      id, session_date, start_time, capacity, is_cancelled, is_online,
+      session_type, title,
+      class_templates(name),
+      rooms(name),
+      instructors(profiles(full_name))
+    `)
     .eq("studio_id", profile.studio_id)
     .gte("session_date", startDate)
     .lte("session_date", endDate)
@@ -82,7 +87,7 @@ export default async function BookingsPage({
     .order("start_time", { ascending: true })
     .limit(200);
 
-  const sessionIds = (sessions || []).map((s) => s.id);
+  const sessionIds = (sessions || []).map((s: { id: string }) => s.id);
   const { data: bookings } =
     sessionIds.length > 0
       ? await supabase
@@ -92,19 +97,45 @@ export default async function BookingsPage({
           .neq("status", "cancelled")
       : { data: [] };
 
-  const confirmedBySession = (bookings || []).reduce((acc, b) => {
+  const confirmedBySession = (bookings || []).reduce((acc: Record<string, number>, b: { session_id: string; status: string }) => {
     if (b.status === "confirmed") {
       acc[b.session_id] = (acc[b.session_id] || 0) + 1;
     }
     return acc;
   }, {} as Record<string, number>);
 
-  const waitlistBySession = (bookings || []).reduce((acc, b) => {
+  const waitlistBySession = (bookings || []).reduce((acc: Record<string, number>, b: { session_id: string; status: string }) => {
     if (b.status === "waitlist") {
       acc[b.session_id] = (acc[b.session_id] || 0) + 1;
     }
     return acc;
   }, {} as Record<string, number>);
+
+  // Transform sessions for the client component
+  // eslint-disable-next-line
+  const clientSessions = (sessions || []).map((s: any) => {
+    const tmpl = Array.isArray(s.class_templates) ? s.class_templates[0] : s.class_templates;
+    const room = Array.isArray(s.rooms) ? s.rooms[0] : s.rooms;
+    const instr = Array.isArray(s.instructors) ? s.instructors[0] : s.instructors;
+    const profile = instr?.profiles
+      ? Array.isArray(instr.profiles) ? instr.profiles[0] : instr.profiles
+      : null;
+
+    return {
+      id: s.id as string,
+      session_date: s.session_date as string,
+      start_time: s.start_time as string,
+      capacity: s.capacity as number,
+      is_cancelled: s.is_cancelled as boolean,
+      is_online: s.is_online as boolean,
+      session_type: (s.session_type as string) || "class",
+      class_name: tmpl?.name || s.title || "—",
+      room_name: room?.name || null,
+      instructor_name: profile?.full_name || null,
+      confirmed: confirmedBySession[s.id] || 0,
+      waitlist: waitlistBySession[s.id] || 0,
+    };
+  });
 
   return (
     <div>
@@ -125,51 +156,8 @@ export default async function BookingsPage({
       </div>
 
       <div className="mt-6">
-        {sessions && sessions.length > 0 ? (
-          <div className="card divide-y divide-gray-200 overflow-hidden p-0">
-            {sessions.map((session) => {
-              const confirmed = confirmedBySession[session.id] || 0;
-              const waitlist = waitlistBySession[session.id] || 0;
-              const className = (session as { classes?: { name?: string } }).classes?.name || "—";
-              return (
-                <Link
-                  key={session.id}
-                  href={`/bookings/${session.id}`}
-                  className="block px-4 py-4 transition-colors hover:bg-gray-50 sm:px-6"
-                >
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {(session as { is_online?: boolean }).is_online && <span title="Online">📹 </span>}
-                        {className}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {formatDate(session.session_date)} · {formatTime(session.start_time)}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span
-                        className={
-                          session.is_cancelled
-                            ? "text-sm font-medium text-red-600"
-                            : "text-sm text-gray-600"
-                        }
-                      >
-                        {session.is_cancelled
-                          ? "Cancelled"
-                          : `${confirmed}/${session.capacity}`}
-                      </span>
-                      {waitlist > 0 && (
-                        <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800">
-                          +{waitlist} waitlist
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
+        {clientSessions.length > 0 ? (
+          <BookingsClient sessions={clientSessions} year={year} month={month} />
         ) : (
           <EmptyState
             title="No upcoming sessions"

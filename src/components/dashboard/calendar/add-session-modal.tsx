@@ -144,7 +144,7 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
         setError("Failed to load data");
       })
       .finally(() => setLoading(false));
-  }, [open, defaultTemplateId]);
+  }, [open, defaultTemplateId, defaultDate, defaultStartTime]);
 
   // Reset on close
   useEffect(() => {
