@@ -16,12 +16,14 @@ type Props = {
   currentDate: Date;
   sessions: DashboardSessionData[];
   confirmedCounts: Record<string, number>;
+  onSlotClick?: (date: string, startTime: string) => void;
 };
 
 export default function DashboardWeekView({
   currentDate,
   sessions,
   confirmedCounts,
+  onSlotClick,
 }: Props) {
   const weekDates = getWeekDates(currentDate);
   const { startHour, endHour } = getTimeRange(sessions);
@@ -140,9 +142,20 @@ export default function DashboardWeekView({
           return (
             <div
               key={dayIdx}
-              className={`relative border-r border-gray-200 ${
+              className={`relative cursor-pointer border-r border-gray-200 ${
                 today ? "bg-brand-50/20" : ""
               }`}
+              onClick={(e) => {
+                if (!onSlotClick) return;
+                if ((e.target as HTMLElement).closest("[data-event-card]")) return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                const y = e.clientY - rect.top + (containerRef.current?.scrollTop || 0);
+                const hourFloat = y / HOUR_HEIGHT + startHour;
+                const hour = Math.floor(hourFloat);
+                const minutes = Math.round((hourFloat - hour) * 60 / 15) * 15;
+                const timeStr = `${String(hour).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+                onSlotClick(dateStr, timeStr);
+              }}
             >
               {/* Hour grid lines */}
               {Array.from({ length: totalHours }, (_, i) => (

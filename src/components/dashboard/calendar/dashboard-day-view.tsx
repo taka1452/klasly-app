@@ -14,12 +14,14 @@ type Props = {
   currentDate: Date;
   sessions: DashboardSessionData[];
   confirmedCounts: Record<string, number>;
+  onSlotClick?: (date: string, startTime: string) => void;
 };
 
 export default function DashboardDayView({
   currentDate,
   sessions,
   confirmedCounts,
+  onSlotClick,
 }: Props) {
   const { startHour, endHour } = getTimeRange(sessions);
   const totalHours = endHour - startHour;
@@ -90,7 +92,21 @@ export default function DashboardDayView({
         </div>
 
         {/* Day column */}
-        <div className={`relative ${today ? "bg-brand-50/20" : ""}`}>
+        <div
+          className={`relative cursor-pointer ${today ? "bg-brand-50/20" : ""}`}
+          onClick={(e) => {
+            if (!onSlotClick) return;
+            // Only trigger if clicking on empty space (not an event card)
+            if ((e.target as HTMLElement).closest("[data-event-card]")) return;
+            const rect = e.currentTarget.getBoundingClientRect();
+            const y = e.clientY - rect.top + (containerRef.current?.scrollTop || 0);
+            const hourFloat = y / HOUR_HEIGHT + startHour;
+            const hour = Math.floor(hourFloat);
+            const minutes = Math.round((hourFloat - hour) * 60 / 15) * 15; // snap to 15 min
+            const timeStr = `${String(hour).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+            onSlotClick(dateStr, timeStr);
+          }}
+        >
           {/* Hour grid lines */}
           {Array.from({ length: totalHours }, (_, i) => (
             <div

@@ -76,6 +76,7 @@ export default function DashboardEventCard({
 
   return (
     <div
+      data-event-card
       className={`absolute cursor-pointer rounded-md px-1.5 py-0.5 text-xs leading-tight transition-shadow hover:shadow-md ${bgColor} ${textColor}`}
       style={{
         top: `${top}px`,

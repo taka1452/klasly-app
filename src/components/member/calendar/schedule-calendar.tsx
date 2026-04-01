@@ -5,6 +5,7 @@ import CalendarHeader from "./calendar-header";
 import CalendarWeekView from "./calendar-week-view";
 import CalendarDayView from "./calendar-day-view";
 import CalendarMonthView from "./calendar-month-view";
+import CalendarListView from "./calendar-list-view";
 import {
   type SessionData,
   type CalendarView,
@@ -98,7 +99,7 @@ export default function ScheduleCalendar({
   function handlePrev() {
     setCurrentDate((d: Date) => {
       if (view === "day") return addDays(d, -1);
-      if (view === "week") return addWeeks(d, -1);
+      if (view === "week" || view === "list") return addWeeks(d, -1);
       return addMonths(d, -1);
     });
   }
@@ -106,7 +107,7 @@ export default function ScheduleCalendar({
   function handleNext() {
     setCurrentDate((d: Date) => {
       if (view === "day") return addDays(d, 1);
-      if (view === "week") return addWeeks(d, 1);
+      if (view === "week" || view === "list") return addWeeks(d, 1);
       return addMonths(d, 1);
     });
   }
@@ -188,6 +189,7 @@ export default function ScheduleCalendar({
               isMobile={isMobile}
             />
           )}
+          {view === "list" && <CalendarListView {...sharedProps} />}
 
           {/* Empty state */}
           {!loading && sessions.length === 0 && (

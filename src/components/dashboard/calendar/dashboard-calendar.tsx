@@ -5,6 +5,7 @@ import CalendarHeader from "@/components/member/calendar/calendar-header";
 import DashboardWeekView from "./dashboard-week-view";
 import DashboardDayView from "./dashboard-day-view";
 import DashboardMonthView from "./dashboard-month-view";
+import DashboardListView from "./dashboard-list-view";
 import { type DashboardSessionData } from "./dashboard-event-card";
 import {
   type CalendarView,
@@ -14,7 +15,11 @@ import {
   addMonths,
 } from "@/components/member/calendar/calendar-utils";
 
-export default function DashboardCalendar() {
+type DashboardCalendarProps = {
+  onSlotClick?: (date: string, startTime: string) => void;
+};
+
+export default function DashboardCalendar({ onSlotClick }: DashboardCalendarProps = {}) {
   const [view, setView] = useState<CalendarView>("week");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [sessions, setSessions] = useState<DashboardSessionData[]>([]);
@@ -69,7 +74,7 @@ export default function DashboardCalendar() {
   function handlePrev() {
     setCurrentDate((d: Date) => {
       if (view === "day") return addDays(d, -1);
-      if (view === "week") return addWeeks(d, -1);
+      if (view === "week" || view === "list") return addWeeks(d, -1);
       return addMonths(d, -1);
     });
   }
@@ -77,7 +82,7 @@ export default function DashboardCalendar() {
   function handleNext() {
     setCurrentDate((d: Date) => {
       if (view === "day") return addDays(d, 1);
-      if (view === "week") return addWeeks(d, 1);
+      if (view === "week" || view === "list") return addWeeks(d, 1);
       return addMonths(d, 1);
     });
   }
@@ -134,6 +139,7 @@ export default function DashboardCalendar() {
               currentDate={currentDate}
               sessions={sessions}
               confirmedCounts={confirmedCounts}
+              onSlotClick={onSlotClick}
             />
           )}
           {view === "day" && (
@@ -141,6 +147,7 @@ export default function DashboardCalendar() {
               currentDate={currentDate}
               sessions={sessions}
               confirmedCounts={confirmedCounts}
+              onSlotClick={onSlotClick}
             />
           )}
           {view === "month" && (
@@ -150,6 +157,13 @@ export default function DashboardCalendar() {
               confirmedCounts={confirmedCounts}
               onDayClick={handleMonthDayClick}
               isMobile={isMobile}
+            />
+          )}
+          {view === "list" && (
+            <DashboardListView
+              currentDate={currentDate}
+              sessions={sessions}
+              confirmedCounts={confirmedCounts}
             />
           )}
 

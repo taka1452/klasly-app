@@ -18,7 +18,7 @@ type Props = {
   isMobile: boolean;
 };
 
-const DAY_HEADERS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const DAY_HEADERS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function CalendarMonthView({
   currentDate,

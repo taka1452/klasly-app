@@ -15,6 +15,8 @@ export default function ScheduleActions() {
   const [modalOpen, setModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [scheduleTemplateId, setScheduleTemplateId] = useState<string | undefined>();
+  const [presetDate, setPresetDate] = useState<string | undefined>();
+  const [presetStartTime, setPresetStartTime] = useState<string | undefined>();
 
   // Auto-open modal if ?schedule=TEMPLATE_ID is in URL
   useEffect(() => {
@@ -34,6 +36,14 @@ export default function ScheduleActions() {
   function handleClose() {
     setModalOpen(false);
     setScheduleTemplateId(undefined);
+    setPresetDate(undefined);
+    setPresetStartTime(undefined);
+  }
+
+  function handleSlotClick(date: string, startTime: string) {
+    setPresetDate(date);
+    setPresetStartTime(startTime);
+    setModalOpen(true);
   }
 
   return (
@@ -72,7 +82,7 @@ export default function ScheduleActions() {
       </div>
 
       <div className="mt-4">
-        <DashboardCalendar key={refreshKey} />
+        <DashboardCalendar key={refreshKey} onSlotClick={handleSlotClick} />
       </div>
 
       <AddSessionModal
@@ -80,6 +90,8 @@ export default function ScheduleActions() {
         onClose={handleClose}
         onCreated={handleCreated}
         defaultTemplateId={scheduleTemplateId}
+        defaultDate={presetDate}
+        defaultStartTime={presetStartTime}
       />
     </>
   );

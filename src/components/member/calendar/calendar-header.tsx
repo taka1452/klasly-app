@@ -16,6 +16,7 @@ const viewOptions: { value: CalendarView; label: string; mobileOnly?: boolean }[
   { value: "day", label: "Day" },
   { value: "week", label: "Week" },
   { value: "month", label: "Month" },
+  { value: "list", label: "List" },
 ];
 
 export default function CalendarHeader({

@@ -34,9 +34,11 @@ type Props = {
   onClose: () => void;
   onCreated: () => void;
   defaultTemplateId?: string;
+  defaultDate?: string;
+  defaultStartTime?: string;
 };
 
-export default function AddSessionModal({ open, onClose, onCreated, defaultTemplateId }: Props) {
+export default function AddSessionModal({ open, onClose, onCreated, defaultTemplateId, defaultDate, defaultStartTime }: Props) {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [instructors, setInstructors] = useState<Instructor[]>([]);
@@ -124,9 +126,9 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
         }));
         setInstructors(instrList);
 
-        // Set default date to today
-        const today = new Date().toISOString().split("T")[0];
-        setDate(today);
+        // Set default date
+        setDate(defaultDate || new Date().toISOString().split("T")[0]);
+        if (defaultStartTime) setStartTime(defaultStartTime);
 
         // If defaultTemplateId provided, pre-select it
         if (defaultTemplateId) {

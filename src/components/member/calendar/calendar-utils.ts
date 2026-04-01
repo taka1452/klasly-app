@@ -18,7 +18,7 @@ export type SessionData = {
   online_link: string | null;
 };
 
-export type CalendarView = "day" | "week" | "month";
+export type CalendarView = "day" | "week" | "month" | "list";
 
 export const HOUR_HEIGHT = 60; // px per hour
 
@@ -65,12 +65,11 @@ export function isToday(date: Date): boolean {
   return isSameDay(date, new Date());
 }
 
-/** Monday-start week: get Monday of the week containing `date` */
+/** Sunday-start week: get Sunday of the week containing `date` */
 export function startOfWeek(date: Date): Date {
   const d = new Date(date);
   const day = d.getDay(); // 0=Sun
-  const diff = day === 0 ? -6 : 1 - day; // shift to Monday
-  d.setDate(d.getDate() + diff);
+  d.setDate(d.getDate() - day); // shift to Sunday
   d.setHours(0, 0, 0, 0);
   return d;
 }
@@ -85,10 +84,10 @@ export function endOfMonth(date: Date): Date {
 
 // ─── Week helpers ───────────────────────────
 
-/** Returns 7 Date objects for Mon–Sun of the given week */
+/** Returns 7 Date objects for Sun–Sat of the given week */
 export function getWeekDates(anchor: Date): Date[] {
-  const mon = startOfWeek(anchor);
-  return Array.from({ length: 7 }, (_, i) => addDays(mon, i));
+  const sun = startOfWeek(anchor);
+  return Array.from({ length: 7 }, (_, i) => addDays(sun, i));
 }
 
 // ─── Month grid helpers ─────────────────────
@@ -98,11 +97,11 @@ export function getMonthGridDates(year: number, month: number): Date[] {
   const first = new Date(year, month, 1);
   const last = new Date(year, month + 1, 0);
 
-  // Grid starts at Monday of the week containing the 1st
+  // Grid starts at Sunday of the week containing the 1st
   const gridStart = startOfWeek(first);
-  // Grid ends at Sunday of the week containing the last day
+  // Grid ends at Saturday of the week containing the last day
   const lastDay = last.getDay();
-  const gridEnd = lastDay === 0 ? last : addDays(last, 7 - lastDay);
+  const gridEnd = lastDay === 6 ? last : addDays(last, 6 - lastDay);
 
   const dates: Date[] = [];
   let current = new Date(gridStart);
@@ -175,7 +174,7 @@ export function getDateRange(
     const d = formatYMD(currentDate);
     return { start: d, end: d };
   }
-  if (view === "week") {
+  if (view === "week" || view === "list") {
     const weekDates = getWeekDates(currentDate);
     return {
       start: formatYMD(weekDates[0]),
@@ -217,7 +216,7 @@ export function formatHeaderLabel(
       day: "numeric",
     });
   }
-  if (view === "week") {
+  if (view === "week" || view === "list") {
     const weekDates = getWeekDates(currentDate);
     const start = weekDates[0];
     const end = weekDates[6];
