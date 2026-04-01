@@ -162,6 +162,8 @@ export type ClassTemplate = {
   sort_order: number;
   is_active: boolean;
   is_public: boolean;
+  recurrence_end_date: string | null;
+  transition_minutes: number | null;
   created_at: string;
 };
 

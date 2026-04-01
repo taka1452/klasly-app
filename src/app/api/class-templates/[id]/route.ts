@@ -92,6 +92,8 @@ export async function PUT(request: Request, context: RouteContext) {
       is_public,
       instructor_id,
       room_id,
+      recurrence_end_date,
+      transition_minutes,
     } = body;
 
     // --- Validation ---
@@ -169,6 +171,8 @@ export async function PUT(request: Request, context: RouteContext) {
       if (is_public !== undefined) updates.is_public = is_public;
       if (instructor_id !== undefined) updates.instructor_id = instructor_id || null;
       if (room_id !== undefined) updates.room_id = room_id || null;
+      if (recurrence_end_date !== undefined) updates.recurrence_end_date = recurrence_end_date || null;
+      if (transition_minutes !== undefined) updates.transition_minutes = transition_minutes || null;
 
       if (Object.keys(updates).length === 0) {
         return NextResponse.json(

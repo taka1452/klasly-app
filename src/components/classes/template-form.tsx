@@ -26,6 +26,8 @@ type TemplateData = {
   is_active: boolean;
   instructor_id: string | null;
   room_id: string | null;
+  recurrence_end_date: string | null;
+  transition_minutes: number | null;
   instructors: {
     id: string;
     profiles: { full_name: string } | null;
@@ -55,6 +57,8 @@ export default function TemplateForm({ templateId }: Props) {
   const [instructorId, setInstructorId] = useState("");
   const [roomId, setRoomId] = useState("");
   const [isPublic, setIsPublic] = useState(true);
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState("");
+  const [transitionMinutes, setTransitionMinutes] = useState(0);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
@@ -127,6 +131,8 @@ export default function TemplateForm({ templateId }: Props) {
         setInstructorId(t.instructor_id || "");
         setRoomId(t.room_id || "");
         setIsPublic(t.is_public ?? true);
+        setRecurrenceEndDate(t.recurrence_end_date || "");
+        setTransitionMinutes(t.transition_minutes || 0);
         if (t.image_url) {
           setExistingImageUrl(t.image_url);
           setImagePreview(t.image_url);
@@ -191,6 +197,8 @@ export default function TemplateForm({ templateId }: Props) {
       instructor_id: instructorId || null,
       room_id: classType !== "online" ? roomId || null : null,
       is_public: isPublic,
+      recurrence_end_date: recurrenceEndDate || null,
+      transition_minutes: transitionMinutes || null,
     };
 
     try {
@@ -548,6 +556,45 @@ export default function TemplateForm({ templateId }: Props) {
               (visible to members on the schedule)
             </span>
           </label>
+        </div>
+
+        {/* Recurrence End Date */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Recurrence End Date{" "}
+            <span className="font-normal text-gray-400">(optional)</span>
+          </label>
+          <input
+            type="date"
+            value={recurrenceEndDate}
+            onChange={(e) => setRecurrenceEndDate(e.target.value)}
+            className="input-field mt-1"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Weekly sessions will stop being generated after this date. Leave blank for no end date.
+          </p>
+        </div>
+
+        {/* Transition Time */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Transition Time{" "}
+            <span className="font-normal text-gray-400">(between classes)</span>
+          </label>
+          <select
+            value={transitionMinutes}
+            onChange={(e) => setTransitionMinutes(parseInt(e.target.value, 10))}
+            className="input-field mt-1"
+          >
+            <option value={0}>None</option>
+            <option value={5}>5 minutes</option>
+            <option value={10}>10 minutes</option>
+            <option value={15}>15 minutes</option>
+            <option value={30}>30 minutes</option>
+          </select>
+          <p className="mt-1 text-xs text-gray-500">
+            Buffer time after each session to prevent back-to-back classes.
+          </p>
         </div>
 
         {/* Class Image */}

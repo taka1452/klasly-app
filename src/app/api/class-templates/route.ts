@@ -103,6 +103,8 @@ export async function POST(request: Request) {
       is_public,
       instructor_id,
       room_id,
+      recurrence_end_date,
+      transition_minutes,
     } = body;
 
     // --- Validation ---
@@ -175,6 +177,8 @@ export async function POST(request: Request) {
           is_public: is_public ?? true,
           is_active: true,
           sort_order: nextSortOrder,
+          recurrence_end_date: recurrence_end_date || null,
+          transition_minutes: transition_minutes || null,
         })
         .select("*, instructors(id, profiles(full_name))")
         .single();
@@ -209,6 +213,8 @@ export async function POST(request: Request) {
         online_link: online_link || null,
         is_public: is_public ?? true,
         is_active: true,
+        recurrence_end_date: recurrence_end_date || null,
+        transition_minutes: transition_minutes || null,
       })
       .select("*, instructors(id, profiles(full_name))")
       .single();

@@ -161,12 +161,29 @@ export async function GET(request: Request) {
       const targetDate = new Date(todayObj);
       targetDate.setDate(todayObj.getDate() + weeksAhead * 7);
 
+      // Check if the template has a recurrence_end_date
+      let recurrenceEndDate: Date | null = null;
+      if (src.template_id) {
+        const { data: tmpl } = await supabase
+          .from("class_templates")
+          .select("recurrence_end_date")
+          .eq("id", src.template_id)
+          .single();
+        if (tmpl?.recurrence_end_date) {
+          const [eY, eM, eD] = (tmpl.recurrence_end_date as string).split("-").map(Number);
+          recurrenceEndDate = new Date(eY, eM - 1, eD);
+        }
+      }
+
       // Generate weekly dates starting from latestDate + 7 days
       const expectedDates: string[] = [];
       const nextDate = new Date(latestDateObj);
       nextDate.setDate(latestDateObj.getDate() + 7);
 
       while (nextDate <= targetDate) {
+        // Stop if past the recurrence end date
+        if (recurrenceEndDate && nextDate > recurrenceEndDate) break;
+
         const yyyy = nextDate.getFullYear();
         const mm = String(nextDate.getMonth() + 1).padStart(2, "0");
         const dd = String(nextDate.getDate()).padStart(2, "0");
