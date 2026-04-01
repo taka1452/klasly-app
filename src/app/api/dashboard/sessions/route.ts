@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const start = searchParams.get("start");
     const end = searchParams.get("end");
+    const filterTemplateId = searchParams.get("template_id");
 
     if (!start || !end) {
       return NextResponse.json(
@@ -106,7 +107,7 @@ export async function GET(request: NextRequest) {
       } | null;
     };
 
-    const { data: sessions } = await supabase
+    let query = supabase
       .from("class_sessions")
       .select(
         `
@@ -125,7 +126,14 @@ export async function GET(request: NextRequest) {
       )
       .eq("studio_id", studioId)
       .gte("session_date", start)
-      .lte("session_date", end)
+      .lte("session_date", end);
+
+    // Optional: filter by template_id
+    if (filterTemplateId) {
+      query = query.eq("template_id", filterTemplateId);
+    }
+
+    const { data: sessions } = await query
       .order("session_date", { ascending: true })
       .order("start_time", { ascending: true });
 
