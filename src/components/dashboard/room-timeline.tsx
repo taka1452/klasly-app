@@ -245,6 +245,9 @@ export default function RoomTimeline() {
 
       {/* Month view: calendar grid */}
       {view === "month" && !loading && (
+        <p className="mb-2 text-xs text-gray-400">Click any day to switch to Day view.</p>
+      )}
+      {view === "month" && !loading && (
         <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
           <div className="grid grid-cols-7 border-b border-gray-200 bg-gray-50">
             {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (

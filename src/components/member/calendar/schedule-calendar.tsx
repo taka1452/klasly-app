@@ -51,13 +51,17 @@ export default function ScheduleCalendar({
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [showTip, setShowTip] = useState(false);
 
-  // Detect mobile on mount
+  // Detect mobile on mount + show tip once
   useEffect(() => {
     const mobile = window.innerWidth < 768;
     setIsMobile(mobile);
     if (mobile) {
       setView("day");
+    }
+    if (!localStorage.getItem("klasly:member:schedule-tip-dismissed")) {
+      setShowTip(true);
     }
   }, []);
 
@@ -146,6 +150,26 @@ export default function ScheduleCalendar({
 
   return (
     <div>
+      {showTip && (
+        <div className="mb-4 flex items-start gap-3 rounded-lg border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-800">
+          <svg className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p className="flex-1">
+            Switch to <strong>List view</strong> for a simple date-by-date list of all upcoming classes.
+          </p>
+          <button
+            type="button"
+            onClick={() => { setShowTip(false); localStorage.setItem("klasly:member:schedule-tip-dismissed", "1"); }}
+            className="shrink-0 rounded p-1 text-brand-400 hover:bg-brand-100 hover:text-brand-700"
+            aria-label="Dismiss tip"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
       <CalendarHeader
         currentDate={currentDate}
         view={view}
