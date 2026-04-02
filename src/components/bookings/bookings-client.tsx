@@ -190,7 +190,26 @@ export default function BookingsClient({ sessions, year, month }: Props) {
           </div>
         ) : (
           <div className="card py-12 text-center">
-            <p className="text-gray-500">No bookings match your filters.</p>
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+              <svg className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 9v7.5" />
+              </svg>
+            </div>
+            <p className="font-medium text-gray-700">No sessions found</p>
+            <p className="mt-1 text-sm text-gray-500">
+              {searchQuery || statusFilter !== "all" || activeTab !== "all"
+                ? "No sessions match your current filters."
+                : "No sessions scheduled for this month."}
+            </p>
+            {(searchQuery || statusFilter !== "all" || activeTab !== "all") && (
+              <button
+                type="button"
+                onClick={() => { setSearchQuery(""); setStatusFilter("all"); setActiveTab("all"); }}
+                className="mt-3 text-sm font-medium text-brand-600 hover:text-brand-800 underline"
+              >
+                Clear all filters
+              </button>
+            )}
           </div>
         )}
       </div>

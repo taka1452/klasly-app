@@ -12,11 +12,11 @@ type Props = {
   onViewChange: (view: CalendarView) => void;
 };
 
-const viewOptions: { value: CalendarView; label: string; mobileOnly?: boolean }[] = [
-  { value: "day", label: "Day" },
-  { value: "week", label: "Week" },
-  { value: "month", label: "Month" },
-  { value: "list", label: "List" },
+const viewOptions: { value: CalendarView; label: string; title?: string }[] = [
+  { value: "day", label: "Day", title: "View a single day in detail" },
+  { value: "week", label: "Week", title: "View the full week" },
+  { value: "month", label: "Month", title: "View the full month grid" },
+  { value: "list", label: "List", title: "Scrollable list of all sessions by date" },
 ];
 
 export default function CalendarHeader({
@@ -74,6 +74,7 @@ export default function CalendarHeader({
             key={opt.value}
             type="button"
             onClick={() => onViewChange(opt.value)}
+            title={opt.title}
             className={`rounded-md px-3 py-1 text-sm font-medium transition-colors ${
               view === opt.value
                 ? "bg-brand-600 text-white"

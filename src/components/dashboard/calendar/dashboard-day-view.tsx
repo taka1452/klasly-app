@@ -27,6 +27,9 @@ export default function DashboardDayView({
   const totalHours = endHour - startHour;
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Hover snap indicator
+  const [hoverSlot, setHoverSlot] = useState<{ y: number; label: string } | null>(null);
+
   // Current time
   const [now, setNow] = useState(new Date());
   useEffect(() => {
@@ -93,7 +96,24 @@ export default function DashboardDayView({
 
         {/* Day column */}
         <div
-          className={`relative cursor-pointer ${today ? "bg-brand-50/20" : ""}`}
+          className={`relative ${onSlotClick ? "cursor-pointer" : ""} ${today ? "bg-brand-50/20" : ""}`}
+          onMouseMove={(e) => {
+            if (!onSlotClick) return;
+            if ((e.target as HTMLElement).closest("[data-event-card]")) { setHoverSlot(null); return; }
+            const rect = e.currentTarget.getBoundingClientRect();
+            const y = e.clientY - rect.top + (containerRef.current?.scrollTop || 0);
+            const hourFloat = y / HOUR_HEIGHT + startHour;
+            const hour = Math.floor(hourFloat);
+            const rawMin = Math.round((hourFloat - hour) * 60 / 15) * 15;
+            const snappedHour = hour + (rawMin >= 60 ? 1 : 0);
+            const snappedMin = rawMin % 60;
+            const snappedY = (snappedHour + snappedMin / 60 - startHour) * HOUR_HEIGHT;
+            const h12 = snappedHour === 0 ? 12 : snappedHour > 12 ? snappedHour - 12 : snappedHour;
+            const ampm = snappedHour < 12 ? "AM" : "PM";
+            const label = `${h12}:${String(snappedMin).padStart(2, "0")} ${ampm}`;
+            setHoverSlot({ y: snappedY, label });
+          }}
+          onMouseLeave={() => setHoverSlot(null)}
           onClick={(e) => {
             if (!onSlotClick) return;
             // Only trigger if clicking on empty space (not an event card)
@@ -135,6 +155,18 @@ export default function DashboardDayView({
                 <div className="absolute -left-1.5 -top-1.5 h-3 w-3 rounded-full bg-red-500" />
                 <div className="h-[2px] bg-red-500" />
               </div>
+            </div>
+          )}
+
+          {/* Hover snap indicator */}
+          {hoverSlot && onSlotClick && (
+            <div
+              className="pointer-events-none absolute left-0 right-0 z-20 flex items-center gap-1.5 border-t-2 border-brand-400"
+              style={{ top: `${hoverSlot.y}px` }}
+            >
+              <span className="ml-2 rounded bg-brand-500 px-1.5 py-0.5 text-[11px] font-medium text-white shadow-sm">
+                ＋ {hoverSlot.label}
+              </span>
             </div>
           )}
 
