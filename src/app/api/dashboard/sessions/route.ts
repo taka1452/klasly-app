@@ -211,6 +211,7 @@ export async function GET(request: NextRequest) {
           ? s.title || "Room Booking"
           : template?.name ?? s.title ?? "Class",
         duration_minutes: durationMinutes,
+        instructor_id: s.instructor_id ?? null,
         instructor_name: instructorName,
         location: s.location ?? template?.location ?? null,
         is_public: isPublic,

@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import {
   type SessionData,
   formatTimeShort,
   parseLocalDate,
 } from "./calendar-utils";
 import CalendarEventCard from "./calendar-event-card";
+import InstructorProfileModal from "@/components/member/instructor-profile-modal";
 
 type Props = {
   currentDate: Date;
@@ -41,6 +43,8 @@ export default function CalendarListView({
   passInfo,
   onBookingComplete,
 }: Props) {
+  const [instructorModalId, setInstructorModalId] = useState<string | null>(null);
+
   // Sort sessions by date then start_time
   const sorted = [...sessions].sort((a, b) => {
     const dateComp = a.session_date.localeCompare(b.session_date);
@@ -125,8 +129,22 @@ export default function CalendarListView({
                         <div className="mt-1 text-sm text-gray-500">
                           {formatTimeShort(session.start_time)} –{" "}
                           {formatTimeShort(endTimeStr)}
-                          {" \u00b7 "}
-                          {session.instructor_name}
+                          {session.instructor_name && (
+                            <>
+                              {" \u00b7 "}
+                              {session.instructor_id ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setInstructorModalId(session.instructor_id)}
+                                  className="font-medium text-brand-600 hover:text-brand-700 hover:underline"
+                                >
+                                  {session.instructor_name}
+                                </button>
+                              ) : (
+                                session.instructor_name
+                              )}
+                            </>
+                          )}
                           {session.room_name && ` \u00b7 ${session.room_name}`}
                         </div>
                         <div className="mt-0.5 text-xs text-gray-400">
@@ -142,6 +160,12 @@ export default function CalendarListView({
           </div>
         );
       })}
+      {instructorModalId && (
+        <InstructorProfileModal
+          instructorId={instructorModalId}
+          onClose={() => setInstructorModalId(null)}
+        />
+      )}
     </div>
   );
 }

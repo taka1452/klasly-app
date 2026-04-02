@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { formatDuration } from "@/lib/utils";
 import BookingButton from "@/components/bookings/booking-button";
+import InstructorProfileModal from "@/components/member/instructor-profile-modal";
 import { useFeature } from "@/lib/features/feature-context";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 import {
@@ -54,6 +55,7 @@ export default function CalendarEventCard({
   const showOnline = onlineEnabled && session.is_online;
 
   const [showPopover, setShowPopover] = useState(false);
+  const [showInstructorModal, setShowInstructorModal] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -169,7 +171,23 @@ export default function CalendarEventCard({
               {formatTimeShort(session.start_time)} – {endTimeStr} ({formatDuration(session.duration_minutes)})
             </p>
             {session.instructor_name && (
-              <p>Instructor: {session.instructor_name}</p>
+              <p>
+                Instructor:{" "}
+                {session.instructor_id ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowInstructorModal(true);
+                    }}
+                    className="font-medium text-brand-600 hover:text-brand-700 hover:underline"
+                  >
+                    {session.instructor_name}
+                  </button>
+                ) : (
+                  session.instructor_name
+                )}
+              </p>
             )}
             {showOnline ? (
               session.online_link ? (
@@ -227,6 +245,14 @@ export default function CalendarEventCard({
         <div
           className="fixed inset-0 z-40 bg-black/30 md:hidden"
           onClick={() => setShowPopover(false)}
+        />
+      )}
+
+      {/* Instructor profile modal */}
+      {showInstructorModal && session.instructor_id && (
+        <InstructorProfileModal
+          instructorId={session.instructor_id}
+          onClose={() => setShowInstructorModal(false)}
         />
       )}
     </>

@@ -55,20 +55,33 @@ export default async function InstructorsPage() {
     .order("created_at", { ascending: false });
 
   const instructorIds = (instructors || []).map((i) => i.id);
-  const { data: classesData } =
+
+  // Query both legacy classes and class_templates tables
+  const [{ data: classesData }, { data: templatesData }] =
     instructorIds.length > 0
-      ? await supabase
-          .from("classes")
-          .select("instructor_id")
-          .in("instructor_id", instructorIds)
-      : { data: [] };
+      ? await Promise.all([
+          supabase
+            .from("classes")
+            .select("id, instructor_id")
+            .in("instructor_id", instructorIds)
+            .eq("is_active", true),
+          supabase
+            .from("class_templates")
+            .select("id, instructor_id")
+            .in("instructor_id", instructorIds)
+            .eq("is_active", true),
+        ])
+      : [{ data: [] }, { data: [] }];
 
   const classCountByInstructor: Record<string, number> = {};
   (instructors || []).forEach((i) => {
     classCountByInstructor[i.id] = 0;
   });
-  (classesData || []).forEach((c) => {
-    if (c.instructor_id) {
+  // Deduplicate by id across both tables
+  const seenIds = new Set<string>();
+  [...(classesData || []), ...(templatesData || [])].forEach((c) => {
+    if (c.instructor_id && !seenIds.has(c.id)) {
+      seenIds.add(c.id);
       classCountByInstructor[c.instructor_id] =
         (classCountByInstructor[c.instructor_id] || 0) + 1;
     }

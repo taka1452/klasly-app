@@ -80,9 +80,10 @@ export async function middleware(request: NextRequest) {
   const isWaiverPage = request.nextUrl.pathname.startsWith("/waiver");
   const isWidgetPage = request.nextUrl.pathname.startsWith("/widget");
   const isInstructorJoinPage = request.nextUrl.pathname.startsWith("/instructor-join");
+  const isDevLoginPage = request.nextUrl.pathname === "/dev-login";
 
   // 未ログインユーザーを認証ページ・公開ページ・waiver署名ページ・ウィジェットページ以外からリダイレクト
-  if (!user && !isAuthPage && !isPublicPage && !isWaiverPage && !isWidgetPage && !isInstructorJoinPage) {
+  if (!user && !isAuthPage && !isPublicPage && !isWaiverPage && !isWidgetPage && !isInstructorJoinPage && !isDevLoginPage) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

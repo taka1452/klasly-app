@@ -64,11 +64,20 @@ export async function GET(
     const p = rawProfile as { full_name?: string; email?: string; phone?: string } | null;
     const specialties = instructor.specialties as string[] | null;
 
-    const { count: classesCount } = await supabase
-      .from("classes")
-      .select("id", { count: "exact", head: true })
-      .eq("instructor_id", instructorId)
-      .eq("is_active", true);
+    // Count from both legacy classes and class_templates
+    const [{ count: legacyCount }, { count: templatesCount }] = await Promise.all([
+      supabase
+        .from("classes")
+        .select("id", { count: "exact", head: true })
+        .eq("instructor_id", instructorId)
+        .eq("is_active", true),
+      supabase
+        .from("class_templates")
+        .select("id", { count: "exact", head: true })
+        .eq("instructor_id", instructorId)
+        .eq("is_active", true),
+    ]);
+    const classesCount = (legacyCount ?? 0) + (templatesCount ?? 0);
 
     return NextResponse.json({
       instructor: {

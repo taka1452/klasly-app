@@ -10,6 +10,7 @@ export type SessionData = {
   is_cancelled: boolean;
   class_name: string;
   duration_minutes: number;
+  instructor_id: string | null;
   instructor_name: string;
   location: string | null;
   price_cents: number | null;

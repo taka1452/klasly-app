@@ -29,6 +29,7 @@ export default function DashboardCalendar({ onSlotClick }: DashboardCalendarProp
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [showCancelled, setShowCancelled] = useState(false);
 
   // Detect mobile on mount
   useEffect(() => {
@@ -100,17 +101,43 @@ export default function DashboardCalendar({ onSlotClick }: DashboardCalendarProp
     setView("day");
   }
 
+  const filteredSessions = showCancelled
+    ? sessions
+    : sessions.filter((s) => !s.is_cancelled);
+
   return (
     <div>
-      <CalendarHeader
-        currentDate={currentDate}
-        view={view}
-        isMobile={isMobile}
-        onPrev={handlePrev}
-        onNext={handleNext}
-        onToday={handleToday}
-        onViewChange={handleViewChange}
-      />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex-1">
+          <CalendarHeader
+            currentDate={currentDate}
+            view={view}
+            isMobile={isMobile}
+            onPrev={handlePrev}
+            onNext={handleNext}
+            onToday={handleToday}
+            onViewChange={handleViewChange}
+          />
+        </div>
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-600">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={showCancelled}
+            onClick={() => setShowCancelled((v) => !v)}
+            className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
+              showCancelled ? "bg-gray-500" : "bg-gray-300"
+            }`}
+          >
+            <span
+              className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
+                showCancelled ? "translate-x-[18px]" : "translate-x-[3px]"
+              }`}
+            />
+          </button>
+          Show cancelled
+        </label>
+      </div>
 
       {fetchError && !loading ? (
         <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-8 text-center">
@@ -137,7 +164,7 @@ export default function DashboardCalendar({ onSlotClick }: DashboardCalendarProp
           {view === "week" && (
             <DashboardWeekView
               currentDate={currentDate}
-              sessions={sessions}
+              sessions={filteredSessions}
               confirmedCounts={confirmedCounts}
               onSlotClick={onSlotClick}
             />
@@ -145,7 +172,7 @@ export default function DashboardCalendar({ onSlotClick }: DashboardCalendarProp
           {view === "day" && (
             <DashboardDayView
               currentDate={currentDate}
-              sessions={sessions}
+              sessions={filteredSessions}
               confirmedCounts={confirmedCounts}
               onSlotClick={onSlotClick}
             />
@@ -153,7 +180,7 @@ export default function DashboardCalendar({ onSlotClick }: DashboardCalendarProp
           {view === "month" && (
             <DashboardMonthView
               currentDate={currentDate}
-              sessions={sessions}
+              sessions={filteredSessions}
               confirmedCounts={confirmedCounts}
               onDayClick={handleMonthDayClick}
               isMobile={isMobile}
@@ -162,13 +189,13 @@ export default function DashboardCalendar({ onSlotClick }: DashboardCalendarProp
           {view === "list" && (
             <DashboardListView
               currentDate={currentDate}
-              sessions={sessions}
+              sessions={filteredSessions}
               confirmedCounts={confirmedCounts}
             />
           )}
 
           {/* Empty state */}
-          {!loading && sessions.length === 0 && (
+          {!loading && filteredSessions.length === 0 && (
             <div className="mt-4 rounded-lg border border-gray-200 bg-white p-8 text-center">
               <p className="text-sm text-gray-500">
                 No sessions scheduled for this period.

@@ -209,6 +209,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
                 <li>View their earnings.</li>
               </Steps>
               They cannot access payment settings, studio settings, or other instructors&apos; data.
+              <Tip>Add a <B>bio</B> and <B>specialties</B> to each instructor&apos;s profile — members can tap an instructor&apos;s name on the schedule to view their profile.</Tip>
             </>
           ),
         },
@@ -244,6 +245,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
                 <li><B>Teal</B> — instructor room bookings (shown with a &quot;Room&quot; badge).</li>
               </Steps>
               Each card shows the class name, time, instructor, and booking count. Classes with a room show a teal room badge. Online classes display a camera icon. A red line indicates the current time. A collapsible color legend is shown above the calendar for quick reference.
+              <Tip>Use the <B>Show cancelled</B> toggle to show or hide cancelled sessions on the calendar. Cancelled sessions are hidden by default.</Tip>
               <Tip>The calendar week starts on <B>Sunday</B>. Use <B>List view</B> for a scrollable, date-by-date breakdown of all upcoming sessions.</Tip>
             </>
           ),
@@ -2067,6 +2069,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
                 <li>Switch between <B>Day</B>, <B>Week</B>, <B>Month</B>, and <B>List</B> views using the buttons at the top.</li>
                 <li>Navigate between dates using the arrow buttons or the <B>Today</B> button.</li>
                 <li>Click on any class to see details (time, instructor, capacity).</li>
+                <li>Click an <B>instructor&apos;s name</B> to view their profile, bio, and specialties.</li>
                 <li>Click <B>Book</B> to reserve your spot.</li>
               </Steps>
               <Tip>The calendar week starts on Sunday. Use <B>List view</B> for a simple date-by-date list of all upcoming classes.</Tip>

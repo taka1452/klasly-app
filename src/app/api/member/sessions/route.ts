@@ -83,6 +83,7 @@ export async function GET(request: NextRequest) {
         online_link?: string | null;
         rooms?: { name?: string } | null;
         instructors?: {
+          id?: string;
           profiles?: { full_name?: string };
         };
       };
@@ -97,7 +98,7 @@ export async function GET(request: NextRequest) {
           name, duration_minutes, location, is_public, price_cents, room_id, is_online, online_link,
           rooms (name),
           instructors (
-            profiles (full_name)
+            id, profiles (full_name)
           )
         )
       `,
@@ -179,6 +180,7 @@ export async function GET(request: NextRequest) {
         is_cancelled: s.is_cancelled,
         class_name: s.classes?.name ?? "Class",
         duration_minutes: s.classes?.duration_minutes ?? 60,
+        instructor_id: s.classes?.instructors?.id ?? null,
         instructor_name: s.classes?.instructors?.profiles?.full_name ?? "",
         location: s.classes?.location ?? null,
         price_cents: s.classes?.price_cents ?? null,
