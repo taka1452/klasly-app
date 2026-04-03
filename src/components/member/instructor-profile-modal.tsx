@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 
 type InstructorData = {
   id: string;
@@ -20,7 +20,6 @@ export default function InstructorProfileModal({
 }: Props) {
   const [data, setData] = useState<InstructorData | null>(null);
   const [loading, setLoading] = useState(true);
-  const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -39,17 +38,6 @@ export default function InstructorProfileModal({
       cancelled = true;
     };
   }, [instructorId]);
-
-  // Close on outside click
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [onClose]);
 
   // Close on Escape
   useEffect(() => {
@@ -71,14 +59,13 @@ export default function InstructorProfileModal({
 
   return (
     <>
-      {/* Backdrop */}
-      <div className="fixed inset-0 z-50 bg-black/30" />
+      {/* Backdrop — z-60 so it sits above popover (z-50) */}
+      <div className="fixed inset-0 z-[60] bg-black/30" onClick={onClose} />
 
-      {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Modal — z-[61] above backdrop */}
+      <div className="fixed inset-0 z-[61] flex items-center justify-center p-4 pointer-events-none">
         <div
-          ref={modalRef}
-          className="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl"
+          className="relative w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl pointer-events-auto"
         >
           {/* Close button */}
           <button
