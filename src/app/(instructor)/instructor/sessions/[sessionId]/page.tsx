@@ -3,6 +3,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { formatDate, formatTime, getStatusColor } from "@/lib/utils";
+import AttendanceChecklist from "@/components/instructor/attendance-checklist";
 
 export default async function InstructorSessionDetailPage({
   params,
@@ -133,61 +134,14 @@ export default async function InstructorSessionDetailPage({
 
       <div className="card mb-6">
         <h3 className="text-sm font-medium text-gray-500">Booked Members</h3>
-        {confirmedBookings.length > 0 ? (
-          <>
-            {/* Mobile card list */}
-            <div className="md:hidden space-y-2 mt-4">
-              {confirmedBookings.map((b) => (
-                <div key={b.id} className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2">
-                  <div>
-                    <p className="font-medium text-gray-900">{getMemberName(b.members)}</p>
-                    <span
-                      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${getStatusColor(b.status)}`}
-                    >
-                      {b.status}
-                    </span>
-                  </div>
-                  <span className="text-sm text-gray-600">
-                    {b.attended ? "✓" : "✗"}
-                  </span>
-                </div>
-              ))}
-            </div>
-            {/* Desktop table */}
-            <div className="hidden md:block mt-4 overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200 text-left text-xs text-gray-500">
-                    <th className="pb-2 font-medium">Name</th>
-                    <th className="pb-2 font-medium">Status</th>
-                    <th className="pb-2 font-medium">Attended</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {confirmedBookings.map((b) => (
-                    <tr key={b.id} className="border-b border-gray-100">
-                      <td className="py-3 font-medium text-gray-900">
-                        {getMemberName(b.members)}
-                      </td>
-                      <td className="py-3">
-                        <span
-                          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${getStatusColor(b.status)}`}
-                        >
-                          {b.status}
-                        </span>
-                      </td>
-                      <td className="py-3 text-sm text-gray-600">
-                        {b.attended ? "✓" : "✗"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        ) : (
-          <p className="mt-4 text-sm text-gray-500">No confirmed bookings.</p>
-        )}
+        <AttendanceChecklist
+          bookings={confirmedBookings.map((b) => ({
+            id: b.id,
+            memberName: getMemberName(b.members),
+            status: b.status,
+            attended: b.attended ?? false,
+          }))}
+        />
       </div>
 
       {waitlistBookings.length > 0 && (

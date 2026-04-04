@@ -2,8 +2,8 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { HelpCircle } from "lucide-react";
-import { formatDate, formatTime } from "@/lib/utils";
+import { formatTime } from "@/lib/utils";
+import WhatsNewBanner from "@/components/instructor/whats-new-banner";
 
 export default async function InstructorDashboardPage() {
   const serverSupabase = await createServerClient();
@@ -60,15 +60,8 @@ export default async function InstructorDashboardPage() {
   const instructorName = profile.full_name || user.email || "Instructor";
 
   const today = new Date().toISOString().split("T")[0];
-  const now = new Date();
-  const dayOfWeek = now.getDay();
-  // 今日から次の土曜日（週末）までを表示（日曜始まりで6日後の土曜まで）
-  const daysUntilSaturday = (6 - dayOfWeek + 7) % 7;
-  const weekEnd = new Date(now);
-  weekEnd.setDate(weekEnd.getDate() + (daysUntilSaturday === 0 ? 6 : daysUntilSaturday));
-  const weekEndStr = weekEnd.toISOString().split("T")[0];
 
-  // Query class_sessions directly by instructor_id (unified table)
+  // Query today's sessions only (full week is on My Schedule)
   const { data: todaySessions } = await supabase
     .from("class_sessions")
     .select(
@@ -79,19 +72,7 @@ export default async function InstructorDashboardPage() {
     .eq("is_cancelled", false)
     .order("start_time", { ascending: true });
 
-  const { data: weekSessions } = await supabase
-    .from("class_sessions")
-    .select(
-      "id, session_date, start_time, capacity, is_cancelled, title, session_type, duration_minutes, location, template_id, room_id, rooms(name), class_templates(name, duration_minutes, location)"
-    )
-    .eq("instructor_id", instructor.id)
-    .gt("session_date", today)
-    .lte("session_date", weekEndStr)
-    .eq("is_cancelled", false)
-    .order("session_date", { ascending: true })
-    .order("start_time", { ascending: true });
-
-  const allSessions = [...(todaySessions || []), ...(weekSessions || [])];
+  const allSessions = todaySessions || [];
   const classSessionIds = allSessions
     .filter((s) => s.session_type !== "room_only")
     .map((s) => s.id);
@@ -141,6 +122,8 @@ export default async function InstructorDashboardPage() {
 
   return (
     <div>
+      <WhatsNewBanner />
+
       {/* First-time welcome message */}
       {!onboardingCompleted && (
         <div className="mb-6 rounded-xl border border-brand-200 bg-brand-50 p-5">
@@ -246,60 +229,17 @@ export default async function InstructorDashboardPage() {
         )}
       </section>
 
-      <section>
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">
-          This Week
-        </h2>
-        {weekSessions && weekSessions.length > 0 ? (
-          <div className="card overflow-hidden p-0">
-            <div className="divide-y divide-gray-200">
-              {weekSessions.map((session) => {
-                const template = session.class_templates as { name?: string } | null;
-                const rawTmpl = Array.isArray(template) ? template[0] : template;
-                const isRoomOnly = session.session_type === "room_only";
-                const className = isRoomOnly ? (session.title || "Room Booking") : (session.title || rawTmpl?.name || "—");
-                const booked = bookedBySession[session.id] || 0;
-                const room = session.rooms as { name?: string } | null;
-                const roomName = Array.isArray(room) ? room[0]?.name : room?.name;
-
-                return (
-                  <Link
-                    key={session.id}
-                    href={isRoomOnly ? "/instructor/room-bookings" : `/instructor/sessions/${session.id}`}
-                    className="block px-4 py-3 md:px-6 md:py-4 transition-colors hover:bg-gray-50"
-                  >
-                    <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {isRoomOnly && (
-                            <span className="mr-1 inline-block rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-teal-700">
-                              Room
-                            </span>
-                          )}
-                          {className}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {formatDate(session.session_date)} · {formatTime(session.start_time)}
-                          {roomName && ` · ${roomName}`}
-                        </p>
-                      </div>
-                      {!isRoomOnly && (
-                        <span className="text-sm text-gray-600">
-                          {booked}/{session.capacity}
-                        </span>
-                      )}
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        ) : (
-          <div className="card py-8 text-center">
-            <p className="text-sm text-gray-500">No more classes this week.</p>
-          </div>
-        )}
-      </section>
+      <div className="text-center">
+        <Link
+          href="/instructor/schedule"
+          className="inline-flex items-center gap-1 text-sm font-medium text-emerald-600 hover:text-emerald-700"
+        >
+          View full schedule
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
+      </div>
     </div>
   );
 }

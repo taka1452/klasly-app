@@ -101,7 +101,7 @@ export default function DashboardDayView({
             if (!onSlotClick) return;
             if ((e.target as HTMLElement).closest("[data-event-card]")) { setHoverSlot(null); return; }
             const rect = e.currentTarget.getBoundingClientRect();
-            const y = e.clientY - rect.top + (containerRef.current?.scrollTop || 0);
+            const y = e.clientY - rect.top;
             const hourFloat = y / HOUR_HEIGHT + startHour;
             const hour = Math.floor(hourFloat);
             const rawMin = Math.round((hourFloat - hour) * 60 / 15) * 15;
@@ -119,7 +119,7 @@ export default function DashboardDayView({
             // Only trigger if clicking on empty space (not an event card)
             if ((e.target as HTMLElement).closest("[data-event-card]")) return;
             const rect = e.currentTarget.getBoundingClientRect();
-            const y = e.clientY - rect.top + (containerRef.current?.scrollTop || 0);
+            const y = e.clientY - rect.top;
             const hourFloat = y / HOUR_HEIGHT + startHour;
             const hour = Math.floor(hourFloat);
             const minutes = Math.round((hourFloat - hour) * 60 / 15) * 15; // snap to 15 min

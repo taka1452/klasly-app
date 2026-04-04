@@ -1607,7 +1607,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I access my instructor account?",
           a: (
             <>
-              Your studio will send you an invitation email. Click the link to set up your account. Once logged in, you&apos;ll see your <B>Instructor Dashboard</B> with today&apos;s classes and upcoming schedule.
+              Your studio will send you an invitation email. Click the link to set up your account. Once logged in, you&apos;ll see your <B>Today</B> page with today&apos;s classes. Visit <B>My Schedule</B> for your full calendar.
             </>
           ),
         },
@@ -1630,18 +1630,13 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
       ],
     },
     {
-      title: "Dashboard",
+      title: "Today",
       items: [
         {
-          q: "What does the instructor Dashboard show?",
+          q: "What does the Today page show?",
           a: (
             <>
-              Your Dashboard shows:
-              <Steps>
-                <li><B>Today&apos;s classes</B> — sessions you&apos;re teaching today with time, class name, and booking count.</li>
-                <li><B>This week&apos;s overview</B> — a quick look at your upcoming week.</li>
-              </Steps>
-              Click on any session to view details or take attendance.
+              The <B>Today</B> page shows your classes for today — session time, class name, room, and booking count. Click any session to view details and take attendance. For your full weekly schedule, visit <B>My Schedule</B>.
             </>
           ),
         },
@@ -1649,7 +1644,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "What is the welcome message on the Dashboard?",
           a: (
             <>
-              If you haven&apos;t completed the onboarding tutorial yet, you&apos;ll see a <B>Welcome to Klasly</B> card at the top of your Dashboard. It explains what you can do from your instructor portal — Schedule, Attendance, Profile, and Earnings. The message disappears automatically once you complete the tutorial.
+              If you haven&apos;t completed the onboarding tutorial yet, you&apos;ll see a <B>Welcome to Klasly</B> card at the top of your Today page. It explains what you can do from your instructor portal — Schedule, Attendance, Profile, and Earnings. The message disappears automatically once you complete the tutorial.
             </>
           ),
         },
@@ -1687,7 +1682,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I take attendance?",
           a: (
             <>
-              Click on any class session in your schedule to open the session detail page. You&apos;ll see the list of booked members. Mark each member as present or absent. Attendance is saved automatically.
+              Click on any class session in your schedule to open the session detail page. You&apos;ll see the list of booked members with checkboxes. Tap a checkbox to mark a member as attended — the change is saved immediately. On mobile, tap the entire row to toggle attendance.
             </>
           ),
         },
@@ -1778,7 +1773,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I book a room?",
           a: (
             <>
-              Open the <B>Room Calendar</B> page. Click an empty time slot to open the session form. You can choose:
+              Go to <B>My Schedule</B> and click the <B>Book a Room</B> button to open the room calendar. Click an empty time slot to open the session form. You can choose:
               <Steps>
                 <li><B>Room only</B> — a simple room reservation with a custom title (no class attached).</li>
                 <li><B>Class template</B> — select a template from the dropdown to create a class session in that room. The duration auto-fills from the template.</li>
@@ -1800,7 +1795,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I view my room bookings?",
           a: (
             <>
-              Go to <B>Room Bookings</B> from the sidebar to see all your room reservations with date, time, and room name. Recurring bookings are marked with a <B>Recurring</B> badge.
+              Go to <B>My Schedule</B> and click the <B>Book a Room</B> button. You&apos;ll see all your room reservations on the room calendar with date, time, and room name. Recurring bookings are marked with a <B>Recurring</B> badge.
             </>
           ),
         },

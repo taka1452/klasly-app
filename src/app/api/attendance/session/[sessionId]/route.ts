@@ -51,7 +51,7 @@ export async function GET(
 
     const { data: session } = await supabase
       .from("class_sessions")
-      .select("id, session_date, start_time, capacity, class_id, studio_id")
+      .select("id, session_date, start_time, capacity, class_id, studio_id, instructor_id")
       .eq("id", sessionId)
       .single();
 
@@ -60,6 +60,18 @@ export async function GET(
         { error: "Session not found" },
         { status: 404 }
       );
+    }
+
+    // Instructors can only access their own sessions
+    if (profile.role === "instructor") {
+      const { data: instrRecord } = await supabase
+        .from("instructors")
+        .select("id")
+        .eq("profile_id", user.id)
+        .single();
+      if (!instrRecord || session.instructor_id !== instrRecord.id) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
     }
 
     const { data: classData } = await supabase
