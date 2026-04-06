@@ -66,6 +66,7 @@ export async function GET(request: NextRequest) {
     // Fetch sessions with expanded class + instructor info
     type SessionRow = {
       id: string;
+      class_id: string;
       session_date: string;
       start_time: string;
       capacity: number;
@@ -73,6 +74,7 @@ export async function GET(request: NextRequest) {
       is_online?: boolean;
       online_link?: string | null;
       classes?: {
+        id?: string;
         name?: string;
         duration_minutes?: number;
         location?: string;
@@ -93,9 +95,9 @@ export async function GET(request: NextRequest) {
       .from("class_sessions")
       .select(
         `
-        id, session_date, start_time, capacity, is_cancelled, is_online, online_link,
+        id, class_id, session_date, start_time, capacity, is_cancelled, is_online, online_link,
         classes (
-          name, duration_minutes, location, is_public, price_cents, room_id, is_online, online_link,
+          id, name, duration_minutes, location, is_public, price_cents, room_id, is_online, online_link,
           rooms (name),
           instructors (
             id, profiles (full_name)
@@ -174,6 +176,7 @@ export async function GET(request: NextRequest) {
 
       return {
         id: s.id,
+        class_id: s.class_id ?? s.classes?.id ?? null,
         session_date: s.session_date,
         start_time: s.start_time,
         capacity: s.capacity,

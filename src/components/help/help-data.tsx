@@ -2125,6 +2125,41 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             </>
           ),
         },
+        {
+          q: "How can I see which classes I attended?",
+          a: (
+            <>
+              In <B>My Bookings</B>, past classes that you attended show a green <B>Attended</B> badge. You&apos;ll also see a summary of how many classes you attended this month at the top of the page.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Attendance History",
+      items: [
+        {
+          q: "Where can I see my full attendance history?",
+          a: (
+            <>
+              Go to <B>History</B> from the navigation menu. This page shows:
+              <Steps>
+                <li><B>Summary cards</B> — total classes attended, this month&apos;s count, and your most attended class.</li>
+                <li><B>Monthly trend</B> — a visual chart of your attendance over the last 6 months.</li>
+                <li><B>Top classes</B> — your most frequently attended classes ranked by count.</li>
+                <li><B>Timeline</B> — a detailed list of every class you attended, grouped by month.</li>
+              </Steps>
+            </>
+          ),
+        },
+        {
+          q: "Does the history include drop-in classes?",
+          a: (
+            <>
+              Yes. Both booked classes and drop-in attendances are included in your history. Drop-in classes are marked with an <B>Drop-in</B> badge.
+            </>
+          ),
+        },
       ],
     },
     {
@@ -2175,6 +2210,27 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               Go to <B>Payments</B> from the navigation menu. You&apos;ll see all past payments with dates, amounts, plan type, and status.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Favorites",
+      items: [
+        {
+          q: "How do I favorite a class or instructor?",
+          a: (
+            <>
+              When viewing a class in the schedule, click the <B>heart icon</B> next to the class name to add it to your favorites. You can also favorite an instructor from their profile popup. Favorites help you quickly find your preferred classes.
+            </>
+          ),
+        },
+        {
+          q: "Where can I see my favorites?",
+          a: (
+            <>
+              Your favorited classes and instructors are indicated by a filled red heart icon throughout the schedule. This feature must be enabled by your studio owner.
             </>
           ),
         },

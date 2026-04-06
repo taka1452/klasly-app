@@ -4,6 +4,7 @@
 
 export type SessionData = {
   id: string;
+  class_id: string | null;
   session_date: string; // "YYYY-MM-DD"
   start_time: string; // "HH:MM:SS"
   capacity: number;

@@ -78,6 +78,8 @@ export const FEATURE_KEYS = {
   ONLINE_CLASSES: "extension.online_classes",
   /** 1-on-1 appointment booking */
   APPOINTMENTS: "extension.appointments",
+  /** Member favorites (classes + instructors) */
+  MEMBER_FAVORITES: "extension.member_favorites",
 
   // ============================================
   // Payout Phase 3 features
@@ -135,6 +137,7 @@ export const DEFAULT_FEATURES: Record<FeatureKey, boolean> = {
   [FEATURE_KEYS.SOAP_NOTES]: false,
   [FEATURE_KEYS.ONLINE_CLASSES]: false,
   [FEATURE_KEYS.APPOINTMENTS]: false,
+  [FEATURE_KEYS.MEMBER_FAVORITES]: false,
 
   // Payout Phase 3: default OFF
   [FEATURE_KEYS.CLASS_FEE_OVERRIDE]: false,
@@ -176,6 +179,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   [FEATURE_KEYS.SOAP_NOTES]: "SOAP Notes",
   [FEATURE_KEYS.ONLINE_CLASSES]: "Online Classes",
   [FEATURE_KEYS.APPOINTMENTS]: "Appointments",
+  [FEATURE_KEYS.MEMBER_FAVORITES]: "Member Favorites",
 
   [FEATURE_KEYS.CLASS_FEE_OVERRIDE]: "Class Fee Override",
   [FEATURE_KEYS.FEE_SCHEDULES]: "Fee Schedules",
@@ -225,6 +229,7 @@ export const FEATURE_CATEGORIES = {
       FEATURE_KEYS.SOAP_NOTES,
       FEATURE_KEYS.ONLINE_CLASSES,
       FEATURE_KEYS.APPOINTMENTS,
+      FEATURE_KEYS.MEMBER_FAVORITES,
     ],
   },
   payout: {

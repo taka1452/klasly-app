@@ -31,6 +31,9 @@ type Props = {
   classPrice?: number;
   passInfo?: { hasPass: boolean; hasCapacity: boolean; classesUsed: number; maxClasses: number | null };
   onBookingComplete: () => void;
+  showFavorites?: boolean;
+  favoriteClassIds?: Set<string>;
+  favoriteInstructorIds?: Set<string>;
 };
 
 export default function CalendarWeekView({
@@ -46,6 +49,8 @@ export default function CalendarWeekView({
   classPrice,
   passInfo,
   onBookingComplete,
+  showFavorites = false,
+  favoriteClassIds = new Set(),
 }: Props) {
   const weekDates = getWeekDates(currentDate);
   const { startHour, endHour } = getTimeRange(sessions);
@@ -322,6 +327,8 @@ export default function CalendarWeekView({
                     classPrice={classPrice}
                     passInfo={passInfo}
                     onBookingComplete={onBookingComplete}
+                    showFavorites={showFavorites}
+                    isFavorited={!!session.class_id && favoriteClassIds.has(session.class_id)}
                   />
                 );
               })}

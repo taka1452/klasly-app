@@ -14,6 +14,8 @@ import {
   addWeeks,
   addMonths,
 } from "./calendar-utils";
+import { useFeature } from "@/lib/features/feature-context";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 type Props = {
   memberId: string | null;
@@ -48,12 +50,17 @@ export default function ScheduleCalendar({
     maxClasses: number | null;
   }>({ hasPass: false, hasCapacity: false, classesUsed: 0, maxClasses: null });
   const [credits, setCredits] = useState(initialCredits);
+  const [favoriteClassIds, setFavoriteClassIds] = useState<Set<string>>(new Set());
+  const [favoriteInstructorIds, setFavoriteInstructorIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showTip, setShowTip] = useState(false);
 
-  // Detect mobile on mount + show tip once
+  const { isEnabled } = useFeature();
+  const showFavorites = isEnabled(FEATURE_KEYS.MEMBER_FAVORITES);
+
+  // Detect mobile on mount + show tip once + fetch favorites
   useEffect(() => {
     const mobile = window.innerWidth < 768;
     setIsMobile(mobile);
@@ -63,7 +70,23 @@ export default function ScheduleCalendar({
     if (!localStorage.getItem("klasly:member:schedule-tip-dismissed")) {
       setShowTip(true);
     }
-  }, []);
+    // Fetch favorites once on mount
+    if (showFavorites) {
+      fetch("/api/member/favorites")
+        .then((res) => res.ok ? res.json() : { favorites: [] })
+        .then((data) => {
+          const classIds = new Set<string>();
+          const instructorIds = new Set<string>();
+          for (const fav of data.favorites || []) {
+            if (fav.favorite_type === "class") classIds.add(fav.target_id);
+            else if (fav.favorite_type === "instructor") instructorIds.add(fav.target_id);
+          }
+          setFavoriteClassIds(classIds);
+          setFavoriteInstructorIds(instructorIds);
+        })
+        .catch(() => {});
+    }
+  }, [showFavorites]);
 
   // Fetch sessions
   const fetchSessions = useCallback(
@@ -146,6 +169,9 @@ export default function ScheduleCalendar({
     classPrice,
     passInfo,
     onBookingComplete: handleBookingComplete,
+    showFavorites,
+    favoriteClassIds,
+    favoriteInstructorIds,
   };
 
   return (

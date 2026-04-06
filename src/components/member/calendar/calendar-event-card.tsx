@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { formatDuration } from "@/lib/utils";
 import BookingButton from "@/components/bookings/booking-button";
 import InstructorProfileModal from "@/components/member/instructor-profile-modal";
+import FavoriteButton from "@/components/member/favorite-button";
 import { useFeature } from "@/lib/features/feature-context";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 import {
@@ -32,6 +33,8 @@ type Props = {
   classPrice?: number;
   passInfo?: { hasPass: boolean; hasCapacity: boolean; classesUsed: number; maxClasses: number | null };
   onBookingComplete: () => void;
+  isFavorited?: boolean;
+  showFavorites?: boolean;
 };
 
 export default function CalendarEventCard({
@@ -49,6 +52,8 @@ export default function CalendarEventCard({
   classPrice,
   passInfo,
   onBookingComplete,
+  isFavorited = false,
+  showFavorites = false,
 }: Props) {
   const { isEnabled } = useFeature();
   const onlineEnabled = isEnabled(FEATURE_KEYS.ONLINE_CLASSES);
@@ -162,10 +167,20 @@ export default function CalendarEventCard({
             </svg>
           </button>
 
-          <h3 className="text-lg font-semibold text-gray-900 pr-6">
-            {showOnline && <span title="Online">📹 </span>}
-            {session.class_name}
-          </h3>
+          <div className="flex items-start justify-between pr-6">
+            <h3 className="text-lg font-semibold text-gray-900">
+              {showOnline && <span title="Online">📹 </span>}
+              {session.class_name}
+            </h3>
+            {showFavorites && session.class_id && (
+              <FavoriteButton
+                favoriteType="class"
+                targetId={session.class_id}
+                isFavorited={isFavorited}
+                size="md"
+              />
+            )}
+          </div>
           <div className="mt-2 space-y-1 text-sm text-gray-600">
             <p>
               {formatTimeShort(session.start_time)} – {endTimeStr} ({formatDuration(session.duration_minutes)})

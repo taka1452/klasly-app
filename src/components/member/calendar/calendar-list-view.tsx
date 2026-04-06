@@ -8,6 +8,7 @@ import {
 } from "./calendar-utils";
 import CalendarEventCard from "./calendar-event-card";
 import InstructorProfileModal from "@/components/member/instructor-profile-modal";
+import FavoriteButton from "@/components/member/favorite-button";
 
 type Props = {
   currentDate: Date;
@@ -27,6 +28,9 @@ type Props = {
     maxClasses: number | null;
   };
   onBookingComplete: () => void;
+  showFavorites?: boolean;
+  favoriteClassIds?: Set<string>;
+  favoriteInstructorIds?: Set<string>;
 };
 
 export default function CalendarListView({
@@ -42,6 +46,8 @@ export default function CalendarListView({
   classPrice,
   passInfo,
   onBookingComplete,
+  showFavorites = false,
+  favoriteClassIds = new Set(),
 }: Props) {
   const [instructorModalId, setInstructorModalId] = useState<string | null>(null);
 
@@ -107,6 +113,13 @@ export default function CalendarListView({
                     <div className="flex items-center justify-between">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
+                          {showFavorites && session.class_id && (
+                            <FavoriteButton
+                              favoriteType="class"
+                              targetId={session.class_id}
+                              isFavorited={favoriteClassIds.has(session.class_id)}
+                            />
+                          )}
                           <span className="font-medium text-gray-900">
                             {session.class_name}
                           </span>

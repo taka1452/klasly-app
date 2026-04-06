@@ -95,6 +95,7 @@ export default async function MyBookingsPage() {
       session_id,
       member_id,
       booked_via_pass,
+      attended,
       class_sessions (
         session_date,
         start_time,
@@ -138,12 +139,35 @@ export default async function MyBookingsPage() {
     confirmedBySession[r.session_id] = (confirmedBySession[r.session_id] || 0) + 1;
   });
 
+  // Attendance summary for current month
+  const currentMonth = today.slice(0, 7); // "YYYY-MM"
+  const attendedThisMonth = (past || []).filter((b) => {
+    const raw = b.class_sessions as { session_date?: string } | { session_date?: string }[] | null;
+    const session = Array.isArray(raw) ? raw[0] : raw;
+    return (
+      b.attended === true &&
+      session?.session_date?.startsWith(currentMonth)
+    );
+  }).length;
+
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-900 md:text-2xl">My Bookings</h1>
-      <p className="mt-1 text-sm text-gray-500">
-        Your upcoming and past classes
-      </p>
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900 md:text-2xl">My Bookings</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Your upcoming and past classes
+          </p>
+        </div>
+        {attendedThisMonth > 0 && (
+          <div className="flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1.5 text-sm font-medium text-green-700">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+              <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" />
+            </svg>
+            {attendedThisMonth} attended this month
+          </div>
+        )}
+      </div>
 
       {upcoming.length > 0 && (
         <div className="mt-6">
@@ -265,6 +289,11 @@ export default async function MyBookingsPage() {
                       {(booking as { booked_via_pass?: boolean }).booked_via_pass && (
                         <span className="inline-flex rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
                           Pass
+                        </span>
+                      )}
+                      {booking.attended === true && (
+                        <span className="inline-flex rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                          Attended
                         </span>
                       )}
                     </div>

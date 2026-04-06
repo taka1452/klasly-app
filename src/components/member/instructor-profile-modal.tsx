@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import FavoriteButton from "@/components/member/favorite-button";
+import { useFeature } from "@/lib/features/feature-context";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 type InstructorData = {
   id: string;
@@ -12,12 +15,16 @@ type InstructorData = {
 type Props = {
   instructorId: string;
   onClose: () => void;
+  isFavorited?: boolean;
 };
 
 export default function InstructorProfileModal({
   instructorId,
   onClose,
+  isFavorited = false,
 }: Props) {
+  const { isEnabled } = useFeature();
+  const showFavorites = isEnabled(FEATURE_KEYS.MEMBER_FAVORITES);
   const [data, setData] = useState<InstructorData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -99,9 +106,19 @@ export default function InstructorProfileModal({
                 {initials}
               </div>
 
-              <h3 className="mt-3 text-lg font-semibold text-gray-900">
-                {data.full_name}
-              </h3>
+              <div className="mt-3 flex items-center justify-center gap-1.5">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {data.full_name}
+                </h3>
+                {showFavorites && (
+                  <FavoriteButton
+                    favoriteType="instructor"
+                    targetId={instructorId}
+                    isFavorited={isFavorited}
+                    size="md"
+                  />
+                )}
+              </div>
 
               {/* Specialties */}
               {data.specialties.length > 0 && (

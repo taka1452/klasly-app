@@ -94,6 +94,12 @@ export default function MemberLayoutClient({
                   </Link>
                 )}
                 <Link
+                  href="/my-history"
+                  className={`shrink-0 ${linkClass("/my-history")}`}
+                >
+                  History
+                </Link>
+                <Link
                   href="/my-payments"
                   className={`shrink-0 ${linkClass("/my-payments")}`}
                 >
