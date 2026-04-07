@@ -1597,6 +1597,32 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
         },
       ],
     },
+    {
+      title: "Class Reviews",
+      items: [
+        {
+          q: "How do I view class reviews?",
+          a: (
+            <>
+              Enable <B>Class Reviews</B> in <B>Settings &gt; Features</B>, then go to <B>Reviews</B> in the sidebar. You&apos;ll see all reviews from members including star ratings and comments, with overall averages.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Email Campaigns",
+      items: [
+        {
+          q: "How do I send a bulk email to my members?",
+          a: (
+            <>
+              Enable <B>Email Campaigns</B> in <B>Settings &gt; Features</B>, then go to <B>Campaigns</B> in the sidebar. Click <B>New Campaign</B> to compose a subject and body, then send to all active members.
+            </>
+          ),
+        },
+      ],
+    },
   ],
 
   instructor: [
@@ -2469,6 +2495,83 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               If no time slots appear for a selected date, the instructor may not be available that day. Try selecting a different date within the next 14 days. If no dates work, contact your studio for assistance.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Class Reviews",
+      items: [
+        {
+          q: "How do I leave a review for a class?",
+          a: (
+            <>
+              After attending a class, go to <B>Bookings</B> and find the class in the <B>Past</B> section. Click the <B>Rate</B> button to open the review dialog. Select a star rating (1-5) and optionally write a comment, then click <B>Submit Review</B>.
+              <Tip>You can only review classes you have attended (confirmed bookings for past sessions).</Tip>
+            </>
+          ),
+        },
+        {
+          q: "Can I see other members' reviews?",
+          a: (
+            <>
+              Reviews are visible to your studio owner and instructors. Average ratings may appear on the class schedule to help you choose classes.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Achievements",
+      items: [
+        {
+          q: "What are achievements?",
+          a: (
+            <>
+              Achievements are badges you earn by attending classes regularly. They appear at the top of your <B>Bookings</B> page. Milestones include your first class, 5/10/25/50 classes, and weekly attendance streaks (7-day, 30-day, 90-day).
+            </>
+          ),
+        },
+        {
+          q: "How do I earn a streak badge?",
+          a: (
+            <>
+              Attend at least one class every week. A <B>7-day streak</B> means you attended for at least 1 consecutive week, <B>30-day</B> for about 4 weeks, and <B>90-day</B> for about 13 weeks. Keep it up!
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Community",
+      items: [
+        {
+          q: "What is the Community page?",
+          a: (
+            <>
+              The <B>Community</B> page is a bulletin board where your studio&apos;s owners and instructors can post updates, tips, and discussions. All members can read posts and leave comments.
+            </>
+          ),
+        },
+        {
+          q: "Can I create a post?",
+          a: (
+            <>
+              Currently, only studio owners, instructors, and managers can create posts. All members can comment on existing posts. Go to <B>Community</B> to join the conversation.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Favorites",
+      items: [
+        {
+          q: "How do I favorite a class?",
+          a: (
+            <>
+              On the <B>Schedule</B> page, click the heart icon on any class card to add it to your favorites. Click again to remove. Favorited classes are highlighted for easy access.
             </>
           ),
         },

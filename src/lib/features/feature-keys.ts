@@ -78,6 +78,18 @@ export const FEATURE_KEYS = {
   ONLINE_CLASSES: "extension.online_classes",
   /** 1-on-1 appointment booking */
   APPOINTMENTS: "extension.appointments",
+  /** Class reviews & ratings */
+  CLASS_REVIEWS: "extension.class_reviews",
+  /** Attendance streaks & achievement badges */
+  ACHIEVEMENTS: "extension.achievements",
+  /** Community bulletin board */
+  COMMUNITY: "extension.community",
+  /** Favorite instructor/class */
+  FAVORITES: "extension.favorites",
+  /** Email campaigns (bulk send) */
+  EMAIL_CAMPAIGNS: "extension.email_campaigns",
+  /** On-demand video content */
+  VIDEO_CONTENT: "extension.video_content",
 
   // ============================================
   // Payout Phase 3 features
@@ -135,6 +147,12 @@ export const DEFAULT_FEATURES: Record<FeatureKey, boolean> = {
   [FEATURE_KEYS.SOAP_NOTES]: false,
   [FEATURE_KEYS.ONLINE_CLASSES]: false,
   [FEATURE_KEYS.APPOINTMENTS]: false,
+  [FEATURE_KEYS.CLASS_REVIEWS]: false,
+  [FEATURE_KEYS.ACHIEVEMENTS]: false,
+  [FEATURE_KEYS.COMMUNITY]: false,
+  [FEATURE_KEYS.FAVORITES]: false,
+  [FEATURE_KEYS.EMAIL_CAMPAIGNS]: false,
+  [FEATURE_KEYS.VIDEO_CONTENT]: false,
 
   // Payout Phase 3: default OFF
   [FEATURE_KEYS.CLASS_FEE_OVERRIDE]: false,
@@ -176,6 +194,12 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   [FEATURE_KEYS.SOAP_NOTES]: "SOAP Notes",
   [FEATURE_KEYS.ONLINE_CLASSES]: "Online Classes",
   [FEATURE_KEYS.APPOINTMENTS]: "Appointments",
+  [FEATURE_KEYS.CLASS_REVIEWS]: "Class Reviews",
+  [FEATURE_KEYS.ACHIEVEMENTS]: "Achievements & Badges",
+  [FEATURE_KEYS.COMMUNITY]: "Community Board",
+  [FEATURE_KEYS.FAVORITES]: "Favorites",
+  [FEATURE_KEYS.EMAIL_CAMPAIGNS]: "Email Campaigns",
+  [FEATURE_KEYS.VIDEO_CONTENT]: "Video Content",
 
   [FEATURE_KEYS.CLASS_FEE_OVERRIDE]: "Class Fee Override",
   [FEATURE_KEYS.FEE_SCHEDULES]: "Fee Schedules",
@@ -225,6 +249,12 @@ export const FEATURE_CATEGORIES = {
       FEATURE_KEYS.SOAP_NOTES,
       FEATURE_KEYS.ONLINE_CLASSES,
       FEATURE_KEYS.APPOINTMENTS,
+      FEATURE_KEYS.CLASS_REVIEWS,
+      FEATURE_KEYS.ACHIEVEMENTS,
+      FEATURE_KEYS.COMMUNITY,
+      FEATURE_KEYS.FAVORITES,
+      FEATURE_KEYS.EMAIL_CAMPAIGNS,
+      FEATURE_KEYS.VIDEO_CONTENT,
     ],
   },
   payout: {

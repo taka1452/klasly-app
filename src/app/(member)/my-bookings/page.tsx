@@ -7,6 +7,9 @@ import { getPlanAccess } from "@/lib/plan-guard";
 import { getRequiresCredits } from "@/lib/booking-utils";
 import BookingButton from "@/components/bookings/booking-button";
 import { unwrapRelation } from "@/lib/supabase/relation";
+import ReviewButton from "@/components/reviews/review-button";
+import MemberAchievements from "@/components/achievements/member-achievements";
+import type { AchievementType } from "@/types/database";
 
 export default async function MyBookingsPage() {
   const serverSupabase = await createServerClient();
@@ -68,6 +71,27 @@ export default async function MyBookingsPage() {
       passInfo = { hasPass: true, hasCapacity, classesUsed: used, maxClasses };
     }
   }
+  // Fetch existing reviews for this member
+  const { data: existingReviews } = member
+    ? await supabase
+        .from("class_reviews")
+        .select("session_id, rating")
+        .eq("member_id", member.id)
+    : { data: [] };
+  const reviewBySession: Record<string, number> = {};
+  (existingReviews || []).forEach((r) => {
+    reviewBySession[r.session_id] = r.rating;
+  });
+
+  // Fetch achievements
+  const { data: achievements } = member
+    ? await supabase
+        .from("member_achievements")
+        .select("achievement_type, earned_at")
+        .eq("member_id", member.id)
+        .order("earned_at", { ascending: true })
+    : { data: [] };
+
   const memberIds = (memberList || []).map((m) => m.id);
   const creditsByMember: Record<string, number> = (memberList || []).reduce(
     (acc, m) => {
@@ -144,6 +168,17 @@ export default async function MyBookingsPage() {
       <p className="mt-1 text-sm text-gray-500">
         Your upcoming and past classes
       </p>
+
+      {(achievements || []).length > 0 && (
+        <div className="mt-4">
+          <MemberAchievements
+            achievements={(achievements || []).map((a) => ({
+              achievement_type: a.achievement_type as AchievementType,
+              earned_at: a.earned_at,
+            }))}
+          />
+        </div>
+      )}
 
       {upcoming.length > 0 && (
         <div className="mt-6">
@@ -269,6 +304,13 @@ export default async function MyBookingsPage() {
                       )}
                     </div>
                   </div>
+                  {booking.status === "confirmed" && (
+                    <ReviewButton
+                      sessionId={booking.session_id}
+                      className={className}
+                      existingRating={reviewBySession[booking.session_id] ?? null}
+                    />
+                  )}
                 </div>
               );
             })}

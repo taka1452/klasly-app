@@ -17,6 +17,7 @@ import { isFeatureEnabled } from "@/lib/features/check-feature";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 import { unwrapRelation } from "@/lib/supabase/relation";
 import { logger } from "@/lib/logger";
+import { checkAndAwardAchievements } from "@/lib/achievements/compute";
 
 type BookingAction = "book" | "rebook" | "cancel" | "leave_waitlist";
 
@@ -569,6 +570,18 @@ export async function executeBookingAction({
 
     if (error) {
       return { success: false, error: error.message, status: 400 };
+    }
+  }
+
+  // Check achievements after booking actions (non-blocking)
+  if (action === "book" || action === "rebook") {
+    try {
+      const achievementsEnabled = await isFeatureEnabled(member.studio_id, FEATURE_KEYS.ACHIEVEMENTS);
+      if (achievementsEnabled) {
+        await checkAndAwardAchievements(adminSupabase, memberId, member.studio_id);
+      }
+    } catch {
+      // Non-critical: don't fail the booking if achievement check fails
     }
   }
 

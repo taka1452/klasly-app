@@ -917,6 +917,124 @@ export type EmailNotificationPreferences = {
   updated_at: string;
 };
 
+// ============================================
+// Class Reviews
+// ============================================
+
+export type ClassReview = {
+  id: string;
+  studio_id: string;
+  member_id: string;
+  session_id: string;
+  class_id: string;
+  instructor_id: string | null;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+};
+
+// ============================================
+// Member Achievements
+// ============================================
+
+export type AchievementType =
+  | "first_class"
+  | "five_classes"
+  | "ten_classes"
+  | "twenty_five_classes"
+  | "fifty_classes"
+  | "streak_7_days"
+  | "streak_30_days"
+  | "streak_90_days";
+
+export type MemberAchievement = {
+  id: string;
+  studio_id: string;
+  member_id: string;
+  achievement_type: AchievementType;
+  earned_at: string;
+  metadata: Record<string, unknown> | null;
+};
+
+// ============================================
+// Community Posts & Comments
+// ============================================
+
+export type CommunityPost = {
+  id: string;
+  studio_id: string;
+  author_id: string;
+  author_role: "owner" | "instructor" | "member" | "manager";
+  title: string;
+  content: string;
+  created_at: string;
+};
+
+export type CommunityComment = {
+  id: string;
+  post_id: string;
+  author_id: string;
+  author_role: "owner" | "instructor" | "member" | "manager";
+  content: string;
+  created_at: string;
+};
+
+// ============================================
+// Member Favorites
+// ============================================
+
+export type MemberFavorite = {
+  id: string;
+  studio_id: string;
+  member_id: string;
+  favorite_type: "class" | "instructor";
+  target_id: string;
+  created_at: string;
+};
+
+// ============================================
+// Email Campaigns
+// ============================================
+
+export type EmailCampaign = {
+  id: string;
+  studio_id: string;
+  subject: string;
+  body: string;
+  recipient_filter: Record<string, unknown> | null;
+  status: "draft" | "sending" | "sent";
+  sent_at: string | null;
+  sent_count: number;
+  created_at: string;
+};
+
+// ============================================
+// Video Content
+// ============================================
+
+export type VideoContent = {
+  id: string;
+  studio_id: string;
+  instructor_id: string | null;
+  class_id: string | null;
+  title: string;
+  description: string | null;
+  video_url: string;
+  thumbnail_url: string | null;
+  duration: number | null;
+  price: number;
+  is_published: boolean;
+  created_at: string;
+};
+
+export type VideoPurchase = {
+  id: string;
+  video_id: string;
+  member_id: string;
+  payment_intent_id: string | null;
+  purchased_at: string;
+};
+
 export type PushNotificationType =
   | "booking_confirmation"
   | "booking_cancellation"

@@ -32,6 +32,8 @@ export default function MemberLayoutClient({
   const { isEnabled } = useFeature();
   const showPasses = isEnabled(FEATURE_KEYS.STUDIO_PASS);
   const showAppointments = isEnabled(FEATURE_KEYS.APPOINTMENTS);
+  const showCommunity = isEnabled(FEATURE_KEYS.COMMUNITY);
+  const showVideos = isEnabled(FEATURE_KEYS.VIDEO_CONTENT);
   const pathname = usePathname();
 
   const linkClass = (href: string) =>
@@ -99,6 +101,22 @@ export default function MemberLayoutClient({
                 >
                   Payments
                 </Link>
+                {showCommunity && (
+                  <Link
+                    href="/community"
+                    className={`shrink-0 ${linkClass("/community")}`}
+                  >
+                    Community
+                  </Link>
+                )}
+                {showVideos && (
+                  <Link
+                    href="/videos"
+                    className={`shrink-0 ${linkClass("/videos")}`}
+                  >
+                    Videos
+                  </Link>
+                )}
                 <Link
                   href="/messages"
                   className={`shrink-0 ${linkClass("/messages")}`}
