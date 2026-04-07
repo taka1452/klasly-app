@@ -8,6 +8,8 @@ import { getStudioFeatures } from "@/lib/features/check-feature";
 import { FeatureProvider } from "@/lib/features/feature-context";
 import AnnouncementBanner from "@/components/announcements/announcement-banner";
 import PushPrompt from "@/components/pwa/push-prompt";
+import { I18nProvider, type Locale } from "@/lib/i18n/context";
+import { cookies } from "next/headers";
 
 export default async function MemberLayout({
   children,
@@ -85,7 +87,12 @@ export default async function MemberLayout({
     ? await getStudioFeatures(profile.studio_id)
     : {};
 
+  const cookieStore = await cookies();
+  const localeCookie = cookieStore.get("klasly-locale")?.value;
+  const locale: Locale = localeCookie === "ja" ? "ja" : "en";
+
   return (
+    <I18nProvider defaultLocale={locale}>
     <FeatureProvider features={features}>
       <AnnouncementBanner />
       <MemberLayoutClient
@@ -102,5 +109,6 @@ export default async function MemberLayout({
         <PushPrompt studioId={profile?.studio_id ?? undefined} />
       </MemberLayoutClient>
     </FeatureProvider>
+    </I18nProvider>
   );
 }

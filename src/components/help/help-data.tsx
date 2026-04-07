@@ -2577,5 +2577,44 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
         },
       ],
     },
+    {
+      title: "Calendar Sync",
+      items: [
+        {
+          q: "How do I subscribe to the studio schedule in my calendar?",
+          a: (
+            <>
+              Your studio provides an iCal feed URL that you can subscribe to in Google Calendar, Apple Calendar, or Outlook. Look for a <B>Subscribe to Calendar</B> option on the Schedule page. This keeps your personal calendar automatically updated with upcoming classes.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Language",
+      items: [
+        {
+          q: "Can I change the language?",
+          a: (
+            <>
+              Yes! Use the language selector (EN/JA) in the top navigation bar to switch between English and Japanese. Your preference is saved automatically.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Videos",
+      items: [
+        {
+          q: "How do I watch on-demand videos?",
+          a: (
+            <>
+              If your studio offers video content, go to <B>Videos</B> in the navigation. Browse available videos — free ones can be watched immediately, while paid videos require a one-time purchase.
+            </>
+          ),
+        },
+      ],
+    },
   ],
 };

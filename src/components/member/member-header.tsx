@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import LanguageSelector from "@/components/i18n/language-selector";
 
 type Props = {
   userName: string;
@@ -40,6 +41,7 @@ export default function MemberHeader({ userName, userEmail }: Props) {
         </Link>
       </div>
       <div className="flex items-center gap-2">
+      <LanguageSelector />
       <Link
         href="/help"
         target="_blank"
