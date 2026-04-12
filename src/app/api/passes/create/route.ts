@@ -108,6 +108,12 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
+      // DB insert 失敗時は Stripe product を非活性化（ロールバック）
+      try {
+        await stripe.products.update(product.id, { active: false }, connectOptions);
+      } catch (rollbackErr) {
+        console.error("[passes/create] Stripe product rollback failed", rollbackErr);
+      }
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 

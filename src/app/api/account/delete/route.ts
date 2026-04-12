@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe/server";
+import { logger } from "@/lib/logger";
 export async function POST(request: Request) {
   try {
     // CSRF protection is handled by middleware
@@ -43,7 +44,26 @@ export async function POST(request: Request) {
     const studioId = profile.studio_id;
 
     // Cancel all active Stripe subscriptions before deleting data
+    // 失敗しても DB 削除は続行（ユーザーの意思によるアカウント削除を妨げない）
+    // ただし失敗した subscription ID をログに記録して追跡可能にする
     const stripe = getStripe();
+    const failedCancellations: string[] = [];
+
+    const safeCancelSub = async (subId: string, context: string) => {
+      try {
+        await stripe.subscriptions.cancel(subId);
+      } catch (err) {
+        const code = (err as { code?: string })?.code;
+        if (code !== "resource_missing") {
+          failedCancellations.push(subId);
+          logger.error(`account/delete: Stripe cancel failed (${context})`, {
+            studioId,
+            subscriptionId: subId,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+    };
 
     // 1. Cancel studio plan subscription
     const { data: studio } = await adminSupabase
@@ -52,11 +72,7 @@ export async function POST(request: Request) {
       .eq("id", studioId)
       .single();
     if (studio?.stripe_subscription_id) {
-      try {
-        await stripe.subscriptions.cancel(studio.stripe_subscription_id);
-      } catch {
-        // Subscription may already be cancelled — continue
-      }
+      await safeCancelSub(studio.stripe_subscription_id, "studio-plan");
     }
 
     // 2. Cancel member subscriptions
@@ -66,11 +82,8 @@ export async function POST(request: Request) {
       .eq("studio_id", studioId)
       .not("stripe_subscription_id", "is", null);
     for (const m of members || []) {
-      if (!m.stripe_subscription_id) continue;
-      try {
-        await stripe.subscriptions.cancel(m.stripe_subscription_id);
-      } catch {
-        // Continue on error
+      if (m.stripe_subscription_id) {
+        await safeCancelSub(m.stripe_subscription_id, "member");
       }
     }
 
@@ -86,11 +99,8 @@ export async function POST(request: Request) {
         .in("member_id", memberIds.map((m) => m.id))
         .not("stripe_subscription_id", "is", null);
       for (const ps of passSubs || []) {
-        if (!ps.stripe_subscription_id) continue;
-        try {
-          await stripe.subscriptions.cancel(ps.stripe_subscription_id);
-        } catch {
-          // Continue on error
+        if (ps.stripe_subscription_id) {
+          await safeCancelSub(ps.stripe_subscription_id, "pass");
         }
       }
     }
@@ -102,12 +112,16 @@ export async function POST(request: Request) {
       .eq("studio_id", studioId)
       .not("stripe_subscription_id", "is", null);
     for (const im of instrMemberships || []) {
-      if (!im.stripe_subscription_id) continue;
-      try {
-        await stripe.subscriptions.cancel(im.stripe_subscription_id);
-      } catch {
-        // Continue on error
+      if (im.stripe_subscription_id) {
+        await safeCancelSub(im.stripe_subscription_id, "instructor-membership");
       }
+    }
+
+    if (failedCancellations.length > 0) {
+      logger.warn("account/delete: Some Stripe subscriptions failed to cancel", {
+        studioId,
+        failedSubscriptionIds: failedCancellations,
+      });
     }
 
     // Get all user IDs (profiles) for this studio before deletion
@@ -186,7 +200,12 @@ export async function POST(request: Request) {
     // Sign out the current user
     await serverSupabase.auth.signOut();
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      ...(failedCancellations.length > 0 && {
+        warning: `${failedCancellations.length} Stripe subscription(s) could not be cancelled automatically. Please check Stripe dashboard.`,
+      }),
+    });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal error";
     return NextResponse.json({ error: message }, { status: 500 });

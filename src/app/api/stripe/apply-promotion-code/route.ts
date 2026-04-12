@@ -4,6 +4,7 @@ import { getStripe } from "@/lib/stripe/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { parseBody } from "@/lib/api/parse-body";
+import { logger } from "@/lib/logger";
 
 /**
  * Studio owner applies a promotion code to their current subscription.
@@ -83,7 +84,8 @@ export async function POST(request: Request) {
     });
 
     // redemption を記録し利用回数カウンタをインクリメント
-    await Promise.all([
+    // (Stripe discount は既に適用済みなので、DB失敗時もdiscountは有効のまま — ログで追跡)
+    const [redemptionResult, incrementResult] = await Promise.all([
       adminSupabase.from("coupon_redemptions").insert({
         studio_id: profile.studio_id,
         coupon_id: promo.coupon_id,
@@ -95,6 +97,17 @@ export async function POST(request: Request) {
         .update({ times_redeemed: (promo.times_redeemed ?? 0) + 1 })
         .eq("id", promo.id),
     ]);
+
+    if (redemptionResult.error || incrementResult.error) {
+      logger.error("apply-promotion-code: DB tracking failed after Stripe discount applied", {
+        studioId: profile.studio_id,
+        code,
+        redemptionError: redemptionResult.error?.message,
+        incrementError: incrementResult.error?.message,
+      });
+      // Stripe discount は正当に適用されたので成功を返す
+      // ただし redemption 記録が欠損していることをログで追跡可能にする
+    }
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
