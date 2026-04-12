@@ -74,6 +74,12 @@ export async function POST(
       .single();
 
     if (error) {
+      // DB insert 失敗時は Stripe プロモコードを非活性化（ロールバック）
+      try {
+        await stripe.promotionCodes.update(stripePromo.id, { active: false });
+      } catch (rollbackErr) {
+        console.error("[Admin] promotion-code rollback failed", rollbackErr);
+      }
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     return NextResponse.json({ promotion_code: promo });

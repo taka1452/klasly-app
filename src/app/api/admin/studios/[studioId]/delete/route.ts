@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/admin/supabase";
+import { getStripe } from "@/lib/stripe/server";
 import { z } from "zod";
 import { parseBody } from "@/lib/api/parse-body";
 
@@ -20,7 +21,7 @@ export async function POST(
 
     const { data: studio } = await supabase
       .from("studios")
-      .select("id, name")
+      .select("id, name, stripe_subscription_id")
       .eq("id", studioId)
       .single();
 
@@ -33,6 +34,26 @@ export async function POST(
         { error: "Studio name does not match. Type the exact name to confirm." },
         { status: 400 }
       );
+    }
+
+    // Stripe subscription をキャンセルしてから DB を削除する
+    // (orphaned subscription による継続課金を防止)
+    if (studio.stripe_subscription_id) {
+      try {
+        const stripe = getStripe();
+        await stripe.subscriptions.cancel(studio.stripe_subscription_id as string);
+      } catch (stripeErr: unknown) {
+        // 既にキャンセル済み or 存在しない場合は続行
+        const code = (stripeErr as { code?: string })?.code;
+        if (code !== "resource_missing") {
+          console.error("[Admin] delete: Stripe subscription cancel failed", stripeErr);
+          const message = stripeErr instanceof Error ? stripeErr.message : "Stripe cancel failed";
+          return NextResponse.json(
+            { error: `Failed to cancel Stripe subscription: ${message}. Studio not deleted.` },
+            { status: 502 }
+          );
+        }
+      }
     }
 
     const { error } = await supabase

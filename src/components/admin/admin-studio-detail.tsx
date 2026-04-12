@@ -48,8 +48,6 @@ type Payment = {
   stripe_payment_intent_id: string | null;
 };
 
-const PLAN_STATUSES = ["trialing", "active", "past_due", "grace", "canceled"] as const;
-
 const STATUS_CLASS: Record<string, string> = {
   trialing: "bg-blue-500/20 text-blue-300",
   active: "bg-green-500/20 text-green-300",
@@ -77,7 +75,7 @@ export default function AdminStudioDetail({
   const [memo, setMemo] = useState(studio.admin_memo ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [planStatus, setPlanStatus] = useState(studio.plan_status ?? "");
+  const planStatus = studio.plan_status ?? "";
   const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState(!!studio.cancel_at_period_end);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -115,29 +113,14 @@ export default function AdminStudioDetail({
     if (res.ok) setSaved(true);
   }
 
-  async function handlePlanStatusChange(newStatus: string) {
-    setError(null);
-    const res = await fetch(`/api/admin/studios/${studioId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan_status: newStatus }),
-    });
-    if (res.ok) {
-      setPlanStatus(newStatus);
-      router.refresh();
-    } else {
-      const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "Failed to update");
-    }
-  }
-
   async function handleCancelAtPeriodEndToggle() {
     setError(null);
     const next = !cancelAtPeriodEnd;
-    const res = await fetch(`/api/admin/studios/${studioId}`, {
-      method: "PATCH",
+    // Stripe 同期が必要なため、cancel エンドポイント経由で更新
+    const res = await fetch(`/api/admin/studios/${studioId}/cancel`, {
+      method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cancel_at_period_end: next }),
+      body: JSON.stringify(next ? { immediate: false } : { resume: true }),
     });
     if (res.ok) {
       setCancelAtPeriodEnd(next);
@@ -321,15 +304,7 @@ export default function AdminStudioDetail({
               <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[String(planStatus)] ?? "bg-slate-600 text-slate-300"}`}>
                 {String(planStatus || "—")}
               </span>
-              <select
-                value={planStatus}
-                onChange={(e) => handlePlanStatusChange(e.target.value)}
-                className="rounded border border-slate-600 bg-slate-900 px-2 py-1 text-xs text-white focus:border-indigo-500 focus:outline-none"
-              >
-                {PLAN_STATUSES.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
+              <span className="text-xs text-slate-500">(Stripe synced)</span>
             </dd>
           </div>
           <div><dt className="text-slate-500">{t("studioDetail.period")}</dt><dd className="text-white">{studio.subscription_period ?? "—"}</dd></div>

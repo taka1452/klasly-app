@@ -128,9 +128,8 @@ export async function PATCH(
 
     const body = await request.json();
     const updates: Record<string, unknown> = {};
-    if (body.plan_status !== undefined) updates.plan_status = body.plan_status;
-    if (body.trial_ends_at !== undefined) updates.trial_ends_at = body.trial_ends_at;
-    if (body.cancel_at_period_end !== undefined) updates.cancel_at_period_end = body.cancel_at_period_end;
+    // plan_status, trial_ends_at, cancel_at_period_end は Stripe 同期が必要なため
+    // 専用エンドポイント (extend-trial, cancel, reset-trial) を使用すること
     if (body.admin_memo !== undefined) updates.admin_memo = body.admin_memo;
     if (body.is_demo !== undefined) updates.is_demo = Boolean(body.is_demo);
 

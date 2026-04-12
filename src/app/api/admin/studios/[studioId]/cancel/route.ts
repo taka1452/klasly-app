@@ -14,10 +14,14 @@ export async function POST(
     const supabase = createAdminClient();
     const { studioId } = await params;
 
-    const schema = z.object({ immediate: z.boolean().optional() });
+    const schema = z.object({
+      immediate: z.boolean().optional(),
+      resume: z.boolean().optional(),
+    });
     const body = await parseBody(request, schema);
     if (body instanceof NextResponse) return body;
     const immediate = body.immediate === true;
+    const resume = body.resume === true;
 
     const { data: studio } = await supabase
       .from("studios")
@@ -39,7 +43,16 @@ export async function POST(
 
     const stripe = getStripe();
 
-    if (immediate) {
+    if (resume) {
+      // キャンセル予約を取り消し（cancel_at_period_end を false に戻す）
+      await stripe.subscriptions.update(subId, {
+        cancel_at_period_end: false,
+      });
+      await supabase
+        .from("studios")
+        .update({ cancel_at_period_end: false })
+        .eq("id", studioId);
+    } else if (immediate) {
       await stripe.subscriptions.cancel(subId);
       await supabase
         .from("studios")

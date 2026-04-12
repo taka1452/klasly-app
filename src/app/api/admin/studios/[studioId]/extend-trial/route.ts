@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/admin/supabase";
+import { getStripe } from "@/lib/stripe/server";
 
 export async function POST(
   request: Request,
@@ -22,7 +23,7 @@ export async function POST(
 
     const { data: studio } = await supabase
       .from("studios")
-      .select("id, trial_ends_at")
+      .select("id, trial_ends_at, stripe_subscription_id")
       .eq("id", studioId)
       .single();
 
@@ -35,6 +36,25 @@ export async function POST(
       : new Date();
     const newEnd = new Date(base);
     newEnd.setDate(newEnd.getDate() + days);
+
+    // Stripe同期: subscription が存在する場合、Stripe の trial_end を先に更新
+    if (studio.stripe_subscription_id) {
+      try {
+        const stripe = getStripe();
+        await stripe.subscriptions.update(
+          studio.stripe_subscription_id as string,
+          { trial_end: Math.floor(newEnd.getTime() / 1000) },
+          { idempotencyKey: `extend-trial-${studioId}-${newEnd.toISOString()}` }
+        );
+      } catch (stripeErr) {
+        console.error("[Admin] extend-trial: Stripe update failed", stripeErr);
+        const message = stripeErr instanceof Error ? stripeErr.message : "Stripe update failed";
+        return NextResponse.json(
+          { error: `Failed to update Stripe subscription: ${message}` },
+          { status: 502 }
+        );
+      }
+    }
 
     const { error } = await supabase
       .from("studios")
