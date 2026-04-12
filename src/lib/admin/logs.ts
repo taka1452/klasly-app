@@ -67,6 +67,45 @@ export async function insertCronLog(
   }
 }
 
+type AdminActionLogInsert = {
+  action: string;
+  studio_id: string | null;
+  admin_email: string | null;
+  details?: Record<string, unknown> | null;
+  status: string;
+  error_message?: string | null;
+};
+
+/**
+ * Admin 操作を cron_logs テーブルに記録する。
+ * (専用テーブルがないため job_name に "admin:" プレフィックスを付けて区別する)
+ */
+export async function insertAdminLog(
+  supabase: LogSupabaseClient,
+  row: AdminActionLogInsert
+): Promise<void> {
+  try {
+    await supabase.from("cron_logs").insert({
+      job_name: `admin:${row.action}`,
+      status: row.status,
+      affected_count: 1,
+      details: {
+        studio_id: row.studio_id,
+        admin_email: row.admin_email,
+        ...row.details,
+      },
+      error_message: row.error_message ?? null,
+      started_at: new Date().toISOString(),
+      completed_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    logger.error("insertAdminLog failed", {
+      action: row.action,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+}
+
 type EmailLogInsert = {
   studio_id: string | null;
   to_email: string;

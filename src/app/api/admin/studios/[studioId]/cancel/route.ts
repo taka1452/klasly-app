@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin/auth";
+import { requireAdmin, getAdminEmail } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/admin/supabase";
 import { getStripe } from "@/lib/stripe/server";
 import { z } from "zod";
 import { parseBody } from "@/lib/api/parse-body";
+import { insertAdminLog } from "@/lib/admin/logs";
 
 export async function POST(
   request: Request,
@@ -11,6 +12,7 @@ export async function POST(
 ) {
   try {
     await requireAdmin();
+    const adminEmail = await getAdminEmail();
     const supabase = createAdminClient();
     const { studioId } = await params;
 
@@ -74,6 +76,14 @@ export async function POST(
         .update({ cancel_at_period_end: true })
         .eq("id", studioId);
     }
+
+    const mode = resume ? "resume" : immediate ? "cancel-immediate" : "cancel-at-period-end";
+    await insertAdminLog(supabase, {
+      action: `subscription-${mode}`,
+      studio_id: studioId,
+      admin_email: adminEmail,
+      status: "success",
+    });
 
     return NextResponse.json({ success: true });
   } catch (e) {

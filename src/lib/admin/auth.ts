@@ -63,3 +63,15 @@ export async function requireAdmin(): Promise<void> {
     notFound();
   }
 }
+
+/**
+ * 現在のログインユーザーのメールアドレスを返す。
+ * requireAdmin() の後に呼ぶことで、管理者のメールを監査ログ等に使える。
+ */
+export async function getAdminEmail(): Promise<string | null> {
+  const serverSupabase = await createServerClient();
+  const {
+    data: { user },
+  } = await serverSupabase.auth.getUser();
+  return user?.email ?? null;
+}

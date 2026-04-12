@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin/auth";
-import { createAdminClient } from "@/lib/admin/supabase";
-import { getStripe } from "@/lib/stripe/server";
 import { z } from "zod";
+import { requireAdmin, getAdminEmail } from "@/lib/admin/auth";
+import { createAdminClient } from "@/lib/admin/supabase";
 import { parseBody } from "@/lib/api/parse-body";
+import { cancelSubscriptionSafe } from "@/lib/admin/stripe-helpers";
+import { insertAdminLog } from "@/lib/admin/logs";
 
 export async function POST(
   request: Request,
@@ -11,6 +12,7 @@ export async function POST(
 ) {
   try {
     await requireAdmin();
+    const adminEmail = await getAdminEmail();
     const supabase = createAdminClient();
     const { studioId } = await params;
 
@@ -38,21 +40,22 @@ export async function POST(
 
     // Stripe subscription をキャンセルしてから DB を削除する
     // (orphaned subscription による継続課金を防止)
-    if (studio.stripe_subscription_id) {
-      try {
-        const stripe = getStripe();
-        await stripe.subscriptions.cancel(studio.stripe_subscription_id as string);
-      } catch (stripeErr: unknown) {
-        // 既にキャンセル済み or 存在しない場合は続行
-        const code = (stripeErr as { code?: string })?.code;
-        if (code !== "resource_missing") {
-          console.error("[Admin] delete: Stripe subscription cancel failed", stripeErr);
-          const message = stripeErr instanceof Error ? stripeErr.message : "Stripe cancel failed";
-          return NextResponse.json(
-            { error: `Failed to cancel Stripe subscription: ${message}. Studio not deleted.` },
-            { status: 502 }
-          );
-        }
+    const subId = studio.stripe_subscription_id as string | null;
+    if (subId) {
+      const stripeError = await cancelSubscriptionSafe(
+        subId,
+        `delete studio ${studioId}`
+      );
+      if (stripeError) {
+        await insertAdminLog(supabase, {
+          action: "delete-studio",
+          studio_id: studioId,
+          admin_email: adminEmail,
+          status: "error",
+          error_message: "Stripe subscription cancel failed",
+          details: { studioName: studio.name },
+        });
+        return stripeError;
       }
     }
 
@@ -64,6 +67,16 @@ export async function POST(
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    // 削除成功後のログ（studio行は消えるので studio_id は null にする）
+    await insertAdminLog(supabase, {
+      action: "delete-studio",
+      studio_id: null,
+      admin_email: adminEmail,
+      status: "success",
+      details: { deletedStudioId: studioId, studioName: studio.name, hadSubscription: !!subId },
+    });
+
     return NextResponse.json({ success: true });
   } catch (e) {
     if (e && typeof e === "object" && "digest" in e) throw e;

@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin/auth";
+import { z } from "zod";
+import { requireAdmin, getAdminEmail } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/admin/supabase";
 import { getStripe } from "@/lib/stripe/server";
+import { parseBody } from "@/lib/api/parse-body";
+import { insertAdminLog } from "@/lib/admin/logs";
+
+const schema = z.object({
+  days: z.coerce.number().int().min(1).max(365),
+});
 
 export async function POST(
   request: Request,
@@ -9,17 +16,13 @@ export async function POST(
 ) {
   try {
     await requireAdmin();
+    const adminEmail = await getAdminEmail();
     const supabase = createAdminClient();
     const { studioId } = await params;
 
-    const body = await request.json();
-    const days = typeof body.days === "number" ? body.days : parseInt(String(body.days), 10);
-    if (Number.isNaN(days) || days < 1 || days > 365) {
-      return NextResponse.json(
-        { error: "Invalid days (1–365)" },
-        { status: 400 }
-      );
-    }
+    const body = await parseBody(request, schema);
+    if (body instanceof NextResponse) return body;
+    const { days } = body;
 
     const { data: studio } = await supabase
       .from("studios")
@@ -31,47 +34,61 @@ export async function POST(
       return NextResponse.json({ error: "Studio not found" }, { status: 404 });
     }
 
-    const base = (studio.trial_ends_at && new Date(studio.trial_ends_at) > new Date())
-      ? new Date(studio.trial_ends_at)
-      : new Date();
+    const base =
+      studio.trial_ends_at && new Date(studio.trial_ends_at) > new Date()
+        ? new Date(studio.trial_ends_at)
+        : new Date();
     const newEnd = new Date(base);
     newEnd.setDate(newEnd.getDate() + days);
 
     // Stripe同期: subscription が存在する場合、Stripe の trial_end を先に更新
-    // (Stripeの trial_end と DB の trial_ends_at を一致させることで、
-    //  旧 trial_end 時点での意図しない課金を防ぐ)
-    if (studio.stripe_subscription_id) {
+    // (DBだけ更新すると旧 trial_end 時点で Stripe が課金してしまう)
+    const subId = studio.stripe_subscription_id as string | null;
+    if (subId) {
       const stripe = getStripe();
       try {
         await stripe.subscriptions.update(
-          studio.stripe_subscription_id as string,
+          subId,
           { trial_end: Math.floor(newEnd.getTime() / 1000) },
           { idempotencyKey: `extend-trial-${studioId}-${newEnd.toISOString()}` }
         );
       } catch (stripeErr: unknown) {
-        console.error("[Admin] extend-trial: Stripe update failed", stripeErr);
-        // subscription が既に active の場合、trial_end を future に設定できない
-        // → Adminにその旨を伝える
-        const stripeMessage = stripeErr instanceof Error ? stripeErr.message : "Stripe update failed";
+        const message =
+          stripeErr instanceof Error ? stripeErr.message : "Stripe update failed";
+        await insertAdminLog(supabase, {
+          action: "extend-trial",
+          studio_id: studioId,
+          admin_email: adminEmail,
+          status: "error",
+          error_message: message,
+          details: { days, newEnd: newEnd.toISOString() },
+        });
         return NextResponse.json(
-          { error: `Stripe subscription update failed: ${stripeMessage}` },
+          { error: `Stripe subscription update failed: ${message}` },
           { status: 502 }
         );
       }
     }
 
+    const newEndStr = newEnd.toISOString().split("T")[0];
     const { error } = await supabase
       .from("studios")
-      .update({ trial_ends_at: newEnd.toISOString().split("T")[0] })
+      .update({ trial_ends_at: newEndStr })
       .eq("id", studioId);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    return NextResponse.json({
-      success: true,
-      trial_ends_at: newEnd.toISOString().split("T")[0],
+
+    await insertAdminLog(supabase, {
+      action: "extend-trial",
+      studio_id: studioId,
+      admin_email: adminEmail,
+      status: "success",
+      details: { days, newEnd: newEndStr, stripeSync: !!subId },
     });
+
+    return NextResponse.json({ success: true, trial_ends_at: newEndStr });
   } catch (e) {
     if (e && typeof e === "object" && "digest" in e) throw e;
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
