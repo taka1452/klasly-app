@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAdminLocale } from "@/lib/admin/locale-context";
 
@@ -114,20 +113,26 @@ export default function AdminStudioDetail({
   }
 
   async function handleCancelAtPeriodEndToggle() {
+    if (actionLoading) return;
+    setActionLoading("toggle-cancel");
     setError(null);
     const next = !cancelAtPeriodEnd;
-    // Stripe 同期が必要なため、cancel エンドポイント経由で更新
-    const res = await fetch(`/api/admin/studios/${studioId}/cancel`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(next ? { immediate: false } : { resume: true }),
-    });
-    if (res.ok) {
-      setCancelAtPeriodEnd(next);
-      router.refresh();
-    } else {
-      const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "Failed to update");
+    try {
+      // Stripe 同期が必要なため、cancel エンドポイント経由で更新
+      const res = await fetch(`/api/admin/studios/${studioId}/cancel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(next ? { immediate: false } : { resume: true }),
+      });
+      if (res.ok) {
+        setCancelAtPeriodEnd(next);
+        router.refresh();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "Failed to update");
+      }
+    } finally {
+      setActionLoading(null);
     }
   }
 

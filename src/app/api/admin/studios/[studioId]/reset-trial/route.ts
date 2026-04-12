@@ -51,6 +51,7 @@ export async function POST(
         stripe_subscription_id: null,
         cancel_at_period_end: false,
         trial_reminder_sent: false,
+        grace_period_ends_at: null,
       })
       .eq("id", studioId);
 

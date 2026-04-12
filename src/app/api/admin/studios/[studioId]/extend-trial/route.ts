@@ -38,19 +38,23 @@ export async function POST(
     newEnd.setDate(newEnd.getDate() + days);
 
     // Stripe同期: subscription が存在する場合、Stripe の trial_end を先に更新
+    // (Stripeの trial_end と DB の trial_ends_at を一致させることで、
+    //  旧 trial_end 時点での意図しない課金を防ぐ)
     if (studio.stripe_subscription_id) {
+      const stripe = getStripe();
       try {
-        const stripe = getStripe();
         await stripe.subscriptions.update(
           studio.stripe_subscription_id as string,
           { trial_end: Math.floor(newEnd.getTime() / 1000) },
           { idempotencyKey: `extend-trial-${studioId}-${newEnd.toISOString()}` }
         );
-      } catch (stripeErr) {
+      } catch (stripeErr: unknown) {
         console.error("[Admin] extend-trial: Stripe update failed", stripeErr);
-        const message = stripeErr instanceof Error ? stripeErr.message : "Stripe update failed";
+        // subscription が既に active の場合、trial_end を future に設定できない
+        // → Adminにその旨を伝える
+        const stripeMessage = stripeErr instanceof Error ? stripeErr.message : "Stripe update failed";
         return NextResponse.json(
-          { error: `Failed to update Stripe subscription: ${message}` },
+          { error: `Stripe subscription update failed: ${stripeMessage}` },
           { status: 502 }
         );
       }

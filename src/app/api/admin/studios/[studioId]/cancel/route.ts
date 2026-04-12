@@ -17,7 +17,10 @@ export async function POST(
     const schema = z.object({
       immediate: z.boolean().optional(),
       resume: z.boolean().optional(),
-    });
+    }).refine(
+      (d) => !(d.immediate && d.resume),
+      { message: "Cannot set both immediate and resume" }
+    );
     const body = await parseBody(request, schema);
     if (body instanceof NextResponse) return body;
     const immediate = body.immediate === true;
@@ -36,7 +39,7 @@ export async function POST(
     const subId = studio.stripe_subscription_id as string | null;
     if (!subId) {
       return NextResponse.json(
-        { error: "No Stripe subscription to cancel" },
+        { error: resume ? "No Stripe subscription to resume" : "No Stripe subscription to cancel" },
         { status: 400 }
       );
     }

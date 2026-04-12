@@ -28,12 +28,22 @@ export async function PATCH(
     if (promoCodes && promoCodes.length > 0) {
       const stripe = getStripe();
       const isActive = status === "active";
+      const updated: string[] = [];
       for (const promo of promoCodes) {
         if (promo.stripe_promo_id) {
           try {
             await stripe.promotionCodes.update(promo.stripe_promo_id, { active: isActive });
+            updated.push(promo.stripe_promo_id);
           } catch (stripeErr) {
             console.error(`[Admin] coupon status: failed to update promo ${promo.stripe_promo_id}`, stripeErr);
+            // 部分失敗: 既に更新したプロモコードを元に戻す
+            for (const revertId of updated) {
+              try {
+                await stripe.promotionCodes.update(revertId, { active: !isActive });
+              } catch (revertErr) {
+                console.error(`[Admin] coupon status rollback failed for ${revertId}`, revertErr);
+              }
+            }
             const message = stripeErr instanceof Error ? stripeErr.message : "Stripe update failed";
             return NextResponse.json(
               { error: `Failed to update Stripe promotion code: ${message}` },
