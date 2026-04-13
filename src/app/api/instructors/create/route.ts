@@ -139,12 +139,16 @@ export async function POST(request: Request) {
       }).eq("id", authUserId);
     } else {
       authUserId = authData!.user.id;
-      await adminSupabase.from("profiles").update({
+      // trigger (handle_new_user) が profile を INSERT するが、
+      // 万一タイミングでまだ存在しない場合にも対応するため upsert を使用
+      await adminSupabase.from("profiles").upsert({
+        id: authUserId,
+        email: emailNorm,
         studio_id: targetStudioId,
         role: "instructor",
         full_name: fullName,
         phone: phone || null,
-      }).eq("id", authUserId);
+      }, { onConflict: "id" });
     }
 
     // 2. マジックリンクを生成（本番では getAppUrl が NEXT_PUBLIC_APP_URL または VERCEL_URL を返す）

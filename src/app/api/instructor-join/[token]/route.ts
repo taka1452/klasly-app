@@ -134,7 +134,7 @@ export async function POST(
       );
     }
 
-    // Check if user already has a profile in this studio
+    // Check if user already has a profile
     const { data: existingProfile } = await adminSupabase
       .from("profiles")
       .select("id, studio_id, role")
@@ -148,8 +148,33 @@ export async function POST(
       );
     }
 
+    // 別スタジオに既に所属している場合は上書きを防止
+    if (existingProfile?.studio_id && existingProfile.studio_id !== invite.studio_id) {
+      return NextResponse.json(
+        { error: "You are already associated with another studio. Please contact support to switch studios." },
+        { status: 409 }
+      );
+    }
+
     // Determine role from invite
     const joinRole = invite.invite_role === "manager" ? "manager" : "instructor";
+
+    // use_count を先にアトミックにインクリメント（楽観ロック）
+    // プロファイル更新前にトークンを消費することで、同時リクエストの競合を防ぐ
+    const { data: updatedToken, error: incrementError } = await adminSupabase
+      .from("instructor_invite_tokens")
+      .update({ use_count: invite.use_count + 1 })
+      .eq("id", invite.id)
+      .eq("use_count", invite.use_count) // optimistic lock: only update if unchanged
+      .select("id")
+      .maybeSingle();
+
+    if (incrementError || !updatedToken) {
+      return NextResponse.json(
+        { error: "This invite link was used by someone else. Please try again." },
+        { status: 409 }
+      );
+    }
 
     // Update profile
     await adminSupabase
@@ -197,23 +222,6 @@ export async function POST(
           can_send_messages: true,
         });
       }
-    }
-
-    // Atomically increment use_count with optimistic locking to prevent race conditions.
-    // Only update if use_count hasn't changed since we read it.
-    const { data: updatedToken, error: incrementError } = await adminSupabase
-      .from("instructor_invite_tokens")
-      .update({ use_count: invite.use_count + 1 })
-      .eq("id", invite.id)
-      .eq("use_count", invite.use_count) // optimistic lock: only update if unchanged
-      .select("id")
-      .maybeSingle();
-
-    if (incrementError || !updatedToken) {
-      return NextResponse.json(
-        { error: "This invite link was used by someone else. Please try again." },
-        { status: 409 }
-      );
     }
 
     const roleLabel = joinRole === "manager" ? "a manager" : "an instructor";

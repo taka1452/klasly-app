@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { getStatusColor } from "@/lib/utils";
+import { csrfFetch } from "@/lib/api/csrf-client";
 
 type BookingItem = {
   id: string;
@@ -28,9 +29,8 @@ export default function AttendanceChecklist({ bookings }: Props) {
     setLoading((prev) => ({ ...prev, [bookingId]: true }));
 
     try {
-      const res = await fetch("/api/attendance/toggle", {
+      const res = await csrfFetch("/api/attendance/toggle", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ booking_id: bookingId, attended: newValue }),
       });
 

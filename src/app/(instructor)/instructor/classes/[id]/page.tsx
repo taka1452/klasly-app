@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { csrfFetch } from "@/lib/api/csrf-client";
 import { createClient } from "@/lib/supabase/client";
 import { formatDate, formatTime, formatDuration } from "@/lib/utils";
 import InstructorClassEditForm from "@/components/instructor/instructor-class-edit-form";
@@ -151,8 +152,9 @@ export default function InstructorClassDetailPage() {
     if (!cls) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/instructor/classes?id=${cls.id}`, {
+      const res = await csrfFetch("/api/instructor/classes", {
         method: "DELETE",
+        body: JSON.stringify({ id: cls.id }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));

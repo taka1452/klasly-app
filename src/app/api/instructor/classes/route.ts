@@ -382,8 +382,18 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
+    // body 経由を優先、fallback で query parameter もサポート
+    let id: string | null = null;
+    try {
+      const body = await request.json();
+      id = body.id ?? null;
+    } catch {
+      // body が空の場合は query parameter を使用
+    }
+    if (!id) {
+      const { searchParams } = new URL(request.url);
+      id = searchParams.get("id");
+    }
     if (!id) {
       return NextResponse.json({ error: "Class id is required" }, { status: 400 });
     }
