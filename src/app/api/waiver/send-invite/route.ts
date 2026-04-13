@@ -36,8 +36,21 @@ export async function POST(request: Request) {
       .eq("id", user.id)
       .single();
 
-    if ((ownerProfile?.role !== "owner" && ownerProfile?.role !== "manager") || !ownerProfile?.studio_id) {
+    if (!ownerProfile?.studio_id || (ownerProfile.role !== "owner" && ownerProfile.role !== "manager")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // マネージャーの場合、can_manage_members 権限を確認
+    if (ownerProfile.role === "manager") {
+      const { data: mgr } = await adminSupabase
+        .from("managers")
+        .select("can_manage_members")
+        .eq("profile_id", user.id)
+        .eq("studio_id", ownerProfile.studio_id)
+        .single();
+      if (!mgr?.can_manage_members) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
     }
 
     const body = await request.json();

@@ -53,6 +53,19 @@ export async function POST(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // マネージャーの場合、can_manage_bookings 権限を確認
+  if (profile.role === "manager") {
+    const { data: mgr } = await adminDb
+      .from("managers")
+      .select("can_manage_bookings")
+      .eq("profile_id", user.id)
+      .eq("studio_id", event.studio_id)
+      .single();
+    if (!mgr?.can_manage_bookings) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
+
   // Promote
   await adminDb
     .from("event_bookings")
