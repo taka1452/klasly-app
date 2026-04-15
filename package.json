@@ -11,7 +11,10 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "demo:record": "playwright test --config playwright.config.demo.ts",
+    "demo:build": "bash scripts/build-demo-video.sh",
+    "demo:all": "npm run demo:record && npm run demo:build"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

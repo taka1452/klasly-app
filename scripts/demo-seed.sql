@@ -1,0 +1,67 @@
+-- ============================================================
+-- Demo seed data for marketing video recording.
+-- Apply via Supabase SQL Editor (or psql) against a NON-PRODUCTION project.
+--
+-- Prerequisite:
+--   1. Create a demo auth user (owner) via Supabase Auth UI or dashboard
+--      and set DEV_LOGIN_EMAIL / DEV_LOGIN_PASSWORD in .env.local.
+--   2. Replace :studio_id and :owner_id below with real UUIDs before running,
+--      or run the "resolve" block to pick them up automatically.
+--
+-- This file is a STARTING POINT — adapt column names to match your actual
+-- schema (see supabase/migrations/ for source of truth). Tables referenced
+-- below are common across the migrations but some may need tweaking.
+-- ============================================================
+
+-- Resolve owner + studio (uncomment and adjust to your setup)
+-- select id as owner_id from auth.users where email = 'owner@demo.klasly.app';
+-- select id as studio_id from public.studios where name = 'Studio Harmony';
+
+-- -------- Studio --------
+-- insert into public.studios (id, name, timezone, currency, is_demo)
+-- values (gen_random_uuid(), 'Studio Harmony', 'Asia/Tokyo', 'JPY', true)
+-- on conflict do nothing;
+
+-- -------- Class Templates --------
+-- insert into public.class_templates (studio_id, name, duration_minutes, capacity, color)
+-- values
+--   (:studio_id, 'Vinyasa Flow', 60, 12, '#8b5cf6'),
+--   (:studio_id, 'Morning Pilates', 45, 10, '#f59e0b'),
+--   (:studio_id, 'HIIT 30', 30, 15, '#ef4444'),
+--   (:studio_id, 'Kids Dance', 45, 8, '#06b6d4')
+-- on conflict do nothing;
+
+-- -------- Sessions (this week) --------
+-- Generate 20 sessions across the next 7 days
+-- insert into public.class_sessions (studio_id, template_id, start_at, end_at, capacity)
+-- select
+--   :studio_id,
+--   t.id,
+--   (current_date + (gs || ' days')::interval + (9 + (gs % 4) * 2 || ' hours')::interval) at time zone 'Asia/Tokyo',
+--   (current_date + (gs || ' days')::interval + (10 + (gs % 4) * 2 || ' hours')::interval) at time zone 'Asia/Tokyo',
+--   t.capacity
+-- from public.class_templates t
+-- cross join generate_series(0, 6) gs
+-- where t.studio_id = :studio_id;
+
+-- -------- Members --------
+-- insert into public.profiles (id, studio_id, full_name, email, role)
+-- values
+--   (gen_random_uuid(), :studio_id, 'Aiko Tanaka',  'aiko@demo.klasly.app',  'member'),
+--   (gen_random_uuid(), :studio_id, 'Bob Suzuki',   'bob@demo.klasly.app',   'member'),
+--   (gen_random_uuid(), :studio_id, 'Chloe Sato',   'chloe@demo.klasly.app', 'member'),
+--   (gen_random_uuid(), :studio_id, 'Daiki Kato',   'daiki@demo.klasly.app', 'member'),
+--   (gen_random_uuid(), :studio_id, 'Emi Fujita',   'emi@demo.klasly.app',   'member'),
+--   (gen_random_uuid(), :studio_id, 'Fumi Ito',     'fumi@demo.klasly.app',  'member'),
+--   (gen_random_uuid(), :studio_id, 'Gen Okada',    'gen@demo.klasly.app',   'member'),
+--   (gen_random_uuid(), :studio_id, 'Hana Mori',    'hana@demo.klasly.app',  'member')
+-- on conflict (email) do nothing;
+
+-- -------- Bookings --------
+-- insert into public.bookings (session_id, member_id, status)
+-- select s.id, m.id, 'confirmed'
+-- from public.class_sessions s
+-- join public.profiles m on m.studio_id = s.studio_id and m.role = 'member'
+-- where s.studio_id = :studio_id
+-- order by random()
+-- limit 30;
