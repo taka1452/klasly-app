@@ -178,11 +178,12 @@ export default function TestAccountSwitcher() {
         </div>
       )}
 
-      {/* Floating button */}
+      {/* Floating button — stacked above the Setup checklist button which
+          also lives at bottom-right */}
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className={`fixed bottom-4 right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full text-white shadow-lg transition-colors ${
+        className={`fixed bottom-20 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full text-white shadow-lg transition-colors ${
           insideTestSession
             ? "bg-amber-600 hover:bg-amber-700"
             : "bg-slate-700 hover:bg-slate-800"
@@ -205,9 +206,9 @@ export default function TestAccountSwitcher() {
         </svg>
       </button>
 
-      {/* Panel */}
+      {/* Panel — opens upward from the floating button */}
       {open && (
-        <div className="fixed bottom-20 right-4 z-50 w-80 rounded-xl border border-gray-200 bg-white shadow-2xl">
+        <div className="fixed bottom-36 right-6 z-50 w-80 rounded-xl border border-gray-200 bg-white shadow-2xl">
           <div className="border-b border-gray-100 px-4 py-3">
             <div className="flex items-center justify-between">
               <div>
