@@ -53,7 +53,7 @@ export default async function InstructorDetailPage({
   // Fetch tiers and current membership for this instructor
   const { data: tiers } = await supabase
     .from("instructor_membership_tiers")
-    .select("id, name, monthly_minutes")
+    .select("id, name, monthly_minutes, monthly_price, allow_overage, overage_rate_cents")
     .eq("studio_id", instructor.studio_id)
     .eq("is_active", true)
     .order("sort_order", { ascending: true });

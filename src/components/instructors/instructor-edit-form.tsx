@@ -8,7 +8,14 @@ import Toast from "@/components/ui/toast";
 type RentalType = "none" | "flat_monthly" | "per_class";
 type ContractTab = "none" | "hourly" | "flat";
 
-type TierOption = { id: string; name: string; monthly_minutes: number };
+type TierOption = {
+  id: string;
+  name: string;
+  monthly_minutes: number;
+  monthly_price?: number | null;
+  allow_overage?: boolean | null;
+  overage_rate_cents?: number | null;
+};
 
 type Props = {
   instructorId: string;
@@ -254,8 +261,9 @@ export default function InstructorEditForm({
           {contractTab === "hourly" && (
             <div className="mt-4 rounded-lg border border-gray-200 p-4">
               <p className="text-xs text-gray-500">
-                Subscription with a monthly hour allowance and (optional)
-                overage charge. Billed automatically via Stripe.
+                Subscription with a monthly hour allowance. Billed
+                automatically via Stripe. Extra hours beyond the plan can
+                optionally be billed per-hour (configured on each plan).
               </p>
               {tiers.length > 0 ? (
                 <>
@@ -271,8 +279,40 @@ export default function InstructorEditForm({
                       </option>
                     ))}
                   </select>
+
+                  {/* Overage policy badge for the selected tier */}
+                  {(() => {
+                    if (!tierId) return null;
+                    const selected = tiers.find((t) => t.id === tierId);
+                    if (!selected) return null;
+                    const unlimited = selected.monthly_minutes === -1;
+                    if (unlimited) {
+                      return (
+                        <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-2.5 text-xs text-emerald-800">
+                          ✨ <strong>Unlimited hours</strong> — no overage ever applies.
+                        </div>
+                      );
+                    }
+                    if (selected.allow_overage) {
+                      const rate =
+                        selected.overage_rate_cents != null
+                          ? `$${(selected.overage_rate_cents / 100).toFixed(2)}/hour`
+                          : "not set";
+                      return (
+                        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-800">
+                          💳 <strong>Overage allowed</strong> — extra hours beyond the plan are billed at <strong>{rate}</strong> on the 1st of the following month.
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-2.5 text-xs text-gray-700">
+                        🚫 <strong>Hard limit</strong> — this plan blocks further bookings once the monthly allowance runs out.
+                      </div>
+                    );
+                  })()}
+
                   <p className="mt-2 text-xs text-gray-400">
-                    Don&apos;t see the right plan?{" "}
+                    Don&apos;t see the right plan or want to change the overage rate?{" "}
                     <a
                       href="/settings/contracts?tab=hourly"
                       target="_blank"

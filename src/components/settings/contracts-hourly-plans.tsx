@@ -310,53 +310,95 @@ export default function ContractsHourlyPlans({ onSwitchToOverage }: Props = {}) 
             </div>
 
             {formMinutes !== "-1" && (
-              <div className="rounded-lg border border-gray-200 p-4">
-                <p className="text-sm font-medium text-gray-700 mb-3">
-                  Overage Policy
+              <div>
+                <p className="text-sm font-medium text-gray-700">
+                  When the monthly limit is reached...
                 </p>
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="overagePolicy"
-                      checked={!formAllowOverage}
-                      onChange={() => {
-                        setFormAllowOverage(false);
-                        setFormOverageRate("");
-                      }}
-                      className="accent-brand-600"
-                    />
-                    <span className="text-sm text-gray-700">
-                      Block scheduling when limit is reached
-                    </span>
+                <p className="mt-0.5 text-xs text-gray-500">
+                  Choose what happens when an instructor tries to book beyond
+                  their included hours.
+                </p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  {/* Block option */}
+                  <label
+                    className={`flex cursor-pointer flex-col gap-1 rounded-lg border p-3 text-sm transition-colors ${
+                      !formAllowOverage
+                        ? "border-brand-400 bg-brand-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="overagePolicy"
+                        checked={!formAllowOverage}
+                        onChange={() => {
+                          setFormAllowOverage(false);
+                          setFormOverageRate("");
+                        }}
+                        className="accent-brand-600"
+                      />
+                      <span className="font-medium text-gray-900">
+                        🚫 Block further bookings
+                      </span>
+                    </div>
+                    <p className="ml-6 text-xs text-gray-500">
+                      Instructor cannot schedule additional hours until the
+                      next month resets their allowance.
+                    </p>
                   </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="overagePolicy"
-                      checked={formAllowOverage}
-                      onChange={() => setFormAllowOverage(true)}
-                      className="accent-brand-600"
-                    />
-                    <span className="text-sm text-gray-700">
-                      Allow overage with hourly charge
-                    </span>
+
+                  {/* Allow overage option */}
+                  <label
+                    className={`flex cursor-pointer flex-col gap-1 rounded-lg border p-3 text-sm transition-colors ${
+                      formAllowOverage
+                        ? "border-brand-400 bg-brand-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="overagePolicy"
+                        checked={formAllowOverage}
+                        onChange={() => setFormAllowOverage(true)}
+                        className="accent-brand-600"
+                      />
+                      <span className="font-medium text-gray-900">
+                        💳 Allow overage — charge per extra hour
+                      </span>
+                    </div>
+                    <p className="ml-6 text-xs text-gray-500">
+                      Instructor can keep booking. At month-end we auto-charge
+                      the extra hours to their Stripe card.
+                    </p>
                   </label>
                 </div>
+
                 {formAllowOverage && (
-                  <div className="mt-3 flex items-center gap-2">
-                    <label className="text-sm text-gray-500">Overage Rate:</label>
-                    <span className="text-sm text-gray-500">$</span>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formOverageRate}
-                      onChange={(e) => setFormOverageRate(e.target.value)}
-                      placeholder="25.00"
-                      className="input-field w-28"
-                    />
-                    <span className="text-sm text-gray-500">/ hour</span>
+                  <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                    <label className="block text-sm font-medium text-gray-800">
+                      Overage rate
+                    </label>
+                    <p className="mt-0.5 text-xs text-amber-800">
+                      Per extra hour the instructor uses beyond the plan. E.g.
+                      plan is 10h/$200 and rate is $25 → they book 12h → $50
+                      extra billed on the 1st of next month.
+                    </p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className="text-sm text-gray-500">$</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formOverageRate}
+                        onChange={(e) => setFormOverageRate(e.target.value)}
+                        placeholder="25.00"
+                        className="input-field w-28"
+                        required
+                      />
+                      <span className="text-sm text-gray-500">/ hour</span>
+                    </div>
                   </div>
                 )}
               </div>

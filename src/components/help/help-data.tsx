@@ -1423,10 +1423,12 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
               When an instructor on an <B>hourly plan</B> uses more hours than their plan includes, the extra time is charged at the overage rate you set. Charges are calculated at the end of each month and billed automatically. You can waive charges before they&apos;re processed.
               <Steps>
                 <li>Go to <B>Settings &gt; Contracts &gt; Hourly plans</B> and edit a plan.</li>
-                <li>Choose <B>&quot;Allow overage with hourly charge&quot;</B> and set the rate.</li>
-                <li>At the end of each month, overage is calculated and charged automatically.</li>
+                <li>Under <B>&quot;When the monthly limit is reached...&quot;</B>, choose <B>&quot;💳 Allow overage — charge per extra hour&quot;</B> and set the hourly rate.</li>
+                <li>When an instructor creates a booking that would push them over the monthly limit, a confirmation modal shows the estimated charge and requires explicit approval before the booking is created.</li>
+                <li>At the end of each month, the accumulated overage is calculated and charged automatically to their Stripe card.</li>
                 <li>Click <B>View overage charges</B> on the Contracts page to review and waive as needed.</li>
               </Steps>
+              <Tip>Instructors can see their live monthly usage and estimated overage on the <B>Membership</B> page from the instructor sidebar.</Tip>
             </>
           ),
         },

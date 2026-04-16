@@ -23,6 +23,16 @@ type OverageCharge = {
   status: string;
 };
 
+type Quota = {
+  hasTier: boolean;
+  monthlyMinutes?: number;
+  usedMinutes?: number;
+  allowOverage?: boolean;
+  overageRateCents?: number | null;
+  overageMinutes?: number;
+  estimatedOverageCharge?: number;
+};
+
 export default function InstructorMembershipPage() {
   const searchParams = useSearchParams();
   const [info, setInfo] = useState<MembershipInfo | null>(null);
@@ -31,6 +41,7 @@ export default function InstructorMembershipPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [overageCharges, setOverageCharges] = useState<OverageCharge[]>([]);
+  const [quota, setQuota] = useState<Quota | null>(null);
 
   const fetchInfo = useCallback(async () => {
     const res = await fetch("/api/instructor/membership");
@@ -41,6 +52,11 @@ export default function InstructorMembershipPage() {
     const overageRes = await fetch("/api/instructor/overage-charges");
     if (overageRes.ok) {
       setOverageCharges(await overageRes.json());
+    }
+    // And current-month quota usage
+    const quotaRes = await fetch("/api/instructor/quota");
+    if (quotaRes.ok) {
+      setQuota(await quotaRes.json());
     }
     setLoading(false);
   }, []);
@@ -184,6 +200,89 @@ export default function InstructorMembershipPage() {
           </button>
         )}
       </div>
+
+      {/* This month's usage / overage estimate */}
+      {quota?.hasTier &&
+        quota.monthlyMinutes != null &&
+        quota.monthlyMinutes !== -1 && (
+          <div className="mt-6 card">
+            <h2 className="text-lg font-semibold text-gray-900">This Month</h2>
+            <p className="mt-1 text-xs text-gray-500">
+              Live usage against your plan. If you exceed the included hours,
+              overage is billed automatically on the 1st of next month.
+            </p>
+            {(() => {
+              const used = quota.usedMinutes ?? 0;
+              const limit = quota.monthlyMinutes!;
+              const pct = Math.min(100, Math.round((used / limit) * 100));
+              const overMin = quota.overageMinutes ?? 0;
+              const overOk = quota.allowOverage === true;
+              const rate = quota.overageRateCents ?? 0;
+              const estCharge = quota.estimatedOverageCharge ?? 0;
+              const barColor =
+                overMin > 0
+                  ? "bg-red-500"
+                  : pct >= 90
+                    ? "bg-amber-500"
+                    : "bg-brand-500";
+              const fmt = (m: number) => {
+                const h = Math.floor(m / 60);
+                const r = m % 60;
+                if (h === 0) return `${r}m`;
+                if (r === 0) return `${h}h`;
+                return `${h}h ${r}m`;
+              };
+              return (
+                <div className="mt-4">
+                  <div className="flex items-baseline justify-between">
+                    <p className="text-sm text-gray-700">
+                      <span className="font-semibold">{fmt(used)}</span>{" "}
+                      used of{" "}
+                      <span className="font-semibold">{fmt(limit)}</span>
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {pct}% {overMin > 0 ? "(over)" : ""}
+                    </p>
+                  </div>
+                  <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                    <div
+                      className={`h-full rounded-full transition-all ${barColor}`}
+                      style={{ width: `${Math.min(100, pct)}%` }}
+                    />
+                  </div>
+
+                  {overMin > 0 ? (
+                    overOk ? (
+                      <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                        💳 You are{" "}
+                        <strong>{fmt(overMin)} over</strong> your monthly
+                        allowance. Estimated overage charge:{" "}
+                        <strong>${(estCharge / 100).toFixed(2)}</strong>
+                        {rate ? ` ($${(rate / 100).toFixed(2)}/hour)` : ""}.
+                        Billed on the 1st of next month.
+                      </div>
+                    ) : (
+                      <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                        🚫 You have exceeded your monthly allowance. Further
+                        bookings are blocked until next month.
+                      </div>
+                    )
+                  ) : pct >= 90 ? (
+                    <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                      ⚠ You&apos;re approaching your monthly limit ({100 - pct}%
+                      remaining).
+                      {overOk && rate
+                        ? ` If you go over, extra hours will be billed at $${(rate / 100).toFixed(2)}/hour.`
+                        : overOk === false
+                          ? " Additional bookings will be blocked at the limit."
+                          : ""}
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })()}
+          </div>
+        )}
 
       {/* Overage charge history */}
       {overageCharges.length > 0 && (

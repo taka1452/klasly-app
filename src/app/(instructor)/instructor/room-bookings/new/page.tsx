@@ -24,6 +24,23 @@ export default function NewRoomBookingPage() {
   const [loading, setLoading] = useState(false);
   const [noMembershipWarning, setNoMembershipWarning] = useState(false);
 
+  // Overage confirmation modal state
+  type OverageInfo = {
+    monthlyMinutes: number;
+    overageMinutes: number;
+    overageRateCents: number | null;
+    estimatedChargeCents: number | null;
+    bookingCount: number;
+    months: Array<{
+      year: number;
+      month: number;
+      used: number;
+      requested: number;
+      overage: number;
+    }>;
+  };
+  const [overageInfo, setOverageInfo] = useState<OverageInfo | null>(null);
+
   useEffect(() => {
     async function fetchData() {
       const supabase = createClient();
@@ -64,30 +81,41 @@ export default function NewRoomBookingPage() {
     setBookingDate(today);
   }, []);
 
+  async function submitBooking(confirmOverage: boolean) {
+    const res = await fetch("/api/instructor/room-bookings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        room_id: roomId,
+        title,
+        booking_date: bookingType === "one_time" ? bookingDate : undefined,
+        start_time: startTime,
+        end_time: endTime,
+        is_public: isPublic,
+        notes: notes || null,
+        recurring: bookingType === "recurring",
+        day_of_week: bookingType === "recurring" ? dayOfWeek : undefined,
+        weeks: bookingType === "recurring" ? numWeeks : undefined,
+        confirm_overage: confirmOverage,
+      }),
+    });
+    return { res, data: await res.json() };
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setOverageInfo(null);
     setLoading(true);
 
     try {
-      const res = await fetch("/api/instructor/room-bookings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          room_id: roomId,
-          title,
-          booking_date: bookingType === "one_time" ? bookingDate : undefined,
-          start_time: startTime,
-          end_time: endTime,
-          is_public: isPublic,
-          notes: notes || null,
-          recurring: bookingType === "recurring",
-          day_of_week: bookingType === "recurring" ? dayOfWeek : undefined,
-          weeks: bookingType === "recurring" ? numWeeks : undefined,
-        }),
-      });
+      const { res, data } = await submitBooking(false);
 
-      const data = await res.json();
+      if (res.status === 409 && data?.code === "OVERAGE_CONFIRM_REQUIRED") {
+        setOverageInfo(data.overage);
+        setLoading(false);
+        return;
+      }
 
       if (!res.ok) {
         setError(data.error || "Failed to create booking");
@@ -100,6 +128,26 @@ export default function NewRoomBookingPage() {
     } catch {
       setError("Failed to create booking");
       setLoading(false);
+    }
+  }
+
+  async function handleConfirmOverage() {
+    setError("");
+    setLoading(true);
+    try {
+      const { res, data } = await submitBooking(true);
+      if (!res.ok) {
+        setError(data.error || "Failed to create booking");
+        setLoading(false);
+        setOverageInfo(null);
+        return;
+      }
+      router.push("/instructor/room-bookings");
+      router.refresh();
+    } catch {
+      setError("Failed to create booking");
+      setLoading(false);
+      setOverageInfo(null);
     }
   }
 
@@ -341,6 +389,136 @@ export default function NewRoomBookingPage() {
             </Link>
           </div>
         </form>
+      </div>
+
+      {/* Overage confirmation modal */}
+      {overageInfo && (
+        <OverageConfirmModal
+          info={overageInfo}
+          loading={loading}
+          onCancel={() => setOverageInfo(null)}
+          onConfirm={handleConfirmOverage}
+        />
+      )}
+    </div>
+  );
+}
+
+function fmtH(m: number) {
+  const h = Math.floor(m / 60);
+  const r = m % 60;
+  if (h === 0) return `${r}m`;
+  if (r === 0) return `${h}h`;
+  return `${h}h ${r}m`;
+}
+
+function OverageConfirmModal({
+  info,
+  loading,
+  onCancel,
+  onConfirm,
+}: {
+  info: {
+    monthlyMinutes: number;
+    overageMinutes: number;
+    overageRateCents: number | null;
+    estimatedChargeCents: number | null;
+    bookingCount: number;
+    months: Array<{
+      year: number;
+      month: number;
+      used: number;
+      requested: number;
+      overage: number;
+    }>;
+  };
+  loading: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const rateStr =
+    info.overageRateCents != null
+      ? `$${(info.overageRateCents / 100).toFixed(2)}/hour`
+      : "per-hour rate";
+  const chargeStr =
+    info.estimatedChargeCents != null
+      ? `$${(info.estimatedChargeCents / 100).toFixed(2)}`
+      : "—";
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
+        <div className="border-b border-gray-200 px-5 py-4">
+          <h3 className="text-lg font-semibold text-gray-900">
+            ⚠ Overage charge required
+          </h3>
+          <p className="mt-1 text-xs text-gray-500">
+            This booking exceeds your monthly hour allowance. Extra time will
+            be billed to your card on the 1st of next month.
+          </p>
+        </div>
+
+        <div className="space-y-3 px-5 py-4 text-sm">
+          <div className="flex justify-between">
+            <span className="text-gray-500">
+              {info.bookingCount > 1
+                ? `${info.bookingCount} bookings will go over by`
+                : "This booking goes over by"}
+            </span>
+            <span className="font-semibold text-red-600">
+              {fmtH(info.overageMinutes)}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500">Rate</span>
+            <span className="font-medium text-gray-900">{rateStr}</span>
+          </div>
+          <div className="flex items-baseline justify-between border-t border-gray-100 pt-3">
+            <span className="font-medium text-gray-700">
+              Estimated charge
+            </span>
+            <span className="text-lg font-bold text-gray-900">{chargeStr}</span>
+          </div>
+          {info.months.length > 1 && (
+            <div className="mt-3 rounded-lg bg-gray-50 p-2 text-xs text-gray-600">
+              Breakdown by month:
+              <ul className="mt-1 space-y-0.5">
+                {info.months.map((m) => (
+                  <li key={`${m.year}-${m.month}`} className="flex justify-between">
+                    <span>
+                      {m.year}/{String(m.month).padStart(2, "0")}
+                    </span>
+                    <span>+{fmtH(m.overage)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <p className="mt-2 rounded-lg bg-amber-50 border border-amber-200 p-2.5 text-xs text-amber-800">
+            By proceeding, you agree to pay the overage charge. The exact
+            amount may differ slightly if you book more or cancel hours this
+            month.
+          </p>
+        </div>
+
+        <div className="flex gap-2 border-t border-gray-200 px-5 py-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={loading}
+            className="btn-secondary flex-1"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={loading}
+            className="btn-primary flex-1"
+          >
+            {loading ? "Booking..." : "Proceed & agree to charge"}
+          </button>
+        </div>
       </div>
     </div>
   );

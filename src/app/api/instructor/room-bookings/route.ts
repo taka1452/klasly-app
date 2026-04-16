@@ -73,7 +73,19 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { room_id, title, booking_date, start_time, end_time, is_public, notes, recurring, day_of_week, weeks } = body;
+    const {
+      room_id,
+      title,
+      booking_date,
+      start_time,
+      end_time,
+      is_public,
+      notes,
+      recurring,
+      day_of_week,
+      weeks,
+      confirm_overage,
+    } = body;
 
     if (!room_id || !title || !start_time || !end_time) {
       return NextResponse.json(
@@ -256,6 +268,39 @@ export async function POST(request: Request) {
               code: "QUOTA_BLOCKED",
             },
             { status: 403 }
+          );
+        }
+
+        // Overage would occur and is allowed. Require explicit confirmation
+        // from the client (so the instructor sees the charge before agreeing).
+        if (exceedingMonths.length > 0 && allowOverage && !confirm_overage) {
+          const totalOverMinutes = exceedingMonths.reduce(
+            (s, c) => s + c.overage,
+            0
+          );
+          const estChargeCents = overageRateCents
+            ? Math.ceil((totalOverMinutes / 60) * overageRateCents)
+            : null;
+          return NextResponse.json(
+            {
+              error: "Overage confirmation required.",
+              code: "OVERAGE_CONFIRM_REQUIRED",
+              overage: {
+                monthlyMinutes,
+                overageMinutes: totalOverMinutes,
+                overageRateCents,
+                estimatedChargeCents: estChargeCents,
+                bookingCount: bookingDates.length,
+                months: exceedingMonths.map((m) => ({
+                  year: m.year,
+                  month: m.month,
+                  used: m.used,
+                  requested: m.requested,
+                  overage: m.overage,
+                })),
+              },
+            },
+            { status: 409 }
           );
         }
 
