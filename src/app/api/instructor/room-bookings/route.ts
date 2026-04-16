@@ -198,6 +198,13 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     let overageWarning: string | null = null;
+    // Captured for the instructor confirmation email — null unless this
+    // booking triggers an actual overage (past the 409 confirmation step).
+    let bookingOverageForEmail: {
+      minutes: number;
+      rateCents: number | null;
+      estimatedChargeCents: number | null;
+    } | null = null;
 
     if (membership) {
       const rawTier = membership.instructor_membership_tiers as unknown;
@@ -308,6 +315,14 @@ export async function POST(request: Request) {
         if (exceedingMonths.length > 0) {
           const rateStr = overageRateCents ? `$${(overageRateCents / 100).toFixed(2)}` : null;
           const totalOverMinutes = exceedingMonths.reduce((s, c) => s + c.overage, 0);
+          // Capture for the instructor confirmation email.
+          bookingOverageForEmail = {
+            minutes: totalOverMinutes,
+            rateCents: overageRateCents,
+            estimatedChargeCents: overageRateCents
+              ? Math.ceil((totalOverMinutes / 60) * overageRateCents)
+              : null,
+          };
           if (exceedingMonths.length === 1) {
             const m = exceedingMonths[0];
             overageWarning = `You've used ${fmtH(m.used)} of ${fmtH(monthlyMinutes)} this month. ${recurring ? `These ${bookingDates.length} bookings total ${fmtH(totalRequestedMinutes)}` : "This booking"} will put you ${fmtH(m.overage)} over your limit.${rateStr ? ` Additional hours are charged at ${rateStr}/hour.` : ""}`;
@@ -390,6 +405,18 @@ export async function POST(request: Request) {
       startTime: start_time,
       endTime: end_time,
     }).catch((err) => console.warn("[RoomBookings] Notification email failed:", err));
+
+    // Send confirmation email to the instructor themselves (fire-and-forget)
+    notifyInstructorOfOwnBooking(ctx.supabase, ctx.studioId, ctx.instructorId, {
+      roomId: room_id,
+      title,
+      dates: bookingDates,
+      startTime: start_time,
+      endTime: end_time,
+      overage: bookingOverageForEmail,
+    }).catch((err) =>
+      console.warn("[RoomBookings] Instructor confirmation email failed:", err)
+    );
 
     return NextResponse.json(
       {
@@ -608,5 +635,88 @@ async function notifyRoomBooking(
     }
   } catch (err) {
     console.error("[RoomBooking] Failed to send notification:", err);
+  }
+}
+
+// Helper: notify the instructor themselves that their booking was created.
+// Respects their email_booking_confirmation preference.
+async function notifyInstructorOfOwnBooking(
+  supabase: SupabaseClient,
+  studioId: string,
+  instructorId: string,
+  booking: {
+    roomId: string;
+    title: string;
+    dates: string[];
+    startTime: string;
+    endTime: string;
+    overage: {
+      minutes: number;
+      rateCents: number | null;
+      estimatedChargeCents: number | null;
+    } | null;
+  }
+) {
+  try {
+    const { data: instructor } = await supabase
+      .from("instructors")
+      .select("profile_id, profiles(email, full_name)")
+      .eq("id", instructorId)
+      .single();
+    if (!instructor?.profile_id) return;
+    const rawProfile = instructor.profiles as unknown;
+    const profile = (Array.isArray(rawProfile) ? rawProfile[0] : rawProfile) as
+      | { email: string; full_name: string }
+      | null;
+    if (!profile?.email) return;
+
+    // Respect instructor's email preferences.
+    const { shouldSendEmail } = await import("@/lib/email/check-preference");
+    const allowed = await shouldSendEmail(
+      instructor.profile_id,
+      studioId,
+      "booking_confirmation"
+    );
+    if (!allowed) return;
+
+    const { data: room } = await supabase
+      .from("rooms")
+      .select("name")
+      .eq("id", booking.roomId)
+      .single();
+    const { data: studio } = await supabase
+      .from("studios")
+      .select("name")
+      .eq("id", studioId)
+      .single();
+
+    const { instructorRoomBookingConfirmation } = await import(
+      "@/lib/email/templates"
+    );
+    const { sendEmail } = await import("@/lib/email/send");
+
+    const template = instructorRoomBookingConfirmation({
+      instructorName: profile.full_name || "there",
+      roomName: room?.name || "the room",
+      title: booking.title,
+      dates: booking.dates,
+      startTime: booking.startTime,
+      endTime: booking.endTime,
+      studioName: studio?.name || "your studio",
+      overage: booking.overage,
+    });
+
+    await sendEmail({
+      to: profile.email,
+      subject: template.subject,
+      html: template.html,
+      studioId,
+      templateName: "instructorRoomBookingConfirmation",
+    });
+  } catch (err) {
+    console.error(
+      "[RoomBooking] Failed to send instructor confirmation:",
+      err
+    );
   }
 }

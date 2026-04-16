@@ -67,8 +67,8 @@ export default function DashboardEventCard({
 
   function handleClick() {
     if (isRoomBooking) {
-      // Room bookings navigate to the rooms bookings list
-      router.push("/rooms");
+      // Instructor room bookings -> dedicated staff detail view
+      router.push(`/rooms/bookings/${session.id}`);
     } else {
       router.push(`/calendar/${session.class_id}/sessions/${session.id}`);
     }

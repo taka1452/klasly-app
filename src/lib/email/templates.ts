@@ -70,6 +70,107 @@ export function bookingConfirmation(params: BookingParams) {
   };
 }
 
+export function instructorRoomBookingConfirmation(params: {
+  instructorName: string;
+  roomName: string;
+  title: string;
+  dates: string[]; // YYYY-MM-DD, chronological
+  startTime: string;
+  endTime: string;
+  studioName: string;
+  overage?: {
+    minutes: number;
+    rateCents: number | null;
+    estimatedChargeCents: number | null;
+  } | null;
+}) {
+  const {
+    instructorName,
+    roomName,
+    title,
+    dates,
+    startTime,
+    endTime,
+    studioName,
+    overage,
+  } = params;
+  const recurring = dates.length > 1;
+  const dateList = recurring
+    ? `${dates.length} sessions: ${dates[0]} → ${dates[dates.length - 1]}`
+    : dates[0] ?? "";
+
+  const overageSection = overage
+    ? `<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:12px;margin:12px 0;font-size:13px;color:#92400e;">
+        <strong>Overage charge ${overage.estimatedChargeCents != null ? `: $${(overage.estimatedChargeCents / 100).toFixed(2)}` : " applies"}</strong><br />
+        This booking puts you ${Math.floor(overage.minutes / 60)}h ${overage.minutes % 60}m over your plan's monthly allowance${overage.rateCents ? ` (billed at $${(overage.rateCents / 100).toFixed(2)}/hour)` : ""}. The amount is charged on the 1st of next month.
+      </div>`
+    : "";
+
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">Room booking confirmed</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${instructorName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">Your studio room booking is confirmed:</p>
+    <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-weight:600;color:${BRAND_COLOR};">${title}</p>
+      <p style="margin:8px 0 0;font-size:14px;">${dateList}</p>
+      <p style="margin:4px 0 0;font-size:14px;">${startTime} &ndash; ${endTime}</p>
+      <p style="margin:4px 0 0;font-size:14px;color:#6b7280;">${roomName} &middot; ${studioName}</p>
+    </div>
+    ${overageSection}
+    <p style="margin:0;font-size:13px;color:#6b7280;">You can manage your bookings anytime from the instructor portal.</p>
+  `;
+  return {
+    subject: recurring
+      ? `Room booking confirmed - ${dates.length} sessions - ${title}`
+      : `Room booking confirmed - ${title}`,
+    html: baseHtml(content),
+  };
+}
+
+export function instructorRoomBookingCancelledByOwner(params: {
+  instructorName: string;
+  roomName: string;
+  title: string;
+  bookingDate: string;
+  startTime: string;
+  endTime: string;
+  studioName: string;
+  reason?: string | null;
+}) {
+  const {
+    instructorName,
+    roomName,
+    title,
+    bookingDate,
+    startTime,
+    endTime,
+    studioName,
+    reason,
+  } = params;
+  const reasonSection = reason
+    ? `<p style="margin:12px 0 0;font-size:14px;"><strong>Reason:</strong> ${reason}</p>`
+    : "";
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">Room booking cancelled</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${instructorName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      The studio has cancelled one of your room bookings:
+    </p>
+    <div style="background:#fef2f2;border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-weight:600;color:#991b1b;">${title}</p>
+      <p style="margin:8px 0 0;font-size:14px;">${bookingDate}</p>
+      <p style="margin:4px 0 0;font-size:14px;">${startTime} &ndash; ${endTime}</p>
+      <p style="margin:4px 0 0;font-size:14px;color:#6b7280;">${roomName} &middot; ${studioName}</p>
+      ${reasonSection}
+    </div>
+    <p style="margin:0;font-size:14px;">Please reach out to the studio if you have questions.</p>
+  `;
+  return {
+    subject: `Your room booking was cancelled - ${title}`,
+    html: baseHtml(content),
+  };
+}
+
 export function bookingCancelled(params: BookingParams) {
   const { memberName, className, sessionDate, startTime, studioName } = params;
   const content = `

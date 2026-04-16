@@ -1417,6 +1417,27 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
+          q: "Who can view, edit, or cancel an instructor's room booking?",
+          a: (
+            <>
+              Instructors can manage their own room bookings from <B>Instructor &gt; Room bookings</B>. Owners and managers with the <B>can_manage_rooms</B> permission can also view, edit, and cancel any instructor&apos;s room booking.
+              <Steps>
+                <li>On the dashboard calendar, click any teal <B>Room</B> event to open its detail page at <B>/rooms/bookings/[id]</B>.</li>
+                <li>Use the <B>Cancel booking</B> panel to cancel. For recurring series you can cancel only this session or this and all future sessions.</li>
+                <li>Optionally include a <B>reason</B>; it is emailed to the instructor along with the cancellation notice if they have booking cancellation emails enabled.</li>
+              </Steps>
+            </>
+          ),
+        },
+        {
+          q: "Do instructors get an email when they book a room?",
+          a: (
+            <>
+              Yes. Whenever an instructor creates a room booking, they receive a confirmation email with the date, time, room, and (if applicable) the estimated overage charge. Instructors can toggle this at <B>Instructor &gt; Notifications</B> (the <B>Room booking confirmations</B> option). They also receive an email if the studio cancels one of their bookings on their behalf.
+            </>
+          ),
+        },
+        {
           q: "How does overage billing work?",
           a: (
             <>

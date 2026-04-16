@@ -3,6 +3,16 @@ import { createClient } from "@supabase/supabase-js";
 /** Allowed notification types that map to email_* columns */
 const VALID_NOTIFICATION_TYPES = [
   "booking_confirmation",
+  "booking_cancellation",
+  "class_changes",
+  "payment_receipts",
+  "waiver_requests",
+  "new_messages",
+  "waitlist_promotion",
+  "event_reminders",
+  // Legacy aliases — kept so existing callers that pass these strings still
+  // fall through to the shouldSendEmail warning/default-true path rather than
+  // silently failing to send.
   "booking_cancelled",
   "waitlist_promoted",
   "payment_receipt",
