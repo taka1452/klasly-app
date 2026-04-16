@@ -90,8 +90,8 @@ export default function SettingsLayout({
           show: isCollectiveMode,
         },
         {
-          label: "Tiers",
-          href: "/settings/tiers",
+          label: "Contracts",
+          href: "/settings/contracts",
           icon: <Handshake className="h-4 w-4" />,
           show: isCollectiveMode,
         },

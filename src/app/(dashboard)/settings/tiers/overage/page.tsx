@@ -104,10 +104,10 @@ export default function OverageManagementPage() {
     <div>
       <div className="mb-6">
         <Link
-          href="/settings/tiers"
+          href="/settings/contracts?tab=hourly"
           className="text-sm text-gray-500 hover:text-gray-700"
         >
-          &larr; Back to tiers
+          &larr; Back to contracts
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-gray-900">
           Overage Charges

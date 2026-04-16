@@ -184,10 +184,10 @@ export default async function DashboardLayout({
         },
         {
           id: "setup-tiers",
-          label: "Define membership tiers",
+          label: "Define instructor contracts",
           done: (tiersCount ?? 0) >= 1,
-          href: "/settings/tiers",
-          hint: "Create monthly tiers for instructors.",
+          href: "/settings/contracts?tab=hourly",
+          hint: "Create hourly plans for instructors.",
           helpHref: "/help/collective-mode/collective-tiers",
         },
       ];

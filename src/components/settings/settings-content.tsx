@@ -415,16 +415,16 @@ export default function SettingsContent({
           {(isOwner || canManageSettings) && (
             <div className="card">
               <h3 className="text-lg font-semibold text-gray-900">
-                Instructor Membership Tiers
+                Instructor Contracts
               </h3>
               <p className="mt-2 text-sm text-gray-600">
-                Define tiers with monthly hour limits for instructor room bookings.
+                Manage hourly plans, flat / per-class fees, and overage charges for instructors.
               </p>
               <Link
-                href="/settings/tiers"
+                href="/settings/contracts"
                 className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
               >
-                Manage Tiers →
+                Manage Contracts →
               </Link>
             </div>
           )}

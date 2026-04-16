@@ -74,9 +74,9 @@ export default async function CollectiveSetupPage() {
     {
       id: "tiers",
       icon: <Layers className="h-5 w-5" />,
-      title: "2. Define membership tiers",
-      description: "Create monthly membership tiers with different hour allowances and prices (e.g., Community: 3h/$60, Growth: 16h/$280).",
-      href: "/settings/tiers",
+      title: "2. Define instructor contracts",
+      description: "Create hourly plans with different hour allowances and prices (e.g., Community: 3h/$60, Growth: 16h/$280), or set up flat / per-class fees per instructor.",
+      href: "/settings/contracts?tab=hourly",
       done: (tiersCount ?? 0) >= 1,
     },
     {

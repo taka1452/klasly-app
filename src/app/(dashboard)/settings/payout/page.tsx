@@ -490,7 +490,7 @@ export default function PayoutSettingsPage() {
         </p>
         <div className="mt-4 space-y-3">
           <Link
-            href="/instructors/rental"
+            href="/settings/contracts?tab=flat"
             className="inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
           >
             View rental report →

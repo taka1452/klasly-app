@@ -671,7 +671,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
                 <li><B>Payments &amp; Billing</B> — Studio Currency, Stripe Connect, Products &amp; Pricing, Subscription.</li>
                 <li><B>Scheduling</B> — Widget (Embed).</li>
                 <li><B>Forms &amp; Waivers</B> — Waiver Template.</li>
-                <li><B>Collective Mode</B> — Collective Setup, Rooms, Tiers, Payout (visible only in Collective Mode).</li>
+                <li><B>Collective Mode</B> — Collective Setup, Rooms, Contracts, Payout (visible only in Collective Mode).</li>
                 <li><B>Studio</B> — Features, Referral, Notifications, Account, Support.</li>
               </Steps>
               <Tip>Click any item in the side nav to jump directly to that settings page. The active page is highlighted.</Tip>
@@ -1401,18 +1401,31 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
       ],
     },
     {
-      title: "Overage Billing",
+      title: "Instructor Contracts",
       items: [
+        {
+          q: "What are instructor contracts?",
+          a: (
+            <>
+              An instructor contract defines how each instructor pays to use your studio. Both types live under <B>Settings &gt; Contracts</B>. Each instructor is assigned <B>one</B> of the following:
+              <Steps>
+                <li><B>Hourly plan</B> (tab 1) &mdash; a recurring monthly subscription that includes a set number of hours. Ideal when you want predictable revenue and automatic Stripe billing. Supports optional overage charges.</li>
+                <li><B>Flat / per-class fee</B> (tab 2) &mdash; either a fixed monthly amount or a charge per class taught. Settlement is manual (bank transfer, cash, etc.) via the built-in monthly report.</li>
+              </Steps>
+              <Tip>Assign the chosen contract on each instructor&apos;s edit page. Hourly plans are defined on the Contracts page first; flat / per-class fees are configured directly on the instructor.</Tip>
+            </>
+          ),
+        },
         {
           q: "How does overage billing work?",
           a: (
             <>
-              When an instructor uses more hours than their tier includes, the extra time is charged at the overage rate you set. Charges are calculated at the end of each month and billed automatically. You can waive charges before they&apos;re processed.
+              When an instructor on an <B>hourly plan</B> uses more hours than their plan includes, the extra time is charged at the overage rate you set. Charges are calculated at the end of each month and billed automatically. You can waive charges before they&apos;re processed.
               <Steps>
-                <li>Go to <B>Settings &gt; Tiers</B> and edit a tier.</li>
+                <li>Go to <B>Settings &gt; Contracts &gt; Hourly plans</B> and edit a plan.</li>
                 <li>Choose <B>&quot;Allow overage with hourly charge&quot;</B> and set the rate.</li>
                 <li>At the end of each month, overage is calculated and charged automatically.</li>
-                <li>View and manage charges under <B>Settings &gt; Tiers &gt; Overage Charges</B>.</li>
+                <li>Click <B>View overage charges</B> on the Contracts page to review and waive as needed.</li>
               </Steps>
             </>
           ),
@@ -1421,7 +1434,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "Can I block instructors from going over their limit?",
           a: (
             <>
-              Yes. When editing a tier, select <B>&quot;Block scheduling when limit is reached&quot;</B>. Instructors won&apos;t be able to schedule room bookings beyond their monthly hours.
+              Yes. When editing an hourly plan, select <B>&quot;Block scheduling when limit is reached&quot;</B>. Instructors won&apos;t be able to schedule room bookings beyond their monthly hours. This check is enforced per month — recurring bookings that span multiple months are validated against each month&apos;s remaining allowance individually.
             </>
           ),
         },
@@ -1438,7 +1451,16 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "Can I waive an overage charge?",
           a: (
             <>
-              Yes. Go to <B>Settings &gt; Tiers &gt; Overage Charges</B>, find the charge, and click <B>Waive</B>. If the charge has already been processed, a refund will be issued automatically.
+              Yes. Go to <B>Settings &gt; Contracts &gt; View overage charges</B>, find the charge, and click <B>Waive</B>. If the charge has already been processed, a refund will be issued automatically.
+            </>
+          ),
+        },
+        {
+          q: "How do flat / per-class fees work?",
+          a: (
+            <>
+              On the instructor edit page, under <B>Contract &gt; B. Flat / per-class fee</B>, pick either <B>Flat monthly</B> (fixed monthly amount) or <B>Per class</B> (amount per class taught) and enter the amount. At the start of each month, go to <B>Settings &gt; Contracts &gt; Flat &amp; per-class fees</B> to see what each instructor owes and collect payment outside of Stripe (bank transfer, cash, etc.).
+              <Tip>Flat / per-class fees are <B>not</B> auto-charged; this is manual settlement by design.</Tip>
             </>
           ),
         },
