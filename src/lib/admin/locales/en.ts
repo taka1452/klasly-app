@@ -158,11 +158,11 @@ export const en = {
     studioNameMismatch: "Studio name does not match.",
     membersActivePaused: "Active {{active}} / Paused {{paused}} / Cancelled {{cancelled}}",
     userActivity: "User Activity",
-    lastLogin: "Last Login",
+    lastLogin: "Last Activity",
     active: "Active",
     inactive: "Inactive",
     dormant: "Dormant",
-    never: "Never",
+    never: "No activity yet",
     noStaff: "No staff members found",
   },
   billing: {

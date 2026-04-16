@@ -728,7 +728,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How can I see if studio staff are actively using the platform?",
           a: (
             <>
-              On the <B>Studio Detail</B> page (Admin &gt; Studios &gt; click a studio), scroll to the <B>User Activity</B> section. It shows the last login time and activity status for each owner, manager, and instructor. Users are marked as <B>Active</B> (logged in within 30 days), <B>Inactive</B> (30-90 days), or <B>Dormant</B> (90+ days or never logged in).
+              On the <B>Studio Detail</B> page (Admin &gt; Studios &gt; click a studio), scroll to the <B>User Activity</B> section. It shows the last activity time (actual app usage, not just sign-in) and activity status for each owner, manager, and instructor. Users are marked as <B>Active</B> (activity within 30 days), <B>Inactive</B> (30-90 days), or <B>Dormant</B> (90+ days or no activity recorded). Activity updates are throttled to at most once every 5 minutes per user.
             </>
           ),
         },

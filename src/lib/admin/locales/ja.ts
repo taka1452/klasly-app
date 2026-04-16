@@ -158,11 +158,11 @@ export const ja = {
     studioNameMismatch: "スタジオ名が一致しません。",
     membersActivePaused: "アクティブ {{active}} / 一時停止 {{paused}} / 解約 {{cancelled}}",
     userActivity: "ユーザー稼働状況",
-    lastLogin: "最終ログイン",
+    lastLogin: "最終操作日時",
     active: "稼働中",
     inactive: "非稼働",
     dormant: "休止",
-    never: "未ログイン",
+    never: "操作履歴なし",
     noStaff: "スタッフが見つかりません",
   },
   billing: {

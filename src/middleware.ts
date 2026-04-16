@@ -60,6 +60,30 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Track real activity for the admin "User Activity" panel.
+  // Throttled via a client-side cookie so at most one update fires per 5 min.
+  if (user) {
+    const LAST_ACTIVE_COOKIE = "klasly_last_active";
+    const THROTTLE_MS = 5 * 60 * 1000;
+    const lastActiveStr = request.cookies.get(LAST_ACTIVE_COOKIE)?.value;
+    const lastActiveMs = lastActiveStr ? parseInt(lastActiveStr, 10) : 0;
+    if (Number.isNaN(lastActiveMs) || Date.now() - lastActiveMs > THROTTLE_MS) {
+      const nowIso = new Date().toISOString();
+      // Fire-and-forget — never block the request on this update.
+      supabase
+        .from("profiles")
+        .update({ last_active_at: nowIso })
+        .eq("id", user.id)
+        .then(() => {}, () => {});
+      supabaseResponse.cookies.set(LAST_ACTIVE_COOKIE, String(Date.now()), {
+        httpOnly: false,
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24, // 1 day — short enough to recover quickly from stale state
+        path: "/",
+      });
+    }
+  }
+
   // 認証不要ページの判定
   const isAuthPage =
     request.nextUrl.pathname.startsWith("/login") ||
