@@ -36,6 +36,9 @@ type PermissionDef = {
   allows: string[];
   /** Things it does NOT cover, to clear up ambiguity. */
   doesNotInclude?: string[];
+  /** Optional call-out badge shown in the compact list (e.g. sub-features). */
+  calloutLabel?: string;
+  calloutText?: string;
 };
 
 const PERMISSIONS: PermissionDef[] = [
@@ -130,17 +133,19 @@ const PERMISSIONS: PermissionDef[] = [
     key: "canManageSettings",
     label: "Settings",
     short: "Access studio settings, contracts, and widget configuration",
-    long: "Configure how the studio runs. Includes Contracts (hourly plans / overage / flat fees), Collective Setup, booking rules, widget, waiver template, features, notifications — and the Test Accounts switcher.",
+    long: "Configure how the studio runs. Includes Contracts (hourly plans / overage / flat fees), Collective Setup, booking rules, widget, waiver template, features, notifications — and importantly, the Test Accounts switcher.",
     allows: [
       "Settings page (most cards)",
       "Contracts: hourly plans, overage policy, flat fees",
       "Collective Mode setup + Studio Fee",
       "Widget config, waiver template, features, notifications",
-      "Test Accounts switcher (impersonate test instructor/member)",
     ],
     doesNotInclude: [
       "Stripe Connect, subscription/billing, and account deletion (owner only)",
     ],
+    calloutLabel: "Account switcher",
+    calloutText:
+      "Grants access to the Test Accounts switcher (the person icon at the bottom-right). The manager can sign in as any of the studio's test instructor / test member accounts to see the app from that side — real members and instructors cannot be impersonated. Test accounts are blocked from performing real Stripe actions.",
   },
   {
     key: "canTeach",
@@ -304,6 +309,16 @@ export default function ManagersClient() {
                     </ul>
                   </>
                 )}
+                {p.calloutLabel && p.calloutText && (
+                  <div className="mt-3 rounded-md border border-brand-200 bg-brand-50 p-2.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-700">
+                      {p.calloutLabel}
+                    </p>
+                    <p className="mt-1 text-xs text-brand-900">
+                      {p.calloutText}
+                    </p>
+                  </div>
+                )}
               </li>
             ))}
           </ul>
@@ -423,6 +438,11 @@ export default function ManagersClient() {
                             }`}
                           >
                             {p.label}
+                            {p.calloutLabel && (
+                              <span className="ml-2 rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-brand-700">
+                                + {p.calloutLabel}
+                              </span>
+                            )}
                           </p>
                           <p className="mt-0.5 text-xs text-gray-500">
                             {p.short}
