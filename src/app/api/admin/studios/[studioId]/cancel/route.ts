@@ -48,33 +48,43 @@ export async function POST(
 
     const stripe = getStripe();
 
-    if (resume) {
-      // キャンセル予約を取り消し（cancel_at_period_end を false に戻す）
-      await stripe.subscriptions.update(subId, {
-        cancel_at_period_end: false,
+    try {
+      if (resume) {
+        await stripe.subscriptions.update(subId, { cancel_at_period_end: false });
+        await supabase
+          .from("studios")
+          .update({ cancel_at_period_end: false })
+          .eq("id", studioId);
+      } else if (immediate) {
+        await stripe.subscriptions.cancel(subId);
+        await supabase
+          .from("studios")
+          .update({
+            plan_status: "canceled",
+            stripe_subscription_id: null,
+            cancel_at_period_end: false,
+          })
+          .eq("id", studioId);
+      } else {
+        await stripe.subscriptions.update(subId, { cancel_at_period_end: true });
+        await supabase
+          .from("studios")
+          .update({ cancel_at_period_end: true })
+          .eq("id", studioId);
+      }
+    } catch (stripeErr: unknown) {
+      const stripeMessage = stripeErr instanceof Error ? stripeErr.message : "Stripe API error";
+      await insertAdminLog(supabase, {
+        action: `subscription-${resume ? "resume" : immediate ? "cancel-immediate" : "cancel-at-period-end"}`,
+        studio_id: studioId,
+        admin_email: adminEmail,
+        status: "error",
+        error_message: stripeMessage,
       });
-      await supabase
-        .from("studios")
-        .update({ cancel_at_period_end: false })
-        .eq("id", studioId);
-    } else if (immediate) {
-      await stripe.subscriptions.cancel(subId);
-      await supabase
-        .from("studios")
-        .update({
-          plan_status: "canceled",
-          stripe_subscription_id: null,
-          cancel_at_period_end: false,
-        })
-        .eq("id", studioId);
-    } else {
-      await stripe.subscriptions.update(subId, {
-        cancel_at_period_end: true,
-      });
-      await supabase
-        .from("studios")
-        .update({ cancel_at_period_end: true })
-        .eq("id", studioId);
+      return NextResponse.json(
+        { error: `Stripe operation failed: ${stripeMessage}` },
+        { status: 502 }
+      );
     }
 
     const mode = resume ? "resume" : immediate ? "cancel-immediate" : "cancel-at-period-end";

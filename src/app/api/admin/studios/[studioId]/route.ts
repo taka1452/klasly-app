@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin/auth";
+import { requireAdmin, getAdminEmail } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/admin/supabase";
+import { insertAdminLog } from "@/lib/admin/logs";
 
 export async function GET(
   _request: Request,
@@ -123,6 +124,7 @@ export async function PATCH(
 ) {
   try {
     await requireAdmin();
+    const adminEmail = await getAdminEmail();
     const supabase = createAdminClient();
     const { studioId } = await params;
 
@@ -140,6 +142,15 @@ export async function PATCH(
     const { error } = await supabase.from("studios").update(updates).eq("id", studioId);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    await insertAdminLog(supabase, {
+      action: "studio-patch",
+      studio_id: studioId,
+      admin_email: adminEmail,
+      status: "success",
+      details: { fields: Object.keys(updates) },
+    });
+
     return NextResponse.json({ success: true });
   } catch (e) {
     if (e && typeof e === "object" && "digest" in e) throw e;

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin/auth";
+import { requireAdmin, getAdminEmail } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/admin/supabase";
 import { getStripe } from "@/lib/stripe/server";
+import { insertAdminLog } from "@/lib/admin/logs";
 
 export async function POST(
   _request: Request,
@@ -9,6 +10,7 @@ export async function POST(
 ) {
   try {
     await requireAdmin();
+    const adminEmail = await getAdminEmail();
     const supabase = createAdminClient();
     const { studioId } = await params;
 
@@ -41,6 +43,14 @@ export async function POST(
     }
 
     await stripe.subscriptions.deleteDiscount(subId);
+
+    await insertAdminLog(supabase, {
+      action: "remove-coupon",
+      studio_id: studioId,
+      admin_email: adminEmail,
+      status: "success",
+    });
+
     return NextResponse.json({ success: true });
   } catch (e) {
     if (e && typeof e === "object" && "digest" in e) throw e;
