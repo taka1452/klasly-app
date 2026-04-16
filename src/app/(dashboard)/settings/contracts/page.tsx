@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import ContractsHourlyPlans from "@/components/settings/contracts-hourly-plans";
@@ -14,13 +14,17 @@ function ContractsPageInner() {
   const router = useRouter();
   const pathname = usePathname();
 
+  // URL is the source of truth so that <Link href="?tab=..."> navigation
+  // (e.g. from within a child component) actually switches tabs.
   const tabParam = searchParams.get("tab");
-  const initialTab: TabKey =
-    tabParam === "flat" ? "flat" : tabParam === "overage" ? "overage" : "hourly";
-  const [tab, setTab] = useState<TabKey>(initialTab);
+  const tab: TabKey =
+    tabParam === "flat"
+      ? "flat"
+      : tabParam === "overage"
+        ? "overage"
+        : "hourly";
 
   function selectTab(next: TabKey) {
-    setTab(next);
     const params = new URLSearchParams(searchParams.toString());
     params.set("tab", next);
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
