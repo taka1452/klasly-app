@@ -53,6 +53,7 @@ export async function GET() {
         canManageRooms: m.can_manage_rooms,
         canViewPayments: m.can_view_payments,
         canSendMessages: m.can_send_messages,
+        canManageSettings: m.can_manage_settings ?? false,
         canTeach: m.can_teach ?? false,
         createdAt: m.created_at,
       };
@@ -114,6 +115,7 @@ export async function POST(request: Request) {
             can_manage_rooms: permissions?.canManageRooms ?? true,
             can_view_payments: permissions?.canViewPayments ?? true,
             can_send_messages: permissions?.canSendMessages ?? true,
+            can_manage_settings: permissions?.canManageSettings ?? false,
             can_teach: permissions?.canTeach ?? false,
           },
           { onConflict: "studio_id,profile_id" }
@@ -163,6 +165,7 @@ export async function POST(request: Request) {
         can_manage_rooms: permissions?.canManageRooms ?? true,
         can_view_payments: permissions?.canViewPayments ?? true,
         can_send_messages: permissions?.canSendMessages ?? true,
+        can_manage_settings: permissions?.canManageSettings ?? false,
         can_teach: permissions?.canTeach ?? false,
       });
     }
@@ -192,6 +195,7 @@ export async function PATCH(request: Request) {
     if (permissions.canManageRooms !== undefined) updateData.can_manage_rooms = permissions.canManageRooms;
     if (permissions.canViewPayments !== undefined) updateData.can_view_payments = permissions.canViewPayments;
     if (permissions.canSendMessages !== undefined) updateData.can_send_messages = permissions.canSendMessages;
+    if (permissions.canManageSettings !== undefined) updateData.can_manage_settings = permissions.canManageSettings;
     if (permissions.canTeach !== undefined) updateData.can_teach = permissions.canTeach;
 
     const { data, error } = await ctx.supabase
