@@ -35,6 +35,8 @@ function loadDotenvLocal() {
     ) {
       value = value.slice(1, -1);
     }
+    // Tolerate a stray leading "=" (a common "KEY==value" typo).
+    if (value.startsWith("=")) value = value.slice(1);
     if (!(key in process.env)) process.env[key] = value;
   }
 }
