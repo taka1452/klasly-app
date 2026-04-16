@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ErrorAlert from "@/components/ui/error-alert";
+import MarkdownEditor from "@/components/ui/markdown-editor";
 import { CalendarPlus, CheckCircle } from "lucide-react";
 import { useFeature } from "@/lib/features/feature-context";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
@@ -53,7 +54,6 @@ export default function TemplateForm({ templateId, duplicateData }: Props) {
   const [durationMins, setDurationMins] = useState(0);
   const [capacity, setCapacity] = useState(15);
   const [priceDollars, setPriceDollars] = useState("");
-  const [location, setLocation] = useState("");
   const [onlineLink, setOnlineLink] = useState("");
   const [instructorId, setInstructorId] = useState("");
   const [roomId, setRoomId] = useState("");
@@ -118,7 +118,6 @@ export default function TemplateForm({ templateId, duplicateData }: Props) {
     setCapacity((duplicateData.capacity as number) || 15);
     const pc = duplicateData.price_cents as number | null;
     setPriceDollars(pc != null ? (pc / 100).toFixed(2) : "");
-    setLocation((duplicateData.location as string) || "");
     setOnlineLink((duplicateData.online_link as string) || "");
     setInstructorId((duplicateData.instructor_id as string) || "");
     setRoomId((duplicateData.room_id as string) || "");
@@ -152,7 +151,6 @@ export default function TemplateForm({ templateId, duplicateData }: Props) {
             ? (t.price_cents / 100).toFixed(2)
             : ""
         );
-        setLocation(t.location || "");
         setOnlineLink(t.online_link || "");
         setInstructorId(t.instructor_id || "");
         setRoomId(t.room_id || "");
@@ -215,7 +213,7 @@ export default function TemplateForm({ templateId, duplicateData }: Props) {
       duration_minutes: durationHours * 60 + durationMins,
       capacity,
       price_cents: priceCents,
-      location: classType !== "online" ? location.trim() || null : null,
+      location: null,
       online_link:
         classType === "online" || classType === "hybrid"
           ? onlineLink.trim() || null
@@ -364,16 +362,12 @@ export default function TemplateForm({ templateId, duplicateData }: Props) {
           <label className="block text-sm font-medium text-gray-700">
             Description
           </label>
-          <textarea
+          <MarkdownEditor
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={3}
+            onChange={setDescription}
+            rows={4}
             placeholder="A relaxing start to your day..."
-            className="input-field mt-1"
           />
-          <p className="mt-1 text-xs text-gray-400">
-            Formatting: **bold**, *italic*, - bullet list
-          </p>
         </div>
 
         {/* Class Type */}
@@ -506,44 +500,42 @@ export default function TemplateForm({ templateId, duplicateData }: Props) {
           </p>
         </div>
 
-        {/* Location (in-person/hybrid) */}
+        {/* Room (in-person/hybrid) */}
         {classType !== "online" && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Location
-            </label>
-            <input
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Main studio"
-              className="input-field mt-1"
-            />
-          </div>
-        )}
-
-        {/* Room (in-person/hybrid, optional) */}
-        {classType !== "online" && rooms.length > 0 && (
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Default Room{" "}
               <span className="font-normal text-gray-400">(optional)</span>
             </label>
-            <select
-              value={roomId}
-              onChange={(e) => setRoomId(e.target.value)}
-              className="input-field mt-1"
-            >
-              <option value="">No room</option>
-              {rooms.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
-            <p className="mt-1 text-xs text-gray-500">
-              This room will be pre-selected when scheduling sessions.
-            </p>
+            {rooms.length > 0 ? (
+              <>
+                <select
+                  value={roomId}
+                  onChange={(e) => setRoomId(e.target.value)}
+                  className="input-field mt-1"
+                >
+                  <option value="">No room</option>
+                  {rooms.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-gray-500">
+                  This room will be pre-selected when scheduling sessions.
+                </p>
+              </>
+            ) : (
+              <p className="mt-1 text-xs text-gray-500">
+                No rooms configured.{" "}
+                <Link
+                  href="/rooms"
+                  className="font-medium text-brand-600 hover:text-brand-700"
+                >
+                  Add a room →
+                </Link>
+              </p>
+            )}
           </div>
         )}
 

@@ -148,7 +148,6 @@ export default async function ClassDetailPage({
               startTime: startTimeForInput,
               durationMinutes: cls.duration_minutes,
               capacity: cls.capacity,
-              location: cls.location || "",
               instructorId: cls.instructor_id || "",
               roomId: cls.room_id || "",
               isPublic: cls.is_public ?? true,

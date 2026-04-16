@@ -7,6 +7,7 @@ import { useFeature } from "@/lib/features/feature-context";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 import { usePlanAccess } from "@/components/ui/plan-access-provider";
 import HelpTip from "@/components/ui/help-tip";
+import MarkdownEditor from "@/components/ui/markdown-editor";
 import Link from "next/link";
 
 const DAY_OPTIONS = [
@@ -33,7 +34,6 @@ type Props = {
     startTime: string;
     durationMinutes: number;
     capacity: number;
-    location: string;
     instructorId: string;
     roomId: string;
     isPublic: boolean;
@@ -63,7 +63,6 @@ export default function ClassEditForm({
     initialData.durationMinutes % 60
   );
   const [capacity, setCapacity] = useState(initialData.capacity);
-  const [location, setLocation] = useState(initialData.location);
   const [instructorId, setInstructorId] = useState(initialData.instructorId);
   const [roomId, setRoomId] = useState(initialData.roomId);
   const [isPublic, setIsPublic] = useState(initialData.isPublic);
@@ -117,7 +116,7 @@ export default function ClassEditForm({
         start_time: startTimeFormatted,
         duration_minutes: durationHours * 60 + durationMins,
         capacity,
-        location: isOnline ? null : location || null,
+        location: null,
         instructor_id: instructorId || null,
         room_id: isOnline ? null : roomId || null,
         is_public: isPublic,
@@ -194,11 +193,10 @@ export default function ClassEditForm({
           <label className="block text-sm font-medium text-gray-700">
             Description
           </label>
-          <textarea
+          <MarkdownEditor
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={3}
-            className="input-field mt-1"
+            onChange={setDescription}
+            rows={4}
           />
         </div>
 
@@ -352,11 +350,11 @@ export default function ClassEditForm({
         </div>
 
         {classType !== "online" && (
-          <>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Room
-              </label>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Room
+            </label>
+            {rooms.length > 0 ? (
               <select
                 value={roomId}
                 onChange={(e) => setRoomId(e.target.value)}
@@ -369,20 +367,18 @@ export default function ClassEditForm({
                   </option>
                 ))}
               </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Location
-              </label>
-              <input
-                type="text"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                className="input-field mt-1"
-              />
-            </div>
-          </>
+            ) : (
+              <p className="mt-1 text-xs text-gray-500">
+                No rooms configured.{" "}
+                <Link
+                  href="/rooms"
+                  className="font-medium text-brand-600 hover:text-brand-700"
+                >
+                  Add a room →
+                </Link>
+              </p>
+            )}
+          </div>
         )}
 
         <div className="flex items-center gap-3">

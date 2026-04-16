@@ -76,19 +76,34 @@ export default async function SessionDetailPage({
             Schedule
           </Link>
           <span>/</span>
-          <span className="text-gray-900">
-            {className} &middot; {formatDate(session.session_date)}
-          </span>
+          <Link
+            href={`/calendar/${classId}`}
+            className="hover:text-gray-700 hover:underline"
+          >
+            {className}
+          </Link>
+          <span>/</span>
+          <span className="text-gray-900">{formatDate(session.session_date)}</span>
         </nav>
-        <h1 className="mt-2 text-2xl font-bold text-gray-900">
-          {effectiveIsOnline && <span title="Online">📹 </span>}
-          {className}
-        </h1>
-        <p className="text-sm text-gray-500">
-          {formatDate(session.session_date)} · {formatTime(session.start_time)} ·{" "}
-          {session.capacity} capacity
-          {effectiveIsOnline && " · Online"}
-        </p>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {effectiveIsOnline && <span title="Online">📹 </span>}
+              {className}
+            </h1>
+            <p className="text-sm text-gray-500">
+              {formatDate(session.session_date)} · {formatTime(session.start_time)} ·{" "}
+              {session.capacity} capacity
+              {effectiveIsOnline && " · Online"}
+            </p>
+          </div>
+          <Link
+            href={`/calendar/${classId}`}
+            className="btn-secondary text-sm whitespace-nowrap"
+          >
+            Edit class
+          </Link>
+        </div>
         {effectiveIsOnline && (session.online_link || classData?.online_link) && (
           <a
             href={session.online_link || classData?.online_link || ""}

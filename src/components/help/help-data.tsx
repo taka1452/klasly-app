@@ -297,8 +297,10 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
               <Steps>
                 <li>Go to <B>Classes</B> in the sidebar to see all templates in a grid view.</li>
                 <li>Click <B>+ New Template</B> to create one. Fill in the name, class type, duration, capacity, price, instructor, and default room.</li>
+                <li>The <B>Description</B> field supports rich text formatting — use the toolbar to add bold, italic, and bullet lists, and toggle <B>Preview</B> to see how it will render for members.</li>
                 <li>After creating a template, you can click <B>Schedule Now</B> to immediately schedule a session, or go back to the class list.</li>
                 <li>Click any template card to edit its details, or click <B>Schedule</B> to create a session from it.</li>
+                <li>From any session on the calendar, click the class name in the breadcrumb or the <B>Edit class</B> button to jump to the template editor.</li>
                 <li>Templates can be deactivated from the edit page &mdash; they won&apos;t appear in the list but can be restored later.</li>
               </Steps>
               <Tip>When you set a default room on a template, it will be automatically pre-selected when scheduling sessions.</Tip>

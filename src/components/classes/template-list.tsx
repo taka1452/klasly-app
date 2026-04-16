@@ -334,7 +334,7 @@ export default function TemplateList() {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  router.push(`/calendar/${t.id}`);
+                  router.push(`/calendar?schedule=${t.id}`);
                 }}
                 className="btn-secondary text-xs"
               >
