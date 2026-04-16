@@ -198,6 +198,20 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
+          q: "How can I test what instructors and members see?",
+          a: (
+            <>
+              Every studio gets a pair of <B>test accounts</B> (one test instructor, one test member) created automatically during onboarding. Use the <B>Test Accounts</B> switcher (person icon in the lower-right corner) to sign in as one of them in a single click, check the experience from that side, and then click <B>Return to your account</B> in the amber banner at the top of the screen.
+              <Steps>
+                <li>Only owners and managers with <B>Manage settings</B> permission can start a switcher session.</li>
+                <li>You can only switch to accounts flagged as test accounts — real instructors and members cannot be impersonated.</li>
+                <li>Changes you make while viewing as a test account are real and persist in your studio.</li>
+              </Steps>
+              <Tip>For the launch checklist, try booking a class as the test member, taking attendance as the test instructor, and reviewing the booking + payout trail as the owner.</Tip>
+            </>
+          ),
+        },
+        {
           q: "Can I import instructors in bulk?",
           a: (
             <>

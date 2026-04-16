@@ -157,6 +157,8 @@ async function main() {
         user_metadata: {
           full_name: fullName,
           is_demo_account: true,
+          // Required for the Test Account Switcher to allow impersonation.
+          is_test_account: true,
           default_password: DEFAULT_PASSWORD,
         },
       });
