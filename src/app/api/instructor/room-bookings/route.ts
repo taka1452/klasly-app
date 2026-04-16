@@ -204,44 +204,96 @@ export async function POST(request: Request) {
         const perBookingMinutes = (eh * 60 + em) - (sh * 60 + sm);
         const totalRequestedMinutes = perBookingMinutes * bookingDates.length;
 
-        const firstBookingMonth = new Date(bookingDates[0]);
-        const year = firstBookingMonth.getFullYear();
-        const month = firstBookingMonth.getMonth() + 1;
-
-        const { data: usedData } = await ctx.supabase.rpc("get_instructor_used_minutes", {
-          p_instructor_id: ctx.instructorId,
-          p_year: year,
-          p_month: month,
-        });
-
-        const usedMinutes = typeof usedData === "number" ? usedData : 0;
-        const remainingMinutes = monthlyMinutes - usedMinutes;
-
         const fmtH = (m: number) => {
           const h = Math.floor(m / 60);
           const r = m % 60;
           return h > 0 && r > 0 ? `${h}h ${r}m` : h > 0 ? `${h}h` : `${r}m`;
         };
 
-        if (perBookingMinutes > remainingMinutes) {
-          if (!allowOverage) {
-            return NextResponse.json(
-              {
-                error: "You've reached your monthly hour limit. Please contact the studio to upgrade your membership.",
-                code: "QUOTA_BLOCKED",
-              },
-              { status: 403 }
-            );
-          }
-          const overMinutes = usedMinutes + totalRequestedMinutes - monthlyMinutes;
-          const rateStr = overageRateCents ? `$${(overageRateCents / 100).toFixed(2)}` : null;
-          overageWarning = `You've used ${fmtH(usedMinutes)} of ${fmtH(monthlyMinutes)} this month. ${recurring ? `These ${bookingDates.length} bookings total ${fmtH(totalRequestedMinutes)}` : "This booking"} will put you ${fmtH(overMinutes)} over your limit.${rateStr ? ` Additional hours are charged at ${rateStr}/hour.` : ""}`;
-        } else if (usedMinutes >= monthlyMinutes * 0.9) {
-          overageWarning = `You've used ${fmtH(usedMinutes)} of ${fmtH(monthlyMinutes)} this month — approaching your limit.`;
+        // Group booking dates by year-month so multi-month recurring bookings
+        // are checked against each month's allowance separately.
+        const datesByMonth = new Map<string, { year: number; month: number; count: number }>();
+        for (const date of bookingDates) {
+          const d = new Date(date);
+          const y = d.getFullYear();
+          const m = d.getMonth() + 1;
+          const key = `${y}-${m}`;
+          const existing = datesByMonth.get(key);
+          if (existing) existing.count += 1;
+          else datesByMonth.set(key, { year: y, month: m, count: 1 });
         }
 
-        if (usedMinutes + perBookingMinutes >= monthlyMinutes * 0.9 && usedMinutes < monthlyMinutes * 0.9) {
-          sendOverageWarningEmail(ctx.supabase, ctx.instructorId, ctx.studioId, usedMinutes + perBookingMinutes, monthlyMinutes, overageRateCents).catch((err) => console.warn("[RoomBookings] Overage warning email failed:", err));
+        // Fetch used minutes and compute overage for each affected month.
+        const monthChecks: Array<{
+          year: number;
+          month: number;
+          used: number;
+          requested: number;
+          overage: number;
+        }> = [];
+        for (const { year, month, count } of datesByMonth.values()) {
+          const { data: usedData } = await ctx.supabase.rpc("get_instructor_used_minutes", {
+            p_instructor_id: ctx.instructorId,
+            p_year: year,
+            p_month: month,
+          });
+          const used = typeof usedData === "number" ? usedData : 0;
+          const requested = perBookingMinutes * count;
+          const overage = Math.max(0, used + requested - monthlyMinutes);
+          monthChecks.push({ year, month, used, requested, overage });
+        }
+
+        const exceedingMonths = monthChecks.filter((c) => c.overage > 0);
+
+        // Block if any month would exceed the allowance and overage is disabled.
+        if (exceedingMonths.length > 0 && !allowOverage) {
+          return NextResponse.json(
+            {
+              error:
+                exceedingMonths.length === 1
+                  ? "You've reached your monthly hour limit. Please contact the studio to upgrade your membership."
+                  : `These bookings would exceed your monthly hour limit across ${exceedingMonths.length} months. Please contact the studio to upgrade your membership.`,
+              code: "QUOTA_BLOCKED",
+            },
+            { status: 403 }
+          );
+        }
+
+        // Build overage / warning messages.
+        if (exceedingMonths.length > 0) {
+          const rateStr = overageRateCents ? `$${(overageRateCents / 100).toFixed(2)}` : null;
+          const totalOverMinutes = exceedingMonths.reduce((s, c) => s + c.overage, 0);
+          if (exceedingMonths.length === 1) {
+            const m = exceedingMonths[0];
+            overageWarning = `You've used ${fmtH(m.used)} of ${fmtH(monthlyMinutes)} this month. ${recurring ? `These ${bookingDates.length} bookings total ${fmtH(totalRequestedMinutes)}` : "This booking"} will put you ${fmtH(m.overage)} over your limit.${rateStr ? ` Additional hours are charged at ${rateStr}/hour.` : ""}`;
+          } else {
+            overageWarning = `These ${bookingDates.length} bookings span ${exceedingMonths.length} months and total ${fmtH(totalOverMinutes)} over your monthly limits.${rateStr ? ` Additional hours are charged at ${rateStr}/hour.` : ""}`;
+          }
+        } else {
+          const approaching = monthChecks.find(
+            (c) => c.used + c.requested >= monthlyMinutes * 0.9
+          );
+          if (approaching) {
+            overageWarning = `You've used ${fmtH(approaching.used)} of ${fmtH(monthlyMinutes)} this month — approaching your limit.`;
+          }
+        }
+
+        // Fire 90% warning email the first time a month crosses the threshold
+        // because of this request.
+        const thresholdCrossed = monthChecks.find(
+          (c) =>
+            c.used + c.requested >= monthlyMinutes * 0.9 &&
+            c.used < monthlyMinutes * 0.9
+        );
+        if (thresholdCrossed) {
+          sendOverageWarningEmail(
+            ctx.supabase,
+            ctx.instructorId,
+            ctx.studioId,
+            thresholdCrossed.used + thresholdCrossed.requested,
+            monthlyMinutes,
+            overageRateCents
+          ).catch((err) => console.warn("[RoomBookings] Overage warning email failed:", err));
         }
       }
     }
