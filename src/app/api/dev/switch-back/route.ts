@@ -129,6 +129,25 @@ export async function POST(request: Request) {
       origin + "/auth/callback"
     )}`;
 
+    // Audit log — best-effort.
+    try {
+      await supabase.from("test_account_impersonation_logs").insert({
+        studio_id: currentProfile.studio_id,
+        actor_profile_id: user.id,
+        target_profile_id: originalProfileId,
+        action: "switch_back",
+        actor_role: "test_account",
+        target_role: target.role ?? null,
+        user_agent: request.headers.get("user-agent") ?? null,
+        ip_address:
+          request.headers.get("x-forwarded-for") ??
+          request.headers.get("x-real-ip") ??
+          null,
+      });
+    } catch (err) {
+      console.warn("[switch-back] audit log failed:", err);
+    }
+
     return NextResponse.json({ url: verifyUrl });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal error";

@@ -7,6 +7,7 @@ import { useTourActions } from "@/components/tour/TourProvider";
 import Toast from "@/components/ui/toast";
 import FlowHintPanel from "@/components/ui/flow-hint-panel";
 import BookingSettingsCard from "@/components/settings/booking-settings-card";
+import TestAccountsCard from "@/components/settings/test-accounts-card";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import { SUPPORTED_CURRENCIES } from "@/lib/currency";
 
@@ -361,6 +362,9 @@ export default function SettingsContent({
               </Link>
             </div>
           )}
+
+          {/* Test Accounts — owner or manager with settings permission */}
+          {(isOwner || canManageSettings) && <TestAccountsCard />}
 
           {/* Collective Mode Setup — only shown in collective mode */}
           {(isOwner || canManageSettings) && isCollectiveMode && (

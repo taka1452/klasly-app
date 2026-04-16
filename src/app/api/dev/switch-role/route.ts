@@ -111,14 +111,20 @@ export async function GET() {
       role: string;
       isCurrent: boolean;
       isTest: boolean;
+      defaultPassword: string | null;
     }> = [];
 
     // Check is_test_account via auth user metadata. Batch-fetch list.
     for (const p of profiles ?? []) {
       let isTest = false;
+      let defaultPassword: string | null = null;
       try {
         const { data } = await supabase.auth.admin.getUserById(p.id);
-        isTest = data?.user?.user_metadata?.is_test_account === true;
+        const meta = data?.user?.user_metadata;
+        isTest = meta?.is_test_account === true;
+        if (isTest && typeof meta?.default_password === "string") {
+          defaultPassword = meta.default_password;
+        }
       } catch {
         // ignore, default to false
       }
@@ -133,6 +139,7 @@ export async function GET() {
         role: p.role,
         isCurrent,
         isTest,
+        defaultPassword,
       });
     }
 
@@ -218,7 +225,7 @@ export async function POST(request: Request) {
     // Target must be in the same studio.
     const { data: targetProfile } = await supabase
       .from("profiles")
-      .select("id, email, studio_id")
+      .select("id, email, studio_id, role")
       .eq("id", targetProfileId)
       .single();
     if (!targetProfile || targetProfile.studio_id !== profile.studio_id) {
@@ -278,6 +285,25 @@ export async function POST(request: Request) {
     const verifyUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/verify?token=${tokenHash}&type=magiclink&redirect_to=${encodeURIComponent(
       origin + "/auth/callback"
     )}`;
+
+    // Audit log — best-effort, never blocks the switch.
+    try {
+      await supabase.from("test_account_impersonation_logs").insert({
+        studio_id: profile.studio_id,
+        actor_profile_id: user.id,
+        target_profile_id: targetProfileId,
+        action: "switch_in",
+        actor_role: profile.role,
+        target_role: targetProfile.role ?? null,
+        user_agent: request.headers.get("user-agent") ?? null,
+        ip_address:
+          request.headers.get("x-forwarded-for") ??
+          request.headers.get("x-real-ip") ??
+          null,
+      });
+    } catch (err) {
+      console.warn("[switch-role] audit log failed:", err);
+    }
 
     return NextResponse.json({
       url: verifyUrl,

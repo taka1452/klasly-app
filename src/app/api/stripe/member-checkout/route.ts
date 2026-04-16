@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { stripe } from "@/lib/stripe/server";
 import { NextResponse } from "next/server";
+import { isTestAccount, TEST_ACCOUNT_STRIPE_ERROR } from "@/lib/auth/test-account-guard";
 
 export async function POST(request: Request) {
   try {
@@ -12,6 +13,13 @@ export async function POST(request: Request) {
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (await isTestAccount(user.id)) {
+      return NextResponse.json(
+        { error: TEST_ACCOUNT_STRIPE_ERROR, code: "TEST_ACCOUNT_BLOCKED" },
+        { status: 403 }
+      );
     }
 
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
