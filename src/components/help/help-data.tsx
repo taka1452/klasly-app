@@ -41,6 +41,15 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
+          q: "How can I test the instructor and member experience?",
+          a: (
+            <>
+              When you create a studio, a <B>Test Instructor</B> and <B>Test Member</B> account are automatically created. You can find them in your Instructors and Members lists. Open their detail page to see the login credentials (email and password) displayed in an amber card at the top.
+              <Tip>Log in with the test credentials in a private/incognito window to preview the instructor or member dashboards without logging out of your owner account.</Tip>
+            </>
+          ),
+        },
+        {
           q: "How do I connect Stripe to receive payments?",
           a: (
             <>
@@ -236,7 +245,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How does the Schedule calendar work?",
           a: (
             <>
-              The <B>Schedule</B> page shows all upcoming sessions in a calendar format with Day, Week, Month, and <B>List</B> views. You can navigate between dates and click any session to go to its detail page. Sessions are color-coded:
+              The <B>Schedule</B> page shows all upcoming sessions in a calendar format with Day, Week, Month, and <B>List</B> views. The calendar defaults to <B>Month</B> view (Day view on mobile). Your last-used view is remembered across visits. You can navigate between dates and click any session to go to its detail page. Sessions are color-coded:
               <Steps>
                 <li><B>Blue</B> — normal public sessions.</li>
                 <li><B>Violet</B> — private sessions.</li>
@@ -330,6 +339,28 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
+          q: "Can I duplicate a class?",
+          a: (
+            <>
+              Yes. On the <B>Classes</B> page, each class card has a <B>Duplicate</B> button. Clicking it opens the new class form pre-filled with all the original class&apos;s settings. The name is set to &quot;[Original Name] (Copy)&quot;. Review the details, make any changes, and save to create the new class.
+            </>
+          ),
+        },
+        {
+          q: "Can I format class descriptions?",
+          a: (
+            <>
+              Yes. Class descriptions support basic formatting using Markdown syntax:
+              <Steps>
+                <li><B>**bold**</B> for bold text.</li>
+                <li><B>*italic*</B> for italic text.</li>
+                <li><B>- item</B> for bullet lists.</li>
+              </Steps>
+              Formatting is shown in class detail pages, the member schedule, and the website widget.
+            </>
+          ),
+        },
+        {
           q: "Can I import classes in bulk?",
           a: (
             <>
@@ -350,7 +381,12 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "Can I set an end date for recurring sessions?",
           a: (
             <>
-              Yes. When creating or editing a class template, you can set a <B>Recurrence End Date</B>. Sessions will stop being generated after that date. This is useful for seasonal classes or courses with a fixed end date.
+              Yes. When scheduling a weekly session, you can choose:
+              <Steps>
+                <li><B>After X weeks</B> — sessions are created for a fixed number of weeks.</li>
+                <li><B>Never (ongoing)</B> — sessions are generated automatically on a rolling basis, using your studio&apos;s session generation setting (default 8 weeks ahead).</li>
+              </Steps>
+              You can also set a <B>Recurrence End Date</B> on the class template to stop generation after a specific date.
               <Tip>Existing sessions already generated past the end date are not automatically deleted — you can cancel them individually if needed.</Tip>
             </>
           ),
@@ -419,6 +455,14 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               Yes. Instructor room bookings are shown on the <B>Schedule</B> calendar alongside class sessions. Room bookings appear in <B>teal</B> with a &quot;Room&quot; badge to distinguish them from classes.
+            </>
+          ),
+        },
+        {
+          q: "Do I get notified when instructors book rooms?",
+          a: (
+            <>
+              Yes. When an instructor books a room, the studio owner and all managers with the <B>Rooms</B> permission receive an email notification with the instructor name, room, date, and time.
             </>
           ),
         },
@@ -1449,7 +1493,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "What permissions can I give a manager?",
           a: (
             <>
-              Each manager has 8 permission toggles:
+              Each manager has 9 permission toggles:
               <Steps>
                 <li><B>Members</B> — create, edit, and view member profiles and credits.</li>
                 <li><B>Classes</B> — create and edit class templates, sessions, and schedules.</li>
@@ -1459,6 +1503,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
                 <li><B>Payments</B> — view payment history, passes, and export reports.</li>
                 <li><B>Messages</B> — send messages and announcements to members.</li>
                 <li><B>Teach</B> — register as an instructor and teach classes.</li>
+                <li><B>Settings</B> — access studio settings including tiers, collective mode setup, scheduling, widget, and waiver. Stripe Connect, billing, and account deletion remain owner-only.</li>
               </Steps>
               <Tip>Hover over each permission badge to see what it controls.</Tip>
             </>

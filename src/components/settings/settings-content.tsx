@@ -19,6 +19,7 @@ type Props = {
   sessionGenerationWeeks: number;
   role?: "owner" | "manager";
   canTeach?: boolean;
+  canManageSettings?: boolean;
   studioName?: string;
   studioCurrency?: string;
 };
@@ -34,6 +35,7 @@ export default function SettingsContent({
   sessionGenerationWeeks,
   role = "owner",
   canTeach = false,
+  canManageSettings = false,
   studioName = "",
   studioCurrency = "usd",
 }: Props) {
@@ -296,8 +298,8 @@ export default function SettingsContent({
         </div>
       </section>
 
-      {/* ── Scheduling — owner only ── */}
-      {isOwner && (
+      {/* ── Scheduling — owner or manager with settings permission ── */}
+      {(isOwner || canManageSettings) && (
         <section>
           <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
             Scheduling
@@ -358,8 +360,8 @@ export default function SettingsContent({
             </div>
           )}
 
-          {/* Collective Mode Setup — owner only */}
-          {isOwner && (
+          {/* Collective Mode Setup — owner or manager with settings permission */}
+          {(isOwner || canManageSettings) && (
             <div className="card">
               <h3 className="text-lg font-semibold text-gray-900">
                 Collective Mode Setup
@@ -409,8 +411,8 @@ export default function SettingsContent({
             </div>
           )}
 
-          {/* Instructor Tiers — owner only */}
-          {isOwner && (
+          {/* Instructor Tiers — owner or manager with settings permission */}
+          {(isOwner || canManageSettings) && (
             <div className="card">
               <h3 className="text-lg font-semibold text-gray-900">
                 Instructor Membership Tiers

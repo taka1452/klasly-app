@@ -36,9 +36,10 @@ type TemplateData = {
 
 type Props = {
   templateId?: string;
+  duplicateData?: Record<string, unknown> | null;
 };
 
-export default function TemplateForm({ templateId }: Props) {
+export default function TemplateForm({ templateId, duplicateData }: Props) {
   const router = useRouter();
   const { isEnabled } = useFeature();
   const onlineEnabled = isEnabled(FEATURE_KEYS.ONLINE_CLASSES);
@@ -103,6 +104,31 @@ export default function TemplateForm({ templateId }: Props) {
     }
     fetchData();
   }, []);
+
+  // Pre-fill form with duplicate data
+  useEffect(() => {
+    if (!duplicateData) return;
+    setName((duplicateData.name as string) || "");
+    setDescription((duplicateData.description as string) || "");
+    const ct = (duplicateData.class_type as string) || "in_person";
+    setClassType(ct as "in_person" | "online" | "hybrid");
+    const dm = (duplicateData.duration_minutes as number) || 60;
+    setDurationHours(Math.floor(dm / 60));
+    setDurationMins(dm % 60);
+    setCapacity((duplicateData.capacity as number) || 15);
+    const pc = duplicateData.price_cents as number | null;
+    setPriceDollars(pc != null ? (pc / 100).toFixed(2) : "");
+    setLocation((duplicateData.location as string) || "");
+    setOnlineLink((duplicateData.online_link as string) || "");
+    setInstructorId((duplicateData.instructor_id as string) || "");
+    setRoomId((duplicateData.room_id as string) || "");
+    setIsPublic((duplicateData.is_public as boolean) ?? true);
+    setTransitionMinutes((duplicateData.transition_minutes as number) || 0);
+    if (duplicateData.image_url) {
+      setExistingImageUrl(duplicateData.image_url as string);
+      setImagePreview(duplicateData.image_url as string);
+    }
+  }, [duplicateData]);
 
   // Fetch existing template for edit mode
   useEffect(() => {
@@ -345,6 +371,9 @@ export default function TemplateForm({ templateId }: Props) {
             placeholder="A relaxing start to your day..."
             className="input-field mt-1"
           />
+          <p className="mt-1 text-xs text-gray-400">
+            Formatting: **bold**, *italic*, - bullet list
+          </p>
         </div>
 
         {/* Class Type */}

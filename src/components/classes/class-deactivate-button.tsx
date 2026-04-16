@@ -21,7 +21,7 @@ export default function ClassDeactivateButton({
     const supabase = createClient();
 
     const { error: deactivateError } = await supabase
-      .from("classes")
+      .from("class_templates")
       .update({ is_active: false })
       .eq("id", classId);
 

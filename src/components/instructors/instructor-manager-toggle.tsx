@@ -11,6 +11,7 @@ type ManagerPermissions = {
   canManageRooms: boolean;
   canViewPayments: boolean;
   canSendMessages: boolean;
+  canManageSettings: boolean;
 };
 
 const permissionLabels: {
@@ -25,6 +26,7 @@ const permissionLabels: {
   { key: "canManageRooms", label: "Rooms", desc: "Manage studio rooms" },
   { key: "canViewPayments", label: "Payments", desc: "View payment info" },
   { key: "canSendMessages", label: "Messages", desc: "Send messages to members" },
+  { key: "canManageSettings", label: "Settings", desc: "Access studio settings (tiers, scheduling, widget, waiver)" },
 ];
 
 export default function InstructorManagerToggle({

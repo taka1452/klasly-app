@@ -54,7 +54,7 @@ export default async function SessionDetailPage({
   }
 
   const { data: classData } = await supabase
-    .from("classes")
+    .from("class_templates")
     .select("name, is_online, online_link")
     .eq("id", classId)
     .single();

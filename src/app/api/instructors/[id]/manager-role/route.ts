@@ -66,6 +66,7 @@ export async function GET(
             canManageRooms: manager.can_manage_rooms,
             canViewPayments: manager.can_view_payments,
             canSendMessages: manager.can_send_messages,
+            canManageSettings: manager.can_manage_settings,
           }
         : null,
     });
@@ -93,6 +94,7 @@ export async function POST(
         canManageRooms: z.boolean().optional(),
         canViewPayments: z.boolean().optional(),
         canSendMessages: z.boolean().optional(),
+        canManageSettings: z.boolean().optional(),
       }).optional(),
     });
     const body = await parseBody(request, schema);
@@ -128,6 +130,7 @@ export async function POST(
           can_manage_rooms: permissions.canManageRooms ?? false,
           can_view_payments: permissions.canViewPayments ?? false,
           can_send_messages: permissions.canSendMessages ?? true,
+          can_manage_settings: permissions.canManageSettings ?? false,
         },
         { onConflict: "studio_id,profile_id" }
       )
@@ -147,6 +150,7 @@ export async function POST(
         canManageRooms: manager.can_manage_rooms,
         canViewPayments: manager.can_view_payments,
         canSendMessages: manager.can_send_messages,
+        canManageSettings: manager.can_manage_settings,
       },
     });
   } catch {
@@ -221,6 +225,7 @@ export async function PATCH(
     if (body.canManageRooms !== undefined) updateData.can_manage_rooms = body.canManageRooms;
     if (body.canViewPayments !== undefined) updateData.can_view_payments = body.canViewPayments;
     if (body.canSendMessages !== undefined) updateData.can_send_messages = body.canSendMessages;
+    if (body.canManageSettings !== undefined) updateData.can_manage_settings = body.canManageSettings;
 
     const { data: manager, error } = await ctx.supabase
       .from("managers")
@@ -243,6 +248,7 @@ export async function PATCH(
         canManageRooms: manager.can_manage_rooms,
         canViewPayments: manager.can_view_payments,
         canSendMessages: manager.can_send_messages,
+        canManageSettings: manager.can_manage_settings,
       },
     });
   } catch {

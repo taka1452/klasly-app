@@ -62,6 +62,19 @@ export default async function MemberDetailPage({
     notFound();
   }
 
+  // Check if this is a test account
+  let testAccountInfo: { email: string; password: string } | null = null;
+  if (serviceRoleKey && member.profile_id) {
+    const { data: authData } = await supabase.auth.admin.getUserById(member.profile_id);
+    const meta = authData?.user?.user_metadata;
+    if (meta?.is_test_account && meta?.default_password) {
+      testAccountInfo = {
+        email: member.profiles?.email || "",
+        password: meta.default_password as string,
+      };
+    }
+  }
+
   return (
     <div>
       <div className="mb-6">
@@ -119,6 +132,27 @@ export default async function MemberDetailPage({
 
         {/* 右: サイドパネル */}
         <div className="space-y-6">
+          {testAccountInfo && (
+            <div className="card border-amber-200 bg-amber-50">
+              <div className="flex items-center gap-2 text-sm font-medium text-amber-800">
+                <span>🔑</span> Test Account
+              </div>
+              <dl className="mt-3 space-y-2">
+                <div>
+                  <dt className="text-xs text-amber-600">Email</dt>
+                  <dd className="text-sm font-mono text-amber-900">{testAccountInfo.email}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-amber-600">Password</dt>
+                  <dd className="text-sm font-mono text-amber-900">{testAccountInfo.password}</dd>
+                </div>
+              </dl>
+              <p className="mt-3 text-xs text-amber-600">
+                Log in with these credentials to preview the member experience.
+              </p>
+            </div>
+          )}
+
           <div className="card">
             <h3 className="text-sm font-medium text-gray-500">Member Info</h3>
             <dl className="mt-4 space-y-3">

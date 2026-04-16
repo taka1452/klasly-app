@@ -1137,3 +1137,41 @@ export function appointmentCancelled(params: AppointmentParams & { cancelledBy: 
     html: baseHtml(content),
   };
 }
+
+// ── Instructor Room Booking Notification ──
+
+export function instructorRoomBooking(params: {
+  recipientName: string;
+  instructorName: string;
+  roomName: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  title?: string | null;
+  studioName: string;
+}) {
+  const { recipientName, instructorName, roomName, date, startTime, endTime, title, studioName } = params;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">New Room Booking</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${recipientName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      <strong>${instructorName}</strong> has booked <strong>${roomName}</strong>.
+    </p>
+    <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
+      ${title ? `<p style="margin:0 0 4px;font-weight:600;color:#111827;">${title}</p>` : ""}
+      <p style="margin:0;font-size:14px;"><strong>Date:</strong> ${date}</p>
+      <p style="margin:4px 0 0;font-size:14px;"><strong>Time:</strong> ${startTime} – ${endTime}</p>
+      <p style="margin:4px 0 0;font-size:14px;"><strong>Room:</strong> ${roomName}</p>
+      <p style="margin:4px 0 0;font-size:14px;color:#6b7280;">${studioName}</p>
+    </div>
+    <p style="margin:16px 0 0;">
+      <a href="https://app.klasly.app/bookings" style="color:${BRAND_COLOR};text-decoration:none;font-weight:600;">
+        View in Klasly →
+      </a>
+    </p>
+  `;
+  return {
+    subject: `${instructorName} booked ${roomName}`,
+    html: baseHtml(content),
+  };
+}

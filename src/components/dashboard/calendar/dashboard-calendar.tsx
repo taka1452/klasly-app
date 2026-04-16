@@ -19,8 +19,18 @@ type DashboardCalendarProps = {
   onSlotClick?: (date: string, startTime: string) => void;
 };
 
+const CALENDAR_VIEW_KEY = "klasly:calendar-view";
+
 export default function DashboardCalendar({ onSlotClick }: DashboardCalendarProps = {}) {
-  const [view, setView] = useState<CalendarView>("week");
+  const [view, setView] = useState<CalendarView>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(CALENDAR_VIEW_KEY);
+      if (saved === "week" || saved === "day" || saved === "month" || saved === "list") return saved;
+      // Default to day on mobile, month on desktop
+      if (window.innerWidth < 768) return "day";
+    }
+    return "month";
+  });
   const [currentDate, setCurrentDate] = useState(new Date());
   const [sessions, setSessions] = useState<DashboardSessionData[]>([]);
   const [confirmedCounts, setConfirmedCounts] = useState<
@@ -35,7 +45,7 @@ export default function DashboardCalendar({ onSlotClick }: DashboardCalendarProp
   useEffect(() => {
     const mobile = window.innerWidth < 768;
     setIsMobile(mobile);
-    if (mobile) {
+    if (mobile && !localStorage.getItem(CALENDAR_VIEW_KEY)) {
       setView("day");
     }
   }, []);
@@ -94,6 +104,7 @@ export default function DashboardCalendar({ onSlotClick }: DashboardCalendarProp
 
   function handleViewChange(v: CalendarView) {
     setView(v);
+    localStorage.setItem(CALENDAR_VIEW_KEY, v);
   }
 
   function handleMonthDayClick(date: Date) {

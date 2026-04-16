@@ -109,7 +109,7 @@ export default function ClassEditForm({
 
     const supabase = createClient();
     const { data: updated, error: updateError } = await supabase
-      .from("classes")
+      .from("class_templates")
       .update({
         name,
         description: description || null,

@@ -224,6 +224,70 @@ export async function POST(request: Request) {
       }
     }
 
+    // 5. テスト用アカウントを自動作成（fire-and-forget）
+    try {
+      const shortId = studio.id.replace(/-/g, "").slice(0, 8);
+      const defaultPassword = "klasly-test-2024";
+
+      // Test Instructor
+      const instrEmail = `test-instructor-${shortId}@klasly.app`;
+      const { data: instrUser } = await adminSupabase.auth.admin.createUser({
+        email: instrEmail,
+        password: defaultPassword,
+        email_confirm: true,
+        user_metadata: {
+          full_name: "Test Instructor",
+          is_test_account: true,
+          default_password: defaultPassword,
+        },
+      });
+      if (instrUser?.user) {
+        await adminSupabase.from("profiles").upsert({
+          id: instrUser.user.id,
+          studio_id: studio.id,
+          role: "instructor",
+          full_name: "Test Instructor",
+          email: instrEmail,
+        }, { onConflict: "id" });
+        await adminSupabase.from("instructors").insert({
+          studio_id: studio.id,
+          profile_id: instrUser.user.id,
+          bio: "This is a test account for previewing the instructor experience.",
+        });
+      }
+
+      // Test Member
+      const memberEmail = `test-member-${shortId}@klasly.app`;
+      const { data: memberUser } = await adminSupabase.auth.admin.createUser({
+        email: memberEmail,
+        password: defaultPassword,
+        email_confirm: true,
+        user_metadata: {
+          full_name: "Test Member",
+          is_test_account: true,
+          default_password: defaultPassword,
+        },
+      });
+      if (memberUser?.user) {
+        await adminSupabase.from("profiles").upsert({
+          id: memberUser.user.id,
+          studio_id: studio.id,
+          role: "member",
+          full_name: "Test Member",
+          email: memberEmail,
+        }, { onConflict: "id" });
+        await adminSupabase.from("members").insert({
+          studio_id: studio.id,
+          profile_id: memberUser.user.id,
+          plan_type: "drop_in",
+          status: "active",
+        });
+      }
+    } catch (err) {
+      // Test account creation failure must never block studio creation
+      console.warn("[create-studio] Test account creation failed:", err);
+    }
+
     return NextResponse.json({ success: true, studioId: studio.id });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal error";

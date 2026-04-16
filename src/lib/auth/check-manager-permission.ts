@@ -10,6 +10,7 @@ export type ManagerPermissions = {
   can_view_payments: boolean;
   can_send_messages: boolean;
   can_teach: boolean;
+  can_manage_settings: boolean;
 };
 
 type PermissionCheckResult = {
@@ -56,7 +57,7 @@ export async function checkManagerPermission(
     const { data: manager } = await supabase
       .from("managers")
       .select(
-        "can_manage_members, can_manage_classes, can_manage_instructors, can_manage_bookings, can_manage_rooms, can_view_payments, can_send_messages, can_teach"
+        "can_manage_members, can_manage_classes, can_manage_instructors, can_manage_bookings, can_manage_rooms, can_view_payments, can_send_messages, can_teach, can_manage_settings"
       )
       .eq("profile_id", user.id)
       .eq("studio_id", profile.studio_id)
@@ -95,7 +96,7 @@ export async function getManagerPermissions(
   const { data: manager } = await supabase
     .from("managers")
     .select(
-      "can_manage_members, can_manage_classes, can_manage_instructors, can_manage_bookings, can_manage_rooms, can_view_payments, can_send_messages, can_teach"
+      "can_manage_members, can_manage_classes, can_manage_instructors, can_manage_bookings, can_manage_rooms, can_view_payments, can_send_messages, can_teach, can_manage_settings"
     )
     .eq("profile_id", userId)
     .eq("studio_id", studioId)

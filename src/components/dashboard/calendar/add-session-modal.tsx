@@ -54,6 +54,7 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
   const [roomId, setRoomId] = useState("");
   const [instructorId, setInstructorId] = useState("");
   const [repeat, setRepeat] = useState<"single" | "weekly">("single");
+  const [repeatEnd, setRepeatEnd] = useState<"weeks" | "never">("weeks");
   const [repeatWeeks, setRepeatWeeks] = useState(4);
 
   // Room conflict check state
@@ -305,7 +306,8 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
           room_id: roomId || undefined,
           instructor_id: instructorId || undefined,
           repeat,
-          repeat_weeks: repeat === "weekly" ? repeatWeeks : undefined,
+          repeat_weeks: repeat === "weekly" && repeatEnd === "weeks" ? repeatWeeks : undefined,
+          repeat_never: repeat === "weekly" && repeatEnd === "never" ? true : undefined,
         }),
       });
 
@@ -534,22 +536,53 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
               </div>
 
               {repeat === "weekly" && (
-                <div className="mt-2">
-                  <label className="block text-xs text-gray-500 mb-1">
-                    Number of weeks
+                <div className="mt-3 space-y-3">
+                  <label className="block text-xs font-medium text-gray-500">
+                    Repeat ends
                   </label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={52}
-                    value={repeatWeeks}
-                    onChange={(e) =>
-                      setRepeatWeeks(
-                        Math.min(52, Math.max(1, parseInt(e.target.value) || 1))
-                      )
-                    }
-                    className="input w-24"
-                  />
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-sm text-gray-700">
+                      <input
+                        type="radio"
+                        name="repeatEnd"
+                        value="weeks"
+                        checked={repeatEnd === "weeks"}
+                        onChange={() => setRepeatEnd("weeks")}
+                        className="text-brand-600 focus:ring-brand-500"
+                      />
+                      <span>For</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={52}
+                        value={repeatWeeks}
+                        onChange={(e) =>
+                          setRepeatWeeks(
+                            Math.min(52, Math.max(1, parseInt(e.target.value) || 1))
+                          )
+                        }
+                        disabled={repeatEnd !== "weeks"}
+                        className="input w-16 text-center disabled:opacity-40"
+                      />
+                      <span>weeks</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-sm text-gray-700">
+                      <input
+                        type="radio"
+                        name="repeatEnd"
+                        value="never"
+                        checked={repeatEnd === "never"}
+                        onChange={() => setRepeatEnd("never")}
+                        className="text-brand-600 focus:ring-brand-500"
+                      />
+                      Never — keep generating indefinitely
+                    </label>
+                  </div>
+                  {repeatEnd === "never" && (
+                    <p className="rounded-md bg-blue-50 px-3 py-2 text-xs text-blue-700">
+                      Sessions will be auto-generated several weeks ahead on a rolling basis. You can stop anytime by setting an end date on the class template.
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -567,7 +600,9 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
                 {startTime}
                 {endTimeDisplay ? `–${endTimeDisplay}` : ""},{" "}
                 {repeat === "weekly"
-                  ? `${repeatWeeks} weeks starting ${date}`
+                  ? repeatEnd === "never"
+                    ? `ongoing, starting ${date}`
+                    : `${repeatWeeks} weeks starting ${date}`
                   : date}
               </div>
             )}
@@ -598,7 +633,9 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
                 {submitting
                   ? "Creating..."
                   : repeat === "weekly"
-                    ? `Create ${repeatWeeks} Sessions`
+                    ? repeatEnd === "never"
+                      ? "Create Ongoing Sessions"
+                      : `Create ${repeatWeeks} Sessions`
                     : "Create Session"}
               </button>
             </div>

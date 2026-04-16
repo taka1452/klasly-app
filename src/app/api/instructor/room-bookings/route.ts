@@ -285,6 +285,15 @@ export async function POST(request: Request) {
     // Return backward-compatible format
     const bookings = (insertedSessions || []).map(mapSessionToBooking);
 
+    // Send email notification to owner + managers with can_manage_rooms (fire-and-forget)
+    notifyRoomBooking(ctx.supabase, ctx.studioId, ctx.instructorId, {
+      roomId: room_id,
+      title,
+      dates: bookingDates,
+      startTime: start_time,
+      endTime: end_time,
+    }).catch((err) => console.warn("[RoomBookings] Notification email failed:", err));
+
     return NextResponse.json(
       {
         bookings,
@@ -400,5 +409,107 @@ async function sendOverageWarningEmail(
     });
   } catch (err) {
     console.error("[OverageWarning] Failed to send warning email:", err);
+  }
+}
+
+// Helper: notify owner + managers with can_manage_rooms about a new room booking
+async function notifyRoomBooking(
+  supabase: SupabaseClient,
+  studioId: string,
+  instructorId: string,
+  booking: {
+    roomId: string;
+    title: string;
+    dates: string[];
+    startTime: string;
+    endTime: string;
+  },
+) {
+  try {
+    // Get instructor name
+    const { data: instructor } = await supabase
+      .from("instructors")
+      .select("profiles(full_name)")
+      .eq("id", instructorId)
+      .single();
+    const instrProfile = instructor?.profiles as unknown;
+    const instrP = (Array.isArray(instrProfile) ? instrProfile[0] : instrProfile) as { full_name: string } | null;
+    const instructorName = instrP?.full_name || "An instructor";
+
+    // Get room name
+    const { data: room } = await supabase
+      .from("rooms")
+      .select("name")
+      .eq("id", booking.roomId)
+      .single();
+    const roomName = room?.name || "a room";
+
+    // Get studio name
+    const { data: studio } = await supabase
+      .from("studios")
+      .select("name")
+      .eq("id", studioId)
+      .single();
+    const studioName = studio?.name || "your studio";
+
+    // Get owner email
+    const { data: ownerProfile } = await supabase
+      .from("profiles")
+      .select("email, full_name")
+      .eq("studio_id", studioId)
+      .eq("role", "owner")
+      .single();
+
+    // Get managers with can_manage_rooms
+    const { data: managers } = await supabase
+      .from("managers")
+      .select("profiles(email, full_name)")
+      .eq("studio_id", studioId)
+      .eq("can_manage_rooms", true);
+
+    const recipients: { email: string; name: string }[] = [];
+    if (ownerProfile?.email) {
+      recipients.push({ email: ownerProfile.email, name: ownerProfile.full_name || "Owner" });
+    }
+    if (managers) {
+      for (const m of managers) {
+        const mp = (Array.isArray(m.profiles) ? m.profiles[0] : m.profiles) as { email: string; full_name: string } | null;
+        if (mp?.email && !recipients.some((r) => r.email === mp.email)) {
+          recipients.push({ email: mp.email, name: mp.full_name || "Manager" });
+        }
+      }
+    }
+
+    if (recipients.length === 0) return;
+
+    const { instructorRoomBooking } = await import("@/lib/email/templates");
+    const { sendEmail } = await import("@/lib/email/send");
+
+    const dateStr = booking.dates.length === 1
+      ? booking.dates[0]
+      : `${booking.dates[0]} (${booking.dates.length} sessions)`;
+
+    for (const recipient of recipients) {
+      const template = instructorRoomBooking({
+        recipientName: recipient.name,
+        instructorName,
+        roomName,
+        date: dateStr,
+        startTime: booking.startTime,
+        endTime: booking.endTime,
+        title: booking.title || null,
+        studioName,
+      });
+
+      await sendEmail({
+        to: recipient.email,
+        subject: template.subject,
+        html: template.html,
+        studioId,
+        templateName: "instructorRoomBooking",
+      });
+    }
+  } catch (err) {
+    console.error("[RoomBooking] Failed to send notification:", err);
   }
 }

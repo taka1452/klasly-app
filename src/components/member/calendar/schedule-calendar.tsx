@@ -32,7 +32,15 @@ export default function ScheduleCalendar({
   payPerClass,
   classPrice,
 }: Props) {
-  const [view, setView] = useState<CalendarView>("week");
+  const CALENDAR_VIEW_KEY = "klasly:member:calendar-view";
+  const [view, setView] = useState<CalendarView>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(CALENDAR_VIEW_KEY);
+      if (saved === "week" || saved === "day" || saved === "month" || saved === "list") return saved;
+      if (window.innerWidth < 768) return "day";
+    }
+    return "month";
+  });
   const [currentDate, setCurrentDate] = useState(new Date());
   const [sessions, setSessions] = useState<SessionData[]>([]);
   const [bookings, setBookings] = useState<
@@ -57,7 +65,7 @@ export default function ScheduleCalendar({
   useEffect(() => {
     const mobile = window.innerWidth < 768;
     setIsMobile(mobile);
-    if (mobile) {
+    if (mobile && !localStorage.getItem(CALENDAR_VIEW_KEY)) {
       setView("day");
     }
     if (!localStorage.getItem("klasly:member:schedule-tip-dismissed")) {
@@ -122,6 +130,7 @@ export default function ScheduleCalendar({
 
   function handleViewChange(v: CalendarView) {
     setView(v);
+    localStorage.setItem(CALENDAR_VIEW_KEY, v);
   }
 
   function handleMonthDayClick(date: Date) {

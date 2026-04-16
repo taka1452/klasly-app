@@ -1,6 +1,26 @@
 "use client";
 
 import { useWidgetTheme } from "./widget-theme-provider";
+import { useMemo } from "react";
+import { markdownToHtml } from "@/lib/waiver-content";
+import DOMPurify from "dompurify";
+
+function DescriptionMarkdown({ content }: { content: string }) {
+  const html = useMemo(() => {
+    const raw = markdownToHtml(content);
+    return DOMPurify.sanitize(raw, {
+      ALLOWED_TAGS: ["strong", "em", "ul", "ol", "li", "br"],
+      ALLOWED_ATTR: [],
+    });
+  }, [content]);
+  if (!html) return null;
+  return (
+    <div
+      className="mt-2 text-xs leading-relaxed text-gray-500 line-clamp-3 [&_strong]:font-semibold [&_em]:italic [&_ul]:list-disc [&_ul]:ml-3 [&_ol]:list-decimal [&_ol]:ml-3"
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+}
 
 type EventOption = {
   id: string;
@@ -196,11 +216,9 @@ export default function WidgetEventCard({
             {event.name}
           </h3>
 
-          {/* Description */}
+          {/* Description (markdown) */}
           {event.description && (
-            <p className="mt-2 text-xs leading-relaxed text-gray-500 line-clamp-3">
-              {event.description}
-            </p>
+            <DescriptionMarkdown content={event.description} />
           )}
 
           {/* Info chips */}

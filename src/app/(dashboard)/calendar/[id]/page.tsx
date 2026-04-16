@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getDayName, formatTime, formatDate, formatDuration } from "@/lib/utils";
 import ClassEditForm from "@/components/classes/class-edit-form";
 import ClassDeactivateButton from "@/components/classes/class-deactivate-button";
+import SafeMarkdown from "@/components/ui/safe-markdown";
 import FlowHintPanel from "@/components/ui/flow-hint-panel";
 import { isFeatureEnabled } from "@/lib/features/check-feature";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
@@ -33,7 +34,7 @@ export default async function ClassDetailPage({
     : serverSupabase;
 
   const { data: cls } = await supabase
-    .from("classes")
+    .from("class_templates")
     .select("*, instructors(profiles(full_name))")
     .eq("id", id)
     .single();
@@ -116,7 +117,9 @@ export default async function ClassDetailPage({
           <FlowHintPanel flowType="instructor-assign" buttonLabel="How to assign instructor?" />
         </div>
         {cls.description && (
-          <p className="mt-1 text-sm text-gray-600">{cls.description}</p>
+          <div className="mt-1 text-sm text-gray-600">
+            <SafeMarkdown content={cls.description} />
+          </div>
         )}
       </div>
 

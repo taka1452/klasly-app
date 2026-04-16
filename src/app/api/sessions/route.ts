@@ -25,6 +25,7 @@ export async function POST(request: Request) {
       instructor_id: bodyInstructorId,
       repeat = "single",
       repeat_weeks = 4,
+      repeat_never,
     } = body;
 
     // --- Basic validation ---
@@ -66,7 +67,9 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    const weeks = Math.min(Math.max(repeat_weeks ?? 4, 1), 52);
+    // For "never" (ongoing) repeat, we'll resolve weeks after auth when we have studioId
+    let weeks = Math.min(Math.max(repeat_weeks ?? 4, 1), 52);
+    const isOngoing = repeat === "weekly" && repeat_never === true;
 
     // --- Auth: try dashboard first, then instructor ---
     const dashCtx = await getDashboardContext();
@@ -94,6 +97,16 @@ export async function POST(request: Request) {
       studioId = instrCtx.studioId;
       resolvedInstructorId = instrCtx.instructorId;
       authSource = "instructor";
+    }
+
+    // For ongoing (never-ending) repeat, use studio's session_generation_weeks
+    if (isOngoing) {
+      const { data: studio } = await supabase
+        .from("studios")
+        .select("session_generation_weeks")
+        .eq("id", studioId)
+        .single();
+      weeks = (studio?.session_generation_weeks as number) || 8;
     }
 
     // --- Determine session_type and fetch template if needed ---
@@ -346,6 +359,14 @@ export async function POST(request: Request) {
         );
       }
 
+      // For ongoing recurrence, clear recurrence_end_date on the template
+      if (isOngoing && template_id) {
+        await supabase
+          .from("class_templates")
+          .update({ recurrence_end_date: null })
+          .eq("id", template_id);
+      }
+
       return NextResponse.json(
         {
           sessions: inserted,
@@ -392,6 +413,14 @@ export async function POST(request: Request) {
         { error: insertError.message },
         { status: 500 }
       );
+    }
+
+    // For ongoing recurrence, clear recurrence_end_date on the template
+    if (isOngoing && template_id) {
+      await supabase
+        .from("class_templates")
+        .update({ recurrence_end_date: null })
+        .eq("id", template_id);
     }
 
     return NextResponse.json(

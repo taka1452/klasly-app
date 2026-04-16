@@ -321,15 +321,26 @@ export default function TemplateList() {
             >
               {t.is_active ? "Active" : "Inactive"}
             </span>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                router.push(`/calendar/${t.id}`);
-              }}
-              className="btn-secondary text-xs"
-            >
-              Schedule
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push(`/classes/new?duplicate=${t.id}`);
+                }}
+                className="btn-secondary text-xs"
+              >
+                Duplicate
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push(`/calendar/${t.id}`);
+                }}
+                className="btn-secondary text-xs"
+              >
+                Schedule
+              </button>
+            </div>
           </div>
         </div>
 
