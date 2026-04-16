@@ -77,7 +77,7 @@ export default async function SessionDetailPage({
           </Link>
           <span>/</span>
           <Link
-            href={`/calendar/${classId}`}
+            href={`/classes/${classId}`}
             className="hover:text-gray-700 hover:underline"
           >
             {className}
@@ -98,7 +98,7 @@ export default async function SessionDetailPage({
             </p>
           </div>
           <Link
-            href={`/calendar/${classId}`}
+            href={`/classes/${classId}`}
             className="btn-secondary text-sm whitespace-nowrap"
           >
             Edit class
