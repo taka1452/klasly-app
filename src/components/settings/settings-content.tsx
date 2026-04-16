@@ -22,6 +22,7 @@ type Props = {
   canManageSettings?: boolean;
   studioName?: string;
   studioCurrency?: string;
+  isCollectiveMode?: boolean;
 };
 
 const WEEKS_OPTIONS = [4, 6, 8, 12];
@@ -38,6 +39,7 @@ export default function SettingsContent({
   canManageSettings = false,
   studioName = "",
   studioCurrency = "usd",
+  isCollectiveMode = false,
 }: Props) {
   const isOwner = role === "owner";
   const router = useRouter();
@@ -360,18 +362,26 @@ export default function SettingsContent({
             </div>
           )}
 
-          {/* Collective Mode Setup — owner or manager with settings permission */}
-          {(isOwner || canManageSettings) && (
-            <div className="card">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Collective Mode Setup
-              </h3>
-              <p className="mt-2 text-sm text-gray-600">
-                Step-by-step guide for setting up your shared studio: rooms, tiers, fees, and instructor invitations.
+          {/* Collective Mode Setup — only shown in collective mode */}
+          {(isOwner || canManageSettings) && isCollectiveMode && (
+            <div className="card border-amber-300 bg-amber-50">
+              <div className="flex items-center gap-2">
+                <span
+                  aria-hidden
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-200 text-xs font-bold text-amber-800"
+                >
+                  !
+                </span>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Collective Mode Setup
+                </h3>
+              </div>
+              <p className="mt-2 text-sm text-gray-700">
+                Your studio is in <strong>Collective Mode</strong> (instructors pay you to use your space). Complete this setup so instructors can book rooms and manage their classes: rooms &rarr; contracts &rarr; studio fee &rarr; invite first instructor.
               </p>
               <Link
                 href="/settings/collective-setup"
-                className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+                className="mt-4 inline-block rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
               >
                 Open Setup Guide &rarr;
               </Link>

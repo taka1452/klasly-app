@@ -20,11 +20,17 @@ export type SetupTask = {
 type SetupTaskListProps = {
   tasks: SetupTask[];
   title?: string;
+  /** Optional link to a full setup-guide page (rendered as a footer link). */
+  guideHref?: string | null;
+  /** Label for the guide link. */
+  guideLabel?: string;
 };
 
 export default function SetupTaskList({
   tasks,
   title = "Set up your studio",
+  guideHref = null,
+  guideLabel = "View full setup guide",
 }: SetupTaskListProps) {
   const [dismissed, setDismissed] = useState(true);
   const [mounted, setMounted] = useState(false);
@@ -147,7 +153,8 @@ export default function SetupTaskList({
         </div>
       ) : (
         /* Task list */
-        <ul className="px-5 pb-4 space-y-1">
+        <>
+        <ul className="px-5 pb-1 space-y-1">
           {tasks.map((task) => (
             <li key={task.id} className="flex items-start gap-3 py-2">
               {/* Checkmark */}
@@ -198,6 +205,17 @@ export default function SetupTaskList({
             </li>
           ))}
         </ul>
+        {guideHref && (
+          <div className="border-t border-gray-100 px-5 py-3">
+            <Link
+              href={guideHref}
+              className="flex items-center justify-center gap-1 text-xs font-medium text-brand-600 hover:text-brand-700"
+            >
+              {guideLabel} &rarr;
+            </Link>
+          </div>
+        )}
+        </>
       )}
     </div>
   );

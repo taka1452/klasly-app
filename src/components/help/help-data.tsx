@@ -1527,7 +1527,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
                 <li><B>Payments</B> — view payment history, passes, and export reports.</li>
                 <li><B>Messages</B> — send messages and announcements to members.</li>
                 <li><B>Teach</B> — register as an instructor and teach classes.</li>
-                <li><B>Settings</B> — access studio settings including tiers, collective mode setup, scheduling, widget, and waiver. Stripe Connect, billing, and account deletion remain owner-only.</li>
+                <li><B>Settings</B> — access studio settings including instructor contracts, collective mode setup, scheduling, widget, and waiver. Stripe Connect, billing, and account deletion remain owner-only.</li>
               </Steps>
               <Tip>Hover over each permission badge to see what it controls.</Tip>
             </>
@@ -1575,7 +1575,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "What is the Collective Mode Setup wizard?",
           a: (
             <>
-              The <B>Collective Mode Setup</B> page (found at <B>Settings &gt; Collective Mode Setup</B>) is a step-by-step checklist that guides you through configuring your shared studio. It tracks your progress across four steps: setting up rooms, defining membership tiers, configuring the studio fee, and inviting your first instructor.
+              The <B>Collective Mode Setup</B> page (found at <B>Settings &gt; Collective Mode Setup</B>) is a step-by-step checklist that guides you through configuring your shared studio. It tracks your progress across four steps: setting up rooms, defining instructor contracts, configuring the studio fee, and inviting your first instructor. The page is also accessible from the bottom-right setup checklist via <B>&quot;View full setup guide&quot;</B> while any step is still incomplete.
             </>
           ),
         },
@@ -1585,7 +1585,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             <>
               <Steps>
                 <li><B>Set up your rooms</B> &mdash; Define the physical spaces instructors can book (e.g., Main Studio, Practitioner Room).</li>
-                <li><B>Define membership tiers</B> &mdash; Create monthly tiers with different hour allowances and prices.</li>
+                <li><B>Define instructor contracts</B> &mdash; Create hourly plans with different hour allowances and prices, or configure flat / per-class fees per instructor.</li>
                 <li><B>Set your Studio Fee</B> &mdash; Choose the percentage deducted from instructor transactions.</li>
                 <li><B>Invite your first instructor</B> &mdash; Send an email invitation so they can join, connect Stripe, and pick a tier.</li>
               </Steps>

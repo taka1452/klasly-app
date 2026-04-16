@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import ErrorAlert from "@/components/ui/error-alert";
+
+type Props = {
+  onSwitchToOverage?: () => void;
+};
 
 type Tier = {
   id: string;
@@ -15,7 +18,7 @@ type Tier = {
   allow_overage: boolean;
 };
 
-export default function ContractsHourlyPlans() {
+export default function ContractsHourlyPlans({ onSwitchToOverage }: Props = {}) {
   const [tiers, setTiers] = useState<Tier[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -171,14 +174,17 @@ export default function ContractsHourlyPlans() {
         automatically charged if enabled.
       </div>
 
-      <div className="mb-4 flex items-center justify-between">
-        <Link
-          href="/settings/tiers/overage"
-          className="text-sm text-brand-600 hover:text-brand-700"
-        >
-          View overage charges &rarr;
-        </Link>
-      </div>
+      {onSwitchToOverage && (
+        <div className="mb-4 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={onSwitchToOverage}
+            className="text-sm text-brand-600 hover:text-brand-700"
+          >
+            View overage charges &rarr;
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="mb-4">

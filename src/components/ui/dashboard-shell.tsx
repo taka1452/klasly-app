@@ -26,6 +26,7 @@ type DashboardShellProps = {
   userId?: string;
   banner?: React.ReactNode;
   setupTasks?: SetupTask[];
+  setupGuideHref?: string | null;
 };
 
 export default function DashboardShell({
@@ -44,6 +45,7 @@ export default function DashboardShell({
   userId,
   banner,
   setupTasks = [],
+  setupGuideHref = null,
 }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -103,7 +105,12 @@ export default function DashboardShell({
       {currentRole === "owner" &&
         setupTasks.length > 0 &&
         !setupTasks.every((t) => t.done) && (
-          <SetupTaskList tasks={setupTasks} title="Setup checklist" />
+          <SetupTaskList
+            tasks={setupTasks}
+            title="Setup checklist"
+            guideHref={setupGuideHref}
+            guideLabel="View full setup guide"
+          />
         )}
     </div>
     </TourProvider>

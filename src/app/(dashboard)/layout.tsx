@@ -272,6 +272,11 @@ export default async function DashboardLayout({
         ) : null
       }
       setupTasks={setupTasks}
+      setupGuideHref={
+        studio?.payout_model === "instructor_direct"
+          ? "/settings/collective-setup"
+          : null
+      }
     >
       {children}
       <DevRoleSwitcher />
