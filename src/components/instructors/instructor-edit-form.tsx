@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import Toast from "@/components/ui/toast";
 
 type RentalType = "none" | "flat_monthly" | "per_class";
 
@@ -41,12 +42,11 @@ export default function InstructorEditForm({
   );
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    setSaved(false);
     setLoading(true);
 
     const specialtiesArray = specialties
@@ -110,24 +110,22 @@ export default function InstructorEditForm({
       });
     }
 
-    setSaved(true);
+    setToast("Changes saved successfully");
     setLoading(false);
     router.refresh();
   }
 
   return (
     <div className="card">
+      {toast && (
+        <Toast message={toast} onClose={() => setToast(null)} variant="success" />
+      )}
       <h2 className="text-lg font-semibold text-gray-900">Edit instructor</h2>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-5">
         {error && (
           <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
             {error}
-          </div>
-        )}
-        {saved && (
-          <div className="rounded-lg bg-green-50 p-3 text-sm text-green-600">
-            Changes saved successfully!
           </div>
         )}
 
