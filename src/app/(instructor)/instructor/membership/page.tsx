@@ -254,22 +254,21 @@ export default function InstructorMembershipPage() {
                   {overMin > 0 ? (
                     overOk ? (
                       <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-                        💳 You are{" "}
-                        <strong>{fmt(overMin)} over</strong> your monthly
-                        allowance. Estimated overage charge:{" "}
+                        You are <strong>{fmt(overMin)} over</strong> your
+                        monthly allowance. Estimated overage charge:{" "}
                         <strong>${(estCharge / 100).toFixed(2)}</strong>
                         {rate ? ` ($${(rate / 100).toFixed(2)}/hour)` : ""}.
                         Billed on the 1st of next month.
                       </div>
                     ) : (
                       <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                        🚫 You have exceeded your monthly allowance. Further
+                        You have exceeded your monthly allowance. Further
                         bookings are blocked until next month.
                       </div>
                     )
                   ) : pct >= 90 ? (
                     <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-                      ⚠ You&apos;re approaching your monthly limit ({100 - pct}%
+                      You&apos;re approaching your monthly limit ({100 - pct}%
                       remaining).
                       {overOk && rate
                         ? ` If you go over, extra hours will be billed at $${(rate / 100).toFixed(2)}/hour.`

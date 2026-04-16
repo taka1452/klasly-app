@@ -450,7 +450,7 @@ function OverageConfirmModal({
       <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
         <div className="border-b border-gray-200 px-5 py-4">
           <h3 className="text-lg font-semibold text-gray-900">
-            ⚠ Overage charge required
+            Overage charge required
           </h3>
           <p className="mt-1 text-xs text-gray-500">
             This booking exceeds your monthly hour allowance. Extra time will

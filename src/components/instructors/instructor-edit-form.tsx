@@ -289,7 +289,7 @@ export default function InstructorEditForm({
                     if (unlimited) {
                       return (
                         <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-2.5 text-xs text-emerald-800">
-                          ✨ <strong>Unlimited hours</strong> — no overage ever applies.
+                          <strong>Unlimited hours</strong> &mdash; no overage ever applies.
                         </div>
                       );
                     }
@@ -300,13 +300,13 @@ export default function InstructorEditForm({
                           : "not set";
                       return (
                         <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-800">
-                          💳 <strong>Overage allowed</strong> — extra hours beyond the plan are billed at <strong>{rate}</strong> on the 1st of the following month.
+                          <strong>Overage allowed</strong> &mdash; extra hours beyond the plan are billed at <strong>{rate}</strong> on the 1st of the following month.
                         </div>
                       );
                     }
                     return (
                       <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-2.5 text-xs text-gray-700">
-                        🚫 <strong>Hard limit</strong> — this plan blocks further bookings once the monthly allowance runs out.
+                        <strong>Hard limit</strong> &mdash; this plan blocks further bookings once the monthly allowance runs out.
                       </div>
                     );
                   })()}
@@ -413,7 +413,7 @@ export default function InstructorEditForm({
 
           {tierId && rentalType !== "none" && (
             <p className="mt-3 rounded-lg bg-amber-50 border border-amber-200 p-2 text-xs text-amber-700">
-              ⚠ Legacy state: both an hourly plan and a flat/per-class fee are
+              Legacy state: both an hourly plan and a flat/per-class fee are
               set. Switch tabs (which auto-clears the other side) and save to
               fix.
             </p>

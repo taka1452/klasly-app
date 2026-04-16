@@ -339,7 +339,7 @@ export default function ContractsHourlyPlans({ onSwitchToOverage }: Props = {}) 
                         className="accent-brand-600"
                       />
                       <span className="font-medium text-gray-900">
-                        🚫 Block further bookings
+                        Block further bookings
                       </span>
                     </div>
                     <p className="ml-6 text-xs text-gray-500">
@@ -365,7 +365,7 @@ export default function ContractsHourlyPlans({ onSwitchToOverage }: Props = {}) 
                         className="accent-brand-600"
                       />
                       <span className="font-medium text-gray-900">
-                        💳 Allow overage — charge per extra hour
+                        Allow overage &mdash; charge per extra hour
                       </span>
                     </div>
                     <p className="ml-6 text-xs text-gray-500">
