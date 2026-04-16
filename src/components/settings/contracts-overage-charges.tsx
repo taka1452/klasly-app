@@ -1,6 +1,16 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+
+type Tier = {
+  id: string;
+  name: string;
+  monthly_minutes: number;
+  allow_overage: boolean;
+  overage_rate_cents: number | null;
+  is_active: boolean;
+};
 
 type OverageCharge = {
   id: string;
@@ -20,6 +30,7 @@ type OverageCharge = {
 
 export default function ContractsOverageCharges() {
   const [charges, setCharges] = useState<OverageCharge[]>([]);
+  const [tiers, setTiers] = useState<Tier[]>([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState(() => {
     const now = new Date();
@@ -41,9 +52,18 @@ export default function ContractsOverageCharges() {
     setLoading(false);
   }, [period]);
 
+  const fetchTiers = useCallback(async () => {
+    const res = await fetch("/api/instructor-membership-tiers");
+    if (res.ok) {
+      const data = await res.json();
+      setTiers(Array.isArray(data) ? data : []);
+    }
+  }, []);
+
   useEffect(() => {
     fetchCharges();
-  }, [fetchCharges]);
+    fetchTiers();
+  }, [fetchCharges, fetchTiers]);
 
   async function handleWaive(chargeId: string) {
     setActionLoading(true);
@@ -107,14 +127,112 @@ export default function ContractsOverageCharges() {
   const chargedCount = charges.filter((c) => c.status === "charged").length;
   const failedCount = charges.filter((c) => c.status === "failed").length;
 
+  const activeTiers = tiers.filter((t) => t.is_active);
+
   return (
     <div>
+      {/* Overage settings summary */}
+      <div className="mb-6 rounded-lg border border-gray-200 bg-white p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900">
+              Overage settings
+            </h3>
+            <p className="mt-0.5 text-xs text-gray-500">
+              Each hourly plan controls its own policy. Edit a plan to change
+              whether overage is allowed and the hourly rate.
+            </p>
+          </div>
+          <Link
+            href="/settings/contracts?tab=hourly"
+            className="shrink-0 whitespace-nowrap text-sm font-medium text-brand-600 hover:text-brand-700"
+          >
+            Edit in Hourly plans &rarr;
+          </Link>
+        </div>
+
+        {activeTiers.length === 0 ? (
+          <p className="mt-3 rounded-lg bg-gray-50 p-3 text-sm text-gray-500">
+            No active hourly plans yet. Create a plan first, then set its
+            overage policy.
+          </p>
+        ) : (
+          <div className="mt-3 overflow-hidden rounded-lg border border-gray-200">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-gray-50 text-left text-xs font-medium uppercase text-gray-500">
+                  <th className="px-3 py-2">Plan</th>
+                  <th className="px-3 py-2">Monthly</th>
+                  <th className="px-3 py-2">Overage policy</th>
+                  <th className="px-3 py-2">Rate</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {activeTiers.map((t) => {
+                  const unlimited = t.monthly_minutes === -1;
+                  const hours = unlimited
+                    ? "Unlimited"
+                    : `${Math.floor(t.monthly_minutes / 60)}h ${t.monthly_minutes % 60}m`;
+                  const policyBadge = unlimited ? (
+                    <span className="inline-block rounded px-2 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-700">
+                      ✨ Unlimited
+                    </span>
+                  ) : t.allow_overage ? (
+                    <span className="inline-block rounded px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-800">
+                      💳 Allowed (auto-bill)
+                    </span>
+                  ) : (
+                    <span className="inline-block rounded px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600">
+                      🚫 Blocked at limit
+                    </span>
+                  );
+                  const rateText =
+                    unlimited || !t.allow_overage
+                      ? "—"
+                      : t.overage_rate_cents != null
+                        ? `$${(t.overage_rate_cents / 100).toFixed(2)} / hour`
+                        : "Not set";
+                  return (
+                    <tr key={t.id}>
+                      <td className="px-3 py-2 font-medium text-gray-900">
+                        {t.name}
+                      </td>
+                      <td className="px-3 py-2 text-gray-600">{hours}</td>
+                      <td className="px-3 py-2">{policyBadge}</td>
+                      <td className="px-3 py-2 text-gray-900">{rateText}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Billing schedule explainer */}
       <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
-        <strong>Overage billing flow:</strong> Overage charges are created
-        automatically on the 1st of each month for instructors who exceeded
-        their hourly plan. Charges move through <em>pending → charged</em>{" "}
-        (billed via Stripe off-session) or <em>failed</em>. You can <em>waive</em>{" "}
-        any charge (a refund is issued automatically if already charged).
+        <strong>How overage billing works:</strong>
+        <ol className="mt-2 ml-4 list-decimal space-y-1 text-xs">
+          <li>
+            When an instructor books beyond their monthly allowance on a plan
+            with overage allowed, they see a confirmation modal and explicitly
+            agree to the charge.
+          </li>
+          <li>
+            On the 1st of the following month (01:00 UTC), a cron job
+            calculates the accumulated overage and bills the instructor&apos;s
+            Stripe card off-session.
+          </li>
+          <li>
+            Charges move through{" "}
+            <em>pending &rarr; charged</em> (success) or <em>failed</em>{" "}
+            (payment method issue &mdash; instructor notified).
+          </li>
+          <li>
+            You can <em>Waive</em> any charge below; if already charged, a
+            refund is issued automatically via Stripe.
+          </li>
+        </ol>
       </div>
 
       {error && (
