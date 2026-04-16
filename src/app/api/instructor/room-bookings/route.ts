@@ -231,7 +231,7 @@ export async function POST(request: Request) {
           requested: number;
           overage: number;
         }> = [];
-        for (const { year, month, count } of datesByMonth.values()) {
+        for (const { year, month, count } of Array.from(datesByMonth.values())) {
           const { data: usedData } = await ctx.supabase.rpc("get_instructor_used_minutes", {
             p_instructor_id: ctx.instructorId,
             p_year: year,
