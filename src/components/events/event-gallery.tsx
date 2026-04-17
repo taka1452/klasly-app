@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 type Props = {
   images: string[];
@@ -23,12 +24,13 @@ export default function EventGallery({ images, eventName }: Props) {
             onClick={() => setSelectedIndex(i)}
             className="group relative aspect-[4/3] overflow-hidden rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={url}
               alt={`${eventName} photo ${i + 1}`}
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              fill
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
               loading="lazy"
+              sizes="(max-width: 640px) 50vw, 33vw"
             />
           </button>
         ))}
@@ -65,12 +67,15 @@ export default function EventGallery({ images, eventName }: Props) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <div className="max-h-[85vh] max-w-[90vw]" onClick={(e) => e.stopPropagation()}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+          <div className="relative max-h-[85vh] max-w-[90vw]" onClick={(e) => e.stopPropagation()}>
+            <Image
               src={images[selectedIndex]}
               alt={`${eventName} photo ${selectedIndex + 1}`}
+              width={1600}
+              height={1200}
               className="max-h-[85vh] max-w-[90vw] rounded-lg object-contain"
+              sizes="90vw"
+              priority
             />
           </div>
           <button

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 
 type Video = {
@@ -82,11 +83,14 @@ export default function VideosPage() {
             return (
               <div key={v.id} className="card overflow-hidden">
                 {v.thumbnail_url ? (
-                  <div className="aspect-video bg-gray-100 -mx-4 -mt-4 mb-3">
-                    <img
+                  <div className="relative aspect-video bg-gray-100 -mx-4 -mt-4 mb-3">
+                    <Image
                       src={v.thumbnail_url}
                       alt={v.title}
-                      className="h-full w-full object-cover"
+                      fill
+                      className="object-cover"
+                      loading="lazy"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     />
                   </div>
                 ) : (

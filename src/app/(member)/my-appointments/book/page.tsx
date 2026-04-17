@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useFeature } from "@/lib/features/feature-context";
@@ -258,10 +259,14 @@ export default function BookAppointmentPage() {
               >
                 <div className="flex items-center gap-3">
                   {inst.avatar_url ? (
-                    <img
+                    <Image
                       src={inst.avatar_url}
                       alt={inst.name}
+                      width={40}
+                      height={40}
                       className="h-10 w-10 rounded-full object-cover"
+                      loading="lazy"
+                      sizes="40px"
                     />
                   ) : (
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-100 text-brand-700 text-sm font-semibold">

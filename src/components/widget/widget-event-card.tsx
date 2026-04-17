@@ -164,9 +164,12 @@ export default function WidgetEventCard({
         <div className="relative">
           {event.image_url ? (
             <div className="h-40 w-full overflow-hidden bg-gray-100">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={event.image_url}
                 alt={event.name}
+                loading="lazy"
+                decoding="async"
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-black/10" />
@@ -330,7 +333,14 @@ export default function WidgetEventCard({
         {/* Small thumbnail */}
         {event.image_url && (
           <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-gray-100">
-            <img src={event.image_url} alt={event.name} className="h-full w-full object-cover" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={event.image_url}
+              alt={event.name}
+              loading="lazy"
+              decoding="async"
+              className="h-full w-full object-cover"
+            />
           </div>
         )}
 
