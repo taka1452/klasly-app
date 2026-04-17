@@ -430,7 +430,7 @@ export default function WidgetSchedule({ studioId }: Props) {
             <button
               type="button"
               onClick={handleSignOut}
-              className="text-[10px] text-gray-400 hover:text-gray-600"
+              className="text-[10px] text-gray-500 hover:text-gray-600"
             >
               Sign out
             </button>

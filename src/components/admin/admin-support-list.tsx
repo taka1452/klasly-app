@@ -134,7 +134,7 @@ export default function AdminSupportList({
                     </td>
                     <td className="p-3 text-slate-300">
                       {t.studio_id ? (
-                        <Link href={`/admin/studios/${t.studio_id}`} className="text-indigo-400 hover:underline">
+                        <Link href={`/admin/studios/${t.studio_id}`} className="text-brand-400 hover:underline">
                           {t.studio_name ?? t.studio_id}
                         </Link>
                       ) : (
@@ -169,12 +169,12 @@ export default function AdminSupportList({
             </span>
             <div className="flex gap-2">
               {page > 1 && (
-                <Link href={`/admin/support?${buildQuery({ page: page - 1 })}`} className="text-indigo-400 hover:underline">
+                <Link href={`/admin/support?${buildQuery({ page: page - 1 })}`} className="text-brand-400 hover:underline">
                   {t("studios.previous")}
                 </Link>
               )}
               {page < totalPages && (
-                <Link href={`/admin/support?${buildQuery({ page: page + 1 })}`} className="text-indigo-400 hover:underline">
+                <Link href={`/admin/support?${buildQuery({ page: page + 1 })}`} className="text-brand-400 hover:underline">
                   {t("studios.next")}
                 </Link>
               )}

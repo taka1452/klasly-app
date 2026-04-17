@@ -83,7 +83,7 @@ export default function AdminStudiosList({ statusCounts }: { statusCounts: Statu
             setSearch(e.target.value);
             setPage(1);
           }}
-          className="rounded border border-slate-600 bg-slate-800 px-3 py-2 text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          className="rounded border border-slate-600 bg-slate-800 px-3 py-2 text-white placeholder-slate-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
         />
         <div className="flex gap-1 rounded-lg border border-slate-600 bg-slate-800 p-1">
           {(["all", "trialing", "active", "past_due", "grace", "canceled"] as const).map((s) => (
@@ -94,7 +94,7 @@ export default function AdminStudiosList({ statusCounts }: { statusCounts: Statu
                 setPage(1);
               }}
               className={`rounded px-3 py-1.5 text-sm font-medium capitalize ${
-                status === s ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-white"
+                status === s ? "bg-brand-600 text-white" : "text-slate-400 hover:text-white"
               }`}
             >
               {s === "all" ? t("studios.all") : STATUS_LABELS[s] ?? s} ({statusCounts[s] ?? 0})
@@ -107,7 +107,7 @@ export default function AdminStudiosList({ statusCounts }: { statusCounts: Statu
             setSort(e.target.value);
             setPage(1);
           }}
-          className="rounded border border-slate-600 bg-slate-800 px-3 py-2 text-white focus:border-indigo-500 focus:outline-none"
+          className="rounded border border-slate-600 bg-slate-800 px-3 py-2 text-white focus:border-brand-500 focus:outline-none"
         >
           <option value="newest">{t("studios.newestFirst")}</option>
           <option value="oldest">{t("studios.oldestFirst")}</option>
@@ -148,7 +148,7 @@ export default function AdminStudiosList({ statusCounts }: { statusCounts: Statu
                   >
                     <td className="p-3">
                       <div className="flex items-center gap-2">
-                        <Link href={`/admin/studios/${s.id}`} className="font-medium text-white hover:text-indigo-400">
+                        <Link href={`/admin/studios/${s.id}`} className="font-medium text-white hover:text-brand-400">
                           {s.name}
                         </Link>
                         {s.is_demo && (

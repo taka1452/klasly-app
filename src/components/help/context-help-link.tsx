@@ -11,7 +11,7 @@ export default function ContextHelpLink({ href, label = 'Help' }: Props) {
       href={href}
       target="_blank"
       title={label}
-      className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 text-gray-400 hover:text-brand-600 transition-colors"
+      className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 text-gray-500 hover:text-brand-600 transition-colors"
     >
       <svg
         className="h-5 w-5"

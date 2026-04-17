@@ -112,7 +112,7 @@ export default function MemberProfileCard({
   return (
     <>
       <div
-        className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
+        className="fixed inset-0 z-50 bg-black/40"
         onClick={onClose}
         aria-hidden
       />
@@ -132,7 +132,7 @@ export default function MemberProfileCard({
           <button
             type="button"
             onClick={onClose}
-            className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-600"
             aria-label="Close"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

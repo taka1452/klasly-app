@@ -120,7 +120,7 @@ export function EventBookingFilters({
                         {booking.guest_name}
                       </p>
                       {booking.group_size > 1 && (
-                        <span className="rounded-full bg-purple-100 px-1.5 py-0.5 text-[10px] font-medium text-purple-700">
+                        <span className="rounded-full bg-brand-100 px-1.5 py-0.5 text-[10px] font-medium text-brand-700">
                           ×{booking.group_size}
                         </span>
                       )}
@@ -158,7 +158,7 @@ export function EventBookingFilters({
                           : booking.payment_status === "partial"
                             ? "bg-amber-100 text-amber-700"
                             : booking.payment_status === "refunded"
-                              ? "bg-purple-100 text-purple-700"
+                              ? "bg-brand-100 text-brand-700"
                               : "bg-gray-100 text-gray-600"
                       }`}
                     >

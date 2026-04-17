@@ -67,7 +67,7 @@ export default function TourOverlay({
             aria-label="Click to skip tour"
           />
           <div
-            className="pointer-events-none absolute border-2 border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all duration-200"
+            className="pointer-events-none absolute border-2 border-brand-500 shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all duration-200"
             style={{
               left: state.targetRect.left - 4,
               top: state.targetRect.top - 4,
@@ -111,7 +111,7 @@ export default function TourOverlay({
               <button
                 type="button"
                 onClick={nextStep}
-                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+                className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700"
               >
                 {isLastStep ? "Finish" : "Next"}
               </button>

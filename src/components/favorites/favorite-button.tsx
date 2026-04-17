@@ -38,7 +38,7 @@ export default function FavoriteButton({
     <button
       onClick={handleToggle}
       disabled={loading}
-      className="text-gray-400 hover:text-red-500 transition-colors"
+      className="text-gray-500 hover:text-red-500 transition-colors"
       title={favorited ? "Remove from favorites" : "Add to favorites"}
     >
       <svg

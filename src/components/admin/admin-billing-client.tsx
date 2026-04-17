@@ -69,7 +69,7 @@ export default function AdminBillingClient({
             type="checkbox"
             checked={demoMode}
             onChange={(e) => setDemoMode(e.target.checked)}
-            className="h-4 w-4 rounded border-slate-600 bg-slate-700 text-indigo-500"
+            className="h-4 w-4 rounded border-slate-600 bg-slate-700 text-brand-500"
           />
           Demo
         </label>
@@ -80,7 +80,7 @@ export default function AdminBillingClient({
           href="https://dashboard.stripe.com"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 rounded-lg border border-indigo-500 bg-indigo-500/20 px-4 py-2 text-sm font-medium text-indigo-300 hover:bg-indigo-500/30"
+          className="inline-flex items-center gap-2 rounded-lg border border-brand-500 bg-brand-500/20 px-4 py-2 text-sm font-medium text-brand-300 hover:bg-brand-500/30"
         >
           {t("billing.openStripeDashboard")} →
         </a>
@@ -135,13 +135,13 @@ export default function AdminBillingClient({
                     </td>
                     <td className="p-2">
                       {demoMode ? (
-                        <span className="text-indigo-400">
+                        <span className="text-brand-400">
                           {displayNames[p.studio_id] ?? p.studio_id}
                         </span>
                       ) : (
                         <Link
                           href={`/admin/studios/${p.studio_id}`}
-                          className="text-indigo-400 hover:underline"
+                          className="text-brand-400 hover:underline"
                         >
                           {displayNames[p.studio_id] ?? p.studio_id}
                         </Link>

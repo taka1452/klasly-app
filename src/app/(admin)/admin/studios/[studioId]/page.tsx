@@ -42,7 +42,7 @@ export default async function AdminStudioDetailPage({
     return (
       <div className="rounded-lg border border-slate-700 bg-slate-800 p-6">
         <p className="text-red-400">Studio not found</p>
-        <Link href="/admin/studios" className="mt-2 inline-block text-sm text-indigo-400 hover:text-indigo-300">
+        <Link href="/admin/studios" className="mt-2 inline-block text-sm text-brand-400 hover:text-brand-300">
           ← Back to Studios
         </Link>
       </div>

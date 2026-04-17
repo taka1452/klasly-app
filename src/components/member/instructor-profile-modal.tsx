@@ -71,7 +71,8 @@ export default function InstructorProfileModal({
           <button
             type="button"
             onClick={onClose}
-            className="absolute right-4 top-4 text-gray-400 hover:text-gray-600"
+            className="absolute right-4 top-4 text-gray-500 hover:text-gray-600"
+            aria-label="Close"
           >
             <svg
               className="h-5 w-5"

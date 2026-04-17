@@ -159,7 +159,7 @@ export default function InstructorManagerToggle({
                   className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                     isEnabled
                       ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                      : "bg-gray-100 text-gray-400 hover:bg-gray-200"
+                      : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                   }`}
                 >
                   {isEnabled ? "\u2713" : "\u2014"} {label}

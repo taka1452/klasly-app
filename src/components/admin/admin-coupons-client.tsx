@@ -55,7 +55,7 @@ export default function AdminCouponsPageClient() {
         <button
           type="button"
           onClick={() => setShowCreateCoupon(true)}
-          className="rounded-lg border border-indigo-500 bg-indigo-500/20 px-4 py-2 text-sm font-medium text-indigo-300 hover:bg-indigo-500/30"
+          className="rounded-lg border border-brand-500 bg-brand-500/20 px-4 py-2 text-sm font-medium text-brand-300 hover:bg-brand-500/30"
         >
           {t("coupons.createCoupon")}
         </button>
@@ -231,7 +231,7 @@ function PromoActiveToggle({
       type="button"
       onClick={handleToggle}
       disabled={loading}
-      className="text-xs text-indigo-400 hover:underline disabled:opacity-50"
+      className="text-xs text-brand-400 hover:underline disabled:opacity-50"
     >
       {isActive ? "Deactivate" : "Activate"}
     </button>
@@ -366,7 +366,7 @@ function CreateCouponForm({ onDone, onCancel }: { onDone: () => void; onCancel: 
             <button
               type="submit"
               disabled={loading}
-              className="rounded bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-500 disabled:opacity-50"
+              className="rounded bg-brand-600 px-4 py-2 text-sm text-white hover:bg-brand-500 disabled:opacity-50"
             >
               {loading ? "…" : t("coupons.addCode")}
             </button>
@@ -468,7 +468,7 @@ function CreatePromoForm({
           <button
             type="submit"
             disabled={loading}
-            className="rounded bg-indigo-600 px-3 py-1 text-sm text-white disabled:opacity-50"
+            className="rounded bg-brand-600 px-3 py-1 text-sm text-white disabled:opacity-50"
           >
             {loading ? "…" : t("coupons.addCode")}
           </button>

@@ -276,7 +276,7 @@ export default function ManagersClient() {
             <button
               type="button"
               onClick={() => setGuideOpen(false)}
-              className="text-xs text-gray-400 hover:text-gray-600"
+              className="text-xs text-gray-500 hover:text-gray-600"
             >
               Close
             </button>

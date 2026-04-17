@@ -169,7 +169,7 @@ export default function WidgetEventCard({
                 alt={event.name}
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-black/10" />
             </div>
           ) : (
             <div
@@ -181,12 +181,12 @@ export default function WidgetEventCard({
           {/* Badges */}
           <div className="absolute right-2.5 top-2.5 flex gap-1.5">
             {earlyBirdOption && (
-              <span className="rounded-full bg-emerald-500/90 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
+              <span className="rounded-full bg-emerald-500/90 px-2 py-0.5 text-[10px] font-bold text-white">
                 Early Bird
               </span>
             )}
             {daysUntil > 0 && daysUntil <= 14 && !isSoldOut && (
-              <span className="rounded-full bg-orange-500/90 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
+              <span className="rounded-full bg-orange-500/90 px-2 py-0.5 text-[10px] font-bold text-white">
                 Starts in {daysUntil}d
               </span>
             )}
@@ -195,7 +195,7 @@ export default function WidgetEventCard({
           {/* Date overlay (if has image) */}
           {event.image_url && (
             <div className="absolute bottom-2.5 left-2.5">
-              <span className="rounded-md bg-white/95 px-2 py-1 text-[11px] font-bold text-gray-800 shadow-sm backdrop-blur-sm">
+              <span className="rounded-md bg-white/95 px-2 py-1 text-[11px] font-bold text-gray-800 shadow-sm">
                 {formatDateRange(event.start_date, event.end_date)}
               </span>
             </div>

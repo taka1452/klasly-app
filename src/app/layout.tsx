@@ -1,13 +1,21 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Source_Sans_3, Source_Serif_4 } from "next/font/google";
 import Script from "next/script";
 import SWUpdater from "@/components/pwa/sw-updater";
 import OfflineBanner from "@/components/pwa/offline-banner";
 import CsrfProvider from "@/components/csrf-provider";
 import "./globals.css";
 
-const inter = Inter({
+const sourceSans = Source_Sans_3({
   subsets: ["latin"],
+  variable: "--font-sans",
+  preload: false,
+  display: "swap",
+});
+
+const sourceSerif = Source_Serif_4({
+  subsets: ["latin"],
+  variable: "--font-serif",
   preload: false,
   display: "swap",
 });
@@ -33,7 +41,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={inter.className}>
+    <html lang="en" className={`${sourceSans.variable} ${sourceSerif.variable} font-sans`}>
       <body>
         <CsrfProvider />
         <OfflineBanner />
