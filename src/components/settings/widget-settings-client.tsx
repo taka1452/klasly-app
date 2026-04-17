@@ -266,7 +266,7 @@ export default function WidgetSettingsClient({ studioId, isOwner = true }: Props
                 <button
                   type="button"
                   onClick={() => handleRemoveDomain(domain)}
-                  className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-600"
+                  className="tap-target rounded text-gray-500 hover:bg-gray-100 hover:text-gray-600"
                   aria-label={`Remove ${domain}`}
                 >
                   <svg

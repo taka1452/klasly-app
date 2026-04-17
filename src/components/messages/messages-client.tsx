@@ -349,7 +349,7 @@ export default function MessagesClient({
             <div className="flex items-center gap-3 border-b border-gray-200 px-4 py-3">
               <button
                 type="button"
-                className="rounded-lg p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-600 md:hidden"
+                className="tap-target rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-600 md:hidden"
                 onClick={() => setSelectedId(null)}
                 aria-label="Back to conversations"
               >
@@ -507,7 +507,7 @@ export default function MessagesClient({
             <button
               type="button"
               onClick={() => setShowCompose(false)}
-              className="absolute right-4 top-4 rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-600"
+              className="absolute right-4 top-4 tap-target rounded text-gray-500 hover:bg-gray-100 hover:text-gray-600"
               aria-label="Close"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

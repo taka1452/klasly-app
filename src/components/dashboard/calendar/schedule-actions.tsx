@@ -107,7 +107,7 @@ export default function ScheduleActions() {
           <button
             type="button"
             onClick={dismissTip}
-            className="shrink-0 rounded p-1 text-brand-400 hover:bg-brand-100 hover:text-brand-700"
+            className="shrink-0 tap-target rounded text-brand-400 hover:bg-brand-100 hover:text-brand-700"
             aria-label="Dismiss tip"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

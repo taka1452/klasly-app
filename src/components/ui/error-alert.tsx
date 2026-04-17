@@ -33,7 +33,7 @@ export default function ErrorAlert({ error, onDismiss }: ErrorAlertProps) {
           <button
             type="button"
             onClick={onDismiss}
-            className="flex-shrink-0 rounded p-1 text-red-400 hover:bg-red-100 hover:text-red-600"
+            className="flex-shrink-0 tap-target rounded text-red-400 hover:bg-red-100 hover:text-red-600"
             aria-label="Dismiss"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">

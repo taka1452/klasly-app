@@ -249,7 +249,7 @@ export default function WidgetSchedule({ studioId }: Props) {
         <button
           type="button"
           onClick={() => { setWeekOffset((w) => w - 1); setSelectedDayIndex(0); }}
-          className="rounded-lg border border-gray-200 p-1.5 text-gray-500 hover:bg-gray-50"
+          className="tap-target rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"
           aria-label="Previous week"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -278,7 +278,7 @@ export default function WidgetSchedule({ studioId }: Props) {
         <button
           type="button"
           onClick={() => { setWeekOffset((w) => w + 1); setSelectedDayIndex(0); }}
-          className="rounded-lg border border-gray-200 p-1.5 text-gray-500 hover:bg-gray-50"
+          className="tap-target rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"
           aria-label="Next week"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
