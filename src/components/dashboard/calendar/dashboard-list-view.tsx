@@ -58,6 +58,7 @@ export default function DashboardListView({
               {daySessions.map((session) => {
                 const confirmed = confirmedCounts[session.id] || 0;
                 const isFull = confirmed >= session.capacity;
+                const isRoomBooking = session.event_type === "room_booking";
                 const endMinutes =
                   parseInt(session.start_time.split(":")[0]) * 60 +
                   parseInt(session.start_time.split(":")[1]) +
@@ -66,16 +67,30 @@ export default function DashboardListView({
                 const endMin = endMinutes % 60;
                 const endTimeStr = `${String(endHour).padStart(2, "0")}:${String(endMin).padStart(2, "0")}:00`;
 
+                const borderAccent = isRoomBooking
+                  ? "border-l-4 border-l-teal-500"
+                  : session.is_cancelled
+                    ? "border-l-4 border-l-gray-300"
+                    : !session.is_public
+                      ? "border-l-4 border-l-violet-500"
+                      : isFull
+                        ? "border-l-4 border-l-amber-500"
+                        : "border-l-4 border-l-brand-500";
+
                 return (
                   <div
                     key={session.id}
-                    className={`flex items-center gap-3 rounded-lg border px-4 py-3 transition-colors hover:bg-gray-50 cursor-pointer ${
+                    className={`flex items-center gap-3 rounded-lg border px-4 py-3 transition-colors hover:bg-gray-50 cursor-pointer ${borderAccent} ${
                       session.is_cancelled
                         ? "border-gray-200 bg-gray-50 opacity-60"
                         : "border-gray-200 bg-white"
                     }`}
                     onClick={() =>
-                      router.push(`/calendar/${session.class_id}/sessions/${session.id}`)
+                      router.push(
+                        isRoomBooking
+                          ? `/rooms/bookings/${session.id}`
+                          : `/calendar/${session.class_id}/sessions/${session.id}`
+                      )
                     }
                   >
                     {/* Time */}
@@ -90,12 +105,17 @@ export default function DashboardListView({
                         <span className="truncate font-medium text-gray-900">
                           {session.class_name}
                         </span>
+                        {isRoomBooking && (
+                          <span className="shrink-0 rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-medium text-teal-700">
+                            Room
+                          </span>
+                        )}
                         {session.is_cancelled && (
                           <span className="shrink-0 rounded bg-gray-200 px-1.5 py-0.5 text-[10px] font-medium text-gray-600">
                             Cancelled
                           </span>
                         )}
-                        {!session.is_public && !session.is_cancelled && (
+                        {!session.is_public && !session.is_cancelled && !isRoomBooking && (
                           <span className="shrink-0 rounded bg-violet-100 px-1.5 py-0.5 text-[10px] font-medium text-violet-700">
                             Private
                           </span>

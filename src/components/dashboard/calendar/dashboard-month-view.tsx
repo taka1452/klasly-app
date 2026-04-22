@@ -93,7 +93,9 @@ export default function DashboardMonthView({
                     <span className="flex gap-0.5">
                       {daySessions.slice(0, 3).map((s, i) => {
                         let dotColor = "bg-brand-400";
-                        if (s.is_cancelled) dotColor = "bg-gray-400";
+                        if (s.event_type === "room_booking") dotColor = "bg-teal-400";
+                        else if (s.is_cancelled) dotColor = "bg-gray-400";
+                        else if (!s.is_public) dotColor = "bg-violet-400";
                         else if (confirmedCounts[s.id] >= s.capacity) dotColor = "bg-amber-400";
                         return (
                           <span
@@ -116,7 +118,9 @@ export default function DashboardMonthView({
                   <div className="mt-1 space-y-0.5">
                     {daySessions.slice(0, maxVisible).map((session) => {
                       let bg = "bg-brand-100 text-brand-800";
-                      if (session.is_cancelled) {
+                      if (session.event_type === "room_booking") {
+                        bg = "bg-teal-100 text-teal-800";
+                      } else if (session.is_cancelled) {
                         bg = "bg-gray-100 text-gray-500";
                       } else if (!session.is_public) {
                         bg = "bg-violet-100 text-violet-800";
