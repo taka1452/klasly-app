@@ -113,7 +113,11 @@ export default function InstructorProfileForm() {
           className="input-field mt-1 cursor-not-allowed bg-gray-50"
         />
         <p className="mt-1 text-xs text-gray-400">
-          Email cannot be changed. Contact the studio owner if needed.
+          To change your email or password, go to{" "}
+          <a href="/account" className="text-brand-600 hover:text-brand-700 underline">
+            Account settings
+          </a>
+          .
         </p>
       </div>
 
