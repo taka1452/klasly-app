@@ -43,11 +43,13 @@
       "Bash(ls -la \"/c/Users/ytaka/Desktop/klasly-app/src/app/\\(dashboard\\)/settings/\")",
       "Bash(ls -la /c/Users/ytaka/Desktop/klasly-app/src/app/\\\\\\(dashboard\\\\\\)/settings/billing/success/)",
       "Bash(xargs grep -l \"CREATE TABLE instructors\")",
-      "Bash(xargs grep -l \"CREATE TABLE studios\")"
+      "Bash(xargs grep -l \"CREATE TABLE studios\")",
+      "mcp__faa90072-dcd0-4481-89eb-d7e81d774b30__list_projects",
+      "mcp__faa90072-dcd0-4481-89eb-d7e81d774b30__list_migrations"
     ]
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "supabase"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }
