@@ -6,6 +6,7 @@ import { formatDate, formatTime } from "@/lib/utils";
 import SessionAttendance from "@/components/attendance/session-attendance";
 import SessionVisibilityToggle from "@/components/classes/session-visibility-toggle";
 import SessionOnlineToggle from "@/components/classes/session-online-toggle";
+import MakeRecurringButton from "@/components/classes/make-recurring-button";
 import { isFeatureEnabled } from "@/lib/features/check-feature";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 import HelpTip from "@/components/ui/help-tip";
@@ -35,7 +36,7 @@ export default async function SessionDetailPage({
 
   const { data: session } = await supabase
     .from("class_sessions")
-    .select("id, session_date, start_time, capacity, class_id, studio_id, is_public, is_online, online_link")
+    .select("id, session_date, start_time, capacity, class_id, studio_id, is_public, is_online, online_link, recurrence_group_id, is_cancelled")
     .eq("id", sessionId)
     .single();
 
@@ -124,6 +125,16 @@ export default async function SessionDetailPage({
             helpSlug="schedule-visibility"
           />
         </div>
+        {!session.recurrence_group_id && !session.is_cancelled && (
+          <div className="mt-4">
+            <MakeRecurringButton sessionId={sessionId} />
+          </div>
+        )}
+        {session.recurrence_group_id && !session.is_cancelled && (
+          <p className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-brand-50 px-2 py-1 text-xs font-medium text-brand-700">
+            🔁 Weekly recurring — future weeks auto-generated
+          </p>
+        )}
         {onlineEnabled && (
           <div className="mt-4 card">
             <h3 className="mb-3 text-sm font-medium text-gray-700">

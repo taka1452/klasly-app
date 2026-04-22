@@ -53,9 +53,10 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
   const [startTime, setStartTime] = useState("09:00");
   const [roomId, setRoomId] = useState("");
   const [instructorId, setInstructorId] = useState("");
-  const [repeat, setRepeat] = useState<"single" | "weekly">("single");
-  const [repeatEnd, setRepeatEnd] = useState<"weeks" | "never">("weeks");
+  const [repeat, setRepeat] = useState<"single" | "weekly">("weekly");
+  const [repeatEnd, setRepeatEnd] = useState<"weeks" | "never" | "date">("never");
   const [repeatWeeks, setRepeatWeeks] = useState(4);
+  const [repeatEndDate, setRepeatEndDate] = useState("");
 
   // Room conflict check state
   const [roomConflict, setRoomConflict] = useState<RoomConflict | null>(null);
@@ -155,8 +156,10 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
       setStartTime("09:00");
       setRoomId("");
       setInstructorId("");
-      setRepeat("single");
+      setRepeat("weekly");
+      setRepeatEnd("never");
       setRepeatWeeks(4);
+      setRepeatEndDate("");
       setError("");
       setSuccess("");
       setRoomConflict(null);
@@ -293,6 +296,16 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
       setError("Cannot create session: room has a scheduling conflict");
       return;
     }
+    if (repeat === "weekly" && repeatEnd === "date") {
+      if (!repeatEndDate) {
+        setError("Please select an end date");
+        return;
+      }
+      if (repeatEndDate < date) {
+        setError("End date must be on or after the start date");
+        return;
+      }
+    }
 
     setSubmitting(true);
     try {
@@ -308,6 +321,7 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
           repeat,
           repeat_weeks: repeat === "weekly" && repeatEnd === "weeks" ? repeatWeeks : undefined,
           repeat_never: repeat === "weekly" && repeatEnd === "never" ? true : undefined,
+          repeat_end_date: repeat === "weekly" && repeatEnd === "date" ? repeatEndDate : undefined,
         }),
       });
 
@@ -545,6 +559,36 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
                       <input
                         type="radio"
                         name="repeatEnd"
+                        value="never"
+                        checked={repeatEnd === "never"}
+                        onChange={() => setRepeatEnd("never")}
+                        className="text-brand-600 focus:ring-brand-500"
+                      />
+                      Never — keep generating indefinitely
+                    </label>
+                    <label className="flex items-center gap-2 text-sm text-gray-700">
+                      <input
+                        type="radio"
+                        name="repeatEnd"
+                        value="date"
+                        checked={repeatEnd === "date"}
+                        onChange={() => setRepeatEnd("date")}
+                        className="text-brand-600 focus:ring-brand-500"
+                      />
+                      <span>On</span>
+                      <input
+                        type="date"
+                        value={repeatEndDate}
+                        onChange={(e) => setRepeatEndDate(e.target.value)}
+                        min={date || new Date().toISOString().split("T")[0]}
+                        disabled={repeatEnd !== "date"}
+                        className="input flex-1 disabled:opacity-40"
+                      />
+                    </label>
+                    <label className="flex items-center gap-2 text-sm text-gray-700">
+                      <input
+                        type="radio"
+                        name="repeatEnd"
                         value="weeks"
                         checked={repeatEnd === "weeks"}
                         onChange={() => setRepeatEnd("weeks")}
@@ -565,17 +609,6 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
                         className="input w-16 text-center disabled:opacity-40"
                       />
                       <span>weeks</span>
-                    </label>
-                    <label className="flex items-center gap-2 text-sm text-gray-700">
-                      <input
-                        type="radio"
-                        name="repeatEnd"
-                        value="never"
-                        checked={repeatEnd === "never"}
-                        onChange={() => setRepeatEnd("never")}
-                        className="text-brand-600 focus:ring-brand-500"
-                      />
-                      Never — keep generating indefinitely
                     </label>
                   </div>
                   {repeatEnd === "never" && (
@@ -602,7 +635,9 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
                 {repeat === "weekly"
                   ? repeatEnd === "never"
                     ? `ongoing, starting ${date}`
-                    : `${repeatWeeks} weeks starting ${date}`
+                    : repeatEnd === "date"
+                      ? `${date} to ${repeatEndDate || "—"}`
+                      : `${repeatWeeks} weeks starting ${date}`
                   : date}
               </div>
             )}
@@ -635,7 +670,9 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
                   : repeat === "weekly"
                     ? repeatEnd === "never"
                       ? "Create Ongoing Sessions"
-                      : `Create ${repeatWeeks} Sessions`
+                      : repeatEnd === "date"
+                        ? "Create Sessions Until End Date"
+                        : `Create ${repeatWeeks} Sessions`
                     : "Create Session"}
               </button>
             </div>

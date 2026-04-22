@@ -26,6 +26,7 @@ export async function POST(request: Request) {
       repeat = "single",
       repeat_weeks = 4,
       repeat_never,
+      repeat_end_date,
     } = body;
 
     // --- Basic validation ---
@@ -70,6 +71,16 @@ export async function POST(request: Request) {
     // For "never" (ongoing) repeat, we'll resolve weeks after auth when we have studioId
     let weeks = Math.min(Math.max(repeat_weeks ?? 4, 1), 52);
     const isOngoing = repeat === "weekly" && repeat_never === true;
+    const hasEndDate =
+      repeat === "weekly" &&
+      typeof repeat_end_date === "string" &&
+      repeat_end_date.length === 10;
+    if (hasEndDate && repeat_end_date < date) {
+      return NextResponse.json(
+        { error: "repeat_end_date must be on or after start date" },
+        { status: 400 }
+      );
+    }
 
     // --- Auth: try dashboard first, then instructor ---
     const dashCtx = await getDashboardContext();
@@ -100,13 +111,23 @@ export async function POST(request: Request) {
     }
 
     // For ongoing (never-ending) repeat, use studio's session_generation_weeks
-    if (isOngoing) {
+    if (isOngoing || hasEndDate) {
       const { data: studio } = await supabase
         .from("studios")
         .select("session_generation_weeks")
         .eq("id", studioId)
         .single();
-      weeks = (studio?.session_generation_weeks as number) || 8;
+      const genWeeks = (studio?.session_generation_weeks as number) || 8;
+      if (isOngoing) {
+        weeks = genWeeks;
+      } else {
+        // hasEndDate: weeks = ceil((endDate - startDate) / 7) + 1, capped by genWeeks
+        const start = new Date(date + "T00:00:00");
+        const end = new Date(repeat_end_date + "T00:00:00");
+        const diffWeeks =
+          Math.floor((end.getTime() - start.getTime()) / (7 * 24 * 3600 * 1000)) + 1;
+        weeks = Math.min(Math.max(diffWeeks, 1), genWeeks);
+      }
     }
 
     // --- Determine session_type and fetch template if needed ---
@@ -415,12 +436,20 @@ export async function POST(request: Request) {
       );
     }
 
-    // For ongoing recurrence, clear recurrence_end_date on the template
-    if (isOngoing && template_id) {
-      await supabase
-        .from("class_templates")
-        .update({ recurrence_end_date: null })
-        .eq("id", template_id);
+    // Update template.recurrence_end_date:
+    //   ongoing => clear, explicit end => set, week-count => leave as-is
+    if (template_id) {
+      if (isOngoing) {
+        await supabase
+          .from("class_templates")
+          .update({ recurrence_end_date: null })
+          .eq("id", template_id);
+      } else if (hasEndDate) {
+        await supabase
+          .from("class_templates")
+          .update({ recurrence_end_date: repeat_end_date })
+          .eq("id", template_id);
+      }
     }
 
     return NextResponse.json(
