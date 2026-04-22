@@ -307,7 +307,7 @@ export default function DistributionsPage() {
                             <button
                               type="button"
                               onClick={() => setEditingId(null)}
-                              className="text-xs text-gray-400 hover:text-gray-600"
+                              className="text-xs text-gray-500 hover:text-gray-600"
                             >
                               Cancel
                             </button>

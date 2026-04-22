@@ -68,14 +68,14 @@ export default function ConfirmDialog({
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center">
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/40"
         onClick={onClose}
       />
       <div className="relative mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-4 top-4 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+          className="absolute right-4 top-4 tap-target rounded text-gray-500 hover:bg-gray-100 hover:text-gray-600"
           aria-label="Close"
         >
           <X className="h-4 w-4" />

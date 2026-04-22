@@ -72,7 +72,7 @@ export default function EmptyState({
       {helpHref && (
         <Link
           href={helpHref}
-          className="mt-4 inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-brand-500 transition-colors"
+          className="mt-4 inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-brand-500 transition-colors"
         >
           <HelpCircle className="h-3.5 w-3.5" />
           {helpLabel}

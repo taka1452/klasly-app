@@ -414,7 +414,13 @@ export default function CreateEventPage() {
                   {galleryImages.map((url, i) => (
                     <div key={i} className="group relative aspect-[4/3] overflow-hidden rounded-lg">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={url} alt={`Gallery ${i + 1}`} className="h-full w-full object-cover" />
+                      <img
+                        src={url}
+                        alt={`Gallery ${i + 1}`}
+                        loading="lazy"
+                        decoding="async"
+                        className="h-full w-full object-cover"
+                      />
                       <button
                         type="button"
                         onClick={() => removeGalleryImage(i)}

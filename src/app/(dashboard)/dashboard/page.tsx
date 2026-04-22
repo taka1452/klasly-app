@@ -377,7 +377,7 @@ export default async function DashboardPage() {
         {canManageClasses && (
           <Link
             href="/classes/new"
-            className="inline-flex shrink-0 items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+            className="inline-flex shrink-0 items-center justify-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700"
             data-tour="create-class-button"
           >
             + Create class
@@ -441,60 +441,71 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* Stats cards */}
+      {/* Stats — Revenue featured (tinted, larger type); secondary metrics compact */}
       <div
-        className="grid gap-4 md:gap-6 sm:grid-cols-2 lg:grid-cols-4"
+        className="flex flex-col gap-4 md:gap-5 lg:flex-row lg:items-stretch"
         data-tour="dashboard-stats"
       >
-        {canManageMembers && (
-          <div className="card">
-            <p className="text-sm font-medium text-gray-500">Active Members</p>
-            <p className="mt-2 text-3xl font-bold text-gray-900">
-              {activeMembersCount ?? 0}
-            </p>
-          </div>
-        )}
-        <div className="card">
-          <p className="text-sm font-medium text-gray-500">
-            Today&apos;s Classes
-          </p>
-          <p className="mt-2 text-3xl font-bold text-gray-900">
-            {todayClassesCount}
-          </p>
-        </div>
-        {canManageBookings && (
-          <div className="card">
-            <p className="text-sm font-medium text-gray-500">
-              Today&apos;s Bookings
-            </p>
-            <p className="mt-2 text-3xl font-bold text-gray-900">
-              {todayBookingsCount ?? 0}
-            </p>
-          </div>
-        )}
         {canViewPayments && (
-          <div className="card">
-            <p className="text-sm font-medium text-gray-500">
+          <div className="flex flex-col justify-between rounded-xl border border-brand-100 bg-brand-50/60 p-5 shadow-sm md:p-7 lg:flex-1 lg:basis-1/2">
+            <p className="text-sm font-medium text-brand-800/80">
               This Month&apos;s Revenue
             </p>
-            <p className="mt-2 text-3xl font-bold text-gray-900">
-              {formatCurrency(monthRevenue)}
-            </p>
-            {revenueChange !== null ? (
-              <p
-                className={`mt-1 text-sm ${revenueChange >= 0 ? "text-green-600" : "text-red-600"}`}
-              >
-                {revenueChange >= 0 ? "+" : ""}
-                {revenueChange.toFixed(1)}% vs last month
+            <div className="mt-3">
+              <p className="text-4xl font-semibold tracking-tight text-gray-900 md:text-5xl">
+                {formatCurrency(monthRevenue)}
               </p>
-            ) : null}
+              {revenueChange !== null ? (
+                <p
+                  className={`mt-2 text-sm ${revenueChange >= 0 ? "text-emerald-700" : "text-red-600"}`}
+                >
+                  {revenueChange >= 0 ? "↑" : "↓"} {Math.abs(revenueChange).toFixed(1)}%
+                  <span className="ml-1 text-gray-500">vs last month</span>
+                </p>
+              ) : (
+                <p className="mt-2 text-sm text-gray-500">&mdash;</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {(canManageMembers || canManageBookings) && (
+          <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-3 md:gap-5">
+            {canManageMembers && (
+              <div className="card flex flex-col justify-between">
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                  Active Members
+                </p>
+                <p className="mt-3 text-2xl font-semibold text-gray-900 md:text-3xl">
+                  {activeMembersCount ?? 0}
+                </p>
+              </div>
+            )}
+            <div className="card flex flex-col justify-between">
+              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                Today&apos;s Classes
+              </p>
+              <p className="mt-3 text-2xl font-semibold text-gray-900 md:text-3xl">
+                {todayClassesCount}
+              </p>
+            </div>
+            {canManageBookings && (
+              <div className="card flex flex-col justify-between">
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                  Today&apos;s Bookings
+                </p>
+                <p className="mt-3 text-2xl font-semibold text-gray-900 md:text-3xl">
+                  {todayBookingsCount ?? 0}
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>
 
       {/* Revenue breakdown */}
-      {canViewPayments && <div className="mt-8">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">
+      {canViewPayments && <div className="mt-10 md:mt-12">
+        <h2 className="mb-5 text-lg font-semibold text-gray-900">
           Revenue Breakdown (This Month)
         </h2>
         <div className="card space-y-4">
@@ -551,8 +562,8 @@ export default async function DashboardPage() {
 
       {/* Failed payments */}
       {canViewPayments && failedPayments && failedPayments.length > 0 && (
-        <div className="mt-8">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">
+        <div className="mt-10 md:mt-12">
+          <h2 className="mb-5 text-lg font-semibold text-gray-900">
             Failed Payments
           </h2>
           <div className="card overflow-hidden p-0">
@@ -603,8 +614,8 @@ export default async function DashboardPage() {
       )}
 
       {/* Today's classes */}
-      <div className="mt-8">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">
+      <div className="mt-10 md:mt-12">
+        <h2 className="mb-5 text-lg font-semibold text-gray-900">
           Today&apos;s Classes
         </h2>
         <div className="card overflow-hidden p-0">
@@ -672,8 +683,8 @@ export default async function DashboardPage() {
 
       {/* Upcoming events */}
       {upcomingEvents && upcomingEvents.length > 0 && (
-        <div className="mt-8">
-          <div className="mb-4 flex items-center justify-between">
+        <div className="mt-10 md:mt-12">
+          <div className="mb-5 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">
               Upcoming Events
             </h2>
@@ -713,8 +724,8 @@ export default async function DashboardPage() {
       )}
 
       {/* Recent activity */}
-      <div className="mt-8">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">
+      <div className="mt-10 md:mt-12">
+        <h2 className="mb-5 text-lg font-semibold text-gray-900">
           Recent Activity
         </h2>
         <div className="card overflow-hidden p-0">

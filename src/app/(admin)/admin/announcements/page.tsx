@@ -106,7 +106,7 @@ export default function AdminAnnouncementsPage() {
               onChange={(e) => setTitle(e.target.value)}
               required
               placeholder="New Feature: Schedule Visibility"
-              className="mt-1 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+              className="mt-1 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-white placeholder-slate-500 focus:border-brand-500 focus:outline-none"
             />
           </div>
 
@@ -120,7 +120,7 @@ export default function AdminAnnouncementsPage() {
               required
               rows={4}
               placeholder="Describe the update..."
-              className="mt-1 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+              className="mt-1 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-white placeholder-slate-500 focus:border-brand-500 focus:outline-none"
             />
           </div>
 
@@ -138,7 +138,7 @@ export default function AdminAnnouncementsPage() {
                     type="checkbox"
                     checked={roles.includes(role)}
                     onChange={() => toggleRole(role)}
-                    className="rounded accent-indigo-500"
+                    className="rounded accent-brand-500"
                   />
                   <span className="capitalize">{role}</span>
                 </label>
@@ -149,7 +149,7 @@ export default function AdminAnnouncementsPage() {
           <button
             type="submit"
             disabled={creating || roles.length === 0}
-            className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
+            className="rounded bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-500 disabled:opacity-50"
           >
             {creating ? "Publishing..." : "Publish"}
           </button>

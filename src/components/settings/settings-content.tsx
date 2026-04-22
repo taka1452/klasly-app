@@ -659,7 +659,7 @@ export default function SettingsContent({
             {showDeleteConfirm && (
               <div className="fixed inset-0 z-[9999] flex items-center justify-center">
                 <div
-                  className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                  className="absolute inset-0 bg-black/40"
                   onClick={() => setShowDeleteConfirm(false)}
                 />
                 <div className="relative mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-xl">

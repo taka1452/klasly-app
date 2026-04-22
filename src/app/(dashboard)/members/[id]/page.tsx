@@ -91,7 +91,7 @@ export default async function MemberDetailPage({
                 {member.profiles?.full_name || "Unknown"}
               </h1>
               {member.is_minor && (
-                <span className="inline-flex rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-700">
+                <span className="inline-flex rounded-full bg-brand-100 px-2.5 py-0.5 text-xs font-medium text-brand-700">
                   Minor
                 </span>
               )}

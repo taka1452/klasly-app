@@ -276,7 +276,7 @@ export default function AdminStudioDetail({
               <dt className="text-slate-500">{t("studioDetail.stripeCustomer")}</dt>
               <dd>
                 {stripeCustomerUrl ? (
-                  <a href={stripeCustomerUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">
+                  <a href={stripeCustomerUrl} target="_blank" rel="noopener noreferrer" className="text-brand-400 hover:underline">
                     {studio.stripe_customer_id}
                   </a>
                 ) : (
@@ -288,7 +288,7 @@ export default function AdminStudioDetail({
               <dt className="text-slate-500">{t("studioDetail.stripeSubscription")}</dt>
               <dd>
                 {stripeSubscriptionUrl ? (
-                  <a href={stripeSubscriptionUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">
+                  <a href={stripeSubscriptionUrl} target="_blank" rel="noopener noreferrer" className="text-brand-400 hover:underline">
                     {studio.stripe_subscription_id}
                   </a>
                 ) : (
@@ -371,13 +371,13 @@ export default function AdminStudioDetail({
                   value={applyCouponCode}
                   onChange={(e) => setApplyCouponCode(e.target.value.toUpperCase())}
                   placeholder={t("studioDetail.promoCode")}
-                  className="w-28 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+                  className="w-28 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-sm text-white placeholder-slate-500 focus:border-brand-500 focus:outline-none"
                 />
                 <button
                   type="button"
                   onClick={doApplyCoupon}
                   disabled={couponLoading || !applyCouponCode.trim()}
-                  className="rounded border border-indigo-500 px-2 py-1 text-xs text-indigo-400 hover:bg-indigo-500/20 disabled:opacity-50"
+                  className="rounded border border-brand-500 px-2 py-1 text-xs text-brand-400 hover:bg-brand-500/20 disabled:opacity-50"
                 >
                   {t("studioDetail.applyCoupon")}
                 </button>
@@ -494,7 +494,7 @@ export default function AdminStudioDetail({
                     <td className="p-2"><span className={`rounded-full px-2 py-0.5 text-xs ${p.status === "paid" ? "bg-green-500/20 text-green-300" : "bg-slate-600 text-slate-300"}`}>{p.status}</span></td>
                     <td className="p-2">
                       {p.stripe_payment_intent_id ? (
-                        <a href={`https://dashboard.stripe.com/payments/${p.stripe_payment_intent_id}`} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">
+                        <a href={`https://dashboard.stripe.com/payments/${p.stripe_payment_intent_id}`} target="_blank" rel="noopener noreferrer" className="text-brand-400 hover:underline">
                           {String(p.stripe_payment_intent_id).slice(0, 20)}…
                         </a>
                       ) : "—"}
@@ -513,7 +513,7 @@ export default function AdminStudioDetail({
           value={memo}
           onChange={(e) => setMemo(e.target.value)}
           rows={4}
-          className="mt-2 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          className="mt-2 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-white placeholder-slate-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           placeholder={t("studioDetail.internalNotes")}
         />
         <div className="mt-2 flex items-center gap-2">
@@ -521,7 +521,7 @@ export default function AdminStudioDetail({
             type="button"
             onClick={saveMemo}
             disabled={saving}
-            className="rounded border border-indigo-500 bg-transparent px-4 py-2 text-sm font-medium text-indigo-400 hover:bg-indigo-500/20 disabled:opacity-50"
+            className="rounded border border-brand-500 bg-transparent px-4 py-2 text-sm font-medium text-brand-400 hover:bg-brand-500/20 disabled:opacity-50"
           >
             {saving ? t("studioDetail.saving") : t("studioDetail.saveNote")}
           </button>
@@ -547,7 +547,7 @@ export default function AdminStudioDetail({
             </div>
             <div className="mt-4 flex justify-end gap-2">
               <button type="button" onClick={() => setShowExtendModal(false)} className="rounded border border-slate-500 px-3 py-1 text-sm text-slate-300">{t("common.cancel")}</button>
-              <button type="button" onClick={doExtendTrial} disabled={!!actionLoading} className="rounded bg-indigo-600 px-3 py-1 text-sm text-white hover:bg-indigo-500 disabled:opacity-50">{t("studioDetail.extend")}</button>
+              <button type="button" onClick={doExtendTrial} disabled={!!actionLoading} className="rounded bg-brand-600 px-3 py-1 text-sm text-white hover:bg-brand-500 disabled:opacity-50">{t("studioDetail.extend")}</button>
             </div>
           </div>
         </div>
@@ -587,7 +587,7 @@ export default function AdminStudioDetail({
             />
             <div className="mt-4 flex justify-end gap-2">
               <button type="button" onClick={() => setShowEmailModal(false)} className="rounded border border-slate-500 px-3 py-1 text-sm text-slate-300">{t("common.cancel")}</button>
-              <button type="button" onClick={doSendEmail} disabled={!!actionLoading || !emailSubject.trim() || !emailBody.trim()} className="rounded bg-indigo-600 px-3 py-1 text-sm text-white hover:bg-indigo-500 disabled:opacity-50">{t("studioDetail.send")}</button>
+              <button type="button" onClick={doSendEmail} disabled={!!actionLoading || !emailSubject.trim() || !emailBody.trim()} className="rounded bg-brand-600 px-3 py-1 text-sm text-white hover:bg-brand-500 disabled:opacity-50">{t("studioDetail.send")}</button>
             </div>
           </div>
         </div>

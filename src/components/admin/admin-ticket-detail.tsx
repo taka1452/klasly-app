@@ -167,7 +167,7 @@ export default function AdminTicketDetail({
             <dt className="text-slate-500">{t("support.studio")}</dt>
             <dd className="text-white">
               {ticket.studio_id ? (
-                <Link href={`/admin/studios/${ticket.studio_id}`} className="text-indigo-400 hover:underline">
+                <Link href={`/admin/studios/${ticket.studio_id}`} className="text-brand-400 hover:underline">
                   {ticket.studio_name ?? ticket.studio_id}
                 </Link>
               ) : (
@@ -216,12 +216,12 @@ export default function AdminTicketDetail({
             onChange={(e) => setNewComment(e.target.value)}
             rows={3}
             placeholder={t("support.reply")}
-            className="mt-2 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            className="mt-2 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-white placeholder-slate-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
           <button
             type="submit"
             disabled={submitting || !newComment.trim()}
-            className="mt-2 rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
+            className="mt-2 rounded bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-500 disabled:opacity-50"
           >
             {submitting ? "…" : t("support.addComment")}
           </button>

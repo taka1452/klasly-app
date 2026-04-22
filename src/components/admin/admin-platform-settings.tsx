@@ -93,14 +93,14 @@ export default function AdminPlatformSettings({ className }: Props) {
             step={0.1}
             value={platformFeePercent}
             onChange={(e) => setPlatformFeePercent(e.target.value)}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
           <span className="text-sm text-slate-600">%</span>
           <button
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+            className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
           >
             {saving ? "Saving..." : "Save"}
           </button>

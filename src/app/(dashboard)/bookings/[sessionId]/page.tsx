@@ -111,7 +111,7 @@ export default async function SessionBookingsPage({
                           {booking.status}
                         </span>
                         {(booking as { booked_via_pass?: boolean }).booked_via_pass && (
-                          <span className="inline-flex rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+                          <span className="inline-flex rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-700">
                             Pass
                           </span>
                         )}

@@ -170,7 +170,7 @@ export default function ScheduleCalendar({
           <button
             type="button"
             onClick={() => { setShowTip(false); localStorage.setItem("klasly:member:schedule-tip-dismissed", "1"); }}
-            className="shrink-0 rounded p-1 text-brand-400 hover:bg-brand-100 hover:text-brand-700"
+            className="shrink-0 tap-target rounded text-brand-400 hover:bg-brand-100 hover:text-brand-700"
             aria-label="Dismiss tip"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

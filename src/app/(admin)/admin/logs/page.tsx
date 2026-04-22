@@ -109,7 +109,7 @@ export default async function AdminLogsPage({
               <span className="text-sm text-slate-400">Filter by event:</span>
               <Link href={baseUrl + "?tab=webhooks"} className="rounded bg-slate-700 px-2 py-0.5 text-sm text-slate-300 hover:bg-slate-600">All</Link>
               {eventTypes.map((et) => (
-                <Link key={et} href={typeLink(et)} className={`rounded px-2 py-0.5 text-sm ${type === et ? "bg-indigo-600 text-white" : "bg-slate-700 text-slate-300 hover:bg-slate-600"}`}>
+                <Link key={et} href={typeLink(et)} className={`rounded px-2 py-0.5 text-sm ${type === et ? "bg-brand-600 text-white" : "bg-slate-700 text-slate-300 hover:bg-slate-600"}`}>
                   {et}
                 </Link>
               ))}
@@ -150,8 +150,8 @@ export default async function AdminLogsPage({
               <div className="flex items-center justify-between border-t border-slate-700 px-3 py-2 text-sm text-slate-400">
                 <span>Total {webhookTotal}</span>
                 <div className="flex gap-2">
-                  {pageNum > 1 && <Link href={pageLink(pageNum - 1)} className="text-indigo-400 hover:underline">Previous</Link>}
-                  {pageNum < totalPages(webhookTotal) && <Link href={pageLink(pageNum + 1)} className="text-indigo-400 hover:underline">Next</Link>}
+                  {pageNum > 1 && <Link href={pageLink(pageNum - 1)} className="text-brand-400 hover:underline">Previous</Link>}
+                  {pageNum < totalPages(webhookTotal) && <Link href={pageLink(pageNum + 1)} className="text-brand-400 hover:underline">Next</Link>}
                 </div>
               </div>
             )}
@@ -193,8 +193,8 @@ export default async function AdminLogsPage({
             <div className="flex items-center justify-between border-t border-slate-700 px-3 py-2 text-sm text-slate-400">
               <span>Total {cronTotal}</span>
               <div className="flex gap-2">
-                {pageNum > 1 && <Link href={pageLink(pageNum - 1)} className="text-indigo-400 hover:underline">Previous</Link>}
-                {pageNum < totalPages(cronTotal) && <Link href={pageLink(pageNum + 1)} className="text-indigo-400 hover:underline">Next</Link>}
+                {pageNum > 1 && <Link href={pageLink(pageNum - 1)} className="text-brand-400 hover:underline">Previous</Link>}
+                {pageNum < totalPages(cronTotal) && <Link href={pageLink(pageNum + 1)} className="text-brand-400 hover:underline">Next</Link>}
               </div>
             </div>
           )}
@@ -208,7 +208,7 @@ export default async function AdminLogsPage({
               <span className="text-sm text-slate-400">Filter by template:</span>
               <Link href={baseUrl + "?tab=email"} className="rounded bg-slate-700 px-2 py-0.5 text-sm text-slate-300 hover:bg-slate-600">All</Link>
               {templates.map((tpl) => (
-                <Link key={tpl} href={typeLink(tpl)} className={`rounded px-2 py-0.5 text-sm ${type === tpl ? "bg-indigo-600 text-white" : "bg-slate-700 text-slate-300 hover:bg-slate-600"}`}>
+                <Link key={tpl} href={typeLink(tpl)} className={`rounded px-2 py-0.5 text-sm ${type === tpl ? "bg-brand-600 text-white" : "bg-slate-700 text-slate-300 hover:bg-slate-600"}`}>
                   {tpl}
                 </Link>
               ))}
@@ -249,8 +249,8 @@ export default async function AdminLogsPage({
               <div className="flex items-center justify-between border-t border-slate-700 px-3 py-2 text-sm text-slate-400">
                 <span>Total {emailTotal}</span>
                 <div className="flex gap-2">
-                  {pageNum > 1 && <Link href={pageLink(pageNum - 1)} className="text-indigo-400 hover:underline">Previous</Link>}
-                  {pageNum < totalPages(emailTotal) && <Link href={pageLink(pageNum + 1)} className="text-indigo-400 hover:underline">Next</Link>}
+                  {pageNum > 1 && <Link href={pageLink(pageNum - 1)} className="text-brand-400 hover:underline">Previous</Link>}
+                  {pageNum < totalPages(emailTotal) && <Link href={pageLink(pageNum + 1)} className="text-brand-400 hover:underline">Next</Link>}
                 </div>
               </div>
             )}

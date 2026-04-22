@@ -162,7 +162,7 @@ export default function HelpTip({
         setVisible((v) => !v);
       }}
     >
-      <HelpCircle className="h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors" />
+      <HelpCircle className="h-4 w-4 text-gray-500 hover:text-gray-600 transition-colors" />
 
       {visible && (
         <div

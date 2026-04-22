@@ -47,7 +47,7 @@ export default function AnnouncementBanner() {
         </div>
         <button
           onClick={() => setDismissed(true)}
-          className="rounded p-1 text-blue-400 hover:bg-blue-100 hover:text-blue-600 transition-colors"
+          className="tap-target rounded text-blue-400 hover:bg-blue-100 hover:text-blue-600 transition-colors"
           aria-label="Dismiss"
         >
           <svg

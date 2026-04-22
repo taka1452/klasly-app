@@ -44,7 +44,8 @@ export default function WidgetLoginModal({ open, onClose }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            className="tap-target rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-600"
+            aria-label="Close"
           >
             <svg
               className="h-5 w-5"

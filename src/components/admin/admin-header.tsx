@@ -56,7 +56,7 @@ export default function AdminHeader({
             type="button"
             onClick={() => setLocale("ja")}
             className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
-              locale === "ja" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-white"
+              locale === "ja" ? "bg-brand-600 text-white" : "text-slate-400 hover:text-white"
             }`}
             title="日本語"
           >
@@ -66,7 +66,7 @@ export default function AdminHeader({
             type="button"
             onClick={() => setLocale("en")}
             className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
-              locale === "en" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-white"
+              locale === "en" ? "bg-brand-600 text-white" : "text-slate-400 hover:text-white"
             }`}
             title="English"
           >

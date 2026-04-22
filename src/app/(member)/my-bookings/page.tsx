@@ -238,7 +238,7 @@ export default async function MyBookingsPage() {
                             {booking.status === "confirmed" ? "Confirmed" : "Waitlist"}
                           </span>
                           {(booking as { booked_via_pass?: boolean }).booked_via_pass && (
-                            <span className="inline-flex rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+                            <span className="inline-flex rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-700">
                               Pass
                             </span>
                           )}
@@ -298,7 +298,7 @@ export default async function MyBookingsPage() {
                         {booking.status === "confirmed" ? "Confirmed" : booking.status === "cancelled" ? "Cancelled" : "Waitlist"}
                       </span>
                       {(booking as { booked_via_pass?: boolean }).booked_via_pass && (
-                        <span className="inline-flex rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+                        <span className="inline-flex rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-700">
                           Pass
                         </span>
                       )}

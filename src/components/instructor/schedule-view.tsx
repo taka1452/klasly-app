@@ -145,7 +145,7 @@ export default function ScheduleView({
           <button
             type="button"
             onClick={() => setWeekOffset((o) => o - 1)}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100"
             aria-label="Previous week"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -162,7 +162,7 @@ export default function ScheduleView({
           <button
             type="button"
             onClick={() => setWeekOffset((o) => o + 1)}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100"
             aria-label="Next week"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

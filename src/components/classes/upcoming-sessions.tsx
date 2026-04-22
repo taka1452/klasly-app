@@ -182,7 +182,7 @@ export default function UpcomingSessions({ templateId }: Props) {
                   <button
                     type="button"
                     onClick={() => setConfirmCancel(session.id)}
-                    className="flex items-center gap-1 rounded px-2 py-1 text-xs text-gray-400 hover:bg-red-50 hover:text-red-500"
+                    className="flex items-center gap-1 rounded px-2 py-1 text-xs text-gray-500 hover:bg-red-50 hover:text-red-500"
                     title="Cancel this session"
                   >
                     <X className="h-3 w-3" />

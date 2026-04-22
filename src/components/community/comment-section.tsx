@@ -23,7 +23,7 @@ function getRoleBadge(role: string) {
     case "instructor":
       return <span className="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">Instructor</span>;
     case "manager":
-      return <span className="rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-medium text-purple-700">Manager</span>;
+      return <span className="rounded bg-brand-100 px-1.5 py-0.5 text-[10px] font-medium text-brand-700">Manager</span>;
     default:
       return null;
   }

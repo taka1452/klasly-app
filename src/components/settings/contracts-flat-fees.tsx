@@ -108,7 +108,7 @@ export default function ContractsFlatFees() {
                       <span
                         className={`rounded-full px-3 py-1 text-xs font-medium ${
                           r.rentalType === "flat_monthly"
-                            ? "bg-purple-100 text-purple-700"
+                            ? "bg-brand-100 text-brand-700"
                             : "bg-blue-100 text-blue-700"
                         }`}
                       >

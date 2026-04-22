@@ -63,7 +63,7 @@ export default function AdminStudioFeatures({
       <div className="rounded-lg border border-slate-700 bg-slate-800 p-6">
         <h2 className="text-lg font-semibold text-white">Feature Flags</h2>
         <div className="mt-4 flex justify-center">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-500 border-t-indigo-400" />
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-500 border-t-brand-400" />
         </div>
       </div>
     );
@@ -107,7 +107,7 @@ export default function AdminStudioFeatures({
                       <button
                         onClick={() => handleToggle(key, info.enabled)}
                         disabled={isToggling}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-800 ${
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-slate-800 ${
                           info.enabled ? "bg-emerald-500" : "bg-slate-600"
                         } ${isToggling ? "opacity-50" : ""}`}
                       >

@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
+import Image from "next/image";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { isFeatureEnabled } from "@/lib/features/check-feature";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
@@ -164,14 +165,16 @@ export default async function EventPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
-      {/* Hero Image */}
+      {/* Hero Image (LCP candidate: priority load) */}
       {event.image_url && (
-        <div className="mb-8 overflow-hidden rounded-2xl">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+        <div className="relative mb-8 h-64 overflow-hidden rounded-2xl sm:h-80 md:h-96">
+          <Image
             src={event.image_url}
             alt={event.name}
-            className="h-64 w-full object-cover sm:h-80 md:h-96"
+            fill
+            priority
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, 768px"
           />
         </div>
       )}

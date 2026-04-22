@@ -117,7 +117,7 @@ export default function Header({ userName, userEmail, onSidebarToggle }: HeaderP
       <Link
         href="/help"
         target="_blank"
-        className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+        className="flex h-11 w-11 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-600"
         title="Help Center"
       >
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">

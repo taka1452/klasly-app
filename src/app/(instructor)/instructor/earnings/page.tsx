@@ -189,7 +189,7 @@ export default function InstructorEarningsPage() {
                 type="button"
                 onClick={handleConnect}
                 disabled={onboardingLoading}
-                className="mt-4 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                className="mt-4 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
               >
                 {onboardingLoading ? "Redirecting..." : "Connect with Stripe"}
               </button>
@@ -206,7 +206,7 @@ export default function InstructorEarningsPage() {
                 type="button"
                 onClick={handleConnect}
                 disabled={onboardingLoading}
-                className="mt-4 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                className="mt-4 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
               >
                 {onboardingLoading ? "Redirecting..." : "Continue Setup"}
               </button>
@@ -267,7 +267,7 @@ export default function InstructorEarningsPage() {
             type="button"
             onClick={handleOpenDashboard}
             disabled={dashboardLoading}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+            className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
           >
             {dashboardLoading ? "Opening..." : "Open Stripe Dashboard"}
           </button>

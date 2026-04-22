@@ -202,7 +202,7 @@ export default function InstructorAvailabilityPage() {
                     />
                     <button
                       onClick={() => removeSlot(slot._idx)}
-                      className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-500"
+                      className="tap-target rounded text-gray-500 hover:bg-red-50 hover:text-red-500"
                       aria-label="Remove slot"
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">

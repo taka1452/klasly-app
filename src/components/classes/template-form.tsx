@@ -630,6 +630,8 @@ export default function TemplateForm({ templateId, duplicateData }: Props) {
                 <img
                   src={imagePreview}
                   alt="Class preview"
+                  loading="lazy"
+                  decoding="async"
                   className="h-20 w-20 min-w-[5rem] rounded-lg object-cover"
                   style={{ width: 80, height: 80 }}
                 />

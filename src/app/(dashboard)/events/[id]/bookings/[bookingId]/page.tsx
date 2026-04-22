@@ -12,7 +12,7 @@ const PAYMENT_STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   unpaid: { label: "Unpaid", cls: "bg-gray-100 text-gray-600" },
   partial: { label: "Partial", cls: "bg-amber-100 text-amber-700" },
   fully_paid: { label: "Fully Paid", cls: "bg-green-100 text-green-700" },
-  refunded: { label: "Refunded", cls: "bg-purple-100 text-purple-700" },
+  refunded: { label: "Refunded", cls: "bg-gray-100 text-gray-600" },
 };
 
 const BOOKING_STATUS_BADGE: Record<string, { label: string; cls: string }> = {
@@ -28,7 +28,7 @@ const BOOKING_STATUS_BADGE: Record<string, { label: string; cls: string }> = {
 const SCHEDULE_STATUS_BADGE: Record<string, string> = {
   paid: "bg-green-100 text-green-700",
   failed: "bg-red-100 text-red-700",
-  refunded: "bg-purple-100 text-purple-700",
+  refunded: "bg-gray-100 text-gray-600",
   cancelled: "bg-gray-100 text-gray-500",
   pending: "bg-gray-100 text-gray-600",
 };

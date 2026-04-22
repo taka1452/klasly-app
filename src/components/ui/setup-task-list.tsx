@@ -111,7 +111,7 @@ export default function SetupTaskList({
         <button
           type="button"
           onClick={handleClose}
-          className="shrink-0 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+          className="shrink-0 tap-target rounded text-gray-500 hover:bg-gray-100 hover:text-gray-600"
           aria-label="Close checklist"
         >
           <X className="h-4 w-4" />

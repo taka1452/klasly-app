@@ -182,7 +182,7 @@ export default function SettingsLayout({
           <div className="border-t border-gray-200 pt-4">
             <Link
               href="/help/settings/manage-feature-flags"
-              className="flex items-center gap-2 px-3 text-xs text-gray-400 hover:text-brand-500 transition-colors"
+              className="flex items-center gap-2 px-3 text-xs text-gray-500 hover:text-brand-500 transition-colors"
             >
               <HelpCircle className="h-3.5 w-3.5" />
               Settings help

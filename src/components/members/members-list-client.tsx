@@ -38,7 +38,7 @@ export default function MembersListClient({ members }: Props) {
                 <p className="font-medium text-gray-900">
                   {member.profiles?.full_name || "—"}
                   {member.is_minor && (
-                    <span className="ml-1.5 inline-flex rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+                    <span className="ml-1.5 inline-flex rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-700">
                       Minor
                     </span>
                   )}
@@ -119,7 +119,7 @@ export default function MembersListClient({ members }: Props) {
                     <p className="text-sm font-medium text-gray-900">
                       {member.profiles?.full_name || "—"}
                       {member.is_minor && (
-                        <span className="ml-1.5 inline-flex rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+                        <span className="ml-1.5 inline-flex rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-700">
                           Minor
                         </span>
                       )}

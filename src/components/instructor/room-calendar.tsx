@@ -318,7 +318,7 @@ export default function InstructorRoomCalendar() {
     <div>
       {/* Header: navigation + room filter */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <button type="button" onClick={handlePrevWeek} className="rounded-lg border border-gray-300 p-1.5 hover:bg-gray-100">
+        <button type="button" onClick={handlePrevWeek} className="tap-target rounded-lg border border-gray-300 hover:bg-gray-100">
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
           </svg>
@@ -326,7 +326,7 @@ export default function InstructorRoomCalendar() {
         <button type="button" onClick={handleToday} className="rounded-lg border border-gray-300 px-3 py-1 text-sm hover:bg-gray-100">
           Today
         </button>
-        <button type="button" onClick={handleNextWeek} className="rounded-lg border border-gray-300 p-1.5 hover:bg-gray-100">
+        <button type="button" onClick={handleNextWeek} className="tap-target rounded-lg border border-gray-300 hover:bg-gray-100">
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
           </svg>
@@ -541,7 +541,7 @@ export default function InstructorRoomCalendar() {
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
-                className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                className="tap-target rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-600"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

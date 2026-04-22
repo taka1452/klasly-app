@@ -126,7 +126,7 @@ export default function AdminMetricsContent({
               </tbody>
             </table>
           </div>
-          <Link href="/admin/logs?tab=webhooks" className="mt-2 inline-block text-sm text-indigo-400 hover:underline">View all →</Link>
+          <Link href="/admin/logs?tab=webhooks" className="mt-2 inline-block text-sm text-brand-400 hover:underline">View all →</Link>
         </div>
 
         <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
@@ -159,7 +159,7 @@ export default function AdminMetricsContent({
               </tbody>
             </table>
           </div>
-          <Link href="/admin/logs?tab=cron" className="mt-2 inline-block text-sm text-indigo-400 hover:underline">View all →</Link>
+          <Link href="/admin/logs?tab=cron" className="mt-2 inline-block text-sm text-brand-400 hover:underline">View all →</Link>
         </div>
       </div>
     </div>

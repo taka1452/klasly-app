@@ -12,7 +12,7 @@ type Account = {
 };
 
 const ROLE_COLORS: Record<string, string> = {
-  owner: "bg-purple-100 text-purple-700",
+  owner: "bg-brand-100 text-brand-700",
   manager: "bg-amber-100 text-amber-700",
   instructor: "bg-blue-100 text-blue-700",
   member: "bg-green-100 text-green-700",
@@ -222,7 +222,7 @@ export default function TestAccountSwitcher() {
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-500 hover:text-gray-600"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path

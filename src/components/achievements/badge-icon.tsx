@@ -5,7 +5,7 @@ import type { AchievementType } from "@/types/database";
 const ACHIEVEMENT_CONFIG: Record<AchievementType, { label: string; emoji: string; color: string }> = {
   first_class: { label: "First Class", emoji: "1", color: "bg-blue-100 text-blue-700" },
   five_classes: { label: "5 Classes", emoji: "5", color: "bg-green-100 text-green-700" },
-  ten_classes: { label: "10 Classes", emoji: "10", color: "bg-purple-100 text-purple-700" },
+  ten_classes: { label: "10 Classes", emoji: "10", color: "bg-brand-100 text-brand-700" },
   twenty_five_classes: { label: "25 Classes", emoji: "25", color: "bg-orange-100 text-orange-700" },
   fifty_classes: { label: "50 Classes", emoji: "50", color: "bg-red-100 text-red-700" },
   streak_7_days: { label: "1 Week Streak", emoji: "7d", color: "bg-cyan-100 text-cyan-700" },
