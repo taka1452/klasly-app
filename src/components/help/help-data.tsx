@@ -267,7 +267,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
                 <li><B>Gray</B> — cancelled sessions.</li>
                 <li><B>Teal</B> — instructor room bookings (shown with a &quot;Room&quot; badge).</li>
               </Steps>
-              Each card shows the class name, time, instructor, and booking count. Classes with a room show a teal room badge. Online classes display a camera icon. A red line indicates the current time. A collapsible color legend is shown above the calendar for quick reference.
+              These colors apply across <B>Day, Week, Month, and List</B> views — in Month view each day shows color-coded pills (or dots on mobile), and in List view each row has a left border in the matching color. Each card shows the class name, time, instructor, and booking count. Online classes display a camera icon. A red line indicates the current time. A collapsible color legend is shown above the calendar for quick reference.
               <Tip>Use the <B>Show cancelled</B> toggle to show or hide cancelled sessions on the calendar. Cancelled sessions are hidden by default.</Tip>
               <Tip>The calendar week starts on <B>Sunday</B>. Use <B>List view</B> for a scrollable, date-by-date breakdown of all upcoming sessions.</Tip>
             </>
@@ -397,13 +397,13 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "Can I set an end date for recurring sessions?",
           a: (
             <>
-              Yes. When scheduling a weekly session, you can choose:
+              Yes. The <B>Add Session</B> dialog defaults to <B>Weekly</B> with a <B>Never end</B> option so new classes keep generating on a rolling basis. You can also choose:
               <Steps>
-                <li><B>After X weeks</B> — sessions are created for a fixed number of weeks.</li>
-                <li><B>Never (ongoing)</B> — sessions are generated automatically on a rolling basis, using your studio&apos;s session generation setting (default 8 weeks ahead).</li>
+                <li><B>On [date]</B> — sessions are generated weekly until the date you pick (stored on the class template so the cron stops on that date).</li>
+                <li><B>For X weeks</B> — a fixed number of weeks starting from the first session.</li>
               </Steps>
-              You can also set a <B>Recurrence End Date</B> on the class template to stop generation after a specific date.
-              <Tip>Existing sessions already generated past the end date are not automatically deleted — you can cancel them individually if needed.</Tip>
+              With <B>Never</B>, new sessions appear automatically using your studio&apos;s session generation setting (default 8 weeks ahead).
+              <Tip>Have an older class that only shows a few weeks ahead? Open one of its sessions and click <B>Make ongoing weekly</B> — future weeks will start auto-generating.</Tip>
             </>
           ),
         },
@@ -650,6 +650,21 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
+          q: "How do I update my email, password, or profile picture?",
+          a: (
+            <>
+              Click the profile avatar in the top-right corner and choose <B>Account settings</B>. From this one page you can:
+              <Steps>
+                <li>Upload or remove a <B>profile picture</B> (JPG, PNG, or WebP — max 2MB).</li>
+                <li>Update your <B>full name</B> and <B>phone number</B>.</li>
+                <li>Change your <B>email address</B> — you&apos;ll need to confirm the change via a link sent to both your old and new inbox.</li>
+                <li>Change your <B>password</B> — you&apos;ll be asked for your current password first.</li>
+              </Steps>
+              <Tip>The same <B>Account settings</B> page works for owners, managers, instructors, and members — the link is in the user menu on every role.</Tip>
+            </>
+          ),
+        },
+        {
           q: "How do I manage email notification preferences?",
           a: (
             <>
@@ -663,6 +678,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
                 <li><B>New messages</B> &mdash; sent when you receive an in-app message.</li>
                 <li><B>Waitlist updates</B> &mdash; sent when promoted from a waitlist.</li>
                 <li><B>Event reminders</B> &mdash; sent for upcoming events and retreats.</li>
+                <li><B>Instructor bookings</B> &mdash; sent when an instructor schedules a class, receives a private appointment, or books a room. Delivered to the owner and all managers.</li>
               </Steps>
               <Tip>Important account notifications like password resets and security alerts cannot be turned off.</Tip>
             </>
@@ -1759,6 +1775,14 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             </>
           ),
         },
+        {
+          q: "How do I change my email, password, or profile picture?",
+          a: (
+            <>
+              Click the avatar in the top-right corner and choose <B>Account settings</B>. From there you can upload a profile picture, update your name or phone, change your email (with double-confirmation), or change your password. Display name, bio, and specialties are edited on the <B>Profile</B> page as before.
+            </>
+          ),
+        },
       ],
     },
     {
@@ -2122,6 +2146,14 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               Go to the login page and enter your email and password. If you forgot your password, click <B>Forgot password?</B> to receive a reset link.
+            </>
+          ),
+        },
+        {
+          q: "How do I update my email, password, or profile picture?",
+          a: (
+            <>
+              Tap the avatar in the top-right corner (or in the bottom nav on mobile) and choose <B>Account settings</B>. You can upload a profile picture, update your name and phone, change your email (with a confirmation link sent to both old and new inboxes), or change your password.
             </>
           ),
         },
