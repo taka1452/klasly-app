@@ -54,6 +54,7 @@ export async function PATCH(req: NextRequest) {
     "email_new_messages",
     "email_waitlist_promotion",
     "email_event_reminders",
+    "email_instructor_bookings",
   ];
 
   const updates: Record<string, boolean | string> = {};

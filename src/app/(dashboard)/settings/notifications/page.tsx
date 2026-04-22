@@ -13,6 +13,7 @@ type Preferences = {
   email_new_messages: boolean;
   email_waitlist_promotion: boolean;
   email_event_reminders: boolean;
+  email_instructor_bookings: boolean;
 };
 
 const NOTIFICATION_OPTIONS: {
@@ -59,6 +60,12 @@ const NOTIFICATION_OPTIONS: {
     key: "email_event_reminders",
     label: "Event reminders",
     description: "Reminders for upcoming events and retreats",
+  },
+  {
+    key: "email_instructor_bookings",
+    label: "Instructor bookings",
+    description:
+      "When an instructor schedules a class, receives a private appointment, or books a room",
   },
 ];
 

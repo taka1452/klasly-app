@@ -10,6 +10,7 @@ const VALID_NOTIFICATION_TYPES = [
   "new_messages",
   "waitlist_promotion",
   "event_reminders",
+  "instructor_bookings",
   // Legacy aliases — kept so existing callers that pass these strings still
   // fall through to the shouldSendEmail warning/default-true path rather than
   // silently failing to send.

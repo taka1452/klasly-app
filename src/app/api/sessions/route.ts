@@ -2,6 +2,7 @@ import { getDashboardContext } from "@/lib/auth/dashboard-access";
 import { getInstructorContext } from "@/lib/auth/instructor-access";
 import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { notifyStaffOfInstructorBooking } from "@/lib/email/notify-staff";
 
 /**
  * POST /api/sessions
@@ -380,12 +381,32 @@ export async function POST(request: Request) {
         );
       }
 
-      // For ongoing recurrence, clear recurrence_end_date on the template
-      if (isOngoing && template_id) {
-        await supabase
-          .from("class_templates")
-          .update({ recurrence_end_date: null })
-          .eq("id", template_id);
+      // Update template.recurrence_end_date:
+      //   ongoing => clear, explicit end => set, week-count => leave as-is
+      if (template_id) {
+        if (isOngoing) {
+          await supabase
+            .from("class_templates")
+            .update({ recurrence_end_date: null })
+            .eq("id", template_id);
+        } else if (hasEndDate) {
+          await supabase
+            .from("class_templates")
+            .update({ recurrence_end_date: repeat_end_date })
+            .eq("id", template_id);
+        }
+      }
+
+      if (authSource === "instructor") {
+        await notifyForInstructorSessions({
+          studioId,
+          instructorId: resolvedInstructorId,
+          sessionDates,
+          startTime: start_time,
+          endTime: endTime,
+          title: title || templateTitle || "Session",
+          isPrivate: !(is_public ?? templateIsPublic),
+        });
       }
 
       return NextResponse.json(
@@ -452,6 +473,18 @@ export async function POST(request: Request) {
       }
     }
 
+    if (authSource === "instructor") {
+      await notifyForInstructorSessions({
+        studioId,
+        instructorId: resolvedInstructorId,
+        sessionDates,
+        startTime: start_time,
+        endTime: endTime,
+        title: title || templateTitle || "Session",
+        isPrivate: !(is_public ?? templateIsPublic),
+      });
+    }
+
     return NextResponse.json(
       {
         sessions: inserted,
@@ -464,6 +497,53 @@ export async function POST(request: Request) {
       { error: "Internal server error" },
       { status: 500 }
     );
+  }
+}
+
+// --- Helper: notify owner + managers when an instructor creates session(s) ---
+async function notifyForInstructorSessions(params: {
+  studioId: string;
+  instructorId: string | null;
+  sessionDates: string[];
+  startTime: string;
+  endTime: string;
+  title: string;
+  isPrivate: boolean;
+}): Promise<void> {
+  try {
+    if (!params.instructorId || params.sessionDates.length === 0) return;
+    const adminDb = (await import("@/lib/admin/supabase")).createAdminClient();
+
+    const { data: instr } = await adminDb
+      .from("instructors")
+      .select("profiles(full_name)")
+      .eq("id", params.instructorId)
+      .maybeSingle();
+    const profiles = (Array.isArray(instr?.profiles)
+      ? instr?.profiles[0]
+      : instr?.profiles) as { full_name: string | null } | null;
+    const instructorName = profiles?.full_name || "An instructor";
+
+    const first = params.sessionDates[0];
+    const dateLabel =
+      params.sessionDates.length > 1
+        ? `${first} (+${params.sessionDates.length - 1} more)`
+        : first;
+    const activity = params.isPrivate
+      ? "scheduled a new private session"
+      : "scheduled a new class session";
+
+    await notifyStaffOfInstructorBooking({
+      studioId: params.studioId,
+      instructorName,
+      activity,
+      title: params.title,
+      date: dateLabel,
+      startTime: params.startTime,
+      endTime: params.endTime,
+    });
+  } catch (err) {
+    console.error("[sessions] notifyForInstructorSessions failed:", err);
   }
 }
 

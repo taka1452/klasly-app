@@ -6,6 +6,7 @@ import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 import { getRequiresCredits } from "@/lib/booking-utils";
 import { sendEmail } from "@/lib/email/send";
 import { appointmentConfirmation } from "@/lib/email/templates";
+import { notifyStaffOfInstructorBooking } from "@/lib/email/notify-staff";
 
 /**
  * POST: Book an appointment
@@ -245,6 +246,18 @@ export async function POST(request: Request) {
         templateName: "appointment_confirmation",
       });
     }
+
+    // Notify owner + managers that the instructor received a private booking
+    await notifyStaffOfInstructorBooking({
+      studioId: profile.studio_id,
+      instructorName: instructorProfile?.full_name || "An instructor",
+      activity: `received a private appointment from ${profile.full_name || "a member"}`,
+      title: appointmentType.name,
+      date,
+      startTime: start_time,
+      endTime,
+      linkPath: "/appointments",
+    });
 
     return NextResponse.json({ appointment });
   } catch (err) {

@@ -1276,3 +1276,62 @@ export function instructorRoomBooking(params: {
     html: baseHtml(content),
   };
 }
+
+/**
+ * Notifies owner/managers when an instructor schedules a new class session
+ * or when a member books a private appointment with an instructor.
+ * `activity` summarises what happened ("scheduled a new class",
+ * "received a private appointment", etc.) so one template covers both flows.
+ */
+export function instructorBookingStaffNotice(params: {
+  recipientName: string;
+  instructorName: string;
+  activity: string;
+  title: string;
+  date: string;
+  startTime: string;
+  endTime?: string | null;
+  location?: string | null;
+  studioName: string;
+  linkPath?: string;
+}) {
+  const {
+    recipientName,
+    instructorName,
+    activity,
+    title,
+    date,
+    startTime,
+    endTime,
+    location,
+    studioName,
+    linkPath,
+  } = params;
+  const path = linkPath || "/calendar";
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">New instructor booking</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${recipientName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      <strong>${instructorName}</strong> ${activity}.
+    </p>
+    <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-weight:600;color:${BRAND_COLOR};">${title}</p>
+      <p style="margin:8px 0 0;font-size:14px;"><strong>Date:</strong> ${date}</p>
+      <p style="margin:4px 0 0;font-size:14px;"><strong>Time:</strong> ${startTime}${endTime ? ` – ${endTime}` : ""}</p>
+      ${location ? `<p style="margin:4px 0 0;font-size:14px;"><strong>Where:</strong> ${location}</p>` : ""}
+      <p style="margin:4px 0 0;font-size:14px;color:#6b7280;">${studioName}</p>
+    </div>
+    <p style="margin:16px 0 0;">
+      <a href="https://app.klasly.app${path}" style="color:${BRAND_COLOR};text-decoration:none;font-weight:600;">
+        View in Klasly →
+      </a>
+    </p>
+    <p style="margin:16px 0 0;font-size:12px;color:#9ca3af;">
+      You can turn these notifications off in Account settings → Notifications.
+    </p>
+  `;
+  return {
+    subject: `${instructorName} — ${title}`,
+    html: baseHtml(content),
+  };
+}
