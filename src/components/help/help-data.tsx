@@ -54,12 +54,22 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               <Steps>
-                <li>Go to <B>Settings → Stripe Connect</B> and click <B>&quot;Connect with Stripe.&quot;</B></li>
-                <li>You&apos;ll be redirected to Stripe&apos;s secure onboarding — enter your business type, legal details, and bank account.</li>
+                <li>Go to <B>Settings → Stripe Connect</B>.</li>
+                <li>Select your <B>Business country</B> (defaults to your studio&apos;s timezone — change it if your business is registered elsewhere). This determines the postal code, phone, and bank account formats Stripe will ask for.</li>
+                <li>Click <B>&quot;Connect with Stripe&quot;</B>. You&apos;ll be redirected to Stripe&apos;s secure onboarding — enter your business type, legal details, and bank account.</li>
                 <li>Once complete, you&apos;ll see a <B>✅ Stripe Connected</B> status. Member payments now go directly to your Stripe account.</li>
               </Steps>
               If setup is incomplete (e.g., you left Stripe&apos;s page mid-way), return to <B>Settings → Stripe Connect</B> and click <B>&quot;Continue Setup.&quot;</B> You&apos;ll also see a reminder on your Dashboard until setup is done.
               <Tip>Stripe Connect must be set up before members can purchase credits, subscriptions, or studio passes.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "I picked the wrong country — can I change it?",
+          a: (
+            <>
+              Stripe doesn&apos;t allow changing a Connect account&apos;s country after it&apos;s created. If the postal code or phone format doesn&apos;t match your country, go to <B>Settings → Stripe Connect</B> and click <B>Disconnect and start over</B>. Pick the correct country and click <B>Connect with Stripe</B> again — a fresh account will be created. The old account is abandoned and can be deleted from your Stripe dashboard later.
+              <Tip>This option only appears while onboarding is still in progress. If you&apos;ve already completed setup and need to switch countries, contact support.</Tip>
             </>
           ),
         },

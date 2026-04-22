@@ -3,11 +3,15 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { stripe } from "@/lib/stripe/server";
 import { NextResponse } from "next/server";
 import { isTestAccount, TEST_ACCOUNT_STRIPE_ERROR } from "@/lib/auth/test-account-guard";
+import {
+  defaultCountryFromTimezone,
+  isSupportedConnectCountry,
+} from "@/lib/stripe/connect-countries";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
     const serverSupabase = await createServerClient();
     const {
@@ -66,8 +70,24 @@ export async function POST() {
     let connectAccountId = instructor.stripe_account_id;
 
     if (!connectAccountId) {
+      const body = await request.json().catch(() => ({}));
+      const requestedCountry =
+        typeof body?.country === "string" ? body.country.toUpperCase() : null;
+      let country: string;
+      if (isSupportedConnectCountry(requestedCountry)) {
+        country = requestedCountry;
+      } else {
+        const { data: studio } = await adminSupabase
+          .from("studios")
+          .select("timezone")
+          .eq("id", profile.studio_id)
+          .single();
+        country = defaultCountryFromTimezone(studio?.timezone);
+      }
+
       const account = await stripe.accounts.create({
         type: "express",
+        country,
         email: instructorEmail,
         capabilities: {
           card_payments: { requested: true },

@@ -3,11 +3,15 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { stripe } from "@/lib/stripe/server";
 import { NextResponse } from "next/server";
 import { isTestAccount, TEST_ACCOUNT_STRIPE_ERROR } from "@/lib/auth/test-account-guard";
+import {
+  defaultCountryFromTimezone,
+  isSupportedConnectCountry,
+} from "@/lib/stripe/connect-countries";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
     const serverSupabase = await createServerClient();
     const {
@@ -53,7 +57,7 @@ export async function POST() {
 
     const { data: studio } = await adminSupabase
       .from("studios")
-      .select("stripe_connect_account_id")
+      .select("stripe_connect_account_id, timezone")
       .eq("id", studioId)
       .single();
 
@@ -64,8 +68,18 @@ export async function POST() {
     let connectAccountId = studio.stripe_connect_account_id;
 
     if (!connectAccountId) {
+      // Country is required on Express account creation and cannot be changed
+      // later. Accept an explicit override, falling back to a timezone guess.
+      const body = await request.json().catch(() => ({}));
+      const requestedCountry =
+        typeof body?.country === "string" ? body.country.toUpperCase() : null;
+      const country = isSupportedConnectCountry(requestedCountry)
+        ? requestedCountry
+        : defaultCountryFromTimezone(studio.timezone);
+
       const account = await stripe.accounts.create({
         type: "express",
+        country,
         email: ownerEmail,
         capabilities: {
           card_payments: { requested: true },

@@ -1,12 +1,20 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
-import { stripe } from "@/lib/stripe/server";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+/**
+ * POST /api/stripe/connect/disconnect
+ * Clears the studio's stripe_connect_account_id so the owner can restart
+ * onboarding (e.g., if they chose the wrong country). Stripe does not allow
+ * changing a Connect account's country after creation, so the only recovery
+ * is to unlink the existing account and create a fresh one. We leave the
+ * Stripe account untouched — the platform can clean up orphaned accounts
+ * later if needed.
+ */
+export async function POST() {
   try {
     const serverSupabase = await createServerClient();
     const {
@@ -40,43 +48,16 @@ export async function GET() {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { data: studio } = await adminSupabase
+    const { error } = await adminSupabase
       .from("studios")
-      .select("stripe_connect_account_id, stripe_connect_onboarding_complete")
-      .eq("id", profile.studio_id)
-      .single();
+      .update({ stripe_connect_account_id: null })
+      .eq("id", profile.studio_id);
 
-    if (!studio?.stripe_connect_account_id) {
-      return NextResponse.json({
-        connected: false,
-        onboardingComplete: false,
-        chargesEnabled: false,
-        payoutsEnabled: false,
-        country: null,
-      });
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    const connectAccountId = studio.stripe_connect_account_id;
-    const account = await stripe.accounts.retrieve(connectAccountId);
-
-    const chargesEnabled = account.charges_enabled ?? false;
-    const payoutsEnabled = account.payouts_enabled ?? false;
-    const onboardingComplete = chargesEnabled && payoutsEnabled;
-
-    if (onboardingComplete && !studio.stripe_connect_onboarding_complete) {
-      await adminSupabase
-        .from("studios")
-        .update({ stripe_connect_onboarding_complete: true })
-        .eq("id", profile.studio_id);
-    }
-
-    return NextResponse.json({
-      connected: true,
-      onboardingComplete,
-      chargesEnabled,
-      payoutsEnabled,
-      country: account.country ?? null,
-    });
+    return NextResponse.json({ success: true });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal error";
     return NextResponse.json({ error: message }, { status: 500 });

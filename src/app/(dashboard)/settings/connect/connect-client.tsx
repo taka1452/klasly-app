@@ -5,21 +5,30 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import FlowHintPanel from "@/components/ui/flow-hint-panel";
 import Toast from "@/components/ui/toast";
+import { STRIPE_CONNECT_COUNTRIES } from "@/lib/stripe/connect-countries";
 
 type Status = {
   connected: boolean;
   onboardingComplete: boolean;
   chargesEnabled: boolean;
   payoutsEnabled: boolean;
+  country: string | null;
 };
 
-export default function SettingsConnectClient() {
+type Props = {
+  defaultCountry: string;
+};
+
+export default function SettingsConnectClient({ defaultCountry }: Props) {
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<Status | null>(null);
   const [loading, setLoading] = useState(true);
   const [onboardingLoading, setOnboardingLoading] = useState(false);
   const [dashboardLoading, setDashboardLoading] = useState(false);
+  const [disconnectLoading, setDisconnectLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [selectedCountry, setSelectedCountry] = useState(defaultCountry);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   const fetchStatus = useCallback(async () => {
     const res = await fetch("/api/stripe/connect/status");
@@ -45,6 +54,8 @@ export default function SettingsConnectClient() {
     try {
       const res = await fetch("/api/stripe/connect/onboarding", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ country: selectedCountry }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -78,6 +89,24 @@ export default function SettingsConnectClient() {
     }
   }
 
+  async function handleDisconnect() {
+    setDisconnectLoading(true);
+    try {
+      const res = await fetch("/api/stripe/connect/disconnect", {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setToastMessage(data.error ?? "Failed to disconnect");
+        return;
+      }
+      await fetchStatus();
+      setConfirmReset(false);
+    } finally {
+      setDisconnectLoading(false);
+    }
+  }
+
   if (loading || status === null) {
     return (
       <div>
@@ -91,6 +120,11 @@ export default function SettingsConnectClient() {
       </div>
     );
   }
+
+  const countryName =
+    STRIPE_CONNECT_COUNTRIES.find(
+      (c) => c.code === (status.country || "").toUpperCase()
+    )?.name ?? status.country;
 
   return (
     <div>
@@ -120,6 +154,30 @@ export default function SettingsConnectClient() {
           <p className="mt-2 text-sm text-gray-600">
             To receive payments from your members, connect your Stripe account.
           </p>
+
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700">
+              Business country
+            </label>
+            <select
+              value={selectedCountry}
+              onChange={(e) => setSelectedCountry(e.target.value)}
+              className="mt-1 w-full max-w-sm rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            >
+              {STRIPE_CONNECT_COUNTRIES.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-gray-500">
+              Choose the country where your business is registered. This
+              determines the postal code, phone, and bank account formats shown
+              on the Stripe form. It cannot be changed once your account is
+              created.
+            </p>
+          </div>
+
           <button
             type="button"
             onClick={handleConnect}
@@ -135,7 +193,8 @@ export default function SettingsConnectClient() {
             Complete Your Stripe Setup
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Your Stripe account is created but setup is not complete.
+            Your Stripe account is created
+            {countryName ? ` in ${countryName}` : ""} but setup is not complete.
           </p>
           <button
             type="button"
@@ -145,6 +204,52 @@ export default function SettingsConnectClient() {
           >
             {onboardingLoading ? "Redirecting..." : "Continue Setup"}
           </button>
+
+          <div className="mt-6 border-t border-gray-100 pt-4">
+            <p className="text-sm font-medium text-gray-700">
+              Wrong country?
+            </p>
+            <p className="mt-1 text-xs text-gray-500">
+              Stripe doesn&apos;t allow changing an account&apos;s country after
+              it&apos;s created. If you picked the wrong one, disconnect this
+              account and start over with the correct country.
+            </p>
+            {!confirmReset ? (
+              <button
+                type="button"
+                onClick={() => setConfirmReset(true)}
+                className="mt-2 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
+              >
+                Disconnect and start over
+              </button>
+            ) : (
+              <div className="mt-2 rounded-lg border border-red-200 bg-red-50 p-3">
+                <p className="text-xs text-red-700">
+                  This will unlink the current Stripe account so you can start a
+                  fresh one. The old account will be abandoned on Stripe&apos;s
+                  side — you can delete it from your Stripe dashboard later.
+                </p>
+                <div className="mt-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleDisconnect}
+                    disabled={disconnectLoading}
+                    className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                  >
+                    {disconnectLoading ? "Disconnecting..." : "Yes, disconnect"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmReset(false)}
+                    disabled={disconnectLoading}
+                    className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       ) : (
         <div className="mt-6 card">
@@ -152,7 +257,8 @@ export default function SettingsConnectClient() {
             ✅ Stripe Connected
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Your account is ready to receive payments from members.
+            Your account is ready to receive payments from members
+            {countryName ? ` (${countryName})` : ""}.
           </p>
           <button
             type="button"
