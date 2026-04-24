@@ -8,6 +8,8 @@ import { useFeature } from "@/lib/features/feature-context";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 import type { CancellationPolicyTier } from "@/types/database";
 import HelpTip from "@/components/ui/help-tip";
+import { EVENT_COLOR_PRESETS } from "@/lib/events/color-presets";
+import EventColorPicker from "@/components/events/event-color-picker";
 
 type OptionDraft = {
   name: string;
@@ -76,6 +78,7 @@ export default function CreateEventPage() {
   const [endDate, setEndDate] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [isPublic, setIsPublic] = useState(true);
+  const [color, setColor] = useState<string>(EVENT_COLOR_PRESETS[0].value);
 
   // Step 2: Gallery & Details (NEW)
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
@@ -229,6 +232,7 @@ export default function CreateEventPage() {
         start_date: startDate,
         end_date: endDate || startDate,
         image_url: imageUrl.trim() || null,
+        color: color || null,
         is_public: isPublic,
         status,
         payment_type: paymentType,
@@ -383,6 +387,7 @@ export default function CreateEventPage() {
               <input type="url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://example.com/retreat-image.jpg" className="input-field mt-1" />
               <p className="mt-1 text-xs text-gray-400">Main hero image for your event page.</p>
             </div>
+            <EventColorPicker value={color} onChange={setColor} />
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Visibility

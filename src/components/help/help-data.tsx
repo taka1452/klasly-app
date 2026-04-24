@@ -434,6 +434,23 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             </>
           ),
         },
+        {
+          q: "Can I change the date or time of a single scheduled session?",
+          a: (
+            <>
+              Yes. On the <B>Classes → [Class Template]</B> page, open <B>Upcoming Sessions</B>, click <B>Edit</B> next to the session, and change the date, start or end time, or title. The rest of the series keeps its original schedule.
+              <Tip>Use this to fix a wrong day without cancelling and re-adding every session. If you change the date to one that&apos;s already booked in the same room, you&apos;ll see a conflict warning.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "What is the \"Special instructions\" field on a class?",
+          a: (
+            <>
+              A free-form note — e.g. &quot;bring your own mat&quot;, &quot;arrive 10 minutes early&quot;, a prop list, or accessibility information. Edit it on the class template form. The instructions appear on the class detail page that members see and are included in their booking confirmation email.
+            </>
+          ),
+        },
       ],
     },
     {
@@ -489,6 +506,15 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               Yes. When an instructor books a room, the studio owner and all managers with the <B>Rooms</B> permission receive an email notification with the instructor name, room, date, and time.
+            </>
+          ),
+        },
+        {
+          q: "Can I book a room on behalf of an instructor?",
+          a: (
+            <>
+              Yes. On the <B>Rooms</B> page, click <B>+ Add booking</B> at the top. Pick the instructor, the room, date, start/end time, and optional notes, then click <B>Create booking</B>. The booking appears on the instructor&apos;s own calendar just like one they created themselves.
+              <Tip>Use this for private sessions, workshop prep, or holds for guest teachers who aren&apos;t logged into Klasly yet. Owners and managers with the <B>Rooms</B> permission can do this.</Tip>
             </>
           ),
         },
@@ -1125,7 +1151,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             <>
               Go to <B>Events &amp; Retreats</B> and click <B>&quot;Create Event.&quot;</B> Follow the 7-step form:
               <Steps>
-                <li><B>Basic Info</B> — name, dates, location, cover image, visibility.</li>
+                <li><B>Basic Info</B> — name, dates, location, cover image, <B>color</B>, visibility. The color is shown as a dot on your events list and as the accent color on the event card.</li>
                 <li><B>Gallery &amp; Details</B> — photo gallery, packing list, access/travel info, map coordinates, waitlist toggle.</li>
                 <li><B>Room Options</B> — tiers with pricing, capacity, and optional early bird pricing with deadline.</li>
                 <li><B>Schedule</B> — daily timetable with activities, times, and descriptions.</li>
@@ -1580,7 +1606,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "What permissions can I give a manager?",
           a: (
             <>
-              Each manager has 9 permission toggles:
+              Each manager has 13 permission toggles:
               <Steps>
                 <li><B>Members</B> — create, edit, and view member profiles and credits.</li>
                 <li><B>Classes</B> — create and edit class templates, sessions, and schedules.</li>
@@ -1590,9 +1616,21 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
                 <li><B>Payments</B> — view payment history, passes, and export reports.</li>
                 <li><B>Messages</B> — send messages and announcements to members.</li>
                 <li><B>Teach</B> — register as an instructor and teach classes.</li>
-                <li><B>Settings</B> — access studio settings including instructor contracts, collective mode setup, scheduling, widget, and waiver. Stripe Connect, billing, and account deletion remain owner-only.</li>
+                <li><B>Settings</B> — access studio settings including scheduling, widget, waiver, collective mode setup. Stripe Connect, billing, and account deletion remain owner-only.</li>
+                <li><B>Class Pricing</B> — edit class prices, drop-in rates, and promotional pricing (separate from Classes so you can allow schedule edits without price changes).</li>
+                <li><B>Instructor Contracts &amp; Membership Tiers</B> — edit instructor contracts (hourly, flat, overage) and create / update membership tiers.</li>
+                <li><B>Tutorial</B> — whether this user sees Klasly&apos;s onboarding tutorials and tooltip hints. A UX preference — turn off once they know the product.</li>
+                <li><B>Export Your Data</B> — download CSV / PDF exports of members, bookings, payments, attendance, waivers, and analytics.</li>
               </Steps>
-              <Tip>Hover over each permission badge to see what it controls.</Tip>
+              <Tip>Hover over each permission badge to see what it controls. Open the &quot;What does each permission do?&quot; guide on the Managers page for full descriptions.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "What does the \"Tutorial\" permission control?",
+          a: (
+            <>
+              <B>Tutorial</B> is a UX preference, not a capability. When ON, this user sees Klasly&apos;s onboarding walkthrough: the dashboard checklist, first-time tooltips on each new page, and feature-highlight hint panels. When OFF, those hints stay hidden so the UI stays clean for people who already know the product. Turning it off does <B>not</B> remove access to the Help Center — that is always available.
             </>
           ),
         },

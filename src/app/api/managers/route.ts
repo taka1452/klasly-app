@@ -55,6 +55,10 @@ export async function GET() {
         canSendMessages: m.can_send_messages,
         canManageSettings: m.can_manage_settings ?? false,
         canTeach: m.can_teach ?? false,
+        canManageClassPricing: m.can_manage_class_pricing ?? false,
+        canManageContractsTiers: m.can_manage_contracts_tiers ?? false,
+        canShowTutorial: m.can_show_tutorial ?? true,
+        canExportData: m.can_export_data ?? false,
         createdAt: m.created_at,
       };
     });
@@ -117,6 +121,10 @@ export async function POST(request: Request) {
             can_send_messages: permissions?.canSendMessages ?? true,
             can_manage_settings: permissions?.canManageSettings ?? false,
             can_teach: permissions?.canTeach ?? false,
+            can_manage_class_pricing: permissions?.canManageClassPricing ?? false,
+            can_manage_contracts_tiers: permissions?.canManageContractsTiers ?? false,
+            can_show_tutorial: permissions?.canShowTutorial ?? true,
+            can_export_data: permissions?.canExportData ?? false,
           },
           { onConflict: "studio_id,profile_id" }
         )
@@ -167,6 +175,10 @@ export async function POST(request: Request) {
         can_send_messages: permissions?.canSendMessages ?? true,
         can_manage_settings: permissions?.canManageSettings ?? false,
         can_teach: permissions?.canTeach ?? false,
+        can_manage_class_pricing: permissions?.canManageClassPricing ?? false,
+        can_manage_contracts_tiers: permissions?.canManageContractsTiers ?? false,
+        can_show_tutorial: permissions?.canShowTutorial ?? true,
+        can_export_data: permissions?.canExportData ?? false,
       });
     }
 
@@ -197,6 +209,10 @@ export async function PATCH(request: Request) {
     if (permissions.canSendMessages !== undefined) updateData.can_send_messages = permissions.canSendMessages;
     if (permissions.canManageSettings !== undefined) updateData.can_manage_settings = permissions.canManageSettings;
     if (permissions.canTeach !== undefined) updateData.can_teach = permissions.canTeach;
+    if (permissions.canManageClassPricing !== undefined) updateData.can_manage_class_pricing = permissions.canManageClassPricing;
+    if (permissions.canManageContractsTiers !== undefined) updateData.can_manage_contracts_tiers = permissions.canManageContractsTiers;
+    if (permissions.canShowTutorial !== undefined) updateData.can_show_tutorial = permissions.canShowTutorial;
+    if (permissions.canExportData !== undefined) updateData.can_export_data = permissions.canExportData;
 
     const { data, error } = await ctx.supabase
       .from("managers")

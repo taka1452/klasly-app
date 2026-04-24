@@ -105,6 +105,7 @@ export async function POST(request: Request) {
       room_id,
       recurrence_end_date,
       transition_minutes,
+      special_instructions,
     } = body;
 
     // --- Validation ---
@@ -179,6 +180,7 @@ export async function POST(request: Request) {
           sort_order: nextSortOrder,
           recurrence_end_date: recurrence_end_date || null,
           transition_minutes: transition_minutes || null,
+          special_instructions: special_instructions?.trim?.() || null,
         })
         .select("*, instructors(id, profiles(full_name))")
         .single();
@@ -215,6 +217,7 @@ export async function POST(request: Request) {
         is_active: true,
         recurrence_end_date: recurrence_end_date || null,
         transition_minutes: transition_minutes || null,
+        special_instructions: special_instructions?.trim?.() || null,
       })
       .select("*, instructors(id, profiles(full_name))")
       .single();

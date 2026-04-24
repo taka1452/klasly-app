@@ -87,12 +87,20 @@ export default function TestAccountSwitcher() {
     setOriginalProfileId(readCookie(ORIGINAL_COOKIE));
   }, [fetchAccounts]);
 
+  const [switchError, setSwitchError] = useState<string | null>(null);
+
   async function switchTo(target: Account) {
-    if (target.isCurrent) return;
-    if (!target.isTest) {
-      alert("You can only switch to test accounts.");
+    if (target.isCurrent) {
+      // Friendly inline feedback instead of a silent no-op so the user sees
+      // that the click registered (Jamie feedback 2026-04: "nothing happens").
+      setSwitchError("That's the account you're already signed in as.");
       return;
     }
+    if (!target.isTest) {
+      setSwitchError("You can only switch into test accounts, not real users.");
+      return;
+    }
+    setSwitchError(null);
     setSwitching(target.id);
     try {
       const res = await fetch("/api/dev/switch-role", {
@@ -101,8 +109,8 @@ export default function TestAccountSwitcher() {
         body: JSON.stringify({ targetProfileId: target.id }),
       });
       if (!res.ok) {
-        const data = await res.json();
-        alert(data.error ?? "Failed to switch");
+        const data = await res.json().catch(() => ({}));
+        setSwitchError(data.error ?? "Failed to switch account.");
         setSwitching(null);
         return;
       }
@@ -114,7 +122,9 @@ export default function TestAccountSwitcher() {
       }
       window.location.href = url;
     } catch {
-      alert("Failed to switch role");
+      setSwitchError(
+        "Couldn't contact the server. Check your connection and try again."
+      );
       setSwitching(null);
     }
   }
@@ -122,11 +132,12 @@ export default function TestAccountSwitcher() {
   async function switchBack() {
     const origId = readCookie(ORIGINAL_COOKIE);
     if (!origId) {
-      alert(
+      setSwitchError(
         "We couldn't find your original account. Please sign out and sign in again."
       );
       return;
     }
+    setSwitchError(null);
     setSwitching(origId);
     try {
       const res = await fetch("/api/dev/switch-back", {
@@ -135,8 +146,8 @@ export default function TestAccountSwitcher() {
         body: JSON.stringify({ originalProfileId: origId }),
       });
       if (!res.ok) {
-        const data = await res.json();
-        alert(data.error ?? "Failed to switch back");
+        const data = await res.json().catch(() => ({}));
+        setSwitchError(data.error ?? "Failed to switch back.");
         setSwitching(null);
         return;
       }
@@ -144,7 +155,7 @@ export default function TestAccountSwitcher() {
       deleteCookie(ORIGINAL_COOKIE);
       window.location.href = url;
     } catch {
-      alert("Failed to switch back");
+      setSwitchError("Failed to switch back.");
       setSwitching(null);
     }
   }
@@ -250,16 +261,41 @@ export default function TestAccountSwitcher() {
             </div>
           )}
 
+          {switchError && (
+            <div className="border-b border-red-100 bg-red-50 px-4 py-2 text-xs text-red-700">
+              <div className="flex items-start justify-between gap-2">
+                <span>{switchError}</span>
+                <button
+                  type="button"
+                  onClick={() => setSwitchError(null)}
+                  className="shrink-0 text-red-500 hover:text-red-700"
+                  aria-label="Dismiss error"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="max-h-72 overflow-y-auto p-2">
             {loading ? (
               <p className="py-4 text-center text-sm text-gray-500">
                 Loading accounts...
               </p>
-            ) : accounts.filter((a) => a.isTest || a.isCurrent).length === 0 ? (
-              <p className="px-3 py-4 text-center text-xs text-gray-500">
-                No test accounts set up yet. Test accounts are created
-                automatically when you complete onboarding.
-              </p>
+            ) : accounts.filter((a) => a.isTest).length === 0 ? (
+              <div className="px-3 py-4 text-center text-xs text-gray-600">
+                <p className="font-medium text-gray-900">No test accounts yet</p>
+                <p className="mt-1 text-gray-500">
+                  Test accounts let you preview Klasly as an instructor or
+                  member without affecting real data.
+                </p>
+                <a
+                  href="/settings#test-accounts"
+                  className="mt-2 inline-block font-medium text-brand-600 underline hover:text-brand-700"
+                >
+                  Create test accounts →
+                </a>
+              </div>
             ) : (
               <div className="space-y-1">
                 {accounts.map((acct) => {

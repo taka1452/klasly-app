@@ -44,7 +44,18 @@ export async function PUT(
       // Build updates
       const updates = buildUpdates(body);
 
-      // If room_id changes, check availability
+      const newDate = (updates.session_date as string) || existing.session_date;
+      const newStart = (updates.start_time as string) || existing.start_time;
+      const newEnd = (updates.end_time as string) || existing.end_time;
+
+      if (newEnd <= newStart) {
+        return NextResponse.json(
+          { error: "end_time must be after start_time" },
+          { status: 400 }
+        );
+      }
+
+      // If room_id changes, check availability in the target room.
       if (
         updates.room_id !== undefined &&
         updates.room_id !== existing.room_id
@@ -53,36 +64,25 @@ export async function PUT(
           dashCtx.supabase,
           updates.room_id as string,
           dashCtx.studioId,
-          existing.session_date,
-          (updates.start_time as string) || existing.start_time,
-          (updates.end_time as string) || existing.end_time,
+          newDate,
+          newStart,
+          newEnd,
           id
         );
         if (roomAvailResult) return roomAvailResult;
       }
 
-      // If time changes but same room, re-check availability
+      // If date or time changes but same room, re-check availability.
       if (
         existing.room_id &&
         !updates.room_id &&
-        (updates.start_time || updates.end_time)
+        (updates.session_date || updates.start_time || updates.end_time)
       ) {
-        const newStart =
-          (updates.start_time as string) || existing.start_time;
-        const newEnd = (updates.end_time as string) || existing.end_time;
-
-        if (newEnd <= newStart) {
-          return NextResponse.json(
-            { error: "end_time must be after start_time" },
-            { status: 400 }
-          );
-        }
-
         const roomAvailResult = await checkRoomForUpdate(
           dashCtx.supabase,
           existing.room_id,
           dashCtx.studioId,
-          existing.session_date,
+          newDate,
           newStart,
           newEnd,
           id
@@ -92,9 +92,6 @@ export async function PUT(
 
       // Recalculate duration_minutes if times changed
       if (updates.start_time || updates.end_time) {
-        const newStart =
-          (updates.start_time as string) || existing.start_time;
-        const newEnd = (updates.end_time as string) || existing.end_time;
         const [sh, sm] = newStart.split(":").map(Number);
         const [eh, em] = newEnd.split(":").map(Number);
         updates.duration_minutes = eh * 60 + em - (sh * 60 + sm);
@@ -142,7 +139,18 @@ export async function PUT(
 
     const updates = buildUpdates(body);
 
-    // If room_id changes, check availability
+    const newDate = (updates.session_date as string) || existing.session_date;
+    const newStart = (updates.start_time as string) || existing.start_time;
+    const newEnd = (updates.end_time as string) || existing.end_time;
+
+    if (newEnd <= newStart) {
+      return NextResponse.json(
+        { error: "end_time must be after start_time" },
+        { status: 400 }
+      );
+    }
+
+    // If room_id changes, check availability in the target room.
     if (
       updates.room_id !== undefined &&
       updates.room_id !== existing.room_id
@@ -151,36 +159,25 @@ export async function PUT(
         instrCtx.supabase,
         updates.room_id as string,
         instrCtx.studioId,
-        existing.session_date,
-        (updates.start_time as string) || existing.start_time,
-        (updates.end_time as string) || existing.end_time,
+        newDate,
+        newStart,
+        newEnd,
         id
       );
       if (roomAvailResult) return roomAvailResult;
     }
 
-    // If time changes but same room, re-check availability
+    // If date or time changes but same room, re-check availability.
     if (
       existing.room_id &&
       !updates.room_id &&
-      (updates.start_time || updates.end_time)
+      (updates.session_date || updates.start_time || updates.end_time)
     ) {
-      const newStart =
-        (updates.start_time as string) || existing.start_time;
-      const newEnd = (updates.end_time as string) || existing.end_time;
-
-      if (newEnd <= newStart) {
-        return NextResponse.json(
-          { error: "end_time must be after start_time" },
-          { status: 400 }
-        );
-      }
-
       const roomAvailResult = await checkRoomForUpdate(
         instrCtx.supabase,
         existing.room_id,
         instrCtx.studioId,
-        existing.session_date,
+        newDate,
         newStart,
         newEnd,
         id
@@ -190,9 +187,6 @@ export async function PUT(
 
     // Recalculate duration_minutes if times changed
     if (updates.start_time || updates.end_time) {
-      const newStart =
-        (updates.start_time as string) || existing.start_time;
-      const newEnd = (updates.end_time as string) || existing.end_time;
       const [sh, sm] = newStart.split(":").map(Number);
       const [eh, em] = newEnd.split(":").map(Number);
       updates.duration_minutes = eh * 60 + em - (sh * 60 + sm);
@@ -325,6 +319,7 @@ export async function DELETE(
 function buildUpdates(body: Record<string, unknown>): Record<string, unknown> {
   const updates: Record<string, unknown> = {};
 
+  if (body.session_date !== undefined) updates.session_date = body.session_date;
   if (body.start_time !== undefined) updates.start_time = body.start_time;
   if (body.end_time !== undefined) updates.end_time = body.end_time;
   if (body.room_id !== undefined) updates.room_id = body.room_id || null;
