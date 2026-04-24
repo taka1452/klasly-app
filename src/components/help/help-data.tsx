@@ -1654,6 +1654,28 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
       ],
     },
     {
+      title: "Online library & integrations",
+      items: [
+        {
+          q: "How do I run a paid on-demand class library?",
+          a: (
+            <>
+              Go to <B>Settings → Online library</B>. Enroll members manually in the <B>Basic</B> or <B>Premium</B> tier at a monthly price. Each published video in your <B>Library</B> can be tagged <B>free</B>, <B>members</B>, or <B>premium</B> so only the right subscribers can watch.
+              <Tip>Self-service Stripe Checkout enrollment is coming next. For now, admin-enrollment lets you grant access right away and pause / cancel from the same table.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "Can I connect Klasly to Google?",
+          a: (
+            <>
+              Yes. <B>Settings → Integrations</B> lists every third-party service you can link (Google Workspace, Mailchimp, Zoom). Click <B>Connect Google</B> to start the OAuth handshake. Once it completes we sync Google Calendar events and use the connected email to match Google Pay / Wallet subscription charges to your library members.
+            </>
+          ),
+        },
+      ],
+    },
+    {
       title: "Forms & documents builder",
       items: [
         {

@@ -80,6 +80,21 @@ export default function SettingsLayout({
       ],
     },
     {
+      title: "Integrations & Library",
+      items: [
+        {
+          label: "Integrations",
+          href: "/settings/integrations",
+          icon: <Settings className="h-4 w-4" />,
+        },
+        {
+          label: "Online library",
+          href: "/settings/library",
+          icon: <FileCheck className="h-4 w-4" />,
+        },
+      ],
+    },
+    {
       title: "Collective Mode",
       items: [
         {
