@@ -101,6 +101,12 @@ export default function SettingsLayout({
           icon: <Handshake className="h-4 w-4" />,
           show: isCollectiveMode,
         },
+        {
+          label: "Monthly invoices",
+          href: "/settings/invoices",
+          icon: <Handshake className="h-4 w-4" />,
+          show: isCollectiveMode,
+        },
       ],
     },
     {

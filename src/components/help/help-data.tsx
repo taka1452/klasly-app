@@ -1645,6 +1645,34 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
       ],
     },
     {
+      title: "Monthly instructor invoices",
+      items: [
+        {
+          q: "How do I invoice my instructors monthly?",
+          a: (
+            <>
+              Go to <B>Settings → Monthly invoices</B>. Pick a month, click <B>Generate for all instructors</B>, and Klasly creates a draft invoice per instructor that bundles:
+              <Steps>
+                <li><B>Tier subscription</B> — the instructor&apos;s active hourly plan monthly price.</li>
+                <li><B>Overage</B> — any overage charges for that month.</li>
+                <li><B>Flat / per-class fees</B> — class fee overrides and fee schedule matches applied to every session they taught.</li>
+              </Steps>
+              Review each draft, optionally add an adjustment, then click <B>Send</B> to email it to the instructor. Mark it <B>Paid</B> when you receive payment, or <B>Void</B> if you&apos;re retracting.
+              <Tip>Re-running the generator for the same month overwrites the draft — it&apos;s safe to re-run after fixing a contract. Already-sent or paid invoices are never overwritten automatically.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "What if an instructor has no charges for a month?",
+          a: (
+            <>
+              Their invoice is skipped by the bulk generator (you&apos;ll see it in the skipped count). You can still draft one manually for future use if you need a zero-total record.
+            </>
+          ),
+        },
+      ],
+    },
+    {
       title: "Payout Settings",
 
       items: [
