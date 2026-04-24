@@ -13,6 +13,7 @@ import {
   HelpCircle,
   LayoutGrid,
   Globe,
+  User,
 } from "lucide-react";
 
 type SettingsNavItem = {
@@ -122,7 +123,12 @@ export default function SettingsLayout({
           icon: <Bell className="h-4 w-4" />,
         },
         {
-          label: "Account",
+          label: "My account",
+          href: "/account",
+          icon: <User className="h-4 w-4" />,
+        },
+        {
+          label: "Studio account",
           href: "/settings",
           icon: <Settings className="h-4 w-4" />,
         },

@@ -536,7 +536,10 @@ async function sendOverageWarningEmail(
   }
 }
 
-// Helper: notify owner + managers with can_manage_rooms about a new room booking
+// Helper: notify owner + all managers about a new room booking.
+// Sends to every manager (independent of can_manage_rooms) and respects each
+// recipient's email_instructor_bookings preference, matching how class
+// sessions and private appointments notify staff.
 async function notifyRoomBooking(
   supabase: SupabaseClient,
   studioId: string,
@@ -576,30 +579,40 @@ async function notifyRoomBooking(
       .single();
     const studioName = studio?.name || "your studio";
 
-    // Get owner email
+    // Get owner
     const { data: ownerProfile } = await supabase
       .from("profiles")
-      .select("email, full_name")
+      .select("id, email, full_name")
       .eq("studio_id", studioId)
       .eq("role", "owner")
-      .single();
+      .maybeSingle();
 
-    // Get managers with can_manage_rooms
+    // Get all managers (no can_manage_rooms filter — managers without it can still opt out via preferences)
     const { data: managers } = await supabase
       .from("managers")
-      .select("profiles(email, full_name)")
-      .eq("studio_id", studioId)
-      .eq("can_manage_rooms", true);
+      .select("profiles(id, email, full_name)")
+      .eq("studio_id", studioId);
 
-    const recipients: { email: string; name: string }[] = [];
+    const recipients: { profileId: string; email: string; name: string }[] = [];
+    const seen = new Set<string>();
     if (ownerProfile?.email) {
-      recipients.push({ email: ownerProfile.email, name: ownerProfile.full_name || "Owner" });
+      recipients.push({
+        profileId: ownerProfile.id,
+        email: ownerProfile.email,
+        name: ownerProfile.full_name || "Owner",
+      });
+      seen.add(ownerProfile.email);
     }
     if (managers) {
       for (const m of managers) {
-        const mp = (Array.isArray(m.profiles) ? m.profiles[0] : m.profiles) as { email: string; full_name: string } | null;
-        if (mp?.email && !recipients.some((r) => r.email === mp.email)) {
-          recipients.push({ email: mp.email, name: mp.full_name || "Manager" });
+        const mp = (Array.isArray(m.profiles) ? m.profiles[0] : m.profiles) as { id: string; email: string; full_name: string } | null;
+        if (mp?.email && !seen.has(mp.email)) {
+          recipients.push({
+            profileId: mp.id,
+            email: mp.email,
+            name: mp.full_name || "Manager",
+          });
+          seen.add(mp.email);
         }
       }
     }
@@ -608,12 +621,20 @@ async function notifyRoomBooking(
 
     const { instructorRoomBooking } = await import("@/lib/email/templates");
     const { sendEmail } = await import("@/lib/email/send");
+    const { shouldSendEmail } = await import("@/lib/email/check-preference");
 
     const dateStr = booking.dates.length === 1
       ? booking.dates[0]
       : `${booking.dates[0]} (${booking.dates.length} sessions)`;
 
     for (const recipient of recipients) {
+      const allowed = await shouldSendEmail(
+        recipient.profileId,
+        studioId,
+        "instructor_bookings"
+      );
+      if (!allowed) continue;
+
       const template = instructorRoomBooking({
         recipientName: recipient.name,
         instructorName,

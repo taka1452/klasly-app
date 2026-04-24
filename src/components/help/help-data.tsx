@@ -488,7 +488,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "Do I get notified when instructors book rooms?",
           a: (
             <>
-              Yes. When an instructor books a room, the studio owner and all managers with the <B>Rooms</B> permission receive an email notification with the instructor name, room, date, and time.
+              Yes. When an instructor books a room, the studio owner and all managers receive an email notification with the instructor name, room, date, and time. Anyone can opt out from <B>Settings &gt; Notifications &gt; Instructor bookings</B>.
             </>
           ),
         },

@@ -550,9 +550,12 @@ export default function SettingsContent({
                 <dd className="text-sm font-medium text-gray-900">{email}</dd>
               </div>
             </dl>
-            <p className="mt-4 text-xs text-gray-500">
-              Profile editing coming soon.
-            </p>
+            <Link
+              href="/account"
+              className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+            >
+              Edit profile, email, password, and photo →
+            </Link>
           </div>
 
           {/* Support — owner only */}
