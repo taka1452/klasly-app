@@ -235,8 +235,19 @@ export default function ManagersClient() {
   const [inviteLoading, setInviteLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [toast, setToast] = useState<{ message: string; variant: "success" | "error" } | null>(null);
   const [removeConfirmId, setRemoveConfirmId] = useState<string | null>(null);
   const [guideOpen, setGuideOpen] = useState(false);
+
+  const showToast = useCallback((message: string, variant: "success" | "error" = "success") => {
+    setToast({ message, variant });
+  }, []);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 2000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   const fetchManagers = useCallback(async () => {
     const res = await fetch("/api/managers");
@@ -274,13 +285,43 @@ export default function ManagersClient() {
     await fetchManagers();
   }
 
-  async function handleTogglePermission(manager: ManagerInfo, key: string, value: boolean) {
-    const res = await fetch("/api/managers", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: manager.id, [key]: value }),
-    });
-    if (res.ok) await fetchManagers();
+  async function handleTogglePermission(
+    manager: ManagerInfo,
+    key: PermissionKey,
+    value: boolean,
+  ) {
+    setError("");
+    // Optimistic update so the toggle reflects instantly.
+    setManagers((prev) =>
+      prev.map((m) => (m.id === manager.id ? { ...m, [key]: value } : m)),
+    );
+
+    try {
+      const res = await fetch("/api/managers", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: manager.id, [key]: value }),
+      });
+
+      if (!res.ok) {
+        setManagers((prev) =>
+          prev.map((m) => (m.id === manager.id ? { ...m, [key]: !value } : m)),
+        );
+        const data = await res.json().catch(() => ({} as { error?: string }));
+        const msg = data.error || "Failed to update permission";
+        setError(msg);
+        showToast(msg, "error");
+        return;
+      }
+
+      showToast("変更しました", "success");
+    } catch {
+      setManagers((prev) =>
+        prev.map((m) => (m.id === manager.id ? { ...m, [key]: !value } : m)),
+      );
+      setError("Network error while updating permission");
+      showToast("変更に失敗しました", "error");
+    }
   }
 
   async function handleRemove(manager: ManagerInfo) {
@@ -302,6 +343,20 @@ export default function ManagersClient() {
 
   return (
     <div>
+      {toast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`fixed right-4 top-4 z-50 rounded-lg px-4 py-2 text-sm font-medium shadow-lg transition-opacity ${
+            toast.variant === "success"
+              ? "bg-emerald-600 text-white"
+              : "bg-red-600 text-white"
+          }`}
+        >
+          {toast.message}
+        </div>
+      )}
+
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Managers</h1>
