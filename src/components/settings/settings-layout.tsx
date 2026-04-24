@@ -72,6 +72,11 @@ export default function SettingsLayout({
           href: "/settings/waiver",
           icon: <FileCheck className="h-4 w-4" />,
         },
+        {
+          label: "Forms & documents",
+          href: "/settings/forms",
+          icon: <FileCheck className="h-4 w-4" />,
+        },
       ],
     },
     {

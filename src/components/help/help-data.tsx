@@ -1654,6 +1654,34 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
       ],
     },
     {
+      title: "Forms & documents builder",
+      items: [
+        {
+          q: "How do I build custom forms — applications, contracts, medical intake?",
+          a: (
+            <>
+              Go to <B>Settings → Forms &amp; documents</B>. Click <B>+ New form</B> and pick a type: <B>Waiver</B>, <B>Application</B>, <B>Contract</B>, <B>Medical intake</B>, or <B>Custom</B> (blank). Each type starts with a sensible field template you can tweak — drag fields up/down, toggle required, change type, edit options, or add help text.
+              <Steps>
+                <li>Edit the form&apos;s name, intro text, and success message.</li>
+                <li>Toggle <B>Active</B>, <B>Public</B>, and <B>Require signature</B> as needed.</li>
+                <li>Click <B>Copy link</B> on the card to get the public URL for your website.</li>
+                <li>Submissions land in Klasly — open <B>Submissions</B> on the card to view or export CSV.</li>
+              </Steps>
+              <Tip>Create as many forms as you like — e.g. one general waiver, one aerial waiver, one instructor application, one medical intake. Fields marked <B>sensitive</B> are flagged (medical, etc.) so you treat them with care.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "Can I require an electronic signature?",
+          a: (
+            <>
+              Yes. Toggle <B>Require signature</B> in the form editor. A typed-name signature field is appended to the form and stored with the submission. (For contracts, this is usually all that&apos;s needed for acceptance.)
+            </>
+          ),
+        },
+      ],
+    },
+    {
       title: "Monthly instructor invoices",
       items: [
         {
