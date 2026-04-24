@@ -978,6 +978,15 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             </>
           ),
         },
+        {
+          q: "How do I build and save custom reports?",
+          a: (
+            <>
+              Click <B>Build &amp; save reports →</B> on the Analytics page (top-right) to open the report builder. Pick one of the built-in report types — <B>Revenue over time</B>, <B>Class attendance</B>, <B>Instructor payouts</B>, <B>Member growth</B>, <B>Drop-in counts</B>, or <B>Room utilization</B> — tune the date range, grouping (day / week / month), and optional instructor filter, then click <B>Save report</B> to name it. Saved reports appear in the sidebar and can be re-run with one click.
+              <Tip>Click <B>↓ CSV</B> to export the current chart&apos;s data for spreadsheet analysis. ★ a saved report to pin it to the top.</Tip>
+            </>
+          ),
+        },
       ],
     },
     {

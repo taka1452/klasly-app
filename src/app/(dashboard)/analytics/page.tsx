@@ -167,9 +167,15 @@ export default function AnalyticsPage() {
 
   return (
     <div>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
         <ContextHelpLink href="/help/analytics/view-analytics" />
+        <a
+          href="/analytics/reports"
+          className="ml-auto inline-flex items-center gap-1 rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700 hover:bg-brand-100"
+        >
+          Build &amp; save reports →
+        </a>
       </div>
       <p className="mt-1 mb-6 text-sm text-gray-500">
         Track your studio&apos;s performance
