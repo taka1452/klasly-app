@@ -26,7 +26,7 @@ type Props = {
   isCollectiveMode?: boolean;
 };
 
-const WEEKS_OPTIONS = [4, 6, 8, 12];
+const WEEKS_OPTIONS = [4, 6, 8, 12, 26, 52];
 
 export default function SettingsContent({
   fullName,
@@ -326,11 +326,19 @@ export default function SettingsContent({
                   disabled={genWeeksLoading}
                   className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:opacity-50"
                 >
-                  {WEEKS_OPTIONS.map((w) => (
-                    <option key={w} value={w}>
-                      {w} weeks ahead
-                    </option>
-                  ))}
+                  {WEEKS_OPTIONS.map((w) => {
+                    const label =
+                      w === 26
+                        ? "26 weeks ahead (~6 months)"
+                        : w === 52
+                          ? "52 weeks ahead (1 year)"
+                          : `${w} weeks ahead`;
+                    return (
+                      <option key={w} value={w}>
+                        {label}
+                      </option>
+                    );
+                  })}
                 </select>
                 {genWeeksLoading && (
                   <span className="text-xs text-gray-400">Saving…</span>

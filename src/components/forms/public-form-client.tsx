@@ -75,7 +75,17 @@ export default function PublicFormClient({ form }: Props) {
     return (
       <div className="rounded-xl bg-white p-8 text-center shadow-sm">
         <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600">
-          ✓
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={3}
+            className="h-5 w-5"
+            aria-hidden
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+          </svg>
         </div>
         <h2 className="text-lg font-semibold text-gray-900">Submitted</h2>
         <p className="mt-2 text-sm text-gray-600">

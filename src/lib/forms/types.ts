@@ -56,12 +56,16 @@ export const FORM_TYPE_LABEL: Record<FormType, string> = {
   custom: "Custom",
 };
 
-export const FORM_TYPE_ICON: Record<FormType, string> = {
-  waiver: "🛡️",
-  application: "📝",
-  contract: "📄",
-  medical_intake: "🩺",
-  custom: "✦",
+/**
+ * Short two-letter label for each form type. Used as a compact color-coded
+ * badge in the forms list. No emojis — matches the rest of the app.
+ */
+export const FORM_TYPE_BADGE: Record<FormType, string> = {
+  waiver: "WV",
+  application: "AP",
+  contract: "CT",
+  medical_intake: "MI",
+  custom: "CU",
 };
 
 export const DEFAULT_FIELDS_BY_TYPE: Record<FormType, FormField[]> = {

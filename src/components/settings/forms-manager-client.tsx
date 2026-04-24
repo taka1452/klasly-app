@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CustomForm, FormField, FormType } from "@/lib/forms/types";
 import {
   DEFAULT_FIELDS_BY_TYPE,
-  FORM_TYPE_ICON,
+  FORM_TYPE_BADGE,
   FORM_TYPE_LABEL,
 } from "@/lib/forms/types";
 import FormBuilderModal from "@/components/settings/form-builder-modal";
@@ -141,7 +141,9 @@ export default function FormsManagerClient() {
                     onClick={() => setCreating(t)}
                     className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50"
                   >
-                    <span>{FORM_TYPE_ICON[t]}</span>
+                    <span className="inline-flex h-5 w-7 shrink-0 items-center justify-center rounded bg-gray-100 text-[10px] font-bold text-gray-600">
+                      {FORM_TYPE_BADGE[t]}
+                    </span>
                     <span>{FORM_TYPE_LABEL[t]}</span>
                   </button>
                 )
@@ -173,7 +175,7 @@ export default function FormsManagerClient() {
             <div key={f.id} className="card flex flex-col">
               <div className="mb-2 flex items-center justify-between gap-2">
                 <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-brand-700">
-                  {FORM_TYPE_ICON[f.form_type as FormType]} {FORM_TYPE_LABEL[f.form_type as FormType]}
+                  {FORM_TYPE_LABEL[f.form_type as FormType]}
                 </span>
                 <span
                   className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
@@ -407,7 +409,7 @@ function SubmissionsModal({
                     })}
                   </dl>
                   {s.signature_data && (
-                    <div className="mt-2 text-xs text-gray-500">Signed ✓</div>
+                    <div className="mt-2 text-xs text-green-600">Signature on file</div>
                   )}
                 </li>
               ))}

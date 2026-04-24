@@ -18,7 +18,10 @@ type ProviderDef = {
   id: string;
   name: string;
   description: string;
-  logoEmoji: string;
+  /** Accent background color for the provider tile (CSS color). */
+  accent: string;
+  /** Two-letter abbreviation rendered on the tile. */
+  abbr: string;
   scopes: string[];
   docsHref: string;
 };
@@ -29,7 +32,8 @@ const PROVIDERS: ProviderDef[] = [
     name: "Google Workspace",
     description:
       "Sync Google Calendar for classes & events. Track Google Pay / Wallet subscriptions against library memberships by matching member email.",
-    logoEmoji: "🟡",
+    accent: "#fbbc05",
+    abbr: "G",
     scopes: ["calendar.readonly", "calendar.events", "userinfo.email"],
     docsHref: "/help/integrations/google",
   },
@@ -38,7 +42,8 @@ const PROVIDERS: ProviderDef[] = [
     name: "Mailchimp",
     description:
       "Sync members to a Mailchimp audience automatically as they join or cancel.",
-    logoEmoji: "🟠",
+    accent: "#ffe01b",
+    abbr: "M",
     scopes: ["audiences.readwrite"],
     docsHref: "/help/integrations/mailchimp",
   },
@@ -47,7 +52,8 @@ const PROVIDERS: ProviderDef[] = [
     name: "Zoom",
     description:
       "Host hybrid classes and auto-generate meeting links when a session is scheduled.",
-    logoEmoji: "📹",
+    accent: "#2d8cff",
+    abbr: "Z",
     scopes: ["meeting:write"],
     docsHref: "/help/integrations/zoom",
   },
@@ -139,8 +145,11 @@ export default function IntegrationsClient() {
               key={p.id}
               className="card flex flex-wrap items-center gap-4"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white text-xl ring-1 ring-gray-200">
-                {p.logoEmoji}
+              <div
+                className="flex h-12 w-12 items-center justify-center rounded-xl text-base font-bold text-white ring-1 ring-black/5"
+                style={{ background: p.accent }}
+              >
+                {p.abbr}
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">

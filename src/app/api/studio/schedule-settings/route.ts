@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/admin/supabase";
 
-const ALLOWED_WEEKS = [4, 6, 8, 12];
+// Allowed values for studios.session_generation_weeks. The cron extends
+// the rolling session window this far into the future. Range goes up to
+// 52 weeks (1 year) so long-running studios can publish a full year of
+// sessions in advance.
+const ALLOWED_WEEKS = [4, 6, 8, 12, 26, 52];
 
 // ============================================================
 // PATCH /api/studio/schedule-settings

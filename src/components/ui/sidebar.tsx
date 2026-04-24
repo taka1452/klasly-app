@@ -491,7 +491,9 @@ export default function Sidebar({
       </aside>
 
       {/* デスクトップ: 固定サイドバー */}
-      <aside className="hidden w-64 flex-col border-r border-gray-200 bg-white md:flex">
+      {/* sticky + h-dvh: ページのメインコンテンツが縦に伸びてもサイドバー自身は */}
+      {/* ビューポート高を超えない（フッターが途中でずり上がる見た目を防ぐ）。 */}
+      <aside className="sticky top-0 hidden h-dvh w-64 flex-col border-r border-gray-200 bg-white md:flex">
       {/* ロゴ */}
       <div className="flex h-16 items-center border-b border-gray-200 px-6">
         <Link href="/dashboard" className="flex items-center gap-2">
@@ -518,7 +520,17 @@ export default function Sidebar({
             href="/admin"
             className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-700"
           >
-            <span aria-hidden>🔒</span>
+            <svg
+              aria-hidden
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.75}
+              className="h-3.5 w-3.5"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+            </svg>
             System Admin
           </Link>
         </div>
