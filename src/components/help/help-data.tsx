@@ -434,6 +434,23 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             </>
           ),
         },
+        {
+          q: "Can I change the date or time of a single scheduled session?",
+          a: (
+            <>
+              Yes. On the <B>Classes → [Class Template]</B> page, open <B>Upcoming Sessions</B>, click <B>Edit</B> next to the session, and change the date, start or end time, or title. The rest of the series keeps its original schedule.
+              <Tip>Use this to fix a wrong day without cancelling and re-adding every session. If you change the date to one that&apos;s already booked in the same room, you&apos;ll see a conflict warning.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "What is the \"Special instructions\" field on a class?",
+          a: (
+            <>
+              A free-form note — e.g. &quot;bring your own mat&quot;, &quot;arrive 10 minutes early&quot;, a prop list, or accessibility information. Edit it on the class template form. The instructions appear on the class detail page that members see and are included in their booking confirmation email.
+            </>
+          ),
+        },
       ],
     },
     {
@@ -489,6 +506,15 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               Yes. When an instructor books a room, the studio owner and all managers receive an email notification with the instructor name, room, date, and time. Anyone can opt out from <B>Settings &gt; Notifications &gt; Instructor bookings</B>.
+            </>
+          ),
+        },
+        {
+          q: "Can I book a room on behalf of an instructor?",
+          a: (
+            <>
+              Yes. On the <B>Rooms</B> page, click <B>+ Add booking</B> at the top. Pick the instructor, the room, date, start/end time, and optional notes, then click <B>Create booking</B>. The booking appears on the instructor&apos;s own calendar just like one they created themselves.
+              <Tip>Use this for private sessions, workshop prep, or holds for guest teachers who aren&apos;t logged into Klasly yet. Owners and managers with the <B>Rooms</B> permission can do this.</Tip>
             </>
           ),
         },
@@ -952,6 +978,15 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             </>
           ),
         },
+        {
+          q: "How do I build and save custom reports?",
+          a: (
+            <>
+              Click <B>Build &amp; save reports →</B> on the Analytics page (top-right) to open the report builder. Pick one of the built-in report types — <B>Revenue over time</B>, <B>Class attendance</B>, <B>Instructor payouts</B>, <B>Member growth</B>, <B>Drop-in counts</B>, or <B>Room utilization</B> — tune the date range, grouping (day / week / month), and optional instructor filter, then click <B>Save report</B> to name it. Saved reports appear in the sidebar and can be re-run with one click.
+              <Tip>Click <B>↓ CSV</B> to export the current chart&apos;s data for spreadsheet analysis. ★ a saved report to pin it to the top.</Tip>
+            </>
+          ),
+        },
       ],
     },
     {
@@ -1125,7 +1160,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             <>
               Go to <B>Events &amp; Retreats</B> and click <B>&quot;Create Event.&quot;</B> Follow the 7-step form:
               <Steps>
-                <li><B>Basic Info</B> — name, dates, location, cover image, visibility.</li>
+                <li><B>Basic Info</B> — name, dates, location, cover image, <B>color</B>, visibility. The color is shown as a dot on your events list and as the accent color on the event card.</li>
                 <li><B>Gallery &amp; Details</B> — photo gallery, packing list, access/travel info, map coordinates, waitlist toggle.</li>
                 <li><B>Room Options</B> — tiers with pricing, capacity, and optional early bird pricing with deadline.</li>
                 <li><B>Schedule</B> — daily timetable with activities, times, and descriptions.</li>
@@ -1580,7 +1615,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "What permissions can I give a manager?",
           a: (
             <>
-              Each manager has 9 permission toggles:
+              Each manager has 13 permission toggles:
               <Steps>
                 <li><B>Members</B> — create, edit, and view member profiles and credits.</li>
                 <li><B>Classes</B> — create and edit class templates, sessions, and schedules.</li>
@@ -1590,9 +1625,21 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
                 <li><B>Payments</B> — view payment history, passes, and export reports.</li>
                 <li><B>Messages</B> — send messages and announcements to members.</li>
                 <li><B>Teach</B> — register as an instructor and teach classes.</li>
-                <li><B>Settings</B> — access studio settings including instructor contracts, collective mode setup, scheduling, widget, and waiver. Stripe Connect, billing, and account deletion remain owner-only.</li>
+                <li><B>Settings</B> — access studio settings including scheduling, widget, waiver, collective mode setup. Stripe Connect, billing, and account deletion remain owner-only.</li>
+                <li><B>Class Pricing</B> — edit class prices, drop-in rates, and promotional pricing (separate from Classes so you can allow schedule edits without price changes).</li>
+                <li><B>Instructor Contracts &amp; Membership Tiers</B> — edit instructor contracts (hourly, flat, overage) and create / update membership tiers.</li>
+                <li><B>Tutorial</B> — whether this user sees Klasly&apos;s onboarding tutorials and tooltip hints. A UX preference — turn off once they know the product.</li>
+                <li><B>Export Your Data</B> — download CSV / PDF exports of members, bookings, payments, attendance, waivers, and analytics.</li>
               </Steps>
-              <Tip>Hover over each permission badge to see what it controls.</Tip>
+              <Tip>Hover over each permission badge to see what it controls. Open the &quot;What does each permission do?&quot; guide on the Managers page for full descriptions.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "What does the \"Tutorial\" permission control?",
+          a: (
+            <>
+              <B>Tutorial</B> is a UX preference, not a capability. When ON, this user sees Klasly&apos;s onboarding walkthrough: the dashboard checklist, first-time tooltips on each new page, and feature-highlight hint panels. When OFF, those hints stay hidden so the UI stays clean for people who already know the product. Turning it off does <B>not</B> remove access to the Help Center — that is always available.
             </>
           ),
         },
@@ -1601,6 +1648,84 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               Yes. Go to <B>Managers</B>, find the manager, and click <B>Remove</B>. You&apos;ll see a confirmation before the manager is removed. Their role will revert to member.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Online library & integrations",
+      items: [
+        {
+          q: "How do I run a paid on-demand class library?",
+          a: (
+            <>
+              Go to <B>Settings → Online library</B>. Enroll members manually in the <B>Basic</B> or <B>Premium</B> tier at a monthly price. Each published video in your <B>Library</B> can be tagged <B>free</B>, <B>members</B>, or <B>premium</B> so only the right subscribers can watch.
+              <Tip>Self-service Stripe Checkout enrollment is coming next. For now, admin-enrollment lets you grant access right away and pause / cancel from the same table.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "Can I connect Klasly to Google?",
+          a: (
+            <>
+              Yes. <B>Settings → Integrations</B> lists every third-party service you can link (Google Workspace, Mailchimp, Zoom). Click <B>Connect Google</B> to start the OAuth handshake. Once it completes we sync Google Calendar events and use the connected email to match Google Pay / Wallet subscription charges to your library members.
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Forms & documents builder",
+      items: [
+        {
+          q: "How do I build custom forms — applications, contracts, medical intake?",
+          a: (
+            <>
+              Go to <B>Settings → Forms &amp; documents</B>. Click <B>+ New form</B> and pick a type: <B>Waiver</B>, <B>Application</B>, <B>Contract</B>, <B>Medical intake</B>, or <B>Custom</B> (blank). Each type starts with a sensible field template you can tweak — drag fields up/down, toggle required, change type, edit options, or add help text.
+              <Steps>
+                <li>Edit the form&apos;s name, intro text, and success message.</li>
+                <li>Toggle <B>Active</B>, <B>Public</B>, and <B>Require signature</B> as needed.</li>
+                <li>Click <B>Copy link</B> on the card to get the public URL for your website.</li>
+                <li>Submissions land in Klasly — open <B>Submissions</B> on the card to view or export CSV.</li>
+              </Steps>
+              <Tip>Create as many forms as you like — e.g. one general waiver, one aerial waiver, one instructor application, one medical intake. Fields marked <B>sensitive</B> are flagged (medical, etc.) so you treat them with care.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "Can I require an electronic signature?",
+          a: (
+            <>
+              Yes. Toggle <B>Require signature</B> in the form editor. A typed-name signature field is appended to the form and stored with the submission. (For contracts, this is usually all that&apos;s needed for acceptance.)
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Monthly instructor invoices",
+      items: [
+        {
+          q: "How do I invoice my instructors monthly?",
+          a: (
+            <>
+              Go to <B>Settings → Monthly invoices</B>. Pick a month, click <B>Generate for all instructors</B>, and Klasly creates a draft invoice per instructor that bundles:
+              <Steps>
+                <li><B>Tier subscription</B> — the instructor&apos;s active hourly plan monthly price.</li>
+                <li><B>Overage</B> — any overage charges for that month.</li>
+                <li><B>Flat / per-class fees</B> — class fee overrides and fee schedule matches applied to every session they taught.</li>
+              </Steps>
+              Review each draft, optionally add an adjustment, then click <B>Send</B> to email it to the instructor. Mark it <B>Paid</B> when you receive payment, or <B>Void</B> if you&apos;re retracting.
+              <Tip>Re-running the generator for the same month overwrites the draft — it&apos;s safe to re-run after fixing a contract. Already-sent or paid invoices are never overwritten automatically.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "What if an instructor has no charges for a month?",
+          a: (
+            <>
+              Their invoice is skipped by the bulk generator (you&apos;ll see it in the skipped count). You can still draft one manually for future use if you need a zero-total record.
             </>
           ),
         },

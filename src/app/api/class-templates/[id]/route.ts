@@ -94,6 +94,7 @@ export async function PUT(request: Request, context: RouteContext) {
       room_id,
       recurrence_end_date,
       transition_minutes,
+      special_instructions,
     } = body;
 
     // --- Validation ---
@@ -173,6 +174,12 @@ export async function PUT(request: Request, context: RouteContext) {
       if (room_id !== undefined) updates.room_id = room_id || null;
       if (recurrence_end_date !== undefined) updates.recurrence_end_date = recurrence_end_date || null;
       if (transition_minutes !== undefined) updates.transition_minutes = transition_minutes || null;
+      if (special_instructions !== undefined) {
+        updates.special_instructions =
+          typeof special_instructions === "string" && special_instructions.trim().length > 0
+            ? special_instructions.trim()
+            : null;
+      }
 
       if (Object.keys(updates).length === 0) {
         return NextResponse.json(

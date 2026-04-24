@@ -17,6 +17,10 @@ type ManagerInfo = {
   canSendMessages: boolean;
   canManageSettings: boolean;
   canTeach: boolean;
+  canManageClassPricing: boolean;
+  canManageContractsTiers: boolean;
+  canShowTutorial: boolean;
+  canExportData: boolean;
   createdAt: string;
 };
 
@@ -159,6 +163,66 @@ const PERMISSIONS: PermissionDef[] = [
     ],
     doesNotInclude: [
       "Managing other instructors (needs Instructors permission)",
+    ],
+  },
+  {
+    key: "canManageClassPricing",
+    label: "Class Pricing",
+    short: "Set class prices, drop-in rates, and promotional pricing",
+    long: "Fine-grained control over how classes are priced — separate from general Classes permission so you can let a manager edit the schedule without changing prices.",
+    allows: [
+      "Edit drop-in price on any class template",
+      "Edit membership / pass class-credit values",
+      "Apply promotional pricing or discounts to a class",
+    ],
+    doesNotInclude: [
+      "Editing membership tiers or instructor contracts (needs Contracts & Tiers)",
+      "Issuing refunds (owner only)",
+    ],
+  },
+  {
+    key: "canManageContractsTiers",
+    label: "Instructor Contracts & Membership Tiers",
+    short: "Edit instructor contracts and create / update membership tiers",
+    long: "Access to the money-side of operating the studio: instructor contract types (hourly, flat, overage) and member-facing membership tier definitions.",
+    allows: [
+      "Settings → Contracts: hourly plans, flat/per-class fees, overage charges",
+      "Settings → Membership Tiers: create / edit / archive tiers",
+      "Assign a contract or tier to an instructor / member",
+    ],
+    doesNotInclude: [
+      "Stripe Connect setup and payouts (owner only)",
+    ],
+  },
+  {
+    key: "canShowTutorial",
+    label: "Tutorial",
+    short: "Show onboarding walkthroughs and tooltip hints in the app",
+    long: "Whether this user sees Klasly's onboarding tutorial tooltips and guided walkthroughs. Turn OFF once they know the product to keep their UI clean.",
+    allows: [
+      "Onboarding checklist on the dashboard",
+      "'First-time' tooltips on each new page",
+      "Feature-highlight hint panels",
+    ],
+    doesNotInclude: [
+      "Access to the Help Center — that's always available",
+    ],
+    calloutLabel: "Preference",
+    calloutText:
+      "Tutorial is a UX preference rather than a capability — it just controls whether Klasly's onboarding hints show up for this user. You can safely turn it off for users who already know the app; they will still see the Help Center.",
+  },
+  {
+    key: "canExportData",
+    label: "Export Your Data",
+    short: "Download CSV / PDF exports of studio data",
+    long: "Lets this manager export members, bookings, payments, attendance, waivers and analytics as CSV or PDF files from the respective pages.",
+    allows: [
+      "Export CSV from Members, Bookings, Payments, Attendance",
+      "Download waiver / form submission archives",
+      "Export analytics reports (when analytics is enabled)",
+    ],
+    doesNotInclude: [
+      "Deleting studio data (owner only)",
     ],
   },
 ];

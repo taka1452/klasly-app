@@ -8,6 +8,8 @@ import type { CancellationPolicyTier } from "@/types/database";
 import HelpTip from "@/components/ui/help-tip";
 import { useFeature } from "@/lib/features/feature-context";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
+import { DEFAULT_EVENT_COLOR } from "@/lib/events/color-presets";
+import EventColorPicker from "@/components/events/event-color-picker";
 
 type OptionDraft = {
   id?: string;
@@ -79,6 +81,7 @@ export default function EditEventPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [color, setColor] = useState<string>(DEFAULT_EVENT_COLOR);
   const [isPublic, setIsPublic] = useState(true);
   const [currentStatus, setCurrentStatus] = useState("draft");
 
@@ -132,6 +135,7 @@ export default function EditEventPage() {
       setStartDate(event.start_date || "");
       setEndDate(event.end_date || "");
       setImageUrl(event.image_url || "");
+      setColor(event.color || DEFAULT_EVENT_COLOR);
       setIsPublic(event.is_public ?? true);
       setCurrentStatus(event.status || "draft");
       setPaymentType(event.payment_type || "full");
@@ -330,6 +334,7 @@ export default function EditEventPage() {
         start_date: startDate,
         end_date: endDate || startDate,
         image_url: imageUrl.trim() || null,
+        color: color || null,
         is_public: isPublic,
         status,
         payment_type: paymentType,
@@ -522,6 +527,7 @@ export default function EditEventPage() {
               <input type="url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://example.com/retreat-image.jpg" className="input-field mt-1" />
               <p className="mt-1 text-xs text-gray-400">Main hero image for your event page.</p>
             </div>
+            <EventColorPicker value={color} onChange={setColor} />
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Visibility

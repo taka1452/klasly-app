@@ -73,6 +73,26 @@ export default function SettingsLayout({
           href: "/settings/waiver",
           icon: <FileCheck className="h-4 w-4" />,
         },
+        {
+          label: "Forms & documents",
+          href: "/settings/forms",
+          icon: <FileCheck className="h-4 w-4" />,
+        },
+      ],
+    },
+    {
+      title: "Integrations & Library",
+      items: [
+        {
+          label: "Integrations",
+          href: "/settings/integrations",
+          icon: <Settings className="h-4 w-4" />,
+        },
+        {
+          label: "Online library",
+          href: "/settings/library",
+          icon: <FileCheck className="h-4 w-4" />,
+        },
       ],
     },
     {
@@ -99,6 +119,12 @@ export default function SettingsLayout({
         {
           label: "Payout",
           href: "/settings/payout",
+          icon: <Handshake className="h-4 w-4" />,
+          show: isCollectiveMode,
+        },
+        {
+          label: "Monthly invoices",
+          href: "/settings/invoices",
           icon: <Handshake className="h-4 w-4" />,
           show: isCollectiveMode,
         },

@@ -29,6 +29,7 @@ type TemplateData = {
   room_id: string | null;
   recurrence_end_date: string | null;
   transition_minutes: number | null;
+  special_instructions: string | null;
   instructors: {
     id: string;
     profiles: { full_name: string } | null;
@@ -60,6 +61,7 @@ export default function TemplateForm({ templateId, duplicateData }: Props) {
   const [isPublic, setIsPublic] = useState(true);
   const [recurrenceEndDate, setRecurrenceEndDate] = useState("");
   const [transitionMinutes, setTransitionMinutes] = useState(0);
+  const [specialInstructions, setSpecialInstructions] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
@@ -110,6 +112,7 @@ export default function TemplateForm({ templateId, duplicateData }: Props) {
     if (!duplicateData) return;
     setName((duplicateData.name as string) || "");
     setDescription((duplicateData.description as string) || "");
+    setSpecialInstructions((duplicateData.special_instructions as string) || "");
     const ct = (duplicateData.class_type as string) || "in_person";
     setClassType(ct as "in_person" | "online" | "hybrid");
     const dm = (duplicateData.duration_minutes as number) || 60;
@@ -157,6 +160,7 @@ export default function TemplateForm({ templateId, duplicateData }: Props) {
         setIsPublic(t.is_public ?? true);
         setRecurrenceEndDate(t.recurrence_end_date || "");
         setTransitionMinutes(t.transition_minutes || 0);
+        setSpecialInstructions(t.special_instructions || "");
         if (t.image_url) {
           setExistingImageUrl(t.image_url);
           setImagePreview(t.image_url);
@@ -223,6 +227,7 @@ export default function TemplateForm({ templateId, duplicateData }: Props) {
       is_public: isPublic,
       recurrence_end_date: recurrenceEndDate || null,
       transition_minutes: transitionMinutes || null,
+      special_instructions: specialInstructions.trim() || null,
     };
 
     try {
@@ -306,28 +311,40 @@ export default function TemplateForm({ templateId, duplicateData }: Props) {
     );
   }
 
-  // Post-creation success screen with "Schedule Now" option
+  // Post-creation success screen. A class "template" on its own has no sessions
+  // on the calendar yet — so we nudge the user to schedule it, but also make
+  // it crystal-clear what each button does and give them a "view the class"
+  // escape hatch (Jamie feedback 2026-04: the previous screen felt like a
+  // dead end after "Back to Classes").
   if (createdId) {
     return (
       <div className="card max-w-xl">
         <div className="flex flex-col items-center py-8 text-center">
           <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
           <h2 className="text-lg font-semibold text-gray-900 mb-2">
-            Class template created!
+            Class created: {name}
           </h2>
-          <p className="text-sm text-gray-500 mb-6">
-            Would you like to schedule a session now?
+          <p className="text-sm text-gray-500 mb-2">
+            This is a <strong>class template</strong> — a reusable definition. To
+            put it on your schedule, add one or more sessions (a date + time)
+            next.
           </p>
-          <div className="flex gap-3">
+          <p className="mb-6 text-xs text-gray-400">
+            You can always add sessions later from the class detail page.
+          </p>
+          <div className="flex flex-wrap justify-center gap-3">
             <Link
               href={`/calendar?schedule=${createdId}`}
               className="btn-primary inline-flex items-center gap-2"
             >
               <CalendarPlus className="h-4 w-4" />
-              Schedule Now
+              Schedule sessions now
+            </Link>
+            <Link href={`/classes/${createdId}`} className="btn-secondary">
+              View class detail
             </Link>
             <Link href="/classes" className="btn-secondary">
-              Back to Classes
+              Back to all classes
             </Link>
           </div>
         </div>
@@ -368,6 +385,24 @@ export default function TemplateForm({ templateId, duplicateData }: Props) {
             rows={4}
             placeholder="A relaxing start to your day..."
           />
+        </div>
+
+        {/* Special instructions */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Special instructions
+            <span className="ml-2 text-xs font-normal text-gray-400">(optional)</span>
+          </label>
+          <textarea
+            value={specialInstructions}
+            onChange={(e) => setSpecialInstructions(e.target.value)}
+            rows={3}
+            placeholder="e.g. Bring your own mat and a blanket. Arrive 10 minutes early to set up props."
+            className="input-field mt-1"
+          />
+          <p className="mt-1 text-xs text-gray-400">
+            Shown to members on the class detail page and in their booking confirmation email.
+          </p>
         </div>
 
         {/* Class Type */}

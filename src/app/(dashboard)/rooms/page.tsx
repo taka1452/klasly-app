@@ -59,6 +59,31 @@ export default async function RoomsPage() {
 
   const isAlsoInstructor = !!instrRec;
 
+  // Load active rooms + studio instructors so admins can create a room booking
+  // on behalf of any instructor (Jamie feedback 2026-04).
+  const [{ data: rooms }, { data: instructorsRaw }] = await Promise.all([
+    supabase
+      .from("rooms")
+      .select("id, name, capacity")
+      .eq("studio_id", profile.studio_id)
+      .eq("is_active", true)
+      .order("name"),
+    supabase
+      .from("instructors")
+      .select("id, profile_id, profiles(full_name, email)")
+      .eq("studio_id", profile.studio_id)
+      .order("created_at"),
+  ]);
+
+  const instructors = (instructorsRaw || []).map((i) => {
+    const prof = Array.isArray(i.profiles) ? i.profiles[0] : i.profiles;
+    return {
+      id: i.id as string,
+      fullName: (prof as { full_name?: string } | null)?.full_name || "Instructor",
+      email: (prof as { email?: string } | null)?.email || "",
+    };
+  });
+
   return (
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -76,7 +101,11 @@ export default async function RoomsPage() {
       </div>
 
       <div className="mt-6">
-        <RoomsPageClient isAlsoInstructor={isAlsoInstructor} />
+        <RoomsPageClient
+          isAlsoInstructor={isAlsoInstructor}
+          rooms={(rooms || []) as Array<{ id: string; name: string; capacity: number | null }>}
+          instructors={instructors}
+        />
       </div>
     </div>
   );

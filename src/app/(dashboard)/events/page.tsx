@@ -47,7 +47,7 @@ export default async function EventsListPage() {
 
   const { data: events } = await supabase
     .from("events")
-    .select("id, name, start_date, end_date, location_name, status, max_total_capacity")
+    .select("id, name, start_date, end_date, location_name, status, max_total_capacity, color")
     .eq("studio_id", profile.studio_id)
     .order("start_date", { ascending: false });
 
@@ -102,6 +102,12 @@ export default async function EventsListPage() {
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
+                      <span
+                        aria-hidden
+                        className="inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-black/5"
+                        style={{ background: event.color || "#d1d5db" }}
+                        title={event.color ? `Color ${event.color}` : "Default color"}
+                      />
                       <p className="truncate font-medium text-gray-900">
                         {event.name}
                       </p>

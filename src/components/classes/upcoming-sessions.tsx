@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { X, AlertTriangle } from "lucide-react";
+import { Pencil, X } from "lucide-react";
+import SessionEditModal from "@/components/classes/session-edit-modal";
 
 type Session = {
   id: string;
@@ -13,6 +14,7 @@ type Session = {
   instructor_name: string | null;
   confirmed_count: number;
   capacity: number;
+  title?: string | null;
 };
 
 type Props = {
@@ -24,6 +26,7 @@ export default function UpcomingSessions({ templateId }: Props) {
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState<string | null>(null);
   const [confirmCancel, setConfirmCancel] = useState<string | null>(null);
+  const [editingSession, setEditingSession] = useState<Session | null>(null);
 
   const fetchSessions = useCallback(async () => {
     try {
@@ -44,6 +47,7 @@ export default function UpcomingSessions({ templateId }: Props) {
             room_name: string | null;
             instructor_name: string | null;
             capacity: number;
+            title?: string | null;
           }) => ({
             ...s,
             confirmed_count: data.confirmedCounts?.[s.id] || 0,
@@ -179,20 +183,53 @@ export default function UpcomingSessions({ templateId }: Props) {
                     </button>
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => setConfirmCancel(session.id)}
-                    className="flex items-center gap-1 rounded px-2 py-1 text-xs text-gray-500 hover:bg-red-50 hover:text-red-500"
-                    title="Cancel this session"
-                  >
-                    <X className="h-3 w-3" />
-                    <span>Cancel</span>
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setEditingSession(session)}
+                      className="flex items-center gap-1 rounded px-2 py-1 text-xs text-gray-500 hover:bg-brand-50 hover:text-brand-600"
+                      title="Change date or time of this session"
+                    >
+                      <Pencil className="h-3 w-3" />
+                      <span>Edit</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmCancel(session.id)}
+                      className="flex items-center gap-1 rounded px-2 py-1 text-xs text-gray-500 hover:bg-red-50 hover:text-red-500"
+                      title="Cancel this session"
+                    >
+                      <X className="h-3 w-3" />
+                      <span>Cancel</span>
+                    </button>
+                  </>
                 )}
               </div>
             </div>
           ))}
         </div>
+      )}
+      {editingSession && (
+        <SessionEditModal
+          session={editingSession}
+          onClose={() => setEditingSession(null)}
+          onSaved={(updated) => {
+            setSessions((prev) =>
+              prev.map((s) =>
+                s.id === editingSession.id
+                  ? {
+                      ...s,
+                      session_date: updated.session_date,
+                      start_time: updated.start_time,
+                      end_time: updated.end_time,
+                      title: updated.title ?? s.title,
+                    }
+                  : s
+              )
+            );
+            setEditingSession(null);
+          }}
+        />
       )}
     </div>
   );
