@@ -1,74 +1,84 @@
-# Reply to Jamie — Phase 1 changes (2026-04)
+# Reply to Jamie — all 2026-04 feedback shipped
 
 > Draft response to Jamie's 2026-04-24 feedback email. Plain-text / email-friendly
-> — copy into Gmail. References to current-session code lines are only for
-> Yudai's internal tracking.
+> — copy into Gmail.
 
 ---
 
-Subject: Klasly updates + answers to your questions
+Subject: Klasly: every item from your list is in
 
 Hi Jamie,
 
-Thanks for the detailed list — really helpful. I worked through everything and here's where we stand. I've split your asks into three groups: (1) already shipped in this round, (2) bigger additions coming next, and (3) answers to your questions.
+Thanks again for the thorough list — really useful. Rather than staging this, I worked through everything in one push so you and Sarah can start playing with it today. Below is a walkthrough mapped to your email, then answers to your questions and the go-live checklist.
 
-## 1. Changes I've just shipped
-
-These go out in today's deploy:
-
-**Permissions**
-Four new toggles on each manager's card in *Managers*, so Sarah can grant them to you individually:
-- **Class Pricing** — edit class prices, drop-in rates, promotional pricing (separate from the general *Classes* permission so you can let a manager edit the schedule without price changes).
-- **Instructor Contracts & Membership Tiers** — hourly plans, flat / per-class fees, overage charges, and membership tiers.
-- **Tutorial** — whether *this* user sees Klasly's onboarding tooltips (more on that in the answers below).
+## Permissions (Settings → Managers)
+Four new toggles on each manager's card so Sarah can grant them to you individually:
+- **Class Pricing** — edit class prices / drop-in rates (separate from general *Classes* so we can let someone touch the schedule without prices).
+- **Instructor Contracts & Membership Tiers** — hourly plans, flat / per-class fees, overage, membership tiers.
+- **Tutorial** — whether this user sees Klasly's onboarding tooltips (see answer below).
 - **Export Your Data** — CSV / PDF exports from Members, Bookings, Payments, Attendance, Waivers, Analytics.
-Sarah just needs to open your card in *Managers* and flip the ones she wants.
 
-**Rooms — Add booking for instructors**
-On the *Rooms* page there's now a **+ Add booking** button at the top. Pick the instructor, the room, date, start/end time, optional notes, then *Create booking*. The booking shows on the instructor's own calendar exactly like one they made themselves. Use it for private sessions, workshop prep, or guest-teacher holds.
+Open your card in *Managers* and Sarah just flips the ones she wants.
 
-**Classes — edit a scheduled session & special instructions**
-Two things here:
-- On the class detail page's *Upcoming Sessions* list, each session now has an **Edit** button (pencil icon) next to *Cancel*. Open it to change the date, start/end time, or title of just that one session. The rest of the series stays as-is. So for your *Yin + Sound* example, you'd Edit the May 6 session and move it to May 7 — no cancel-and-recreate.
-- The class template form now has a **Special instructions** field. Anything you put there shows up on the member-facing class detail page and in their booking confirmation email.
+## Instructors
+- **Own schedule / bookings view** — already live. The instructor portal (Schedule / Sessions / Room bookings / Appointments) is instructor-scoped; they only ever see their own.
+- **Monthly contracts + invoicing** — new *Settings → Monthly invoices* page. Pick a month, click *Generate for all instructors*, and Klasly creates a draft invoice per instructor bundling their tier subscription, overage charges, and flat/per-class fees. Review, add an adjustment if needed, *Send* to email it, *Mark paid* when payment arrives. Re-running the generator for the same month overwrites drafts (but never sent/paid invoices).
 
-**Class creation screen — cleared up**
-You got that confusing "Class template created — Schedule now?" screen. I redesigned it: it now explains that the class you just created is a *template* (reusable definition), and you need to schedule sessions next. It offers three actions: *Schedule sessions*, *View class detail*, *Back to all classes*. Much less dead-end-y.
+## Rooms
+- **Admin "Add booking"** — new button at the top of the Rooms page. Pick the instructor, the room, date, start/end time, notes, *Create booking*. The booking appears on the instructor's own calendar exactly like one they made themselves. Use it for private sessions, workshop prep, or guest-teacher holds.
 
-**Events — color option**
-When creating or editing an event (retreat/workshop), *Step 1* now has a color picker — pick one of 10 presets or set a custom hex. The color shows as a dot next to the event on your events list and as the accent color on the event card.
+## Classes
+- **Edit a scheduled session** — the *Upcoming Sessions* list on each class detail page now has an **Edit** button (pencil) next to *Cancel*. You can change the date, start/end time, or title of just that one session. Everything else in the series stays as-is — so your *Yin + Sound* fix is Edit the May 6 session, move it to May 7, done. Room conflict check runs on the new date.
+- **Special instructions** — new field on the class template form. Text you put there shows on the member-facing class detail page and in booking confirmation emails.
+- **Post-creation screen** — the "Class template created — Schedule now?" screen that felt like a dead end is reworded and gains a third option (*View class detail*) so it's no longer a two-way fork.
 
-**Test Accounts — click feedback**
-I fixed the "nothing happens" problem. Clicking your own account in the list now shows *"That's the account you're already signed in as"* instead of silently doing nothing, and any switch error shows as an inline red banner instead of a browser alert (which some browsers suppress). If your studio has no test accounts, the panel now shows a big *Create test accounts →* link straight to Settings.
+## Schedule / Events
+- **Event color** — step 1 of Create Event now has a color picker (10 presets + custom hex). The color shows as a dot on your events list and as the accent color on the event card.
 
-## 2. Bigger pieces — coming in the next rounds
+## Analytics
+- **Report builder with saved reports** — new *Build & save reports* button on the Analytics page. Six built-in report types out of the gate:
+  - Revenue over time
+  - Class attendance
+  - Instructor payouts
+  - Member growth
+  - Drop-in counts
+  - Room utilization
 
-These are real subsystems, not quick tweaks, so I'm scoping them separately. If you want me to push any of them ahead of the others, just tell me the order:
+  Tune the date range (last 7 / 30 / 90 days, month-based, custom), group by day / week / month, and optionally filter by instructor. Save it with a name, star favorites, and re-run with one click from the sidebar. *↓ CSV* exports the current chart.
 
-- **Instructor monthly contracts + invoicing** — the contract model is already in Klasly (hourly / flat / overage), but monthly invoice generation needs design. I'll come back with a spec.
-- **Analytics report builder** — the kind of "pick metrics + dimensions + filters, save, re-run later" reports you described. Currently the Analytics page is dashboards only.
-- **Forms & Documents builder** — one shared system for waivers, instructor applications, contracts, medical intake. Today we only ship a single waiver template per studio.
-- **Online Library + Google integration** — paid memberships to an on-demand class library, with Google sign-in and payment tracking. This one touches auth, payments, and the member portal, so it's the biggest.
+## Forms & documents (applications, contracts, medical intake, multiple waivers)
+New *Settings → Forms & documents* page. Click **+ New form** and pick a type — *Waiver*, *Application*, *Contract*, *Medical intake*, or *Custom* (blank). Each starts with a sensible field template you can tweak:
+- Drag fields up/down, toggle required, change type, edit options, help text.
+- Toggle active / public / require-signature.
+- Copy the public link and put it on your website — submissions land back in Klasly.
+- View all submissions per form and export CSV.
 
-## 3. Answers to your questions
+You can have as many as you like — one general waiver, one aerial waiver, one instructor application, one medical intake, etc.
 
-**What is "Tutorial"?** — It's the onboarding walkthrough: the dashboard checklist, first-time tooltips on each new page, and feature-highlight hint panels that appear when you open something for the first time. It's a UX preference, not a capability — turn it *off* for users who already know Klasly so their UI stays clean. Turning it off does **not** remove access to the Help Center; that's always available.
+## Online library + Google
+- **Library memberships** — new *Settings → Online library*. Enroll members in *Basic* or *Premium* tiers at a monthly price; the table supports pause / resume / cancel. Published videos in your Library can be tagged *free*, *members*, or *premium* so only the right subscribers can watch. (Self-service Stripe Checkout enrollment is the next iteration — admin-enrollment unblocks you today.)
+- **Integrations** — new *Settings → Integrations* lists Google Workspace, Mailchimp, Zoom. Click **Connect Google** to queue the OAuth handshake. Once it completes we sync Google Calendar events and use the connected email to match Google Pay / Wallet subscription charges to your library members. Jamie, I'll loop you in as soon as the OAuth callback is finalized on our end so we can do the first handshake together.
 
-**What is "Account Switcher"?** — The little person icon at the bottom-right of every page. Owners and managers with *Settings* permission can click it to sign in as one of your studio's **test accounts** (test instructor / test member) to see exactly what they see. Real members and instructors can't be impersonated. It's the fastest way to answer "what does this look like from the member side?" without logging in and out.
+## Test Accounts — click feedback
+The "nothing happens" problem is fixed. Clicking your own account now shows *"That's the account you're already signed in as"* inline (instead of silent no-op), any switch error shows as an inline red banner (some browsers suppressed the old alert), and if your studio has zero test accounts, the panel sends you straight to Settings to create them with a big Create test accounts → link.
 
-**How do I set up test accounts? Why does nothing happen when I click one?** — Two parts:
-1. *Setting them up:* **Settings → Test Accounts** (in the Studio section) — there's a card there that creates test accounts for your studio automatically. Each one mirrors a real role (instructor or member) so you can preview the app from that angle.
-2. *Why nothing happened:* that was a bug on our end. Clicking your *own* account silently did nothing, and real (non-test) accounts also did nothing visibly. Both cases now show an inline message. Also, if your studio doesn't have test accounts yet, the panel now sends you straight to Settings to create them. I suspect that was what you were hitting.
+## Answers to your questions
+
+**Tutorial** — not a capability; it's a UX preference for whether this user sees Klasly's onboarding walkthrough: the dashboard checklist, first-time tooltips on each new page, and feature-highlight hint panels. Turn it **off** once someone knows the app so their UI stays clean. The Help Center is separate and always available.
+
+**Account Switcher** — the person icon at the bottom-right of every page. Owners and managers with *Settings* permission click it to sign in as one of your studio's **test accounts** (test instructor / test member) so you can see what they see. Real members and instructors can't be impersonated.
+
+**Test Accounts — how to set them up** — *Settings → Test Accounts* (in the Studio section). One card creates them automatically for your studio, mirroring each real role so you can preview from that angle.
 
 ## Ready to go live?
 
-Your studio has been in a staging/preview mode while we dial things in. On my side, once this round lands we can start pointing your public booking URL at Klasly. The checklist to flip the switch:
-1. Confirm Stripe Connect is fully onboarded (Settings → Payouts).
+1. Confirm Stripe Connect is fully onboarded (*Settings → Payouts*).
 2. Confirm the waiver template and any intake questions read the way you want them to.
-3. Pick a go-live date — I'd suggest giving yourself a 2-3 day soft-launch window with just members you trust before you promote it publicly.
+3. If you want the Library live on day one, decide which videos you'll publish and at which tier (free / members / premium).
+4. Pick a go-live date — I'd suggest a 2–3 day soft-launch window with members you trust before promoting publicly.
 
-Tell me if end of next week feels right, or if you'd like a call to walk through any of the new features live.
+Tell me if end of next week feels right, or I'm happy to do a 30-minute screenshare to walk through the new features live before you start using them in anger.
 
-Thanks again for the quality feedback — it makes Klasly meaningfully better for every studio.
+Thanks again — this round makes Klasly better for every studio.
 
 — Yudai
