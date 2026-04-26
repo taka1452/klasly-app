@@ -29,7 +29,7 @@
 | studio_features / widget_settings | CASCADE | |
 | support_tickets | SET NULL | チケットは孤立するが残る |
 | email_logs / webhook_logs | SET NULL | ログは孤立するが残る |
-| referral_rewards | **制約なし** | ⚠ 孤立レコードが残る |
+| referral_rewards | **制約なし** | 孤立レコードが残る |
 
 ### ステータス管理
 - `plan_status`: trialing → active → past_due → grace → canceled
@@ -48,7 +48,7 @@
 | members | 別途チェック | profile_id 経由 |
 | instructors | 別途チェック | profile_id 経由 |
 | managers | CASCADE | |
-| messages | CASCADE | ⚠ 送受信両方の会話が全削除 |
+| messages | CASCADE | 送受信両方の会話が全削除 |
 | announcement_reads | CASCADE | |
 | studio_announcements | SET NULL (created_by) | |
 
@@ -71,15 +71,15 @@
 | 影響対象 | FK動作 | 備考 |
 |----------|--------|------|
 | bookings | 残る | member_id で紐づき保持 |
-| pass_subscriptions | CASCADE | ⚠ サブスク記録が消失 |
+| pass_subscriptions | CASCADE | サブスク記録が消失 |
 | pass_class_usage | CASCADE | |
-| waiver_signatures | CASCADE | ⚠ 署名記録が消失 |
+| waiver_signatures | CASCADE | 署名記録が消失 |
 | drop_in_attendances | CASCADE | |
 | event_bookings | SET NULL | 予約は残るが member 不明に |
-| soap_notes | CASCADE | ⚠ 施術記録が消失 |
+| soap_notes | CASCADE | 施術記録が消失 |
 | payments | 残る (NULLABLE FK) | |
 
-### ⚠ 問題点
+### 問題点
 - メンバーの物理削除（スタジオ削除時）で SOAP ノート・ウェイバー署名が完全消失
 - 法的にウェイバー署名は保持義務がある場合がある
 
@@ -102,18 +102,18 @@
 ### 削除時の影響
 | 影響対象 | FK動作 | 明示処理 | 備考 |
 |----------|--------|----------|------|
-| classes | SET NULL | ✅ 明示 | クラスは残るが担当者不明 |
-| class_sessions | SET NULL | ✅ 明示 | セッションは残る |
-| soap_notes | SET NULL | ✅ 明示 | ノートは残るが作成者不明 |
-| instructor_earnings | CASCADE | ❌ 暗黙 | ⚠ 収益記録が消失 |
-| instructor_fee_overrides | CASCADE | ❌ 暗黙 | |
-| instructor_memberships | CASCADE | ❌ 暗黙 | Stripe サブスク未キャンセル？ |
-| instructor_room_bookings | CASCADE | ❌ 暗黙 | 確定済み予約も消失 |
-| instructor_overage_charges | CASCADE | ❌ 暗黙 | 未精算の超過料金も消失 |
-| pass_distributions | CASCADE | ❌ 暗黙 | 配分記録が消失 |
-| pass_class_usage | CASCADE | ❌ 暗黙 | |
+| classes | SET NULL | 明示 | クラスは残るが担当者不明 |
+| class_sessions | SET NULL | 明示 | セッションは残る |
+| soap_notes | SET NULL | 明示 | ノートは残るが作成者不明 |
+| instructor_earnings | CASCADE | 暗黙 | 収益記録が消失 |
+| instructor_fee_overrides | CASCADE | 暗黙 | |
+| instructor_memberships | CASCADE | 暗黙 | Stripe サブスク未キャンセル？ |
+| instructor_room_bookings | CASCADE | 暗黙 | 確定済み予約も消失 |
+| instructor_overage_charges | CASCADE | 暗黙 | 未精算の超過料金も消失 |
+| pass_distributions | CASCADE | 暗黙 | 配分記録が消失 |
+| pass_class_usage | CASCADE | 暗黙 | |
 
-### ⚠ 問題点
+### 問題点
 1. **instructor_earnings が CASCADE で消失** — 会計記録として保持すべき
 2. **instructor_memberships の Stripe サブスクがキャンセルされない** — 課金が続く
 3. **未精算の overage_charges が消失** — 未請求分が失われる
@@ -131,7 +131,7 @@
 1. managers レコードを物理削除
 2. profile.role を "instructor" に戻す
 
-### ⚠ 問題点
+### 問題点
 - マネージャーがインストラクター兼任の場合、instructors レコードのクリーンアップが不十分
 - manager 削除後も instructor レコードが残る（意図的だが確認必要）
 
@@ -149,7 +149,7 @@
 | drop_in_attendances | 残る | 整合性問題 |
 | pass_class_usage | 残る | パス利用数が戻らない |
 
-### ⚠ 問題点
+### 問題点
 - セッションキャンセル時に紐づく bookings が自動キャンセルされない
 - パス利用のリバートが手動（API呼び出し必要）
 
@@ -166,7 +166,7 @@
 3. クレジット利用の場合: credits インクリメント
 4. ウェイトリスト繰り上げ処理
 
-### ⚠ 問題点
+### 問題点
 - ウェイトリスト繰り上げ時のクレジットチェックが不完全（前回のバグチェックで修正済み）
 
 ---
@@ -181,7 +181,7 @@
 - `status = "cancelled"` に更新
 - Stripe サブスクリプションもキャンセル
 
-### ⚠ 問題点
+### 問題点
 - パスを非アクティブにしても既存サブスクが自動キャンセルされない（意図的だが要確認）
 
 ---
@@ -195,10 +195,10 @@
 | 影響対象 | FK動作 | 備考 |
 |----------|--------|------|
 | event_options | CASCADE | |
-| event_bookings | CASCADE | ⚠ 支払済み予約も消失 |
-| event_payment_schedule | CASCADE (via booking) | ⚠ 支払記録消失 |
+| event_bookings | CASCADE | 支払済み予約も消失 |
+| event_payment_schedule | CASCADE (via booking) | 支払記録消失 |
 
-### ⚠ 問題点
+### 問題点
 - イベント削除で支払済み予約が CASCADE 削除される — 返金処理が必要
 
 ---
@@ -213,7 +213,7 @@
 - メンバー削除で CASCADE 削除
 - テンプレート削除で CASCADE 削除
 
-### ⚠ 問題点
+### 問題点
 - 法的に署名記録の保持義務がある場合、CASCADE 削除は問題
 - テンプレート更新時に旧署名との紐づけが切れる
 
@@ -228,7 +228,7 @@
 
 ### 削除の影響
 - インストラクター削除: instructor_id = NULL（ノートは残る）
-- メンバー削除: CASCADE 削除（⚠ 施術記録が完全消失）
+- メンバー削除: CASCADE 削除（ 施術記録が完全消失）
 - スタジオ削除: CASCADE 削除
 
 ---
@@ -238,7 +238,7 @@
 ### 削除の影響
 - sender_id または recipient_id のプロフィール削除で CASCADE 全削除
 
-### ⚠ 問題点
+### 問題点
 - 片方のユーザー削除で相手側の会話も全消失
 - ソフトデリートなし — アーカイブ機能がない
 

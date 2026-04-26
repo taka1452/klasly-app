@@ -39,16 +39,16 @@ https://<YOUR_PROJECT_REF>.supabase.co/auth/v1/callback
 
 1. Go to **Authentication** → **URL Configuration**
 2. Set **Site URL** to your production URL:
-   - Production: `https://yourdomain.com`
-   - Local dev: `http://localhost:3000`
+ - Production: `https://yourdomain.com`
+ - Local dev: `http://localhost:3000`
 
 ### Step 4: Configure Redirect URLs in Supabase
 
 1. In **Authentication** → **URL Configuration**
 2. Under **Redirect URLs**, add:
-   - `http://localhost:3000/auth/callback` (local dev)
-   - `https://yourdomain.com/auth/callback` (production)
-   - `https://*.vercel.app/auth/callback` (if using Vercel preview deploys)
+ - `http://localhost:3000/auth/callback` (local dev)
+ - `https://yourdomain.com/auth/callback` (production)
+ - `https://*.vercel.app/auth/callback` (if using Vercel preview deploys)
 
 3. The `redirectTo` in your app must match one of these URLs exactly.
 
@@ -83,9 +83,9 @@ After creating the OAuth client in Google Cloud Console (see Part 3):
 1. Go to **APIs & Services** → **OAuth consent screen**
 2. Choose **External** (or Internal for workspace-only)
 3. Fill in:
-   - **App name**: e.g. "Klasly"
-   - **User support email**: your email
-   - **Developer contact**: your email
+ - **App name**: e.g. "Klasly"
+ - **User support email**: your email
+ - **Developer contact**: your email
 4. Add scopes if needed (Supabase uses `email`, `profile`, `openid` by default)
 5. Save and continue
 
@@ -147,9 +147,9 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 1. Project → **Settings** → **Environment Variables**
 2. Add:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `NEXT_PUBLIC_APP_URL` = `https://yourdomain.com`
+ - `NEXT_PUBLIC_SUPABASE_URL`
+ - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+ - `NEXT_PUBLIC_APP_URL` = `https://yourdomain.com`
 
 If `NEXT_PUBLIC_APP_URL` is not set, the app uses `VERCEL_URL` automatically (`https://${VERCEL_URL}`).
 
@@ -180,12 +180,12 @@ If `NEXT_PUBLIC_APP_URL` is not set, the app uses `VERCEL_URL` automatically (`h
 ```sql
 -- List users with Google provider
 SELECT
-  id,
-  email,
-  raw_user_meta_data->>'full_name' AS full_name,
-  raw_user_meta_data->>'name' AS name,
-  raw_app_meta_data->'provider' AS provider,
-  created_at
+ id,
+ email,
+ raw_user_meta_data->>'full_name' AS full_name,
+ raw_user_meta_data->>'name' AS name,
+ raw_app_meta_data->'provider' AS provider,
+ created_at
 FROM auth.users
 WHERE raw_app_meta_data->>'provider' = 'google';
 ```

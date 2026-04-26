@@ -51,7 +51,10 @@
       "mcp__092d5d95-7780-4466-844a-0e286e07604e__fetch_stripe_resources",
       "mcp__092d5d95-7780-4466-844a-0e286e07604e__stripe_api_details",
       "mcp__092d5d95-7780-4466-844a-0e286e07604e__stripe_api_search",
-      "mcp__faa90072-dcd0-4481-89eb-d7e81d774b30__execute_sql"
+      "mcp__faa90072-dcd0-4481-89eb-d7e81d774b30__execute_sql",
+      "mcp__supabase__list_migrations",
+      "mcp__supabase__apply_migration",
+      "mcp__supabase__execute_sql"
     ]
   },
   "enableAllProjectMcpServers": true,

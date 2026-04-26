@@ -387,21 +387,28 @@ export default function TemplateForm({ templateId, duplicateData }: Props) {
           />
         </div>
 
-        {/* Special instructions */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
+        {/* Special instructions — visually distinct so it doesn't get
+            confused with Description. Description = marketing copy that
+            sells the class; Special instructions = logistics members need
+            to know (props to bring, arrive-early, accessibility). */}
+        <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+          <label className="block text-sm font-semibold text-amber-900">
             Special instructions
-            <span className="ml-2 text-xs font-normal text-gray-400">(optional)</span>
+            <span className="ml-2 text-xs font-normal text-amber-700">(optional)</span>
           </label>
+          <p className="mt-0.5 text-xs text-amber-800/80">
+            Logistics members need before showing up — props to bring,
+            arrive-early, accessibility notes. Distinct from Description.
+          </p>
           <textarea
             value={specialInstructions}
             onChange={(e) => setSpecialInstructions(e.target.value)}
             rows={3}
             placeholder="e.g. Bring your own mat and a blanket. Arrive 10 minutes early to set up props."
-            className="input-field mt-1"
+            className="input-field mt-2 bg-white"
           />
-          <p className="mt-1 text-xs text-gray-400">
-            Shown to members on the class detail page and in their booking confirmation email.
+          <p className="mt-1 text-xs text-amber-700/80">
+            Shown on the class detail page and in booking confirmation emails.
           </p>
         </div>
 

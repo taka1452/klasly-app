@@ -25,22 +25,22 @@
 
 ```sql
 CREATE TABLE IF NOT EXISTS class_templates (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  studio_id uuid NOT NULL REFERENCES studios(id) ON DELETE CASCADE,
-  instructor_id uuid REFERENCES instructors(id) ON DELETE SET NULL,
-  name text NOT NULL,
-  description text,
-  duration_minutes integer NOT NULL DEFAULT 60,
-  capacity integer NOT NULL DEFAULT 15,
-  price_cents integer,                    -- Collective Mode: per-class price
-  location text,                          -- 外部会場名（部屋を使わない場合）
-  class_type text NOT NULL DEFAULT 'in_person',  -- 'in_person' | 'online' | 'hybrid'
-  online_link text,                       -- オンラインクラスのデフォルトリンク
-  is_active boolean NOT NULL DEFAULT true,
-  is_public boolean NOT NULL DEFAULT true,
-  created_at timestamptz DEFAULT now(),
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+ studio_id uuid NOT NULL REFERENCES studios(id) ON DELETE CASCADE,
+ instructor_id uuid REFERENCES instructors(id) ON DELETE SET NULL,
+ name text NOT NULL,
+ description text,
+ duration_minutes integer NOT NULL DEFAULT 60,
+ capacity integer NOT NULL DEFAULT 15,
+ price_cents integer, -- Collective Mode: per-class price
+ location text, -- 外部会場名（部屋を使わない場合）
+ class_type text NOT NULL DEFAULT 'in_person', -- 'in_person' | 'online' | 'hybrid'
+ online_link text, -- オンラインクラスのデフォルトリンク
+ is_active boolean NOT NULL DEFAULT true,
+ is_public boolean NOT NULL DEFAULT true,
+ created_at timestamptz DEFAULT now(),
 
-  CONSTRAINT valid_class_type CHECK (class_type IN ('in_person', 'online', 'hybrid'))
+ CONSTRAINT valid_class_type CHECK (class_type IN ('in_person', 'online', 'hybrid'))
 );
 ```
 
@@ -63,23 +63,23 @@ ALTER TABLE class_sessions RENAME TO sessions;
 
 -- 新しいカラム追加
 ALTER TABLE sessions
-  ADD COLUMN template_id uuid REFERENCES class_templates(id) ON DELETE SET NULL,
-  ADD COLUMN room_id uuid REFERENCES rooms(id) ON DELETE SET NULL,
-  ADD COLUMN instructor_id uuid REFERENCES instructors(id) ON DELETE SET NULL,
-  ADD COLUMN end_time time,
-  ADD COLUMN duration_minutes integer,
-  ADD COLUMN title text,                    -- template_id=NULL時の表示名
-  ADD COLUMN session_type text NOT NULL DEFAULT 'class',
-  ADD COLUMN price_cents integer,           -- セッション単位の価格override
-  ADD COLUMN location text,
-  ADD COLUMN recurrence_group_id uuid,      -- 繰り返しグループ
-  ADD COLUMN recurrence_rule text,          -- 'weekly' | null
-  -- class_id は移行期間中残す（後で削除）
-  ;
+ ADD COLUMN template_id uuid REFERENCES class_templates(id) ON DELETE SET NULL,
+ ADD COLUMN room_id uuid REFERENCES rooms(id) ON DELETE SET NULL,
+ ADD COLUMN instructor_id uuid REFERENCES instructors(id) ON DELETE SET NULL,
+ ADD COLUMN end_time time,
+ ADD COLUMN duration_minutes integer,
+ ADD COLUMN title text, -- template_id=NULL時の表示名
+ ADD COLUMN session_type text NOT NULL DEFAULT 'class',
+ ADD COLUMN price_cents integer, -- セッション単位の価格override
+ ADD COLUMN location text,
+ ADD COLUMN recurrence_group_id uuid, -- 繰り返しグループ
+ ADD COLUMN recurrence_rule text, -- 'weekly' | null
+ -- class_id は移行期間中残す（後で削除）
+ ;
 
 ALTER TABLE sessions
-  ADD CONSTRAINT valid_session_type
-    CHECK (session_type IN ('class', 'room_only'));
+ ADD CONSTRAINT valid_session_type
+ CHECK (session_type IN ('class', 'room_only'));
 ```
 
 **session_type の意味:**
@@ -240,14 +240,14 @@ sessionsテーブルに統合。`session_type = 'room_only'` で表現。
 ```
 1. インストラクター/オーナーがカレンダーで空き時間をタップ
 2. フォームが開く:
-   - Room: [自動選択済み]（タップした部屋）
-   - Date: [自動選択済み]（タップした日付）
-   - Time: [開始時間] – [終了時間]
-   - Class Template: [ドロップダウン]
-     - Morning Yoga (60 min · $20)
-     - Power Flow (75 min · $25)
-     - — Room only (no class) —
-   - Repeat: ○ Single  ○ Weekly (4 weeks)
+ - Room: [自動選択済み]（タップした部屋）
+ - Date: [自動選択済み]（タップした日付）
+ - Time: [開始時間] – [終了時間]
+ - Class Template: [ドロップダウン]
+ - Morning Yoga (60 min · $20)
+ - Power Flow (75 min · $25)
+ - — Room only (no class) —
+ - Repeat: ○ Single ○ Weekly (4 weeks)
 3. テンプレート選択時: duration_minutesを自動反映してend_timeを計算
 4. 「Room only」選択時: title入力欄が表示
 5. 「Create Session」ボタンで作成
@@ -258,15 +258,15 @@ sessionsテーブルに統合。`session_type = 'room_only'` で表現。
 ```
 1. テンプレート一覧で「Schedule」ボタンをクリック
 2. フォームが開く:
-   - Template: [自動選択済み]
-   - Date: [日付ピッカー]
-   - Time: [開始時間]（end_timeはdurationから自動計算）
-   - Room: [ドロップダウン, optional]
-     - None — Online / External
-     - main room
-     - sub room
-   - Online Link: [URL入力]（class_type=online/hybridの場合のみ表示）
-   - Repeat: ○ Single  ○ Weekly (N weeks)
+ - Template: [自動選択済み]
+ - Date: [日付ピッカー]
+ - Time: [開始時間]（end_timeはdurationから自動計算）
+ - Room: [ドロップダウン, optional]
+ - None — Online / External
+ - main room
+ - sub room
+ - Online Link: [URL入力]（class_type=online/hybridの場合のみ表示）
+ - Repeat: ○ Single ○ Weekly (N weeks)
 3. 「Schedule N Sessions」ボタンで作成
 ```
 
@@ -275,12 +275,12 @@ sessionsテーブルに統合。`session_type = 'room_only'` で表現。
 ```
 1. 開始日から N 週分の日付リストを生成
 2. 各日付に対して:
-   a. 部屋ありの場合: check_room_availability で衝突チェック
-   b. 衝突する日はスキップ（ユーザーに通知）
-   c. 全セッションに同じ recurrence_group_id を付与
+ a. 部屋ありの場合: check_room_availability で衝突チェック
+ b. 衝突する日はスキップ（ユーザーに通知）
+ c. 全セッションに同じ recurrence_group_id を付与
 3. Collective Mode の場合:
-   a. インストラクターの月間利用時間をチェック
-   b. 超過の場合: allow_overage の設定に従う
+ a. インストラクターの月間利用時間をチェック
+ b. 超過の場合: allow_overage の設定に従う
 4. 結果: 作成成功/スキップされた日のサマリーを返す
 ```
 
@@ -305,15 +305,15 @@ sessionsテーブルに統合。`session_type = 'room_only'` で表現。
 ### class_templates
 - **Owner/Manager**: Full CRUD (studio_id match)
 - **Instructor**:
-  - SELECT: 自分のstudioの全テンプレート
-  - INSERT/UPDATE/DELETE: 自分が作成したテンプレートのみ
+ - SELECT: 自分のstudioの全テンプレート
+ - INSERT/UPDATE/DELETE: 自分が作成したテンプレートのみ
 - **Member**: SELECT (is_public=true, is_active=true のみ)
 
 ### sessions（変更）
 - 既存のclass_sessionsポリシーを維持
 - `session_type='room_only'` に対する追加ポリシー:
-  - **Instructor**: 自分のroom_onlyセッションのINSERT/DELETE
-  - **Owner/Manager**: 全room_onlyセッションのCRUD
+ - **Instructor**: 自分のroom_onlyセッションのINSERT/DELETE
+ - **Owner/Manager**: 全room_onlyセッションのCRUD
 
 ---
 
@@ -356,17 +356,17 @@ sessionsテーブルに統合。`session_type = 'room_only'` で表現。
 ```
 1. class_templates テーブル作成
 2. classes → class_templates にデータコピー
-   - 各classに対応するtemplateを作成
-   - class_id → template_id のマッピングテーブルを一時作成
+ - 各classに対応するtemplateを作成
+ - class_id → template_id のマッピングテーブルを一時作成
 3. sessions テーブルにカラム追加
-   - template_id, room_id, instructor_id, end_time, etc.
+ - template_id, room_id, instructor_id, end_time, etc.
 4. 既存 class_sessions にデータ埋め込み
-   - class_id → template_id (マッピング経由)
-   - 親classの room_id, instructor_id を各セッションにコピー
-   - end_time = start_time + duration_minutes
+ - class_id → template_id (マッピング経由)
+ - 親classの room_id, instructor_id を各セッションにコピー
+ - end_time = start_time + duration_minutes
 5. instructor_room_bookings → sessions にデータ移行
-   - session_type = 'room_only'
-   - template_id = NULL
+ - session_type = 'room_only'
+ - template_id = NULL
 ```
 
 ### Phase 2: API + UI切り替え
@@ -452,7 +452,7 @@ sessionsテーブルに統合。`session_type = 'room_only'` で表現。
 ### 表示
 - [ ] オーナーカレンダーで重複なく表示されること
 - [ ] 部屋タグが表示されること
-- [ ] オンラインは📹アイコン付きで表示されること
+- [ ] オンラインはアイコン付きで表示されること
 - [ ] room_onlyはteal色で表示されること
 - [ ] Rooms画面で部屋ごとのタイムラインが正しいこと
 

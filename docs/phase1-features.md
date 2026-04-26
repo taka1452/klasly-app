@@ -30,7 +30,7 @@ Sidebar → **Rooms**
 - **Assign to classes**: Associate a room with each class
 
 ### Live page
-🔗 [app.klasly.app/rooms](https://app.klasly.app/rooms)
+ [app.klasly.app/rooms](https://app.klasly.app/rooms)
 
 ---
 
@@ -52,7 +52,7 @@ Instructor Portal → Sidebar → **Room Bookings**
 - **Quota display**: If a membership tier is assigned, a progress bar shows monthly hours used vs. remaining
 
 ### Live page
-🔗 [app.klasly.app/instructor/room-bookings](https://app.klasly.app/instructor/room-bookings) *(requires instructor login)*
+ [app.klasly.app/instructor/room-bookings](https://app.klasly.app/instructor/room-bookings) *(requires instructor login)*
 
 ---
 
@@ -67,15 +67,15 @@ Sidebar → **Settings** → **Instructor Membership Tiers** → "Manage Tiers"
 
 ### Features
 - **Create a tier**: Click "+ Add tier" to define a new plan
-  - Tier name (e.g., "Basic", "Pro", "Unlimited")
-  - Monthly minutes (-1 for unlimited)
-  - Monthly price (in cents)
+ - Tier name (e.g., "Basic", "Pro", "Unlimited")
+ - Monthly minutes (-1 for unlimited)
+ - Monthly price (in cents)
 - **Edit a tier**: Change name, time limit, or price
 - **Activate / deactivate**: Toggle tier availability
 - **Assign to instructors**: Select a tier from the instructor edit page
 
 ### Live page
-🔗 [app.klasly.app/settings/tiers](https://app.klasly.app/settings/tiers)
+ [app.klasly.app/settings/tiers](https://app.klasly.app/settings/tiers)
 
 ### How quota enforcement works
 1. Owner creates tiers (e.g., "Basic" = 20h/month, "Pro" = 40h/month)
@@ -105,12 +105,12 @@ Instructor Portal → Sidebar → **Membership**
 
 #### Owner side
 - **Instructor detail page**: "Membership Tier" card in the right sidebar showing:
-  - Assigned tier name
-  - Monthly price
-  - Payment status badge (Free / Active / Not subscribed / Cancelling)
+ - Assigned tier name
+ - Monthly price
+ - Payment status badge (Free / Active / Not subscribed / Cancelling)
 
 ### Live page
-🔗 [app.klasly.app/instructor/membership](https://app.klasly.app/instructor/membership) *(requires instructor login)*
+ [app.klasly.app/instructor/membership](https://app.klasly.app/instructor/membership) *(requires instructor login)*
 
 ### Billing flow
 1. Owner creates a tier and sets a monthly price
@@ -133,13 +133,13 @@ Sidebar → **Managers**
 
 ### Features
 - **Invite a manager**: Click "+ Invite manager" and enter an email address
-  - Existing user: Role is automatically changed to manager
-  - New user: Invitation email sent via Supabase Auth
+ - Existing user: Role is automatically changed to manager
+ - New user: Invitation email sent via Supabase Auth
 - **Toggle permissions**: 7 permission flags, each independently on/off
 - **Remove a manager**: Click "Remove" to revoke manager role (user becomes a member)
 
 ### Live page
-🔗 [app.klasly.app/managers](https://app.klasly.app/managers)
+ [app.klasly.app/managers](https://app.klasly.app/managers)
 
 ### Permission flags
 
@@ -173,7 +173,7 @@ Sidebar → **Managers**
 - `rooms` — Studio rooms / spaces
 - `instructor_room_bookings` — Instructor room reservations
 - `instructor_membership_tiers` — Membership tier definitions
-- `instructor_memberships` — Instructor ↔ tier assignments + Stripe info
+- `instructor_memberships` — Instructor tier assignments + Stripe info
 - `managers` — Manager permission records
 
 ### New API endpoints

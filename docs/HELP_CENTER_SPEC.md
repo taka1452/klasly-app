@@ -30,17 +30,17 @@
 
 ```typescript
 type HelpArticle = {
-  id: string;                    // URL用スラッグ
-  title: string;                 // 記事タイトル
-  summary: string;               // 1〜2文の概要
-  category: HelpCategory;        // 所属カテゴリ
-  audience: HelpAudience[];      // 対象ロール（複数可）
-  keywords: string[];            // 検索用キーワード
-  prerequisites?: string[];      // 前提条件
-  steps: HelpStep[];             // 手順
-  tips?: string[];               // ヒント
-  relatedArticles?: string[];    // 関連記事のID
-  featureFlag?: string;          // Feature Flag依存キー
+ id: string; // URL用スラッグ
+ title: string; // 記事タイトル
+ summary: string; // 1〜2文の概要
+ category: HelpCategory; // 所属カテゴリ
+ audience: HelpAudience[]; // 対象ロール（複数可）
+ keywords: string[]; // 検索用キーワード
+ prerequisites?: string[]; // 前提条件
+ steps: HelpStep[]; // 手順
+ tips?: string[]; // ヒント
+ relatedArticles?: string[]; // 関連記事のID
+ featureFlag?: string; // Feature Flag依存キー
 };
 ```
 
@@ -89,7 +89,7 @@ type HelpArticle = {
 - [ ] Feature Flagによるヘルプ記事フィルタ（有効でない機能の記事を非表示）
 - [ ] スクリーンショットの追加（HelpStepにimageUrlフィールド追加）
 - [ ] ヘルプ記事のSupabase移行（100記事超でCMS化検討）
-- [ ] フィードバック機能（記事下部に「Was this helpful? 👍👎」追加）
+- [ ] フィードバック機能（記事下部に「Was this helpful? 」追加）
 - [ ] AI検索（Supabase pgvector活用）
 
 ## 注意事項

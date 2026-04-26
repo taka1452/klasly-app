@@ -30,7 +30,7 @@
 
 ## 機能一覧
 
-### Phase 1: MVP ✅
+### Phase 1: MVP
 - 認証（サインアップ・ログイン・ログアウト・パスワードリセット）
 - オンボーディング（スタジオ作成）
 - 会員管理（CRUD・ステータス・プラン・残回数）
@@ -41,33 +41,33 @@
 - ダッシュボード（今日のクラス・会員数・売上・未払いアラート）
 - ロール別アクセス制御（Owner / Instructor / Member）
 
-### Phase 2: Stripe決済連携 ✅
+### Phase 2: Stripe決済連携
 - Stripeサンドボックス接続
 - Webhook処理
 - サブスクリプション管理
 - 支払い履歴・未払いアラート
 
-### Phase 3: メール・CSV・ウェイトリスト ✅
+### Phase 3: メール・CSV・ウェイトリスト
 - Resendメール送信（8テンプレート）
 - CSVエクスポート（会員・予約・支払い）
 - キャンセル待ち自動繰り上げ
 
-### Phase 4: 拡張機能 ✅
+### Phase 4: 拡張機能
 - Waiver（電子同意書・署名管理）
 - 出席管理（Attendance・ドロップイン対応・回数券手動消費）
 - Instructorポータル（スケジュール・予約者一覧・プロフィール編集）
 
-### Phase 5: コミュニケーション強化 ✅
-- **アプリ内メッセージング**: オーナー↔メンバー間の1対1チャット
-  - 未読バッジ・既読管理
-  - メンバー一覧表示（メッセージなしのメンバーも含む）
-  - メッセージ受信時にメール通知（`messageNotification`）
+### Phase 5: コミュニケーション強化
+- **アプリ内メッセージング**: オーナーメンバー間の1対1チャット
+ - 未読バッジ・既読管理
+ - メンバー一覧表示（メッセージなしのメンバーも含む）
+ - メッセージ受信時にメール通知（`messageNotification`）
 - **予約クレジット自動判定**: Stripe Connect 状況に応じてクレジット要否を自動判定
-  - `null`（Auto）: Stripe Connect 完了 → 必須 / 未完了 → 不要（現金スタジオ）
-  - `true`（常に必須）/ `false`（常に不要）でオーナーが手動オーバーライド可能
-  - Settings ページから設定変更（Booking Credit Requirement）
+ - `null`（Auto）: Stripe Connect 完了 → 必須 / 未完了 → 不要（現金スタジオ）
+ - `true`（常に必須）/ `false`（常に不要）でオーナーが手動オーバーライド可能
+ - Settings ページから設定変更（Booking Credit Requirement）
 
-### System Admin Dashboard ✅
+### System Admin Dashboard
 - KPIダッシュボード（MRR・ARR・Churn Rate・アラート）
 - スタジオ一覧・詳細管理（トライアル延長・プラン変更・キャンセル・削除）
 - 課金ステータス管理（Trialing / Past Due / Grace / Canceled）
@@ -90,97 +90,97 @@
 ```
 src/
 ├── app/
-│   ├── (admin)/         ← System Admin管理画面
-│   │   ├── page.tsx         ダッシュボード（KPI）
-│   │   ├── studios/         スタジオ一覧・詳細
-│   │   ├── billing/         課金ステータス管理
-│   │   ├── coupons/         クーポン管理
-│   │   ├── metrics/         ビジネス指標
-│   │   ├── support/         サポートチケット
-│   │   ├── logs/            ログビューア
-│   │   └── layout.tsx       Adminレイアウト（ダークテーマ）
-│   ├── (auth)/              ← 認証系
-│   │   ├── login/
-│   │   ├── signup/
-│   │   ├── forgot-password/
-│   │   ├── reset-password/
-│   │   └── auth/callback/
-│   ├── (dashboard)/         ← Owner用
-│   │   ├── page.tsx         ダッシュボード
-│   │   ├── members/         会員管理
-│   │   ├── classes/         クラス管理
-│   │   │   └── [classId]/sessions/[sessionId]/  出席管理
-│   │   ├── bookings/        予約管理
-│   │   ├── payments/        支払い管理
-│   │   ├── settings/        設定（Booking Credit Requirement含む）
-│   │   │   ├── billing/     料金・サブスクリプション管理
-│   │   │   ├── connect/     Stripe Connect設定
-│   │   │   ├── pricing/     料金プラン設定
-│   │   │   ├── waiver/      Waiver設定
-│   │   │   └── support/     サポートチケット
-│   │   └── layout.tsx
-│   ├── (instructor)/        ← Instructor用
-│   │   ├── page.tsx         Instructorダッシュボード
-│   │   ├── schedule/        スケジュール
-│   │   ├── sessions/[sessionId]/  セッション詳細（閲覧のみ）
-│   │   ├── profile/         プロフィール編集
-│   │   └── layout.tsx
-│   ├── (member)/            ← 会員用
-│   │   ├── schedule/        スケジュール・予約
-│   │   ├── my-bookings/     予約履歴
-│   │   ├── my-payments/     支払い履歴
-│   │   ├── purchase/        クレジット・プラン購入
-│   │   ├── waiver/          Waiver確認・署名
-│   │   └── layout.tsx
-│   ├── messages/            ← アプリ内メッセージ（ルートグループ外・Owner/Member共用）
-│   │   ├── page.tsx         メッセージ一覧・スレッド表示
-│   │   └── layout.tsx
-│   ├── waiver/sign/[token]/ ← Waiver署名（公開ページ）
-│   ├── privacy/             ← Privacy Policy
-│   ├── terms/               ← Terms of Service
-│   └── api/
-│       ├── admin/           Admin系API（service role key使用）
-│       │   ├── studios/
-│       │   ├── coupons/
-│       │   ├── support/
-│       │   └── logs/
-│       ├── stripe/webhook/
-│       ├── attendance/
-│       ├── bookings/
-│       ├── messages/        アプリ内メッセージAPI
-│       │   └── [memberId]/  スレッド取得・既読更新
-│       ├── studio/
-│       │   └── booking-settings/  予約クレジット設定（PATCH）
-│       ├── waiver/
-│       ├── coupons/         ユーザー向けクーポンAPI
-│       ├── cron/            Cronジョブ
-│       │   ├── trial-reminder/
-│       │   ├── past-due-check/
-│       │   └── grace-check/
-│       └── export/          CSVエクスポート
+│ ├── (admin)/ ← System Admin管理画面
+│ │ ├── page.tsx ダッシュボード（KPI）
+│ │ ├── studios/ スタジオ一覧・詳細
+│ │ ├── billing/ 課金ステータス管理
+│ │ ├── coupons/ クーポン管理
+│ │ ├── metrics/ ビジネス指標
+│ │ ├── support/ サポートチケット
+│ │ ├── logs/ ログビューア
+│ │ └── layout.tsx Adminレイアウト（ダークテーマ）
+│ ├── (auth)/ ← 認証系
+│ │ ├── login/
+│ │ ├── signup/
+│ │ ├── forgot-password/
+│ │ ├── reset-password/
+│ │ └── auth/callback/
+│ ├── (dashboard)/ ← Owner用
+│ │ ├── page.tsx ダッシュボード
+│ │ ├── members/ 会員管理
+│ │ ├── classes/ クラス管理
+│ │ │ └── [classId]/sessions/[sessionId]/ 出席管理
+│ │ ├── bookings/ 予約管理
+│ │ ├── payments/ 支払い管理
+│ │ ├── settings/ 設定（Booking Credit Requirement含む）
+│ │ │ ├── billing/ 料金・サブスクリプション管理
+│ │ │ ├── connect/ Stripe Connect設定
+│ │ │ ├── pricing/ 料金プラン設定
+│ │ │ ├── waiver/ Waiver設定
+│ │ │ └── support/ サポートチケット
+│ │ └── layout.tsx
+│ ├── (instructor)/ ← Instructor用
+│ │ ├── page.tsx Instructorダッシュボード
+│ │ ├── schedule/ スケジュール
+│ │ ├── sessions/[sessionId]/ セッション詳細（閲覧のみ）
+│ │ ├── profile/ プロフィール編集
+│ │ └── layout.tsx
+│ ├── (member)/ ← 会員用
+│ │ ├── schedule/ スケジュール・予約
+│ │ ├── my-bookings/ 予約履歴
+│ │ ├── my-payments/ 支払い履歴
+│ │ ├── purchase/ クレジット・プラン購入
+│ │ ├── waiver/ Waiver確認・署名
+│ │ └── layout.tsx
+│ ├── messages/ ← アプリ内メッセージ（ルートグループ外・Owner/Member共用）
+│ │ ├── page.tsx メッセージ一覧・スレッド表示
+│ │ └── layout.tsx
+│ ├── waiver/sign/[token]/ ← Waiver署名（公開ページ）
+│ ├── privacy/ ← Privacy Policy
+│ ├── terms/ ← Terms of Service
+│ └── api/
+│ ├── admin/ Admin系API（service role key使用）
+│ │ ├── studios/
+│ │ ├── coupons/
+│ │ ├── support/
+│ │ └── logs/
+│ ├── stripe/webhook/
+│ ├── attendance/
+│ ├── bookings/
+│ ├── messages/ アプリ内メッセージAPI
+│ │ └── [memberId]/ スレッド取得・既読更新
+│ ├── studio/
+│ │ └── booking-settings/ 予約クレジット設定（PATCH）
+│ ├── waiver/
+│ ├── coupons/ ユーザー向けクーポンAPI
+│ ├── cron/ Cronジョブ
+│ │ ├── trial-reminder/
+│ │ ├── past-due-check/
+│ │ └── grace-check/
+│ └── export/ CSVエクスポート
 ├── components/
-│   ├── bookings/
-│   │   └── booking-button.tsx    予約ボタン（requiresCredits対応）
-│   ├── messages/
-│   │   └── messages-client.tsx   メッセージUI（会話リスト・バブルスレッド）
-│   └── settings/
-│       └── booking-settings-card.tsx  予約クレジット設定カード
+│ ├── bookings/
+│ │ └── booking-button.tsx 予約ボタン（requiresCredits対応）
+│ ├── messages/
+│ │ └── messages-client.tsx メッセージUI（会話リスト・バブルスレッド）
+│ └── settings/
+│ └── booking-settings-card.tsx 予約クレジット設定カード
 ├── lib/
-│   ├── admin/
-│   │   ├── auth.ts          Admin認証（ADMIN_EMAILS判定）
-│   │   └── supabase.ts      Admin用Supabaseクライアント（service role）
-│   ├── supabase/
-│   │   ├── client.ts        ブラウザ用
-│   │   └── server.ts        サーバー用
-│   ├── stripe/
-│   │   └── config.ts        Stripe設定
-│   ├── email/
-│   │   ├── client.ts
-│   │   ├── templates.ts
-│   │   └── send.ts
-│   └── booking-utils.ts     予約クレジット判定ヘルパー
+│ ├── admin/
+│ │ ├── auth.ts Admin認証（ADMIN_EMAILS判定）
+│ │ └── supabase.ts Admin用Supabaseクライアント（service role）
+│ ├── supabase/
+│ │ ├── client.ts ブラウザ用
+│ │ └── server.ts サーバー用
+│ ├── stripe/
+│ │ └── config.ts Stripe設定
+│ ├── email/
+│ │ ├── client.ts
+│ │ ├── templates.ts
+│ │ └── send.ts
+│ └── booking-utils.ts 予約クレジット判定ヘルパー
 └── types/
-    └── database.ts
+ └── database.ts
 ```
 
 ## データベース（テーブル一覧）
@@ -200,7 +200,7 @@ src/
 ### メッセージ
 | テーブル | 説明 |
 |---|---|
-| messages | オーナー↔メンバー間メッセージ（スタジオ・送信者・受信者・既読） |
+| messages | オーナーメンバー間メッセージ（スタジオ・送信者・受信者・既読） |
 
 ### 出席管理
 | テーブル | 説明 |
@@ -316,11 +316,11 @@ GitHub にプッシュ後、Vercel で Import。
 
 ```
 studios.booking_requires_credits
-  ├── null（Auto・デフォルト）
-  │     stripe_connect_onboarding_complete = true  → クレジット必須
-  │     stripe_connect_onboarding_complete = false → クレジット不要（現金スタジオ）
-  ├── true  → 常にクレジット必須（Stripe の有無に関わらず）
-  └── false → 常にクレジット不要（手動出席管理スタジオ向け）
+ ├── null（Auto・デフォルト）
+ │ stripe_connect_onboarding_complete = true → クレジット必須
+ │ stripe_connect_onboarding_complete = false → クレジット不要（現金スタジオ）
+ ├── true → 常にクレジット必須（Stripe の有無に関わらず）
+ └── false → 常にクレジット不要（手動出席管理スタジオ向け）
 ```
 
 Helper: `src/lib/booking-utils.ts` `getRequiresCredits()`

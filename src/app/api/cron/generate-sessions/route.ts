@@ -65,7 +65,11 @@ export async function GET(request: Request) {
     for (const s of studios ?? []) {
       // キャンセル済みスタジオはスキップ
       if (s.plan_status === "canceled") continue;
-      studioWeeksMap.set(s.id, s.session_generation_weeks ?? 8);
+      // Default lookahead = 26 weeks (~6 months). Studios can override via
+      // studios.session_generation_weeks. Cron runs daily, so the window
+      // moves forward one day at a time and there are always ~6 months of
+      // sessions visible from "today".
+      studioWeeksMap.set(s.id, s.session_generation_weeks ?? 26);
       studioTzMap.set(s.id, s.timezone ?? "Asia/Tokyo");
     }
 
@@ -145,7 +149,7 @@ export async function GET(request: Request) {
       // キャンセル済みスタジオはスキップ
       if (!studioWeeksMap.has(studioId)) continue;
 
-      const weeksAhead = studioWeeksMap.get(studioId) ?? 8;
+      const weeksAhead = studioWeeksMap.get(studioId) ?? 26;
       const tz = studioTzMap.get(studioId) ?? "Asia/Tokyo";
       const todayStr = getTodayInTz(tz);
 

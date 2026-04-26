@@ -37,14 +37,14 @@ Open your card in *Managers* and Sarah just flips the ones she wants.
 
 ## Analytics
 - **Report builder with saved reports** — new *Build & save reports* button on the Analytics page. Six built-in report types out of the gate:
-  - Revenue over time
-  - Class attendance
-  - Instructor payouts
-  - Member growth
-  - Drop-in counts
-  - Room utilization
+ - Revenue over time
+ - Class attendance
+ - Instructor payouts
+ - Member growth
+ - Drop-in counts
+ - Room utilization
 
-  Tune the date range (last 7 / 30 / 90 days, month-based, custom), group by day / week / month, and optionally filter by instructor. Save it with a name, star favorites, and re-run with one click from the sidebar. *↓ CSV* exports the current chart.
+ Tune the date range (last 7 / 30 / 90 days, month-based, custom), group by day / week / month, and optionally filter by instructor. Save it with a name, star favorites, and re-run with one click from the sidebar. *↓ CSV* exports the current chart.
 
 ## Forms & documents (applications, contracts, medical intake, multiple waivers)
 New *Settings → Forms & documents* page. Click **+ New form** and pick a type — *Waiver*, *Application*, *Contract*, *Medical intake*, or *Custom* (blank). Each starts with a sensible field template you can tweak:

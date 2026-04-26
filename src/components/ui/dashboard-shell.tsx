@@ -91,7 +91,7 @@ export default function DashboardShell({
           userEmail={userEmail}
           onSidebarToggle={() => setSidebarOpen((o) => !o)}
         />
-        <main className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
+        <main className="min-h-0 flex-1 overflow-y-auto p-4 pb-32 md:p-6 md:pb-32">
           {banner && <div className="mb-6">{banner}</div>}
           {planAccess ? (
             <PlanAccessProvider planAccess={planAccess}>
