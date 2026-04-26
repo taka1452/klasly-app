@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
+import ContextHelpLink from "@/components/help/context-help-link";
 
 type Campaign = {
   id: string;
@@ -33,7 +34,10 @@ export default function CampaignsPage() {
     <div>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 md:text-2xl">Email Campaigns</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold text-gray-900 md:text-2xl">Email Campaigns</h1>
+            <ContextHelpLink href="/help/messaging/studio-announcements" />
+          </div>
           <p className="mt-1 text-sm text-gray-500">
             Send emails to your members
           </p>

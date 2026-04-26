@@ -7,6 +7,7 @@ import RoomsPageClient from "@/components/dashboard/rooms-page-client";
 import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
 import { isFeatureEnabled } from "@/lib/features/check-feature";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
+import ContextHelpLink from "@/components/help/context-help-link";
 
 export const metadata: Metadata = {
   title: "Rooms - Klasly",
@@ -88,7 +89,10 @@ export default async function RoomsPage() {
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Rooms</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-gray-900">Rooms</h1>
+            <ContextHelpLink href="/help/classes-scheduling/manage-rooms" />
+          </div>
           <p className="mt-1 text-sm text-gray-500">
             Room usage &amp; bookings
           </p>

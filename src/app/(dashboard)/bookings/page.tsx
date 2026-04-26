@@ -7,6 +7,7 @@ import type { Metadata } from "next";
 import BookingsMonthNav from "./bookings-month-nav";
 import BookingsClient from "@/components/bookings/bookings-client";
 import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
+import ContextHelpLink from "@/components/help/context-help-link";
 
 export const metadata: Metadata = {
   title: "Bookings - Klasly",
@@ -141,7 +142,10 @@ export default async function BookingsPage({
     <div>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Bookings</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-gray-900">Bookings</h1>
+            <ContextHelpLink href="/help/classes-scheduling/manage-bookings" />
+          </div>
           <p className="mt-1 text-sm text-gray-500">
             Sessions for {new Date(year, month - 1).toLocaleString("en-US", { month: "long", year: "numeric" })}
           </p>

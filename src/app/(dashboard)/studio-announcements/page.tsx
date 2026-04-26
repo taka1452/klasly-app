@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import ContextHelpLink from "@/components/help/context-help-link";
 
 type AnnouncementRow = {
   id: string;
@@ -84,7 +85,10 @@ export default function StudioAnnouncementsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900">Announcements</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-gray-900">Announcements</h1>
+        <ContextHelpLink href="/help/messaging/studio-announcements" />
+      </div>
       <p className="mt-1 text-sm text-gray-500">
         Create announcements for your studio members and instructors.
       </p>

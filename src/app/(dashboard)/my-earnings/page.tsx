@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Toast from "@/components/ui/toast";
+import ContextHelpLink from "@/components/help/context-help-link";
 
 type EarningItem = {
   id: string;
@@ -158,7 +159,10 @@ export default function MyEarningsPage() {
   if (loading) {
     return (
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">My Earnings</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-gray-900">My Earnings</h1>
+          <ContextHelpLink href="/help/collective-mode/collective-tiers" />
+        </div>
         <div className="mt-6 card">
           <p className="text-sm text-gray-500">Loading...</p>
         </div>
@@ -168,7 +172,10 @@ export default function MyEarningsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900">My Earnings</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-gray-900">My Earnings</h1>
+        <ContextHelpLink href="/help/collective-mode/collective-tiers" />
+      </div>
       <p className="mt-1 text-sm text-gray-500">
         View your class earnings and Stripe account status
       </p>

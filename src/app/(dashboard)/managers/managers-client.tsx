@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import ContextHelpLink from "@/components/help/context-help-link";
 
 type ManagerInfo = {
   id: string;
@@ -359,7 +360,10 @@ export default function ManagersClient() {
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Managers</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-gray-900">Managers</h1>
+            <ContextHelpLink href="/help/collective-mode/assign-manager-role" />
+          </div>
           <p className="mt-1 text-sm text-gray-500">
             Invite managers to help run your studio with customizable permissions.{" "}
             <button

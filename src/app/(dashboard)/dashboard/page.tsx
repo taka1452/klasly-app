@@ -7,6 +7,10 @@ import {
   formatTime,
   formatCurrency,
 } from "@/lib/utils";
+import { getOwnerSetupTasks } from "@/lib/setup-tasks";
+import SetupChecklistCard from "@/components/ui/setup-checklist-card";
+import ContextHelpLink from "@/components/help/context-help-link";
+import type { SetupTask } from "@/components/ui/setup-task-list";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -33,7 +37,7 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, studio_id, role")
+    .select("full_name, studio_id, role, onboarding_completed")
     .eq("id", user.id)
     .single();
 
@@ -58,17 +62,38 @@ export default async function DashboardPage() {
   const canManageClasses = isOwner || managerPerms?.can_manage_classes;
   const canManageBookings = isOwner || managerPerms?.can_manage_bookings;
 
-  // オーナー向け: スタジオのプラン状況・Stripe Connect 状態を取得
+  // オーナー向け: スタジオのプラン状況・Stripe Connect 状態 + Setup Checklist 用情報を取得
   let planStatus: string | null = null;
   let stripeConnectComplete = true;
+  let setupTasks: SetupTask[] = [];
+  let setupGuideHref: string | null = null;
   if (isOwner) {
     const { data: studioInfo } = await supabase
       .from("studios")
-      .select("plan_status, stripe_connect_onboarding_complete")
+      .select(
+        "plan_status, stripe_connect_onboarding_complete, stripe_subscription_id, payout_model",
+      )
       .eq("id", profile.studio_id)
       .single();
-    planStatus = (studioInfo as { plan_status?: string } | null)?.plan_status ?? null;
-    stripeConnectComplete = (studioInfo as { stripe_connect_onboarding_complete?: boolean } | null)?.stripe_connect_onboarding_complete ?? false;
+    const info = studioInfo as {
+      plan_status?: string;
+      stripe_connect_onboarding_complete?: boolean;
+      stripe_subscription_id?: string | null;
+      payout_model?: string | null;
+    } | null;
+    planStatus = info?.plan_status ?? null;
+    stripeConnectComplete = info?.stripe_connect_onboarding_complete ?? false;
+
+    const onboardingCompleted =
+      (profile as { onboarding_completed?: boolean }).onboarding_completed ?? true;
+    setupTasks = await getOwnerSetupTasks(
+      supabase,
+      profile.studio_id,
+      info,
+      onboardingCompleted,
+    );
+    setupGuideHref =
+      info?.payout_model === "instructor_direct" ? "/settings/collective-setup" : null;
   }
 
   const today = new Date().toISOString().split("T")[0];
@@ -369,7 +394,10 @@ export default async function DashboardPage() {
     <div>
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900">Dashboard</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900">Dashboard</h1>
+            <ContextHelpLink href="/help/getting-started/studio-setup-overview" />
+          </div>
           <p className="mt-1 text-sm text-gray-500">
             Welcome back, {profile?.full_name || "there"}!
           </p>
@@ -384,6 +412,11 @@ export default async function DashboardPage() {
           </Link>
         )}
       </div>
+
+      {/* Inline setup checklist for owners (hidden when complete) */}
+      {isOwner && setupTasks.length > 0 && (
+        <SetupChecklistCard tasks={setupTasks} guideHref={setupGuideHref} />
+      )}
 
       {/* Owner alerts: payment issues & Stripe Connect */}
       {isOwner && planStatus === "past_due" && (
