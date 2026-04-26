@@ -2796,21 +2796,29 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
       ],
     },
     {
-      title: "Achievements",
+      title: "Achievements & Levels",
       items: [
         {
-          q: "What are achievements?",
+          q: "What are member levels?",
           a: (
             <>
-              Achievements are badges you earn by attending classes regularly. They appear at the top of your <B>Bookings</B> page. Milestones include your first class, 5/10/25/50 classes, and weekly attendance streaks (7-day, 30-day, 90-day).
+              Every member has a level that grows with attended classes: <B>Bronze</B> (0&ndash;9), <B>Silver</B> (10&ndash;29), <B>Gold</B> (30&ndash;99), <B>Platinum</B> (100&ndash;299), and <B>Diamond</B> (300+). Your level appears as a colored ring around your initial in the top navigation, with a progress bar on your <B>Bookings</B> page showing how many more classes until the next rank.
             </>
           ),
         },
         {
-          q: "How do I earn a streak badge?",
+          q: "How do I level up?",
           a: (
             <>
-              Attend at least one class every week. A <B>7-day streak</B> means you attended for at least 1 consecutive week, <B>30-day</B> for about 4 weeks, and <B>90-day</B> for about 13 weeks. Keep it up!
+              Just keep attending classes. When your instructor or studio marks you as attended, your lifetime count goes up automatically. The next time you reach a level threshold you&apos;ll see a celebration when you open the app.
+            </>
+          ),
+        },
+        {
+          q: "What are achievements?",
+          a: (
+            <>
+              Achievements are badges you earn by attending classes regularly. They appear on your <B>Bookings</B> page below your rank. Milestones include your first class and 5 / 10 / 25 / 50 classes attended.
             </>
           ),
         },

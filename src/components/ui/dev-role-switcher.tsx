@@ -289,12 +289,49 @@ export default function TestAccountSwitcher() {
                   Test accounts let you preview Klasly as an instructor or
                   member without affecting real data.
                 </p>
-                <a
-                  href="/settings#test-accounts"
-                  className="mt-2 inline-block font-medium text-brand-600 underline hover:text-brand-700"
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setSwitchError(null);
+                    setSwitching("seed");
+                    try {
+                      const res = await fetch("/api/dev/seed-test-accounts", {
+                        method: "POST",
+                      });
+                      const data = await res.json().catch(() => ({}));
+                      if (!res.ok || !data.success) {
+                        setSwitchError(
+                          (data.errors && data.errors.length > 0
+                            ? data.errors.join("; ")
+                            : data.error) ||
+                            "Failed to create test accounts."
+                        );
+                      } else {
+                        await fetchAccounts();
+                      }
+                    } catch {
+                      setSwitchError(
+                        "Network error while creating test accounts."
+                      );
+                    } finally {
+                      setSwitching(null);
+                    }
+                  }}
+                  disabled={switching === "seed"}
+                  className="mt-2 inline-block rounded-md bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700 disabled:opacity-50"
                 >
-                  Create test accounts →
-                </a>
+                  {switching === "seed" ? "Creating..." : "Create test accounts"}
+                </button>
+                <p className="mt-2 text-[11px] text-gray-400">
+                  Or manage them at{" "}
+                  <a
+                    href="/settings"
+                    className="font-medium text-brand-600 underline hover:text-brand-700"
+                  >
+                    Settings
+                  </a>
+                  .
+                </p>
               </div>
             ) : (
               <div className="space-y-1">

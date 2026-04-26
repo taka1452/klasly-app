@@ -45,6 +45,7 @@ export async function getOwnerSetupTasks(
       id: "tutorial",
       label: "Complete the tutorial",
       done: onboardingCompleted,
+      href: "/dashboard?tour=1",
       hint: "Take a quick tour to learn the dashboard.",
       helpHref: "/help/getting-started/studio-setup-overview",
     },

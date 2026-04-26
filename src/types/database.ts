@@ -98,6 +98,10 @@ export type Member = {
   is_minor: boolean;
   date_of_birth: string | null;
   guardian_email: string | null;
+  // Levels (gamification)
+  lifetime_classes_attended: number;
+  current_rank: "bronze" | "silver" | "gold" | "platinum" | "diamond";
+  rank_celebrated_at: string | null;
 };
 
 export type Instructor = {

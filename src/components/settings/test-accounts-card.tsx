@@ -25,6 +25,8 @@ export default function TestAccountsCard() {
   const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState<boolean | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [seeding, setSeeding] = useState(false);
+  const [seedError, setSeedError] = useState<string | null>(null);
 
   const fetchAccounts = useCallback(async () => {
     try {
@@ -47,6 +49,28 @@ export default function TestAccountsCard() {
   useEffect(() => {
     fetchAccounts();
   }, [fetchAccounts]);
+
+  async function handleSeed() {
+    setSeeding(true);
+    setSeedError(null);
+    try {
+      const res = await fetch("/api/dev/seed-test-accounts", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        setSeedError(
+          (data.errors && data.errors.length > 0
+            ? data.errors.join("; ")
+            : data.error) || "Failed to create test accounts."
+        );
+      } else {
+        await fetchAccounts();
+      }
+    } catch {
+      setSeedError("Network error while creating test accounts.");
+    } finally {
+      setSeeding(false);
+    }
+  }
 
   async function copyValue(key: string, value: string) {
     try {
@@ -79,10 +103,26 @@ export default function TestAccountsCard() {
           {loading ? (
             <p className="mt-4 text-sm text-gray-400">Loading...</p>
           ) : testAccounts.length === 0 ? (
-            <p className="mt-4 rounded-lg bg-gray-50 p-3 text-sm text-gray-500">
-              No test accounts set up yet. They&apos;re created automatically
-              when you complete studio onboarding.
-            </p>
+            <div className="mt-4 rounded-lg bg-gray-50 p-3 text-sm text-gray-500">
+              <p>
+                No test accounts set up yet. They&apos;re normally created when
+                a studio is first onboarded — if yours got missed, click below
+                to create a Test Instructor and a Test Member now.
+              </p>
+              {seedError && (
+                <p className="mt-2 rounded bg-red-50 px-2 py-1 text-xs text-red-600">
+                  {seedError}
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={handleSeed}
+                disabled={seeding}
+                className="btn-primary mt-3"
+              >
+                {seeding ? "Creating..." : "Create test accounts"}
+              </button>
+            </div>
           ) : (
             <div className="mt-4 space-y-2">
               {testAccounts.map((a) => (

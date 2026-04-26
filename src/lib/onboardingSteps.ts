@@ -10,24 +10,30 @@ export type TourStep = {
 
 export const OWNER_STEPS: TourStep[] = [
   {
+    target: "setup-checklist",
+    title: "Your setup checklist",
+    description:
+      "These are the few steps that get your studio ready. Tick them off in any order — we'll keep this list visible until you're done.",
+  },
+  {
     target: "create-class-button",
-    title: "Create Your First Class",
-    description: "Start by creating a class your members can book.",
+    title: "Create your first class",
+    description: "Add a recurring class so members have something to book.",
   },
   {
     target: "members-section",
-    title: "Add Members",
-    description: "Manage your members here.",
+    title: "Add members",
+    description: "Invite or import the people who'll book classes with you.",
   },
   {
     target: "bookings-section",
     title: "Bookings",
-    description: "Members can reserve classes here.",
+    description: "Once members start booking, you'll find every reservation here.",
   },
   {
     target: "dashboard-stats",
-    title: "Track Performance",
-    description: "Monitor attendance and revenue.",
+    title: "Track performance",
+    description: "Revenue, attendance, and today's classes — all at a glance.",
   },
 ];
 

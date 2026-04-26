@@ -5,13 +5,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import LanguageSelector from "@/components/i18n/language-selector";
+import RankRing from "@/components/levels/rank-ring";
+import { RANK_LABEL, type Rank } from "@/lib/rank";
 
 type Props = {
   userName: string;
   userEmail: string;
+  rank?: Rank | null;
+  lifetimeClasses?: number | null;
 };
 
-export default function MemberHeader({ userName, userEmail }: Props) {
+export default function MemberHeader({ userName, userEmail, rank, lifetimeClasses }: Props) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -58,7 +62,14 @@ export default function MemberHeader({ userName, userEmail }: Props) {
           onClick={() => setMenuOpen(!menuOpen)}
           className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
         >
-          {userName}
+          {rank && (
+            <RankRing
+              rank={rank}
+              initial={(userName?.[0] || "?").toUpperCase()}
+              size="sm"
+            />
+          )}
+          <span className="hidden sm:inline">{userName}</span>
           <svg
             className="h-4 w-4 text-gray-400"
             fill="none"
@@ -78,6 +89,14 @@ export default function MemberHeader({ userName, userEmail }: Props) {
             <div className="border-b border-gray-100 px-3 py-2">
               <p className="text-sm font-medium text-gray-900">{userName}</p>
               <p className="text-xs text-gray-500">{userEmail}</p>
+              {rank && (
+                <p className="mt-1 text-xs text-gray-700">
+                  <span className="font-semibold">{RANK_LABEL[rank]}</span>
+                  {typeof lifetimeClasses === "number" && (
+                    <span className="text-gray-400"> · {lifetimeClasses} classes</span>
+                  )}
+                </p>
+              )}
             </div>
             <a
               href="/account"

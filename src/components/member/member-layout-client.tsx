@@ -7,6 +7,8 @@ import TourProvider from "@/components/tour/TourProvider";
 import { useFeature } from "@/lib/features/feature-context";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 import MemberBottomNav from "@/components/ui/member-bottom-nav";
+import RankUpModal from "@/components/levels/rank-up-modal";
+import type { Rank } from "@/lib/rank";
 
 type MemberLayoutClientProps = {
   userName: string;
@@ -16,6 +18,9 @@ type MemberLayoutClientProps = {
   onboardingStartedAt: string | null;
   userId: string;
   memberCredits: number | null;
+  rank: Rank | null;
+  lifetimeClasses: number | null;
+  pendingRankCelebration: boolean;
   children: React.ReactNode;
 };
 
@@ -27,6 +32,9 @@ export default function MemberLayoutClient({
   onboardingStartedAt,
   userId,
   memberCredits,
+  rank,
+  lifetimeClasses,
+  pendingRankCelebration,
   children,
 }: MemberLayoutClientProps) {
   const { isEnabled } = useFeature();
@@ -55,7 +63,12 @@ export default function MemberLayoutClient({
         <MemberHeader
           userName={userName}
           userEmail={userEmail}
+          rank={rank}
+          lifetimeClasses={lifetimeClasses}
         />
+        {rank && pendingRankCelebration && (
+          <RankUpModal rank={rank} pendingCelebration />
+        )}
         <nav className="border-b border-gray-200 bg-white">
           <div className="mx-auto max-w-6xl px-4 py-2 md:py-3">
             <div className="flex items-center justify-between">

@@ -9,7 +9,9 @@ import BookingButton from "@/components/bookings/booking-button";
 import { unwrapRelation } from "@/lib/supabase/relation";
 import ReviewButton from "@/components/reviews/review-button";
 import MemberAchievements from "@/components/achievements/member-achievements";
+import RankCard from "@/components/levels/rank-card";
 import type { AchievementType } from "@/types/database";
+import { rankFromCount, type Rank } from "@/lib/rank";
 
 export default async function MyBookingsPage() {
   const serverSupabase = await createServerClient();
@@ -31,7 +33,7 @@ export default async function MyBookingsPage() {
 
   const { data: memberList } = await supabase
     .from("members")
-    .select("id, credits, studio_id")
+    .select("id, credits, studio_id, current_rank, lifetime_classes_attended")
     .eq("profile_id", user.id);
 
   const member = memberList?.[0];
@@ -168,6 +170,18 @@ export default async function MyBookingsPage() {
       <p className="mt-1 text-sm text-gray-500">
         Your upcoming and past classes
       </p>
+
+      {member && (
+        <div className="mt-4">
+          <RankCard
+            rank={
+              ((member as { current_rank?: string | null }).current_rank as Rank | undefined)
+                ?? rankFromCount((member as { lifetime_classes_attended?: number | null }).lifetime_classes_attended ?? 0)
+            }
+            lifetimeClasses={(member as { lifetime_classes_attended?: number | null }).lifetime_classes_attended ?? 0}
+          />
+        </div>
+      )}
 
       {(achievements || []).length > 0 && (
         <div className="mt-4">

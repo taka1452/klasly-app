@@ -32,6 +32,7 @@ export default function SetupChecklistCard({
   return (
     <section
       aria-label="Studio setup checklist"
+      data-tour="setup-checklist"
       className="mb-8 rounded-xl border border-gray-200 bg-white p-6 md:p-7"
     >
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">

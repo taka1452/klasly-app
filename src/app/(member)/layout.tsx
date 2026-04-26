@@ -48,14 +48,21 @@ export default async function MemberLayout({
 
   const needsWaiverCheck =
     profile?.studio_id != null && profile.studio_id !== "";
-  let member: { id: string; waiver_signed: boolean; credits: number } | null = null;
+  let member: {
+    id: string;
+    waiver_signed: boolean;
+    credits: number;
+    current_rank?: string | null;
+    lifetime_classes_attended?: number | null;
+    rank_celebrated_at?: string | null;
+  } | null = null;
   let waiverTemplate: { id: string; title: string; content: string } | null = null;
 
   if (needsWaiverCheck && profile.studio_id) {
     const [memberRes, templateRes] = await Promise.all([
       supabase
         .from("members")
-        .select("id, waiver_signed, credits")
+        .select("id, waiver_signed, credits, current_rank, lifetime_classes_attended, rank_celebrated_at")
         .eq("profile_id", user.id)
         .eq("studio_id", profile.studio_id)
         .maybeSingle(),
@@ -91,6 +98,19 @@ export default async function MemberLayout({
   const localeCookie = cookieStore.get("klasly-locale")?.value;
   const locale: Locale = localeCookie === "ja" ? "ja" : "en";
 
+  const VALID_RANKS = ["bronze", "silver", "gold", "platinum", "diamond"] as const;
+  type RankT = typeof VALID_RANKS[number];
+  const rawRank = member?.current_rank ?? null;
+  const rank: RankT | null =
+    rawRank && (VALID_RANKS as readonly string[]).includes(rawRank)
+      ? (rawRank as RankT)
+      : member
+        ? "bronze"
+        : null;
+  const lifetimeClasses = member?.lifetime_classes_attended ?? null;
+  const pendingRankCelebration =
+    !!member && member.rank_celebrated_at == null && rank !== null && rank !== "bronze";
+
   return (
     <I18nProvider defaultLocale={locale}>
     <FeatureProvider features={features}>
@@ -103,6 +123,9 @@ export default async function MemberLayout({
         onboardingStartedAt={onboardingStartedAt}
         userId={user.id}
         memberCredits={member?.credits ?? null}
+        rank={rank}
+        lifetimeClasses={lifetimeClasses}
+        pendingRankCelebration={pendingRankCelebration}
       >
         {children}
         <DevRoleSwitcher />
