@@ -1,19 +1,17 @@
 import Link from "next/link";
-import { CheckCircle2, HelpCircle, Sparkles } from "lucide-react";
+import { HelpCircle } from "lucide-react";
 import type { SetupTask } from "./setup-task-list";
 
 type Props = {
   tasks: SetupTask[];
-  /** Optional link to a full setup-guide page rendered as a footer link. */
   guideHref?: string | null;
   guideLabel?: string;
 };
 
 /**
- * Inline (non-dismissible) version of the setup checklist, intended for the
- * dashboard home. Hidden once everything is complete so the dashboard returns
- * to its normal layout. The floating <SetupTaskList/> in the dashboard layout
- * remains available on every page for users who navigate away.
+ * Inline (non-dismissible) version of the setup checklist for the dashboard
+ * home. Hidden once everything is complete. The floating <SetupTaskList/> in
+ * the dashboard layout remains available on every page.
  */
 export default function SetupChecklistCard({
   tasks,
@@ -28,51 +26,45 @@ export default function SetupChecklistCard({
 
   const progressPercent = Math.round((doneCount / totalCount) * 100);
   const remaining = tasks.filter((t) => !t.done);
-  // Show first 4 remaining inline; rest is reachable via floating checklist.
   const visible = remaining.slice(0, 4);
   const hiddenCount = remaining.length - visible.length;
 
   return (
     <section
       aria-label="Studio setup checklist"
-      className="mb-6 rounded-xl border border-brand-100 bg-gradient-to-br from-brand-50/80 to-white p-5 shadow-sm md:p-6"
+      className="mb-8 rounded-xl border border-gray-200 bg-white p-6 md:p-7"
     >
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-brand-600" aria-hidden="true" />
-            <h2 className="text-base md:text-lg font-semibold text-gray-900">
-              Finish setting up your studio
-            </h2>
-          </div>
-          <p className="mt-1 text-sm text-gray-600">
-            {doneCount} of {totalCount} complete · A few more steps and members can start booking.
-          </p>
-          <div className="mt-3 h-1.5 w-full max-w-md rounded-full bg-gray-100 overflow-hidden">
-            <div
-              className="h-full rounded-full bg-brand-500 transition-all duration-500 ease-out"
-              style={{ width: `${progressPercent}%` }}
-              aria-valuenow={progressPercent}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              role="progressbar"
-            />
-          </div>
-        </div>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+        <h2 className="text-base font-semibold tracking-tight text-gray-900">
+          Finish setting up your studio
+        </h2>
+        <p className="text-xs font-medium tabular-nums text-gray-500">
+          {doneCount} of {totalCount}
+        </p>
+      </div>
+      <div className="mt-3 h-px w-full overflow-hidden bg-gray-100">
+        <div
+          className="h-full bg-brand-500 transition-[width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+          style={{ width: `${progressPercent}%` }}
+          aria-valuenow={progressPercent}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          role="progressbar"
+        />
       </div>
 
-      <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+      <ul className="mt-5 grid gap-x-6 gap-y-3 sm:grid-cols-2">
         {visible.map((task) => (
-          <li
-            key={task.id}
-            className="group flex items-start gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2.5 hover:border-brand-300 hover:bg-brand-50/40 transition-colors"
-          >
-            <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 border-gray-300 group-hover:border-brand-400" />
+          <li key={task.id} className="flex items-start gap-3">
+            <span
+              aria-hidden="true"
+              className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-gray-300"
+            />
             <div className="flex-1 min-w-0">
               {task.href ? (
                 <Link
                   href={task.href}
-                  className="block text-sm font-medium text-gray-800 hover:text-brand-700"
+                  className="block text-sm font-medium text-gray-800 underline-offset-4 hover:text-brand-700 hover:underline"
                 >
                   {task.label}
                 </Link>
@@ -82,7 +74,7 @@ export default function SetupChecklistCard({
                 </span>
               )}
               {task.hint && (
-                <span className="mt-0.5 block text-xs text-gray-500">
+                <span className="mt-0.5 block text-xs leading-relaxed text-gray-500">
                   {task.hint}
                 </span>
               )}
@@ -91,7 +83,8 @@ export default function SetupChecklistCard({
               <Link
                 href={task.helpHref}
                 title="Learn how"
-                className="mt-0.5 flex-shrink-0 text-gray-300 hover:text-brand-500"
+                aria-label={`Learn how: ${task.label}`}
+                className="-m-2 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded text-gray-300 hover:text-brand-600"
               >
                 <HelpCircle className="h-4 w-4" />
               </Link>
@@ -100,25 +93,17 @@ export default function SetupChecklistCard({
         ))}
       </ul>
 
-      {(hiddenCount > 0 || guideHref || tasks.some((t) => t.done)) && (
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-gray-600">
-          <div className="flex items-center gap-3">
-            {tasks.some((t) => t.done) && (
-              <span className="inline-flex items-center gap-1 text-emerald-700">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                {doneCount} done
-              </span>
-            )}
-            {hiddenCount > 0 && (
-              <span className="text-gray-500">
-                +{hiddenCount} more · open the checklist (bottom-right) to see all
-              </span>
-            )}
-          </div>
+      {(hiddenCount > 0 || guideHref) && (
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-xs text-gray-500">
+          {hiddenCount > 0 ? (
+            <span>{hiddenCount} more in the checklist</span>
+          ) : (
+            <span aria-hidden="true" />
+          )}
           {guideHref && (
             <Link
               href={guideHref}
-              className="font-medium text-brand-600 hover:text-brand-700"
+              className="font-medium text-brand-700 underline-offset-4 hover:underline"
             >
               {guideLabel} &rarr;
             </Link>

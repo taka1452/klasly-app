@@ -62,9 +62,9 @@ export default async function DashboardPage() {
   const canManageClasses = isOwner || managerPerms?.can_manage_classes;
   const canManageBookings = isOwner || managerPerms?.can_manage_bookings;
 
-  // オーナー向け: スタジオのプラン状況・Stripe Connect 状態 + Setup Checklist 用情報を取得
+  // オーナー向け: プラン状況 + Setup Checklist 用情報。Stripe Connect は
+  // チェックリストのタスクとして表示するので、ここでは別途バナーを出さない。
   let planStatus: string | null = null;
-  let stripeConnectComplete = true;
   let setupTasks: SetupTask[] = [];
   let setupGuideHref: string | null = null;
   if (isOwner) {
@@ -82,7 +82,6 @@ export default async function DashboardPage() {
       payout_model?: string | null;
     } | null;
     planStatus = info?.plan_status ?? null;
-    stripeConnectComplete = info?.stripe_connect_onboarding_complete ?? false;
 
     const onboardingCompleted =
       (profile as { onboarding_completed?: boolean }).onboarding_completed ?? true;
@@ -455,24 +454,8 @@ export default async function DashboardPage() {
           </div>
         </div>
       )}
-      {isOwner && !stripeConnectComplete && (
-        <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 p-4">
-          <div className="flex items-start gap-3">
-            <svg className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-            </svg>
-            <div className="flex-1">
-              <h3 className="text-sm font-semibold text-amber-800">Stripe Connect setup incomplete</h3>
-              <p className="mt-1 text-sm text-amber-700">
-                Complete your Stripe Connect setup so members can purchase classes and packs.
-              </p>
-              <Link href="/settings/connect" className="mt-2 inline-block text-sm font-medium text-amber-800 underline hover:text-amber-900">
-                Complete setup →
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Stripe Connect status is already surfaced as a task in the inline
+          checklist above — no separate amber banner here. */}
 
       {/* Stats — Revenue featured (tinted, larger type); secondary metrics compact */}
       <div
