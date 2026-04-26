@@ -6,6 +6,7 @@ import Header from "./header";
 import SetupTaskList from "./setup-task-list";
 import { PlanAccessProvider } from "./plan-access-provider";
 import TourProvider from "@/components/tour/TourProvider";
+import TourLauncher from "@/components/tour/TourLauncher";
 import type { PlanAccess } from "@/lib/plan-guard";
 import type { SetupTask } from "./setup-task-list";
 import type { ManagerPermissions } from "@/lib/auth/check-manager-permission";
@@ -112,6 +113,7 @@ export default function DashboardShell({
             guideLabel="View full setup guide"
           />
         )}
+      <TourLauncher />
     </div>
     </TourProvider>
   );

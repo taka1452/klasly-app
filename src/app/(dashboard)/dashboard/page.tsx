@@ -10,7 +10,6 @@ import {
 import { getOwnerSetupTasks } from "@/lib/setup-tasks";
 import SetupChecklistCard from "@/components/ui/setup-checklist-card";
 import ContextHelpLink from "@/components/help/context-help-link";
-import TourLauncher from "@/components/tour/TourLauncher";
 import type { SetupTask } from "@/components/ui/setup-task-list";
 import type { Metadata } from "next";
 
@@ -390,7 +389,6 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <TourLauncher />
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">

@@ -18,12 +18,6 @@ export default function TourLauncher() {
   const tourActions = useTourActions();
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      (window as unknown as { __tourLauncherRan?: { hasActions: boolean; hasParam: boolean } }).__tourLauncherRan = {
-        hasActions: !!tourActions,
-        hasParam: new URLSearchParams(window.location.search).get("tour") === "1",
-      };
-    }
     if (!tourActions) return;
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
