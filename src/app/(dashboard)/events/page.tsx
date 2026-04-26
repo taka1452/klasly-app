@@ -6,6 +6,7 @@ import { formatDate } from "@/lib/utils";
 import ContextHelpLink from "@/components/help/context-help-link";
 import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
 import EmptyState from "@/components/ui/empty-state";
+import { getEmptyStateVideo } from "@/lib/empty-state-videos";
 import { isFeatureEnabled } from "@/lib/features/check-feature";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
@@ -87,6 +88,7 @@ export default async function EventsListPage() {
           actionHref="/events/new"
           helpHref="/help/events-retreats/create-retreat"
           helpLabel="How to create an event"
+          videoUrl={getEmptyStateVideo("events")}
         />
       ) : (
         <div className="card overflow-hidden p-0">

@@ -9,6 +9,7 @@ import FlowHintPanel from "@/components/ui/flow-hint-panel";
 import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
 import ContextHelpLink from "@/components/help/context-help-link";
 import EmptyState from "@/components/ui/empty-state";
+import { getEmptyStateVideo } from "@/lib/empty-state-videos";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -127,6 +128,7 @@ export default async function MembersPage({
               secondaryHref="/members/import"
               helpHref="/help/members/add-member"
               helpLabel="How to add members"
+              videoUrl={getEmptyStateVideo("members")}
             />
           )
         ) : (

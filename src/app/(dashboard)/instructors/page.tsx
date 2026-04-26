@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import EmptyState from "@/components/ui/empty-state";
+import { getEmptyStateVideo } from "@/lib/empty-state-videos";
 import InstructorsListClient from "@/components/instructors/instructors-list-client";
 import FlowHintPanel from "@/components/ui/flow-hint-panel";
 import ExportCsvButton from "@/components/ui/export-csv-button";
@@ -128,6 +129,7 @@ export default async function InstructorsPage() {
             actionHref="/instructors/new"
             helpHref="/help/collective-mode/invite-instructor"
             helpLabel="How to invite instructors"
+            videoUrl={getEmptyStateVideo("instructors")}
           />
         ) : (
           <InstructorsListClient

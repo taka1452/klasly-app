@@ -20,6 +20,14 @@ type EmptyStateProps = {
   helpHref?: string;
   /** Help link label */
   helpLabel?: string;
+  /**
+   * Optional iframe-embeddable URL for a short walkthrough (~30–60s).
+   * Mux / Bunny / YouTube embed links all work. When set, a 16:9 player
+   * is rendered between the description and the CTAs.
+   */
+  videoUrl?: string;
+  /** Accessible title for the embedded iframe. Falls back to the heading. */
+  videoTitle?: string;
 };
 
 export default function EmptyState({
@@ -32,6 +40,8 @@ export default function EmptyState({
   secondaryHref,
   helpHref,
   helpLabel = "Learn more",
+  videoUrl,
+  videoTitle,
 }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50/50 px-6 py-16 text-center">
@@ -50,6 +60,22 @@ export default function EmptyState({
         <p className="mt-2 max-w-sm text-sm text-gray-500 leading-relaxed">
           {description}
         </p>
+      )}
+
+      {/* Walkthrough video */}
+      {videoUrl && (
+        <div className="mt-5 w-full max-w-md">
+          <div className="relative w-full overflow-hidden rounded-lg border border-gray-200 bg-gray-100" style={{ aspectRatio: "16 / 9" }}>
+            <iframe
+              src={videoUrl}
+              title={videoTitle || `Walkthrough: ${title}`}
+              loading="lazy"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="absolute inset-0 h-full w-full"
+            />
+          </div>
+        </div>
       )}
 
       {/* Action buttons */}

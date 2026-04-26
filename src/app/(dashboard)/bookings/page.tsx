@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import EmptyState from "@/components/ui/empty-state";
+import { getEmptyStateVideo } from "@/lib/empty-state-videos";
 import ExportCsvButton from "@/components/ui/export-csv-button";
 import type { Metadata } from "next";
 import BookingsMonthNav from "./bookings-month-nav";
@@ -167,6 +168,7 @@ export default async function BookingsPage({
             title="No upcoming sessions"
             actionLabel="Create your first class"
             actionHref="/classes/new"
+            videoUrl={getEmptyStateVideo("bookings")}
           />
         )}
       </div>

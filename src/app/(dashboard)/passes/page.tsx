@@ -5,6 +5,8 @@ import { isFeatureEnabled } from "@/lib/features/check-feature";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 import PassAutoDistributeToggle from "@/components/passes/pass-auto-distribute-toggle";
 import ContextHelpLink from "@/components/help/context-help-link";
+import EmptyState from "@/components/ui/empty-state";
+import { getEmptyStateVideo } from "@/lib/empty-state-videos";
 
 export default async function PassesPage() {
   const ctx = await getDashboardContext();
@@ -181,19 +183,21 @@ export default async function PassesPage() {
       )}
 
       {(!passes || passes.length === 0) ? (
-        <div className="mt-6 card py-16 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-brand-50">
-            <svg className="h-7 w-7 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5zm6-10.125a1.875 1.875 0 11-3.75 0 1.875 1.875 0 013.75 0zm1.294 6.336a6.721 6.721 0 01-3.17.789 6.721 6.721 0 01-3.168-.789 3.376 3.376 0 016.338 0z" />
-            </svg>
-          </div>
-          <h3 className="text-base font-semibold text-gray-800">No passes yet</h3>
-          <p className="mt-1 text-sm text-gray-500 mx-auto max-w-sm">
-            Create a pass to offer monthly memberships, class packs, or drop-in access to your members.
-          </p>
-          <Link href="/passes/new" className="btn-primary mt-5 inline-flex">
-            + Create Pass
-          </Link>
+        <div className="mt-6">
+          <EmptyState
+            icon={
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5zm6-10.125a1.875 1.875 0 11-3.75 0 1.875 1.875 0 013.75 0zm1.294 6.336a6.721 6.721 0 01-3.17.789 6.721 6.721 0 01-3.168-.789 3.376 3.376 0 016.338 0z" />
+              </svg>
+            }
+            title="No passes yet"
+            description="Create a pass to offer monthly memberships, class packs, or drop-in access to your members."
+            actionLabel="+ Create Pass"
+            actionHref="/passes/new"
+            helpHref="/help/payments/studio-pass-setup"
+            helpLabel="How studio passes work"
+            videoUrl={getEmptyStateVideo("passes")}
+          />
         </div>
       ) : (
         <div className="mt-6 space-y-4">
