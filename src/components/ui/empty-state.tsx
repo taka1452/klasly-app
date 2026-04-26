@@ -65,11 +65,12 @@ export default function EmptyState({
       {/* Walkthrough video */}
       {videoUrl && (
         <div className="mt-5 w-full max-w-md">
-          <div className="relative w-full overflow-hidden rounded-lg border border-gray-200 bg-gray-100" style={{ aspectRatio: "16 / 9" }}>
+          <div className="relative aspect-video w-full overflow-hidden rounded-md bg-gray-100">
             <iframe
               src={videoUrl}
               title={videoTitle || `Walkthrough: ${title}`}
               loading="lazy"
+              referrerPolicy="strict-origin-when-cross-origin"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
               className="absolute inset-0 h-full w-full"
