@@ -204,7 +204,10 @@ export default function CommandPalette({ role }: Props) {
               setActive(0);
             }}
             onKeyDown={onKeyDown}
-            className="h-12 w-full bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
+            // No outline ring on the input itself — the entire dialog is
+            // the focus surface, and the visible "active" item highlight
+            // tells keyboard users where they are.
+            className="h-12 w-full bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus-visible:outline-none"
             aria-label="Search pages"
             aria-controls="command-palette-list"
             aria-activedescendant={
@@ -244,7 +247,7 @@ export default function CommandPalette({ role }: Props) {
                       type="button"
                       onMouseEnter={() => setActive(idx)}
                       onClick={() => onSelect(cmd.href)}
-                      className={`flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors ${
+                      className={`flex min-h-11 w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 ${
                         isActive
                           ? "bg-brand-50 text-brand-700"
                           : "text-gray-800 hover:bg-gray-50"

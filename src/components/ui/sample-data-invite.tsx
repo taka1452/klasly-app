@@ -77,7 +77,7 @@ export default function SampleDataInvite() {
             type="button"
             onClick={handleClick}
             disabled={loading}
-            className="inline-flex items-center rounded-md border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:border-gray-300 hover:text-gray-900 disabled:opacity-60"
+            className="inline-flex h-9 items-center rounded-md border border-gray-200 px-3 text-sm font-medium text-gray-700 transition-colors hover:border-gray-300 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? "Adding…" : "Add sample data"}
           </button>
