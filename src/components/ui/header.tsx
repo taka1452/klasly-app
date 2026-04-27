@@ -112,8 +112,25 @@ export default function Header({ userName, userEmail, onSidebarToggle }: HeaderP
         </span>
       </div>
 
-      {/* Help + ユーザーメニュー */}
+      {/* Help + コマンドパレットヒント + ユーザーメニュー */}
       <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => {
+          window.dispatchEvent(new Event("klasly:open-command-palette"));
+        }}
+        className="hidden h-9 items-center gap-2 rounded-md border border-gray-200 px-2.5 text-xs text-gray-500 hover:border-gray-300 hover:text-gray-700 sm:flex"
+        title="Search pages"
+        aria-label="Open command palette"
+      >
+        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-4.3-4.3M10.5 18a7.5 7.5 0 1 0 0-15 7.5 7.5 0 0 0 0 15Z" />
+        </svg>
+        <span className="hidden md:inline">Search</span>
+        <kbd className="rounded border border-gray-200 bg-gray-50 px-1.5 py-0.5 font-sans text-[10px] tracking-wide text-gray-500">
+          ⌘K
+        </kbd>
+      </button>
       <Link
         href="/help"
         target="_blank"

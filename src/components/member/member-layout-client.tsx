@@ -42,6 +42,7 @@ export default function MemberLayoutClient({
   const showAppointments = isEnabled(FEATURE_KEYS.APPOINTMENTS);
   const showCommunity = isEnabled(FEATURE_KEYS.COMMUNITY);
   const showVideos = isEnabled(FEATURE_KEYS.VIDEO_CONTENT);
+  const showMyStats = isEnabled(FEATURE_KEYS.MEMBER_LEVELS);
   const pathname = usePathname();
 
   const linkClass = (href: string) =>

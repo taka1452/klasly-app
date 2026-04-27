@@ -12,6 +12,8 @@ import MemberAchievements from "@/components/achievements/member-achievements";
 import RankCard from "@/components/levels/rank-card";
 import type { AchievementType } from "@/types/database";
 import { rankFromCount, type Rank } from "@/lib/rank";
+import { getStudioFeatures } from "@/lib/features/check-feature";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 export default async function MyBookingsPage() {
   const serverSupabase = await createServerClient();
@@ -37,6 +39,8 @@ export default async function MyBookingsPage() {
     .eq("profile_id", user.id);
 
   const member = memberList?.[0];
+  const features = member?.studio_id ? await getStudioFeatures(member.studio_id) : {};
+  const memberLevelsEnabled = features[FEATURE_KEYS.MEMBER_LEVELS] === true;
   let planStatus = "trialing";
   let requiresCredits = true;
   if (member?.studio_id) {
@@ -171,7 +175,7 @@ export default async function MyBookingsPage() {
         Your upcoming and past classes
       </p>
 
-      {member && (
+      {memberLevelsEnabled && member && (
         <div className="mt-4">
           <RankCard
             rank={

@@ -94,6 +94,8 @@ export default async function MemberLayout({
     ? await getStudioFeatures(profile.studio_id)
     : {};
 
+  const memberLevelsEnabled = features["extension.member_levels"] === true;
+
   const cookieStore = await cookies();
   const localeCookie = cookieStore.get("klasly-locale")?.value;
   const locale: Locale = localeCookie === "ja" ? "ja" : "en";
@@ -101,15 +103,22 @@ export default async function MemberLayout({
   const VALID_RANKS = ["bronze", "silver", "gold", "platinum", "diamond"] as const;
   type RankT = typeof VALID_RANKS[number];
   const rawRank = member?.current_rank ?? null;
-  const rank: RankT | null =
-    rawRank && (VALID_RANKS as readonly string[]).includes(rawRank)
+  const rank: RankT | null = memberLevelsEnabled
+    ? rawRank && (VALID_RANKS as readonly string[]).includes(rawRank)
       ? (rawRank as RankT)
       : member
         ? "bronze"
-        : null;
-  const lifetimeClasses = member?.lifetime_classes_attended ?? null;
+        : null
+    : null;
+  const lifetimeClasses = memberLevelsEnabled
+    ? (member?.lifetime_classes_attended ?? null)
+    : null;
   const pendingRankCelebration =
-    !!member && member.rank_celebrated_at == null && rank !== null && rank !== "bronze";
+    memberLevelsEnabled &&
+    !!member &&
+    member.rank_celebrated_at == null &&
+    rank !== null &&
+    rank !== "bronze";
 
   return (
     <I18nProvider defaultLocale={locale}>

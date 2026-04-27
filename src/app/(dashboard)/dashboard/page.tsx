@@ -9,6 +9,7 @@ import {
 } from "@/lib/utils";
 import { getOwnerSetupTasks } from "@/lib/setup-tasks";
 import SetupChecklistCard from "@/components/ui/setup-checklist-card";
+import SampleDataInvite from "@/components/ui/sample-data-invite";
 import ContextHelpLink from "@/components/help/context-help-link";
 import type { SetupTask } from "@/components/ui/setup-task-list";
 import type { Metadata } from "next";
@@ -414,6 +415,14 @@ export default async function DashboardPage() {
       {isOwner && setupTasks.length > 0 && (
         <SetupChecklistCard tasks={setupTasks} guideHref={setupGuideHref} />
       )}
+
+      {/* Trial-period invite to seed sample data — only when the studio
+          truly has nothing yet (no real classes AND no real members). */}
+      {isOwner &&
+        setupTasks.find((t) => t.id === "create-class")?.done === false &&
+        setupTasks.find((t) => t.id === "add-member")?.done === false && (
+          <SampleDataInvite />
+        )}
 
       {/* past_due / grace / Stripe Connect statuses are surfaced once each:
           PlanBanner (rendered by the dashboard layout) for billing failures,

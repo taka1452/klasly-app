@@ -7,6 +7,7 @@ import SetupTaskList from "./setup-task-list";
 import { PlanAccessProvider } from "./plan-access-provider";
 import TourProvider from "@/components/tour/TourProvider";
 import TourLauncher from "@/components/tour/TourLauncher";
+import CommandPalette from "./command-palette";
 import type { PlanAccess } from "@/lib/plan-guard";
 import type { SetupTask } from "./setup-task-list";
 import type { ManagerPermissions } from "@/lib/auth/check-manager-permission";
@@ -114,6 +115,7 @@ export default function DashboardShell({
           />
         )}
       <TourLauncher />
+      <CommandPalette role={currentRole} />
     </div>
     </TourProvider>
   );
