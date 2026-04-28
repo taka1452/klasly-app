@@ -142,8 +142,8 @@ export default async function BillingPage() {
 
   const planLabelShort =
     studio.subscription_period === "yearly"
-      ? "Pro (Yearly) - $190/year"
-      : "Pro (Monthly) - $19/month";
+      ? "Pro Yearly · $190/year"
+      : "Pro Monthly · $19/month";
 
   const isYearlyWithinRefund =
     studio.subscription_period === "yearly" &&
@@ -154,12 +154,17 @@ export default async function BillingPage() {
     <div>
       <Link
         href="/settings"
-        className="text-sm text-gray-500 hover:text-gray-700"
+        className="group inline-flex items-center gap-1 text-sm text-gray-500 transition-colors duration-150 hover:text-gray-700"
       >
-        ← Back to Settings
+        <span className="inline-block transition-transform duration-150 ease-out group-hover:-translate-x-0.5">
+          ←
+        </span>
+        Back to Settings
       </Link>
 
-      <h1 className="mt-4 text-2xl font-bold text-gray-900">Billing</h1>
+      <h1 className="mt-4 text-2xl font-semibold tracking-tight text-gray-900">
+        Billing
+      </h1>
       <p className="mt-1 text-sm text-gray-500">
         Manage your subscription and payment methods
       </p>
@@ -167,7 +172,7 @@ export default async function BillingPage() {
       <div className="mt-8 space-y-6">
         {/* Stripe account error */}
         {stripeError && (
-          <div className="rounded-lg border border-amber-300 bg-amber-50 p-4">
+          <div className="panel-enter rounded-lg border border-amber-300 bg-amber-50 p-4">
             <div className="flex items-start gap-3">
               <svg className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
@@ -182,7 +187,7 @@ export default async function BillingPage() {
 
         {/* Urgent alert for past_due or grace */}
         {studio.plan_status === "past_due" && (
-          <div className="rounded-lg border border-red-300 bg-red-50 p-4">
+          <div className="panel-enter rounded-lg border border-red-300 bg-red-50 p-4">
             <div className="flex items-start gap-3">
               <svg className="mt-0.5 h-5 w-5 shrink-0 text-red-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
@@ -197,7 +202,7 @@ export default async function BillingPage() {
           </div>
         )}
         {studio.plan_status === "grace" && (
-          <div className="rounded-lg border border-red-300 bg-red-50 p-4">
+          <div className="panel-enter rounded-lg border border-red-300 bg-red-50 p-4">
             <div className="flex items-start gap-3">
               <svg className="mt-0.5 h-5 w-5 shrink-0 text-red-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
@@ -214,7 +219,7 @@ export default async function BillingPage() {
           </div>
         )}
         {studio.plan_status === "canceled" && (
-          <div className="rounded-lg border border-gray-300 bg-gray-50 p-4">
+          <div className="panel-enter rounded-lg border border-gray-300 bg-gray-50 p-4">
             <div className="flex items-start gap-3">
               <svg className="mt-0.5 h-5 w-5 shrink-0 text-gray-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />

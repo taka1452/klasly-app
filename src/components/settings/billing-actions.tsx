@@ -373,8 +373,8 @@ export default function BillingActions({
 
       {/* Cancel confirmation modal */}
       {cancelModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-w-md rounded-lg bg-white p-6 shadow-xl">
+        <div className="modal-backdrop-enter fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="modal-dialog-enter max-w-md rounded-lg bg-white p-6 shadow-xl">
             <h3 className="text-lg font-semibold text-gray-900">Confirm cancellation</h3>
             <p className="mt-2 text-sm text-gray-600">{cancelMessage}</p>
             <div className="mt-6 flex justify-end gap-2">
@@ -389,9 +389,11 @@ export default function BillingActions({
                 type="button"
                 onClick={handleCancel}
                 disabled={!!loading}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                className="btn-danger"
               >
-                {loading === "cancel" ? "Cancelling…" : "Yes, cancel"}
+                <span className="label-swap" data-pending={loading === "cancel"}>
+                  {loading === "cancel" ? "Cancelling…" : "Yes, cancel"}
+                </span>
               </button>
             </div>
           </div>
@@ -400,8 +402,8 @@ export default function BillingActions({
 
       {/* Switch plan confirmation modals */}
       {switchModal === "yearly" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-w-md rounded-lg bg-white p-6 shadow-xl">
+        <div className="modal-backdrop-enter fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="modal-dialog-enter max-w-md rounded-lg bg-white p-6 shadow-xl">
             <h3 className="text-lg font-semibold text-gray-900">
               Switch to Yearly Plan?
             </h3>
@@ -431,8 +433,8 @@ export default function BillingActions({
       )}
 
       {switchModal === "monthly" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-w-md rounded-lg bg-white p-6 shadow-xl">
+        <div className="modal-backdrop-enter fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="modal-dialog-enter max-w-md rounded-lg bg-white p-6 shadow-xl">
             <h3 className="text-lg font-semibold text-gray-900">
               Switch to Monthly Plan?
             </h3>

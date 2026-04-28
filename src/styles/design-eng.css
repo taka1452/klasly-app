@@ -118,6 +118,34 @@
   opacity: 0.7;
 }
 
+/* Modal backdrop + dialog enter
+   - Modal stays centered (transform-origin: center is correct for modals only) */
+@keyframes modalBackdropEnter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes modalDialogEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.modal-backdrop-enter {
+  animation: modalBackdropEnter 200ms ease-out forwards;
+}
+.modal-dialog-enter {
+  transform-origin: center;
+  animation: modalDialogEnter 240ms var(--ease-out-strong) forwards;
+}
+
 /* Spinner — 600ms is faster than the default 1s; perceived speed boost. */
 @keyframes spinFast {
   to {
@@ -138,7 +166,9 @@
   .toast-exit-top,
   .stagger-item,
   .inline-reveal-right,
-  .panel-enter {
+  .panel-enter,
+  .modal-backdrop-enter,
+  .modal-dialog-enter {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
