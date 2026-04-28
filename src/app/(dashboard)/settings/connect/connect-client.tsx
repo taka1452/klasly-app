@@ -110,12 +110,17 @@ export default function SettingsConnectClient({ defaultCountry }: Props) {
   if (loading || status === null) {
     return (
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Stripe Connect</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
+          Stripe Connect
+        </h1>
         <p className="mt-1 text-sm text-gray-500">
           Receive payments from your members
         </p>
-        <div className="mt-6 card">
-          <p className="text-sm text-gray-500">Loading...</p>
+        <div className="mt-6 card animate-pulse">
+          <div className="h-5 w-2/3 rounded bg-gray-200" />
+          <div className="mt-3 h-4 w-full rounded bg-gray-100" />
+          <div className="mt-2 h-4 w-5/6 rounded bg-gray-100" />
+          <div className="mt-5 h-9 w-40 rounded bg-gray-200" />
         </div>
       </div>
     );
@@ -131,14 +136,19 @@ export default function SettingsConnectClient({ defaultCountry }: Props) {
       <div className="mb-4">
         <Link
           href="/settings"
-          className="text-sm font-medium text-brand-600 hover:text-brand-700"
+          className="group inline-flex items-center gap-1 text-sm font-medium text-brand-600 transition-colors duration-150 hover:text-brand-700"
         >
-          ← Settings
+          <span className="inline-block transition-transform duration-150 ease-out group-hover:-translate-x-0.5">
+            ←
+          </span>
+          Settings
         </Link>
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Stripe Connect</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
+            Stripe Connect
+          </h1>
           <p className="mt-1 text-sm text-gray-500">
             Receive payments from your members
           </p>
@@ -147,7 +157,7 @@ export default function SettingsConnectClient({ defaultCountry }: Props) {
       </div>
 
       {!status.connected ? (
-        <div className="mt-6 card">
+        <div key="not-connected" className="panel-enter mt-6 card">
           <h2 className="text-lg font-semibold text-gray-900">
             Connect Your Stripe Account
           </h2>
@@ -162,7 +172,7 @@ export default function SettingsConnectClient({ defaultCountry }: Props) {
             <select
               value={selectedCountry}
               onChange={(e) => setSelectedCountry(e.target.value)}
-              className="mt-1 w-full max-w-sm rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="mt-1 w-full max-w-sm rounded-lg border border-gray-300 px-3 py-2 text-sm transition-shadow duration-150 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             >
               {STRIPE_CONNECT_COUNTRIES.map((c) => (
                 <option key={c.code} value={c.code}>
@@ -182,13 +192,15 @@ export default function SettingsConnectClient({ defaultCountry }: Props) {
             type="button"
             onClick={handleConnect}
             disabled={onboardingLoading}
-            className="mt-4 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+            className="mt-4 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:bg-brand-700 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100"
           >
-            {onboardingLoading ? "Redirecting..." : "Connect with Stripe"}
+            <span className="label-swap" data-pending={onboardingLoading}>
+              {onboardingLoading ? "Redirecting..." : "Connect with Stripe"}
+            </span>
           </button>
         </div>
       ) : !status.onboardingComplete ? (
-        <div className="mt-6 card">
+        <div key="onboarding" className="panel-enter mt-6 card">
           <h2 className="text-lg font-semibold text-gray-900">
             Complete Your Stripe Setup
           </h2>
@@ -200,9 +212,11 @@ export default function SettingsConnectClient({ defaultCountry }: Props) {
             type="button"
             onClick={handleConnect}
             disabled={onboardingLoading}
-            className="mt-4 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+            className="mt-4 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:bg-brand-700 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100"
           >
-            {onboardingLoading ? "Redirecting..." : "Continue Setup"}
+            <span className="label-swap" data-pending={onboardingLoading}>
+              {onboardingLoading ? "Redirecting..." : "Continue Setup"}
+            </span>
           </button>
 
           <div className="mt-6 border-t border-gray-100 pt-4">
@@ -218,12 +232,12 @@ export default function SettingsConnectClient({ defaultCountry }: Props) {
               <button
                 type="button"
                 onClick={() => setConfirmReset(true)}
-                className="mt-2 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
+                className="mt-2 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition-[transform,background-color] duration-150 ease-out hover:bg-red-50 active:scale-[0.97]"
               >
                 Disconnect and start over
               </button>
             ) : (
-              <div className="mt-2 rounded-lg border border-red-200 bg-red-50 p-3">
+              <div className="panel-enter mt-2 rounded-lg border border-red-200 bg-red-50 p-3">
                 <p className="text-xs text-red-700">
                   This will unlink the current Stripe account so you can start a
                   fresh one. The old account will be abandoned on Stripe&apos;s
@@ -234,15 +248,17 @@ export default function SettingsConnectClient({ defaultCountry }: Props) {
                     type="button"
                     onClick={handleDisconnect}
                     disabled={disconnectLoading}
-                    className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                    className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:bg-red-700 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100"
                   >
-                    {disconnectLoading ? "Disconnecting..." : "Yes, disconnect"}
+                    <span className="label-swap" data-pending={disconnectLoading}>
+                      {disconnectLoading ? "Disconnecting..." : "Yes, disconnect"}
+                    </span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setConfirmReset(false)}
                     disabled={disconnectLoading}
-                    className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                    className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-[transform,background-color] duration-150 ease-out hover:bg-gray-50 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100"
                   >
                     Cancel
                   </button>
@@ -252,9 +268,21 @@ export default function SettingsConnectClient({ defaultCountry }: Props) {
           </div>
         </div>
       ) : (
-        <div className="mt-6 card">
-          <h2 className="text-lg font-semibold text-gray-900">
-            ✅ Stripe Connected
+        <div key="connected" className="panel-enter mt-6 card">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="h-5 w-5 text-emerald-500"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clipRule="evenodd"
+              />
+            </svg>
+            Stripe Connected
           </h2>
           <p className="mt-2 text-sm text-gray-600">
             Your account is ready to receive payments from members
@@ -264,9 +292,11 @@ export default function SettingsConnectClient({ defaultCountry }: Props) {
             type="button"
             onClick={handleOpenDashboard}
             disabled={dashboardLoading}
-            className="mt-4 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+            className="mt-4 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:bg-brand-700 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100"
           >
-            {dashboardLoading ? "Opening..." : "Open Stripe Dashboard"}
+            <span className="label-swap" data-pending={dashboardLoading}>
+              {dashboardLoading ? "Opening..." : "Open Stripe Dashboard"}
+            </span>
           </button>
         </div>
       )}
