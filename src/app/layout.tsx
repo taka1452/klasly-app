@@ -5,6 +5,7 @@ import SWUpdater from "@/components/pwa/sw-updater";
 import OfflineBanner from "@/components/pwa/offline-banner";
 import CsrfProvider from "@/components/csrf-provider";
 import "./globals.css";
+import "@/styles/design-eng.css";
 
 const sourceSans = Source_Sans_3({
   subsets: ["latin"],

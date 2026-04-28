@@ -237,17 +237,24 @@ export default function ManagersClient() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [toast, setToast] = useState<{ message: string; variant: "success" | "error" } | null>(null);
+  const [toastOpen, setToastOpen] = useState(false);
   const [removeConfirmId, setRemoveConfirmId] = useState<string | null>(null);
   const [guideOpen, setGuideOpen] = useState(false);
 
   const showToast = useCallback((message: string, variant: "success" | "error" = "success") => {
     setToast({ message, variant });
+    setToastOpen(true);
   }, []);
 
   useEffect(() => {
     if (!toast) return;
-    const t = setTimeout(() => setToast(null), 2000);
-    return () => clearTimeout(t);
+    // start exit ~180ms before unmount so the exit animation plays before DOM removal
+    const closeTimer = setTimeout(() => setToastOpen(false), 1820);
+    const unmountTimer = setTimeout(() => setToast(null), 2000);
+    return () => {
+      clearTimeout(closeTimer);
+      clearTimeout(unmountTimer);
+    };
   }, [toast]);
 
   const fetchManagers = useCallback(async () => {
@@ -337,7 +344,7 @@ export default function ManagersClient() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-brand-500" />
+        <div className="spin-fast h-8 w-8 rounded-full border-4 border-gray-200 border-t-brand-500" />
       </div>
     );
   }
@@ -348,7 +355,9 @@ export default function ManagersClient() {
         <div
           role="status"
           aria-live="polite"
-          className={`fixed right-4 top-4 z-50 rounded-lg px-4 py-2 text-sm font-medium shadow-lg transition-opacity ${
+          className={`fixed right-4 top-4 z-50 rounded-lg px-4 py-2 text-sm font-medium shadow-lg ${
+            toastOpen ? "toast-enter-top" : "toast-exit-top"
+          } ${
             toast.variant === "success"
               ? "bg-emerald-600 text-white"
               : "bg-red-600 text-white"
@@ -456,7 +465,7 @@ export default function ManagersClient() {
       )}
 
       {showInvite && (
-        <div className="card mb-6">
+        <div className="card panel-enter mb-6">
           <h2 className="text-lg font-semibold text-gray-900">Invite a manager</h2>
           <p className="mt-1 text-xs text-gray-500">
             New managers start with a safe default set of permissions. You can
@@ -487,8 +496,12 @@ export default function ManagersClient() {
 
       {managers.length > 0 ? (
         <div className="space-y-4">
-          {managers.map((mgr) => (
-            <div key={mgr.id} className="card">
+          {managers.map((mgr, idx) => (
+            <div
+              key={mgr.id}
+              className="card stagger-item"
+              style={{ animationDelay: `${idx * 40}ms` }}
+            >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="font-medium text-gray-900">
@@ -497,17 +510,17 @@ export default function ManagersClient() {
                   <p className="text-sm text-gray-500">{mgr.email}</p>
                 </div>
                 {removeConfirmId === mgr.id ? (
-                  <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
+                  <div className="inline-reveal-right flex origin-right items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
                     <p className="text-xs text-red-700">Remove this manager?</p>
                     <button
                       onClick={() => handleRemove(mgr)}
-                      className="rounded bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-700"
+                      className="rounded bg-red-600 px-2 py-1 text-xs font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:bg-red-700 active:scale-[0.95]"
                     >
                       Yes
                     </button>
                     <button
                       onClick={() => setRemoveConfirmId(null)}
-                      className="rounded border border-red-300 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
+                      className="rounded border border-red-300 px-2 py-1 text-xs font-medium text-red-700 transition-[transform,background-color] duration-150 ease-out hover:bg-red-100 active:scale-[0.95]"
                     >
                       No
                     </button>
@@ -515,7 +528,7 @@ export default function ManagersClient() {
                 ) : (
                   <button
                     onClick={() => setRemoveConfirmId(mgr.id)}
-                    className="text-sm text-red-600 hover:text-red-700"
+                    className="text-sm text-red-600 transition-colors duration-150 hover:text-red-700"
                   >
                     Remove
                   </button>
@@ -545,7 +558,7 @@ export default function ManagersClient() {
                             handleTogglePermission(mgr, p.key, !isEnabled)
                           }
                           aria-pressed={isEnabled}
-                          className={`mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                          className={`mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-[transform,background-color,color] duration-150 ease-out active:scale-[0.95] ${
                             isEnabled
                               ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-100"
                               : "bg-gray-100 text-gray-400 ring-1 ring-gray-200 hover:bg-gray-200"

@@ -1,0 +1,153 @@
+/* ========================================
+   Design Engineering utilities (Emil Kowalski philosophy)
+   - Strong custom easings, GPU-only animations, interruptible transitions
+   - Loaded after globals.css so utility classes can win the cascade.
+   ======================================== */
+
+:root {
+  /* Strong ease-out — for entering/exiting UI */
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  /* Strong ease-in-out — for on-screen morph */
+  --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
+  /* iOS drawer curve */
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Press feedback for the shared button utilities.
+   - Adds transform to the existing transition-colors so scale animates smoothly.
+   - active:scale(0.97) gives instant "I heard you" feedback. */
+.btn-primary,
+.btn-secondary,
+.btn-danger {
+  transition: transform 160ms var(--ease-out-strong),
+    background-color 160ms ease, color 160ms ease, border-color 160ms ease;
+  transform-origin: center;
+}
+.btn-primary:active:not(:disabled),
+.btn-secondary:active:not(:disabled),
+.btn-danger:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Toast / floating element enter/exit
+   - Two-state pattern: render with .toast-enter-top, then swap to
+     .toast-exit-top before unmounting so the exit animation plays. */
+@keyframes toastEnterTop {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes toastExitTop {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.97);
+  }
+}
+.toast-enter-top {
+  animation: toastEnterTop 220ms var(--ease-out-strong) forwards;
+}
+.toast-exit-top {
+  animation: toastExitTop 180ms var(--ease-out-strong) forwards;
+}
+
+/* Generic list-item stagger — apply class + animationDelay inline.
+   Stagger is decorative; keep delays short (30-80ms × n) per Emil. */
+@keyframes staggerFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.stagger-item {
+  opacity: 0;
+  animation: staggerFadeUp 320ms var(--ease-out-strong) forwards;
+}
+
+/* Inline reveal for confirm UIs / inline forms.
+   - clip-path reveal so the element grows from one side without layout pop. */
+@keyframes inlineRevealRight {
+  from {
+    clip-path: inset(0 100% 0 0);
+    opacity: 0;
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+}
+.inline-reveal-right {
+  animation: inlineRevealRight 220ms var(--ease-out-strong) forwards;
+}
+
+/* Generic enter for inline panels (forms, dropdowns appearing within layout) */
+@keyframes panelEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.panel-enter {
+  transform-origin: top;
+  animation: panelEnter 220ms var(--ease-out-strong) forwards;
+}
+
+/* Cross-fade with subtle blur — bridges two visually overlapping states.
+   Use on text labels swapping in place (e.g. "Save" → "Saving..."). */
+.label-swap {
+  transition: filter 200ms ease, opacity 200ms ease;
+}
+.label-swap[data-pending="true"] {
+  filter: blur(2px);
+  opacity: 0.7;
+}
+
+/* Spinner — 600ms is faster than the default 1s; perceived speed boost. */
+@keyframes spinFast {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spin-fast {
+  animation: spinFast 600ms linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-primary:active:not(:disabled),
+  .btn-secondary:active:not(:disabled),
+  .btn-danger:active:not(:disabled) {
+    transform: none;
+  }
+  .toast-enter-top,
+  .toast-exit-top,
+  .stagger-item,
+  .inline-reveal-right,
+  .panel-enter {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    clip-path: none !important;
+  }
+  .label-swap {
+    filter: none !important;
+  }
+  .spin-fast {
+    animation-duration: 1s;
+  }
+}
