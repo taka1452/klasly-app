@@ -150,12 +150,20 @@ export default function PayoutSettingsPage() {
   if (loading || !settings) {
     return (
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Payout Settings</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
+          Payout Settings
+        </h1>
         <p className="mt-1 text-sm text-gray-500">
           Configure how payments are distributed
         </p>
-        <div className="mt-6 card">
-          <p className="text-sm text-gray-500">Loading...</p>
+        <div className="mt-6 space-y-6">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="card animate-pulse">
+              <div className="h-5 w-1/3 rounded bg-gray-200" />
+              <div className="mt-3 h-4 w-2/3 rounded bg-gray-100" />
+              <div className="mt-4 h-9 w-full max-w-xs rounded bg-gray-100" />
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -181,12 +189,17 @@ export default function PayoutSettingsPage() {
       <div className="mb-4">
         <Link
           href="/settings"
-          className="text-sm font-medium text-brand-600 hover:text-brand-700"
+          className="group inline-flex items-center gap-1 text-sm font-medium text-brand-600 transition-colors duration-150 hover:text-brand-700"
         >
-          &larr; Settings
+          <span className="inline-block transition-transform duration-150 ease-out group-hover:-translate-x-0.5">
+            &larr;
+          </span>
+          Settings
         </Link>
       </div>
-      <h1 className="text-2xl font-bold text-gray-900">Payout Settings</h1>
+      <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
+        Payout Settings
+      </h1>
       <p className="mt-1 text-sm text-gray-500">
         Configure how payments are distributed
       </p>
@@ -199,7 +212,7 @@ export default function PayoutSettingsPage() {
         </p>
 
         <div className="mt-4 space-y-3">
-          <label className="flex cursor-pointer items-start gap-3 rounded-lg border p-4 hover:bg-gray-50">
+          <label className="flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-[transform,background-color] duration-120 ease-out hover:bg-gray-50 active:scale-[0.99]">
             <input
               type="radio"
               name="payoutModel"
@@ -217,7 +230,7 @@ export default function PayoutSettingsPage() {
             </div>
           </label>
 
-          <label className="flex cursor-pointer items-start gap-3 rounded-lg border p-4 hover:bg-gray-50">
+          <label className="flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-[transform,background-color] duration-120 ease-out hover:bg-gray-50 active:scale-[0.99]">
             <input
               type="radio"
               name="payoutModel"
@@ -379,7 +392,7 @@ export default function PayoutSettingsPage() {
 
                   {/* Inline edit form */}
                   {editingInstructorId === inst.id && (
-                    <div className="mt-3 rounded-lg border border-brand-200 bg-brand-50 p-3">
+                    <div className="panel-enter mt-3 rounded-lg border border-brand-200 bg-brand-50 p-3">
                       <p className="text-sm font-medium text-gray-700 mb-2">
                         Custom Fee for {inst.name}
                       </p>
@@ -426,7 +439,9 @@ export default function PayoutSettingsPage() {
                           disabled={savingOverride}
                           className="btn-primary text-sm px-3 py-1"
                         >
-                          {savingOverride ? "Saving..." : "Save"}
+                          <span className="label-swap" data-pending={savingOverride}>
+                            {savingOverride ? "Saving..." : "Save"}
+                          </span>
                         </button>
                         {inst.feeOverride && (
                           <button
@@ -453,16 +468,18 @@ export default function PayoutSettingsPage() {
         </>
       )}
 
-      {/* Save Button */}
+      {/* Save Button — sticky bar appears only when there are unsaved changes */}
       {hasUnsavedChanges && (
-        <div className="mt-6">
+        <div className="panel-enter sticky bottom-3 z-10 mt-6 flex justify-end rounded-lg border border-brand-200 bg-white/95 p-3 shadow-lg backdrop-blur">
           <button
             type="button"
             onClick={handleSave}
             disabled={saving}
             className="btn-primary"
           >
-            {saving ? "Saving..." : "Save Changes"}
+            <span className="label-swap" data-pending={saving}>
+              {saving ? "Saving..." : "Save Changes"}
+            </span>
           </button>
         </div>
       )}
@@ -635,7 +652,7 @@ function ClassFeeSection({
       </div>
 
       {showForm && (
-        <div className="mt-4 rounded-lg border border-brand-200 bg-brand-50 p-3">
+        <div className="panel-enter mt-4 rounded-lg border border-brand-200 bg-brand-50 p-3">
           <div className="flex items-center gap-3 flex-wrap">
             <select
               value={selectedClassId}
@@ -879,7 +896,7 @@ function FeeScheduleSection() {
       </div>
 
       {showForm && (
-        <div className="mt-4 rounded-lg border border-brand-200 bg-brand-50 p-4 space-y-3">
+        <div className="panel-enter mt-4 rounded-lg border border-brand-200 bg-brand-50 p-4 space-y-3">
           <div className="flex items-center gap-3">
             <input
               type="text"
@@ -911,7 +928,7 @@ function FeeScheduleSection() {
                   key={idx}
                   type="button"
                   onClick={() => toggleDay(idx)}
-                  className={`rounded px-2 py-1 text-xs font-medium ${
+                  className={`rounded px-2 py-1 text-xs font-medium transition-[transform,background-color] duration-150 ease-out active:scale-[0.92] ${
                     formDays.includes(idx)
                       ? "bg-brand-600 text-white"
                       : "bg-gray-200 text-gray-600 hover:bg-gray-300"
