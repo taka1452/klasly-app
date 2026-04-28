@@ -1,12 +1,13 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { getStudioFeatures } from "@/lib/features/check-feature";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
-import { rankFromCount, RANK_LABEL, RANK_GRADIENT_CLASS, type Rank } from "@/lib/rank";
+import { rankFromCount, type Rank } from "@/lib/rank";
 import RankCard from "@/components/levels/rank-card";
+import StreakIndicator from "@/components/levels/streak-indicator";
 import { getMemberPercentile } from "@/lib/percentile";
+import { computeStreakState } from "@/lib/streak";
 import { unwrapRelation } from "@/lib/supabase/relation";
 
 type AttendanceRow = {
@@ -18,7 +19,19 @@ type AttendanceRow = {
   instructor_name: string | null;
 };
 
-const DOW_LABEL = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DOW_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DOW_FULL = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
+
+const pluralize = (n: number, one: string, many: string) =>
+  n === 1 ? one : many;
 
 export default async function MyStatsPage() {
   const serverSupabase = await createServerClient();
@@ -34,7 +47,9 @@ export default async function MyStatsPage() {
 
   const { data: member } = await supabase
     .from("members")
-    .select("id, studio_id, lifetime_classes_attended, current_rank, joined_at")
+    .select(
+      "id, studio_id, lifetime_classes_attended, current_rank, joined_at, current_streak_weeks, longest_streak_weeks, last_attended_week"
+    )
     .eq("profile_id", user.id)
     .maybeSingle();
 
@@ -55,6 +70,16 @@ export default async function MyStatsPage() {
 
   const lifetime = member.lifetime_classes_attended ?? 0;
   const rank = ((member.current_rank as Rank | undefined) ?? rankFromCount(lifetime)) as Rank;
+  const memberAny = member as {
+    current_streak_weeks?: number | null;
+    longest_streak_weeks?: number | null;
+    last_attended_week?: string | null;
+  };
+  const streak = computeStreakState(
+    memberAny.current_streak_weeks ?? 0,
+    memberAny.last_attended_week ?? null,
+    memberAny.longest_streak_weeks ?? 0
+  );
 
   // Pull all attended sessions (booking-attended + drop-in) joined with
   // class & instructor info. Single query each, merged in JS.
@@ -188,29 +213,60 @@ export default async function MyStatsPage() {
   const totalHours = Math.floor(totalMinutes / 60);
   const remainingMinutes = totalMinutes % 60;
 
+  // Stagger entrance: each top-level block fades+lifts 60ms after the
+  // previous one. CSS-driven, no JS hydration needed for the entrance.
+  const staggerStyle = (i: number): React.CSSProperties => ({
+    animationDelay: `${i * 60}ms`,
+  });
+
   return (
     <div className="space-y-4">
-      <div>
+      <div className="stats-stagger" style={staggerStyle(0)}>
         <h1 className="text-xl font-bold text-gray-900 md:text-2xl">Your Practice</h1>
         <p className="mt-1 text-sm text-gray-500">
           A snapshot of your journey across this studio.
         </p>
       </div>
 
-      <RankCard rank={rank} lifetimeClasses={lifetime} />
+      <div className="stats-stagger" style={staggerStyle(1)}>
+        <RankCard rank={rank} lifetimeClasses={lifetime} />
+      </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <StatTile label="This month" value={thisMonth} suffix="classes" />
-        <StatTile label="This year" value={thisYear} suffix="classes" />
+      {streak.weeks > 0 && (
+        <div className="stats-stagger" style={staggerStyle(1.5)}>
+          <StreakIndicator
+            weeks={streak.weeks}
+            atRisk={streak.atRisk}
+            variant="card"
+          />
+          {streak.longest > streak.weeks && (
+            <p className="mt-2 text-xs text-gray-500">
+              Personal best: <span className="font-semibold text-gray-700 tabular-nums">{streak.longest}</span> weeks
+            </p>
+          )}
+        </div>
+      )}
+
+      <div className="stats-stagger grid gap-3 sm:grid-cols-3" style={staggerStyle(2)}>
+        <StatTile
+          label="This month"
+          value={thisMonth}
+          suffix={pluralize(thisMonth, "class", "classes")}
+        />
+        <StatTile
+          label="This year"
+          value={thisYear}
+          suffix={pluralize(thisYear, "class", "classes")}
+        />
         <StatTile
           label="Total practice"
           value={totalHours}
-          suffix={`hr ${remainingMinutes}min`}
+          suffix={`hr ${remainingMinutes} min`}
         />
       </div>
 
       {topInstructors.length > 0 && (
-        <section className="card">
+        <section className="stats-stagger card" style={staggerStyle(3)}>
           <h2 className="mb-3 text-sm font-semibold text-gray-700">Favorite instructors</h2>
           <ol className="space-y-2">
             {topInstructors.map((t, i) => (
@@ -229,21 +285,28 @@ export default async function MyStatsPage() {
       )}
 
       {classTypes.length > 0 && (
-        <section className="card">
+        <section className="stats-stagger card" style={staggerStyle(4)}>
           <h2 className="mb-3 text-sm font-semibold text-gray-700">Class mix</h2>
           <ul className="space-y-2.5">
             {classTypes.map((c) => (
               <li key={c.name}>
                 <div className="flex items-baseline justify-between text-sm">
                   <span className="text-gray-900">{c.name}</span>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs tabular-nums text-gray-500">
                     {c.count} · {c.pct}%
                   </span>
                 </div>
-                <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+                <div
+                  className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gray-100"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={c.pct}
+                  aria-label={`${c.name}: ${c.pct}%`}
+                >
                   <div
-                    className={`h-full bg-gradient-to-r ${RANK_GRADIENT_CLASS[rank]}`}
-                    style={{ width: `${c.pct}%` }}
+                    className="h-full w-full origin-left rounded-full bg-brand-500 transition-transform duration-500 ease-out"
+                    style={{ transform: `scaleX(${c.pct / 100})` }}
                   />
                 </div>
               </li>
@@ -253,54 +316,77 @@ export default async function MyStatsPage() {
       )}
 
       {dowCounts.some((c) => c > 0) && (
-        <section className="card">
-          <h2 className="mb-3 text-sm font-semibold text-gray-700">Your weekly rhythm</h2>
-          <div className="grid grid-cols-7 gap-1">
+        <section className="stats-stagger card" style={staggerStyle(5)}>
+          <h2 className="mb-3 text-sm font-semibold text-gray-700">
+            Your weekly rhythm
+          </h2>
+          <div className="grid grid-cols-7 gap-1.5">
             {dowCounts.map((c, i) => {
               const max = Math.max(...dowCounts, 1);
-              const intensity = Math.round((c / max) * 100);
+              const isPeak = c > 0 && i === topDow;
+              const intensityClass =
+                c === 0
+                  ? "bg-gray-100"
+                  : c / max > 0.75
+                    ? "bg-brand-500"
+                    : c / max > 0.5
+                      ? "bg-brand-400"
+                      : c / max > 0.25
+                        ? "bg-brand-300"
+                        : "bg-brand-200";
               return (
                 <div key={i} className="text-center">
                   <div
-                    className={`mx-auto h-12 w-full rounded ${
-                      i === topDow ? "bg-yellow-400" : "bg-gray-200"
-                    }`}
-                    style={{ opacity: c === 0 ? 0.25 : 0.4 + intensity / 200 }}
-                    title={`${DOW_LABEL[i]}: ${c}`}
+                    role="img"
+                    aria-label={`${DOW_FULL[i]}: ${c} ${pluralize(c, "class", "classes")} attended${isPeak ? " (most attended day)" : ""}`}
+                    className={`mx-auto h-12 w-full rounded-md ${intensityClass} ${isPeak ? "ring-2 ring-brand-700 ring-offset-1" : ""}`}
                   />
-                  <p className="mt-1 text-[10px] text-gray-500">{DOW_LABEL[i]}</p>
-                  <p className="text-xs font-medium text-gray-700">{c}</p>
+                  <p className="mt-1 text-[10px] uppercase tracking-wide text-gray-500">
+                    {DOW_SHORT[i]}
+                  </p>
+                  <p className="text-xs font-medium tabular-nums text-gray-700">
+                    {c}
+                  </p>
                 </div>
               );
             })}
           </div>
-          <p className="mt-2 text-xs text-gray-500">
-            Most-attended day: <span className="font-medium text-gray-700">{DOW_LABEL[topDow]}</span>
+          <p className="mt-3 text-xs text-gray-500">
+            Most-attended day:{" "}
+            <span className="font-medium text-gray-700">{DOW_FULL[topDow]}</span>
           </p>
         </section>
       )}
 
       {(studioPct.topPercent !== null || systemPct.topPercent !== null) && (
-        <section className="card">
-          <h2 className="mb-3 text-sm font-semibold text-gray-700">Where you stand</h2>
+        <section className="stats-stagger card" style={staggerStyle(6)}>
+          <h2 className="mb-3 text-sm font-semibold text-gray-700">
+            Where you stand
+          </h2>
           <ul className="space-y-2 text-sm">
             {studioPct.topPercent !== null && (
-              <li className="flex items-baseline justify-between">
+              <li className="flex items-baseline justify-between gap-3">
                 <span className="text-gray-700">In this studio</span>
                 <span className="text-gray-900">
-                  Top <span className="font-semibold">{studioPct.topPercent}%</span>
-                  <span className="ml-1 text-xs text-gray-400">
+                  Top{" "}
+                  <span className="font-semibold tabular-nums">
+                    {studioPct.topPercent}%
+                  </span>
+                  <span className="ml-1 text-xs tabular-nums text-gray-400">
                     of {studioPct.totalMembers}
                   </span>
                 </span>
               </li>
             )}
             {systemPct.topPercent !== null && (
-              <li className="flex items-baseline justify-between">
+              <li className="flex items-baseline justify-between gap-3">
                 <span className="text-gray-700">Across all studios</span>
                 <span className="text-gray-900">
-                  Top <span className="font-semibold">{systemPct.topPercent}%</span>
-                  <span className="ml-1 text-xs text-gray-400">
+                  Top{" "}
+                  <span className="font-semibold tabular-nums">
+                    {systemPct.topPercent}%
+                  </span>
+                  <span className="ml-1 text-xs tabular-nums text-gray-400">
                     of {systemPct.totalMembers}
                   </span>
                 </span>
@@ -308,19 +394,10 @@ export default async function MyStatsPage() {
             )}
           </ul>
           <p className="mt-3 text-xs text-gray-500">
-            Member names are never shared. Only your own ranking is visible to you.
+            Member names are never shared — only your own ranking is visible to you.
           </p>
         </section>
       )}
-
-      <div className="flex justify-center pt-2">
-        <Link
-          href="/my-bookings"
-          className="text-sm font-medium text-brand-700 hover:underline"
-        >
-          ← Back to bookings
-        </Link>
-      </div>
     </div>
   );
 }
@@ -336,8 +413,12 @@ function StatTile({
 }) {
   return (
     <div className="card">
-      <p className="text-xs uppercase tracking-wide text-gray-500">{label}</p>
-      <p className="mt-1 text-2xl font-bold text-gray-900">{value}</p>
+      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+        {label}
+      </p>
+      <p className="mt-1 text-3xl font-bold tabular-nums text-gray-900">
+        {value}
+      </p>
       <p className="text-xs text-gray-500">{suffix}</p>
     </div>
   );

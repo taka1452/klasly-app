@@ -102,6 +102,12 @@ export type Member = {
   lifetime_classes_attended: number;
   current_rank: "bronze" | "silver" | "gold" | "platinum" | "diamond";
   rank_celebrated_at: string | null;
+  // Streaks
+  current_streak_weeks: number;
+  longest_streak_weeks: number;
+  last_attended_week: string | null;
+  // Comeback nudge
+  comeback_card_until: string | null;
 };
 
 export type Instructor = {
@@ -949,7 +955,10 @@ export type AchievementType =
   | "fifty_classes"
   | "streak_7_days"
   | "streak_30_days"
-  | "streak_90_days";
+  | "streak_90_days"
+  | "five_instructors"
+  | "five_class_types"
+  | "time_explorer";
 
 export type MemberAchievement = {
   id: string;

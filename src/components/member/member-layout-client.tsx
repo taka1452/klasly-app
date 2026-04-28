@@ -21,6 +21,8 @@ type MemberLayoutClientProps = {
   rank: Rank | null;
   lifetimeClasses: number | null;
   pendingRankCelebration: boolean;
+  streakWeeks: number;
+  streakAtRisk: boolean;
   children: React.ReactNode;
 };
 
@@ -35,6 +37,8 @@ export default function MemberLayoutClient({
   rank,
   lifetimeClasses,
   pendingRankCelebration,
+  streakWeeks,
+  streakAtRisk,
   children,
 }: MemberLayoutClientProps) {
   const { isEnabled } = useFeature();
@@ -66,6 +70,8 @@ export default function MemberLayoutClient({
           userEmail={userEmail}
           rank={rank}
           lifetimeClasses={lifetimeClasses}
+          streakWeeks={streakWeeks}
+          streakAtRisk={streakAtRisk}
         />
         {rank && pendingRankCelebration && (
           <RankUpModal rank={rank} pendingCelebration />
@@ -87,6 +93,14 @@ export default function MemberLayoutClient({
                 >
                   Bookings
                 </Link>
+                {showMyStats && (
+                  <Link
+                    href="/my-stats"
+                    className={`shrink-0 ${linkClass("/my-stats")}`}
+                  >
+                    Stats
+                  </Link>
+                )}
                 {showAppointments && (
                   <Link
                     href="/my-appointments"

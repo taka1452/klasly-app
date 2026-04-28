@@ -2807,6 +2807,46 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
+          q: "Where do I see my full stats?",
+          a: (
+            <>
+              Open the <B>Stats</B> tab from the top navigation. It shows your current rank, classes this month / this year, total practice time, your favorite instructors, the mix of class types you take, and your weekly rhythm. You&apos;ll also see how you stack up among other members &mdash; only as anonymous percentile (e.g. &quot;top 12%&quot;), never with names.
+            </>
+          ),
+        },
+        {
+          q: "What's the 🔥 streak counter?",
+          a: (
+            <>
+              The flame at the top of the app shows how many weeks in a row you&apos;ve attended at least one class. Miss a full week and the count resets to zero. The icon turns amber when this week is still empty &mdash; that&apos;s your at-risk warning.
+            </>
+          ),
+        },
+        {
+          q: "What are the diversity badges (Class Explorer / 5 Instructors / All-Day Yogi)?",
+          a: (
+            <>
+              These reward variety. <B>5 Instructors</B> unlocks after taking classes from 5 different teachers, <B>Class Explorer</B> after trying 5 different class types, and <B>All-Day Yogi</B> after attending at least one morning, one afternoon, and one evening session. Once earned, they stick to your profile.
+            </>
+          ),
+        },
+        {
+          q: "I haven't been in a while &mdash; what's that Welcome back card?",
+          a: (
+            <>
+              If you haven&apos;t marked attendance for ~3 weeks, your studio sends a gentle nudge. The Welcome back card stays on your <B>Bookings</B> page for a week to make jumping back in easy &mdash; it disappears the next time you attend.
+            </>
+          ),
+        },
+        {
+          q: "What is the Year Wrapped card?",
+          a: (
+            <>
+              From <B>December 20</B> through <B>February 15</B>, a colorful <B>Year in review</B> card appears on your <B>Bookings</B> page. Tap it to scroll through your year on the mat &mdash; total classes, hours practiced, favorite instructor and style, badges earned, and where you ranked at your studio. There&apos;s also a saveable share image you can post or screenshot.
+            </>
+          ),
+        },
+        {
           q: "How do I level up?",
           a: (
             <>

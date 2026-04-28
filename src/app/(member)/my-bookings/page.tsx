@@ -14,6 +14,9 @@ import type { AchievementType } from "@/types/database";
 import { rankFromCount, type Rank } from "@/lib/rank";
 import { getStudioFeatures } from "@/lib/features/check-feature";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
+import WrappedEntryCard from "@/components/levels/wrapped-entry-card";
+import ComebackCard from "@/components/levels/comeback-card";
+import { getActiveWrappedYear } from "@/lib/wrapped";
 
 export default async function MyBookingsPage() {
   const serverSupabase = await createServerClient();
@@ -35,12 +38,21 @@ export default async function MyBookingsPage() {
 
   const { data: memberList } = await supabase
     .from("members")
-    .select("id, credits, studio_id, current_rank, lifetime_classes_attended")
+    .select(
+      "id, credits, studio_id, current_rank, lifetime_classes_attended, comeback_card_until"
+    )
     .eq("profile_id", user.id);
 
   const member = memberList?.[0];
   const features = member?.studio_id ? await getStudioFeatures(member.studio_id) : {};
   const memberLevelsEnabled = features[FEATURE_KEYS.MEMBER_LEVELS] === true;
+  const wrappedYear = memberLevelsEnabled ? getActiveWrappedYear() : null;
+  const comebackUntil = (member as { comeback_card_until?: string | null } | undefined)
+    ?.comeback_card_until;
+  const showComeback =
+    memberLevelsEnabled &&
+    !!comebackUntil &&
+    new Date(comebackUntil).getTime() > Date.now();
   let planStatus = "trialing";
   let requiresCredits = true;
   if (member?.studio_id) {
@@ -174,6 +186,18 @@ export default async function MyBookingsPage() {
       <p className="mt-1 text-sm text-gray-500">
         Your upcoming and past classes
       </p>
+
+      {showComeback && member && (
+        <div className="mt-4">
+          <ComebackCard />
+        </div>
+      )}
+
+      {wrappedYear !== null && member && (
+        <div className="mt-4">
+          <WrappedEntryCard year={wrappedYear} />
+        </div>
+      )}
 
       {memberLevelsEnabled && member && (
         <div className="mt-4">

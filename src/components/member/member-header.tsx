@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import LanguageSelector from "@/components/i18n/language-selector";
 import RankRing from "@/components/levels/rank-ring";
+import StreakIndicator from "@/components/levels/streak-indicator";
 import { RANK_LABEL, type Rank } from "@/lib/rank";
 
 type Props = {
@@ -13,9 +14,18 @@ type Props = {
   userEmail: string;
   rank?: Rank | null;
   lifetimeClasses?: number | null;
+  streakWeeks?: number;
+  streakAtRisk?: boolean;
 };
 
-export default function MemberHeader({ userName, userEmail, rank, lifetimeClasses }: Props) {
+export default function MemberHeader({
+  userName,
+  userEmail,
+  rank,
+  lifetimeClasses,
+  streakWeeks = 0,
+  streakAtRisk = false,
+}: Props) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -45,6 +55,9 @@ export default function MemberHeader({ userName, userEmail, rank, lifetimeClasse
         </Link>
       </div>
       <div className="flex items-center gap-2">
+      {streakWeeks > 0 && (
+        <StreakIndicator weeks={streakWeeks} atRisk={streakAtRisk} variant="compact" />
+      )}
       <LanguageSelector />
       <Link
         href="/help"

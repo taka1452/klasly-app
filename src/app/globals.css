@@ -97,6 +97,61 @@
   }
 }
 
+/* Rank-up celebration: confetti + modal entrance */
+@keyframes rankConfettiFall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+@keyframes rankBackdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes rankDialogIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.rank-confetti {
+  /* easeInQuad — confetti accelerates under gravity */
+  animation: rankConfettiFall cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+}
+.rank-backdrop-in {
+  animation: rankBackdropIn 200ms ease-out forwards;
+}
+.rank-dialog-in {
+  animation: rankDialogIn 280ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Section reveal on scroll for /wrapped — fade + lift, ease-out, GPU-only */
+@keyframes wrappedSectionIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.wrapped-section {
+  opacity: 0;
+  will-change: transform, opacity;
+}
+.wrapped-section[data-revealed="true"] {
+  animation: wrappedSectionIn 600ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+/* Stats page stagger — delays applied via inline style */
+@keyframes statsTileIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.stats-stagger {
+  opacity: 0;
+  animation: statsTileIn 400ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rank-confetti { display: none; }
+  .rank-backdrop-in,
+  .rank-dialog-in,
+  .wrapped-section,
+  .stats-stagger { animation: none !important; opacity: 1 !important; transform: none !important; }
+}
+
 /* Hide scrollbar for horizontal scroll navigation */
 .scrollbar-hide {
   -ms-overflow-style: none;

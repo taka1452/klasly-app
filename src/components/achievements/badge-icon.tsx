@@ -8,9 +8,12 @@ const ACHIEVEMENT_CONFIG: Record<AchievementType, { label: string; emoji: string
   ten_classes: { label: "10 Classes", emoji: "10", color: "bg-brand-100 text-brand-700" },
   twenty_five_classes: { label: "25 Classes", emoji: "25", color: "bg-orange-100 text-orange-700" },
   fifty_classes: { label: "50 Classes", emoji: "50", color: "bg-red-100 text-red-700" },
-  streak_7_days: { label: "1 Week Streak", emoji: "7d", color: "bg-cyan-100 text-cyan-700" },
-  streak_30_days: { label: "1 Month Streak", emoji: "30d", color: "bg-amber-100 text-amber-700" },
-  streak_90_days: { label: "3 Month Streak", emoji: "90d", color: "bg-pink-100 text-pink-700" },
+  streak_7_days: { label: "1 Week Streak", emoji: "1W", color: "bg-cyan-100 text-cyan-700" },
+  streak_30_days: { label: "1 Month Streak", emoji: "1M", color: "bg-amber-100 text-amber-700" },
+  streak_90_days: { label: "3 Month Streak", emoji: "3M", color: "bg-pink-100 text-pink-700" },
+  five_instructors: { label: "5 Instructors", emoji: "★", color: "bg-violet-100 text-violet-700" },
+  five_class_types: { label: "Class Explorer", emoji: "✦", color: "bg-emerald-100 text-emerald-700" },
+  time_explorer: { label: "All-Day Yogi", emoji: "☀", color: "bg-indigo-100 text-indigo-700" },
 };
 
 type BadgeIconProps = {

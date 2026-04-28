@@ -10,6 +10,7 @@ import AnnouncementBanner from "@/components/announcements/announcement-banner";
 import PushPrompt from "@/components/pwa/push-prompt";
 import { I18nProvider, type Locale } from "@/lib/i18n/context";
 import { cookies } from "next/headers";
+import { computeStreakState } from "@/lib/streak";
 
 export default async function MemberLayout({
   children,
@@ -55,6 +56,10 @@ export default async function MemberLayout({
     current_rank?: string | null;
     lifetime_classes_attended?: number | null;
     rank_celebrated_at?: string | null;
+    current_streak_weeks?: number | null;
+    longest_streak_weeks?: number | null;
+    last_attended_week?: string | null;
+    comeback_card_until?: string | null;
   } | null = null;
   let waiverTemplate: { id: string; title: string; content: string } | null = null;
 
@@ -62,7 +67,9 @@ export default async function MemberLayout({
     const [memberRes, templateRes] = await Promise.all([
       supabase
         .from("members")
-        .select("id, waiver_signed, credits, current_rank, lifetime_classes_attended, rank_celebrated_at")
+        .select(
+          "id, waiver_signed, credits, current_rank, lifetime_classes_attended, rank_celebrated_at, current_streak_weeks, longest_streak_weeks, last_attended_week, comeback_card_until"
+        )
         .eq("profile_id", user.id)
         .eq("studio_id", profile.studio_id)
         .maybeSingle(),
@@ -120,6 +127,15 @@ export default async function MemberLayout({
     rank !== null &&
     rank !== "bronze";
 
+  const streak =
+    memberLevelsEnabled && member
+      ? computeStreakState(
+          member.current_streak_weeks ?? 0,
+          member.last_attended_week ?? null,
+          member.longest_streak_weeks ?? 0
+        )
+      : null;
+
   return (
     <I18nProvider defaultLocale={locale}>
     <FeatureProvider features={features}>
@@ -135,6 +151,8 @@ export default async function MemberLayout({
         rank={rank}
         lifetimeClasses={lifetimeClasses}
         pendingRankCelebration={pendingRankCelebration}
+        streakWeeks={streak?.weeks ?? 0}
+        streakAtRisk={streak?.atRisk ?? false}
       >
         {children}
         <DevRoleSwitcher />

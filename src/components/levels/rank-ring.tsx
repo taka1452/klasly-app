@@ -1,6 +1,11 @@
 "use client";
 
-import { RANK_RING_CLASS, RANK_GRADIENT_CLASS, type Rank } from "@/lib/rank";
+import {
+  RANK_RING_CLASS,
+  RANK_GRADIENT_CLASS,
+  RANK_LABEL,
+  type Rank,
+} from "@/lib/rank";
 
 type Props = {
   rank: Rank;
@@ -16,15 +21,17 @@ const SIZE_CLASS: Record<NonNullable<Props["size"]>, string> = {
 
 export default function RankRing({ rank, initial, size = "sm" }: Props) {
   return (
-    <div
-      className={`relative ${SIZE_CLASS[size]} rounded-full ring-2 ring-offset-2 ring-offset-white ${RANK_RING_CLASS[rank]}`}
-      title={`${rank[0].toUpperCase()}${rank.slice(1)} member`}
+    <span
+      role="img"
+      aria-label={`${RANK_LABEL[rank]} member`}
+      className={`relative inline-flex ${SIZE_CLASS[size]} rounded-full ring-2 ring-offset-2 ring-offset-white ${RANK_RING_CLASS[rank]}`}
     >
-      <div
+      <span
+        aria-hidden="true"
         className={`flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br ${RANK_GRADIENT_CLASS[rank]} font-semibold text-white`}
       >
         {initial}
-      </div>
-    </div>
+      </span>
+    </span>
   );
 }

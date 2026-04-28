@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   RANK_LABEL,
   RANK_GRADIENT_CLASS,
@@ -14,18 +14,34 @@ type Props = {
   pendingCelebration: boolean;
 };
 
+const CONFETTI_COLORS = [
+  "bg-yellow-400",
+  "bg-pink-400",
+  "bg-cyan-400",
+  "bg-fuchsia-400",
+  "bg-emerald-400",
+];
+
 export default function RankUpModal({ rank, pendingCelebration }: Props) {
   const [open, setOpen] = useState(false);
+  const dismissRef = useRef<HTMLButtonElement>(null);
+  const dismissedRef = useRef(false);
 
   useEffect(() => {
-    if (pendingCelebration) {
-      // Small delay so it doesn't fight with page mount
-      const t = setTimeout(() => setOpen(true), 400);
-      return () => clearTimeout(t);
-    }
+    if (!pendingCelebration) return;
+    // Small delay so it doesn't fight with page mount.
+    const t = setTimeout(() => setOpen(true), 400);
+    return () => clearTimeout(t);
   }, [pendingCelebration]);
 
+  // Focus the primary action when the dialog opens.
+  useEffect(() => {
+    if (open) dismissRef.current?.focus();
+  }, [open]);
+
   const dismiss = async () => {
+    if (dismissedRef.current) return;
+    dismissedRef.current = true;
     setOpen(false);
     try {
       await fetch("/api/members/rank-celebrated", { method: "POST" });
@@ -34,28 +50,44 @@ export default function RankUpModal({ rank, pendingCelebration }: Props) {
     }
   };
 
+  // Escape to dismiss.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        void dismiss();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
   if (!open) return null;
 
-  // 24 confetti pieces
-  const confetti = Array.from({ length: 24 }, (_, i) => i);
+  const confetti = Array.from({ length: 18 }, (_, i) => i);
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="rank-up-title"
+      className="rank-backdrop-in fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       onClick={dismiss}
     >
-      {/* confetti */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 overflow-hidden"
+      >
         {confetti.map((i) => {
           const left = (i * 4 + (i % 3) * 7) % 100;
           const delay = (i % 6) * 0.15;
           const duration = 2 + (i % 5) * 0.4;
-          const colors = ["bg-yellow-400", "bg-pink-400", "bg-cyan-400", "bg-fuchsia-400", "bg-emerald-400"];
-          const color = colors[i % colors.length];
+          const color = CONFETTI_COLORS[i % CONFETTI_COLORS.length];
           return (
             <span
               key={i}
-              className={`absolute top-[-10%] h-2 w-2 ${color} rounded-sm rank-confetti`}
+              className={`rank-confetti absolute -top-2 h-2 w-2 rounded-sm ${color}`}
               style={{
                 left: `${left}%`,
                 animationDelay: `${delay}s`,
@@ -68,47 +100,32 @@ export default function RankUpModal({ rank, pendingCelebration }: Props) {
 
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-xl"
+        className="rank-dialog-in relative w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-xl"
       >
         <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">
-          Rank up!
+          Rank up
         </p>
         <div
           className={`mx-auto mt-4 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br ${RANK_GRADIENT_CLASS[rank]} text-3xl font-bold text-white shadow-lg`}
+          aria-hidden="true"
         >
           {RANK_LABEL[rank][0]}
         </div>
-        <h2 className="mt-4 text-xl font-bold text-gray-900">
-          You&apos;re now <span className="capitalize">{RANK_LABEL[rank]}</span>!
+        <h2 id="rank-up-title" className="mt-4 text-xl font-bold text-gray-900">
+          You&apos;re now {RANK_LABEL[rank]}
         </h2>
         <p className="mt-2 text-sm text-gray-600">
           Thanks for showing up. Your dedication is paying off — keep it going.
         </p>
         <button
+          ref={dismissRef}
+          type="button"
           onClick={dismiss}
-          className="mt-5 w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
+          className="btn-primary mt-5 w-full"
         >
           Awesome
         </button>
       </div>
-
-      <style jsx>{`
-        @keyframes rank-confetti-fall {
-          0% {
-            transform: translateY(0) rotate(0deg);
-            opacity: 1;
-          }
-          100% {
-            transform: translateY(110vh) rotate(720deg);
-            opacity: 0;
-          }
-        }
-        .rank-confetti {
-          animation-name: rank-confetti-fall;
-          animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
-          animation-fill-mode: forwards;
-        }
-      `}</style>
     </div>
   );
 }
