@@ -55,7 +55,7 @@ export default function SupportTicketsClient({
   return (
     <div className="mt-8 space-y-6">
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+        <div className="panel-enter rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
           {error}
         </div>
       )}
@@ -70,7 +70,7 @@ export default function SupportTicketsClient({
             New support ticket
           </button>
         ) : (
-          <form onSubmit={handleCreate} className="space-y-4">
+          <form onSubmit={handleCreate} className="panel-enter space-y-4">
             <h2 className="text-lg font-semibold text-gray-900">New ticket</h2>
             <div>
               <label className="block text-sm font-medium text-gray-700">Subject</label>
@@ -80,7 +80,7 @@ export default function SupportTicketsClient({
                 onChange={(e) => setSubject(e.target.value)}
                 required
                 placeholder="Brief summary"
-                className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-gray-900"
+                className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-gray-900 transition-shadow duration-150 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               />
             </div>
             <div>
@@ -90,12 +90,14 @@ export default function SupportTicketsClient({
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
                 placeholder="More details..."
-                className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-gray-900"
+                className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-gray-900 transition-shadow duration-150 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               />
             </div>
             <div className="flex gap-2">
               <button type="submit" disabled={submitting} className="btn-primary">
-                {submitting ? "Submitting…" : "Submit ticket"}
+                <span className="label-swap" data-pending={submitting}>
+                  {submitting ? "Submitting…" : "Submit ticket"}
+                </span>
               </button>
               <button
                 type="button"
@@ -115,11 +117,15 @@ export default function SupportTicketsClient({
           <p className="mt-4 text-sm text-gray-600">No tickets yet.</p>
         ) : (
           <ul className="mt-4 divide-y divide-gray-200">
-            {tickets.map((t) => (
-              <li key={t.id} className="py-3 first:pt-0">
+            {tickets.map((t, idx) => (
+              <li
+                key={t.id}
+                className="stagger-item py-3 first:pt-0"
+                style={{ animationDelay: `${idx * 30}ms` }}
+              >
                 <Link
                   href={`/settings/support/${t.id}`}
-                  className="block font-medium text-gray-900 hover:text-brand-600"
+                  className="block font-medium text-gray-900 transition-colors duration-150 hover:text-brand-600"
                 >
                   #{t.ticket_number} – {t.subject}
                 </Link>
