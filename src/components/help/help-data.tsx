@@ -436,6 +436,19 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
+          q: "Can I print the weekly schedule to post at the front desk?",
+          a: (
+            <>
+              Yes. From the <B>Schedule</B> page, click the <B>Print</B> button in the top-right action bar. A clean, paper-friendly weekly view opens in a new tab with the print dialog already up. The print page hides cancelled and room-only sessions and lays out each day as a table (time, class, instructor, room, capacity).
+              <Steps>
+                <li>Default is the current week. Use the &quot;Previous week&quot; / &quot;Next week&quot; buttons in the preview toolbar to navigate.</li>
+                <li>You can also link directly to a specific week: <B>/calendar/print?week=YYYY-MM-DD</B>.</li>
+              </Steps>
+              <Tip>Print to PDF from the same dialog if you want to email or post the schedule online.</Tip>
+            </>
+          ),
+        },
+        {
           q: "Can I subscribe to my schedule from Google Calendar or Apple Calendar?",
           a: (
             <>

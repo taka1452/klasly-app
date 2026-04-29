@@ -76,6 +76,14 @@ export default function ScheduleActions() {
             filename={`classes-${new Date().toISOString().slice(0, 10)}.csv`}
             label="Export"
           />
+          <Link
+            href="/calendar/print"
+            target="_blank"
+            rel="noopener"
+            className="btn-secondary"
+          >
+            Print
+          </Link>
           <Link href="/calendar/import" className="btn-secondary">
             Import
           </Link>

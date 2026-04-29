@@ -156,6 +156,53 @@
   animation: spinFast 600ms linear infinite;
 }
 
+/* ============================================================
+   Print stylesheet — used by /calendar/print and any page that adds
+   the .print-page class. Hides the dashboard shell and tightens
+   typography so the schedule fits on landscape paper.
+   ============================================================ */
+@media print {
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .print-page aside,
+  .print-page nav,
+  .print-page header.app-header,
+  .print-page [data-app-shell] {
+    display: none !important;
+  }
+  .print-page main,
+  .print-page [role="main"],
+  .print-page .print-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+  .print-page * {
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .print-row {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .toast-enter-top,
+  .toast-exit-top,
+  .stagger-item,
+  .panel-enter,
+  .modal-backdrop-enter,
+  .modal-dialog-enter {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+  .print-only-hide {
+    display: none !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .btn-primary:active:not(:disabled),
   .btn-secondary:active:not(:disabled),
