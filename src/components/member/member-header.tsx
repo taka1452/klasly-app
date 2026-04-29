@@ -54,7 +54,7 @@ export default function MemberHeader({
           Klasly
         </Link>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 sm:gap-2">
       {streakWeeks > 0 && (
         <StreakIndicator weeks={streakWeeks} atRisk={streakAtRisk} variant="compact" />
       )}
