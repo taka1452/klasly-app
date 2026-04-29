@@ -8,6 +8,7 @@ import Toast from "@/components/ui/toast";
 import FlowHintPanel from "@/components/ui/flow-hint-panel";
 import BookingSettingsCard from "@/components/settings/booking-settings-card";
 import TestAccountsCard from "@/components/settings/test-accounts-card";
+import CalendarFeedCard from "@/components/settings/calendar-feed-card";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import { SUPPORTED_CURRENCIES } from "@/lib/currency";
 
@@ -362,6 +363,8 @@ export default function SettingsContent({
                 Manage closures →
               </Link>
             </div>
+
+            <CalendarFeedCard />
           </div>
         </section>
       )}

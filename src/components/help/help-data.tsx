@@ -436,6 +436,21 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
+          q: "Can I subscribe to my schedule from Google Calendar or Apple Calendar?",
+          a: (
+            <>
+              Yes. Go to <B>Settings → Calendar feed</B> and click <B>Generate subscribe URL</B>. Copy the URL it gives you and add it as a subscribed calendar in your calendar app:
+              <Steps>
+                <li><B>Google Calendar (web):</B> Other calendars → + → From URL → paste.</li>
+                <li><B>Apple Calendar (Mac):</B> File → New Calendar Subscription → paste.</li>
+                <li><B>Apple Calendar (iPhone):</B> Settings → Calendar → Accounts → Add Account → Other → Add Subscribed Calendar.</li>
+              </Steps>
+              The feed pulls automatically (about every hour, depending on the app). Owners and managers see every session in the studio; instructors see their assigned classes; members see their confirmed bookings.
+              <Tip>If the URL is shared by mistake, click <B>Regenerate</B> to invalidate it instantly — old subscriptions stop receiving updates.</Tip>
+            </>
+          ),
+        },
+        {
           q: "How do I close the studio for a holiday or vacation?",
           a: (
             <>
