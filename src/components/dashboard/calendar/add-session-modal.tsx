@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { X, CalendarPlus, AlertTriangle } from "lucide-react";
+import { X, CalendarPlus, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 type Template = {
   id: string;
@@ -344,7 +344,7 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
       setTimeout(() => {
         onCreated();
         onClose();
-      }, 1200);
+      }, 800);
     } catch {
       setError("Something went wrong");
     } finally {
@@ -357,12 +357,12 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center">
       <div
-        className="absolute inset-0 bg-black/40"
+        className="backdrop-in absolute inset-0 bg-black/40"
         onClick={onClose}
       />
       <div
         ref={modalRef}
-        className="relative mx-4 w-full max-w-lg rounded-xl bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto"
+        className="dialog-in relative mx-4 w-full max-w-lg rounded-xl bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto"
       >
         <button
           type="button"
@@ -647,7 +647,10 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
               <p className="text-sm text-red-600">{error}</p>
             )}
             {success && (
-              <p className="text-sm text-green-600">{success}</p>
+              <p className="popover-in flex items-center gap-1.5 text-sm text-green-600">
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+                {success}
+              </p>
             )}
 
             {/* Actions */}

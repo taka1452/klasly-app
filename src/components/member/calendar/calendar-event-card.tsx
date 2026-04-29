@@ -104,13 +104,23 @@ export default function CalendarEventCard({
     return () => document.removeEventListener("mousedown", handleClick);
   }, [showPopover]);
 
+  // Close popover on ESC
+  useEffect(() => {
+    if (!showPopover) return;
+    function handleEsc(e: KeyboardEvent) {
+      if (e.key === "Escape") setShowPopover(false);
+    }
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [showPopover]);
+
   const isCompact = height < 40;
 
   return (
     <>
       <div
         ref={cardRef}
-        className={`absolute cursor-pointer rounded-md px-1.5 py-0.5 text-xs leading-tight transition-shadow hover:shadow-md ${bgColor} ${textColor}`}
+        className={`absolute cursor-pointer rounded-md px-1.5 py-0.5 text-xs leading-tight transition-[transform,box-shadow] duration-200 ease-out hover:shadow-md active:scale-[0.97] ${bgColor} ${textColor}`}
         style={{
           top: `${top}px`,
           height: `${height}px`,
@@ -149,7 +159,7 @@ export default function CalendarEventCard({
       {showPopover && (
         <div
           ref={popoverRef}
-          className="fixed inset-x-0 bottom-0 z-50 mx-auto max-w-md rounded-t-2xl border border-gray-200 bg-white p-5 shadow-2xl md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-xl md:max-w-sm"
+          className="sheet-or-popover-in fixed inset-x-0 bottom-0 z-50 mx-auto max-w-md rounded-t-2xl border border-gray-200 bg-white p-5 shadow-2xl md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-xl md:max-w-sm"
         >
           {/* Close button */}
           <button
@@ -243,7 +253,7 @@ export default function CalendarEventCard({
       {/* Mobile backdrop */}
       {showPopover && (
         <div
-          className="fixed inset-0 z-40 bg-black/30 md:hidden"
+          className="backdrop-in fixed inset-0 z-40 bg-black/30 md:hidden"
           onClick={() => setShowPopover(false)}
         />
       )}

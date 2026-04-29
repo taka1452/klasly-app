@@ -38,7 +38,7 @@ export default function CalendarHeader({
         <button
           type="button"
           onClick={onPrev}
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-gray-300 text-gray-600 transition-[transform,background-color] duration-150 ease-out hover:bg-gray-100 active:scale-[0.93]"
           aria-label="Previous"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -48,14 +48,14 @@ export default function CalendarHeader({
         <button
           type="button"
           onClick={onToday}
-          className="rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100"
+          className="rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 transition-[transform,background-color] duration-150 ease-out hover:bg-gray-100 active:scale-[0.97]"
         >
           Today
         </button>
         <button
           type="button"
           onClick={onNext}
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-gray-300 text-gray-600 transition-[transform,background-color] duration-150 ease-out hover:bg-gray-100 active:scale-[0.93]"
           aria-label="Next"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -75,7 +75,7 @@ export default function CalendarHeader({
             type="button"
             onClick={() => onViewChange(opt.value)}
             title={opt.title}
-            className={`rounded-md px-3 py-1 text-sm font-medium transition-colors ${
+            className={`rounded-md px-3 py-1 text-sm font-medium transition-[color,background-color,transform] duration-200 ease-out active:scale-[0.97] ${
               view === opt.value
                 ? "bg-brand-600 text-white"
                 : "text-gray-600 hover:bg-gray-100"
