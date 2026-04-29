@@ -54,7 +54,12 @@
       "mcp__faa90072-dcd0-4481-89eb-d7e81d774b30__execute_sql",
       "mcp__supabase__list_migrations",
       "mcp__supabase__apply_migration",
-      "mcp__supabase__execute_sql"
+      "mcp__supabase__execute_sql",
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "Bash(git push origin main)",
+      "Bash(git push origin main:main)",
+      "Bash(git merge --ff-only *)"
     ]
   },
   "enableAllProjectMcpServers": true,

@@ -345,6 +345,23 @@ export default function SettingsContent({
                 )}
               </div>
             </div>
+
+            <div className="card">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Studio Closures
+              </h3>
+              <p className="mt-2 text-sm text-gray-600">
+                Mark holidays, vacations, or maintenance days. All classes on
+                that date can be cancelled with one click — credits and pass
+                uses are refunded automatically.
+              </p>
+              <Link
+                href="/settings/closures"
+                className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+              >
+                Manage closures →
+              </Link>
+            </div>
           </div>
         </section>
       )}

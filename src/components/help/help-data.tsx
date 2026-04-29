@@ -435,6 +435,19 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
+          q: "How do I close the studio for a holiday or vacation?",
+          a: (
+            <>
+              Go to <B>Settings → Studio Closures</B> and click <B>+ Add closure</B>. Pick the date and give it a label (e.g. &quot;Independence Day&quot; or &quot;Owner vacation&quot;). When you save, every non-cancelled class session on that date is automatically cancelled and the affected bookings have their <B>credits or pass uses refunded</B> in one step.
+              <Steps>
+                <li>You can list multiple closure days (the studio will show all upcoming ones on the Closures page).</li>
+                <li>Removing a closure later does <B>not</B> automatically restore cancelled sessions — recreate them manually if needed.</li>
+              </Steps>
+              <Tip>Owners can always manage closures. Managers need the <B>Settings</B> permission.</Tip>
+            </>
+          ),
+        },
+        {
           q: "Can I change the date or time of a single scheduled session?",
           a: (
             <>
