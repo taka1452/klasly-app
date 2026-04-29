@@ -57,8 +57,15 @@ export default function DashboardListView({
             <div className="space-y-1">
               {daySessions.map((session) => {
                 const confirmed = confirmedCounts[session.id] || 0;
-                const isFull = confirmed >= session.capacity;
                 const isRoomBooking = session.event_type === "room_booking";
+                const isFull = !isRoomBooking && confirmed >= session.capacity;
+                const remainingSpots = session.capacity - confirmed;
+                const isAlmostFull =
+                  !isRoomBooking &&
+                  !session.is_cancelled &&
+                  !isFull &&
+                  confirmed > 0 &&
+                  remainingSpots <= 2;
                 const endMinutes =
                   parseInt(session.start_time.split(":")[0]) * 60 +
                   parseInt(session.start_time.split(":")[1]) +
@@ -128,15 +135,25 @@ export default function DashboardListView({
                     </div>
 
                     {/* Capacity */}
-                    <div className="shrink-0 text-right text-sm">
-                      <span
-                        className={
-                          isFull ? "font-medium text-amber-600" : "text-gray-500"
-                        }
-                      >
-                        {confirmed}/{session.capacity}
-                      </span>
-                    </div>
+                    {!isRoomBooking && (
+                      <div className="shrink-0 text-right text-sm">
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold tabular-nums ${
+                            isFull
+                              ? "bg-amber-100 text-amber-800"
+                              : isAlmostFull
+                                ? "bg-orange-100 text-orange-800"
+                                : "bg-gray-100 text-gray-700"
+                          }`}
+                        >
+                          {isFull
+                            ? "FULL"
+                            : isAlmostFull
+                              ? `${remainingSpots} left`
+                              : `${confirmed}/${session.capacity}`}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 );
               })}

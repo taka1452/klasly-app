@@ -11,6 +11,12 @@ const legendItems = [
     description: "Public session with spots available",
   },
   {
+    color: "bg-orange-500",
+    bg: "bg-orange-50",
+    label: "Almost full",
+    description: "2 or fewer spots remaining",
+  },
+  {
     color: "bg-amber-500",
     bg: "bg-amber-50",
     label: "Full",

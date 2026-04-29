@@ -117,25 +117,58 @@ export default function DashboardMonthView({
                 {!isMobile && (
                   <div className="mt-1 space-y-0.5">
                     {daySessions.slice(0, maxVisible).map((session) => {
+                      const isRoomBooking = session.event_type === "room_booking";
+                      const confirmed = confirmedCounts[session.id] ?? 0;
+                      const isFull = confirmed >= session.capacity;
+                      const remainingSpots = session.capacity - confirmed;
+                      // "Almost full": <= 2 spots and at least 1 booking
+                      const isAlmostFull =
+                        !isFull &&
+                        !isRoomBooking &&
+                        !session.is_cancelled &&
+                        confirmed > 0 &&
+                        remainingSpots <= 2;
                       let bg = "bg-brand-100 text-brand-800";
-                      if (session.event_type === "room_booking") {
+                      if (isRoomBooking) {
                         bg = "bg-teal-100 text-teal-800";
                       } else if (session.is_cancelled) {
                         bg = "bg-gray-100 text-gray-500";
                       } else if (!session.is_public) {
                         bg = "bg-violet-100 text-violet-800";
-                      } else if (confirmedCounts[session.id] >= session.capacity) {
+                      } else if (isFull) {
                         bg = "bg-amber-100 text-amber-800";
+                      } else if (isAlmostFull) {
+                        bg = "bg-orange-50 text-orange-800";
                       }
                       return (
                         <div
                           key={session.id}
-                          className={`truncate rounded px-1 py-0.5 text-[11px] leading-tight ${bg}`}
+                          className={`flex items-center gap-1 truncate rounded px-1 py-0.5 text-[11px] leading-tight ${bg}`}
+                          title={
+                            isRoomBooking || session.is_cancelled
+                              ? undefined
+                              : `${confirmed}/${session.capacity} booked`
+                          }
                         >
-                          <span className="font-medium">
+                          <span className="shrink-0 font-medium">
                             {formatTimeShort(session.start_time)}
-                          </span>{" "}
-                          {session.class_name}
+                          </span>
+                          <span className="truncate">{session.class_name}</span>
+                          {!isRoomBooking && !session.is_cancelled && (
+                            <span
+                              className={`ml-auto shrink-0 rounded-sm px-1 text-[9px] font-semibold tabular-nums ${
+                                isFull
+                                  ? "bg-amber-200/70 text-amber-900"
+                                  : isAlmostFull
+                                    ? "bg-orange-200/70 text-orange-900"
+                                    : "bg-white/60 text-gray-600"
+                              }`}
+                            >
+                              {isFull
+                                ? "FULL"
+                                : `${confirmed}/${session.capacity}`}
+                            </span>
+                          )}
                         </div>
                       );
                     })}

@@ -273,11 +273,12 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
               <Steps>
                 <li><B>Blue</B> — normal public sessions.</li>
                 <li><B>Violet</B> — private sessions.</li>
+                <li><B>Orange</B> — almost full (2 or fewer spots left).</li>
                 <li><B>Amber</B> — fully booked sessions.</li>
                 <li><B>Gray</B> — cancelled sessions.</li>
                 <li><B>Teal</B> — instructor room bookings (shown with a &quot;Room&quot; badge).</li>
               </Steps>
-              These colors apply across <B>Day, Week, Month, and List</B> views — in Month view each day shows color-coded pills (or dots on mobile), and in List view each row has a left border in the matching color. Each card shows the class name, time, instructor, and booking count. Online classes display a camera icon. A red line indicates the current time. A collapsible color legend is shown above the calendar for quick reference.
+              These colors apply across <B>Day, Week, Month, and List</B> views — in Month view each day shows color-coded pills (or dots on mobile), and in List view each row has a left border in the matching color. Each card shows the class name, time, instructor, and a <B>capacity badge</B> that reads <B>5/10</B> while seats are available, <B>2 left</B> when nearly full, and <B>FULL</B> once the cap is reached. Online classes display a camera icon. A red line indicates the current time. A collapsible color legend is shown above the calendar for quick reference.
               <Tip>Use the <B>Show cancelled</B> toggle to show or hide cancelled sessions on the calendar. Cancelled sessions are hidden by default.</Tip>
               <Tip>The calendar week starts on <B>Sunday</B>. Use <B>List view</B> for a scrollable, date-by-date breakdown of all upcoming sessions.</Tip>
             </>
