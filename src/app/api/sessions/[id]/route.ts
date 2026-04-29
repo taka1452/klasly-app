@@ -1,11 +1,25 @@
 import { getDashboardContext } from "@/lib/auth/dashboard-access";
 import { getInstructorContext } from "@/lib/auth/instructor-access";
 import { NextResponse } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { unwrapRelation } from "@/lib/supabase/relation";
+
+type Scope = "single" | "future" | "all";
 
 /**
  * PUT /api/sessions/[id]
  * Update a session.
+ *
+ * Body may include `scope`:
+ *   - "single" (default) — only this session.
+ *   - "future" — this session and all later sessions in the same recurrence series.
+ *   - "all"    — every session in the same recurrence series (past and future).
+ *
+ * For series scopes, only "series-safe" fields are propagated (title, room_id,
+ * times, duration). The session_date is always single-session only — even with
+ * scope=future/all — because shifting every session's calendar date doesn't
+ * have an obvious meaning. Times do propagate.
+ *
  * Owner/Manager (can_manage_classes): can update any session in their studio.
  * Instructor: can only update own sessions.
  */
@@ -16,6 +30,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
+    const scope = parseScope(body?.scope);
 
     // --- Auth: try dashboard first, then instructor ---
     const dashCtx = await getDashboardContext();
@@ -30,7 +45,9 @@ export async function PUT(
       // Verify session belongs to this studio
       const { data: existing } = await dashCtx.supabase
         .from("class_sessions")
-        .select("id, studio_id, room_id, session_date, start_time, end_time")
+        .select(
+          "id, studio_id, room_id, session_date, start_time, end_time, recurrence_group_id"
+        )
         .eq("id", id)
         .single();
 
@@ -41,74 +58,14 @@ export async function PUT(
         );
       }
 
-      // Build updates
-      const updates = buildUpdates(body);
-
-      const newDate = (updates.session_date as string) || existing.session_date;
-      const newStart = (updates.start_time as string) || existing.start_time;
-      const newEnd = (updates.end_time as string) || existing.end_time;
-
-      if (newEnd <= newStart) {
-        return NextResponse.json(
-          { error: "end_time must be after start_time" },
-          { status: 400 }
-        );
-      }
-
-      // If room_id changes, check availability in the target room.
-      if (
-        updates.room_id !== undefined &&
-        updates.room_id !== existing.room_id
-      ) {
-        const roomAvailResult = await checkRoomForUpdate(
-          dashCtx.supabase,
-          updates.room_id as string,
-          dashCtx.studioId,
-          newDate,
-          newStart,
-          newEnd,
-          id
-        );
-        if (roomAvailResult) return roomAvailResult;
-      }
-
-      // If date or time changes but same room, re-check availability.
-      if (
-        existing.room_id &&
-        !updates.room_id &&
-        (updates.session_date || updates.start_time || updates.end_time)
-      ) {
-        const roomAvailResult = await checkRoomForUpdate(
-          dashCtx.supabase,
-          existing.room_id,
-          dashCtx.studioId,
-          newDate,
-          newStart,
-          newEnd,
-          id
-        );
-        if (roomAvailResult) return roomAvailResult;
-      }
-
-      // Recalculate duration_minutes if times changed
-      if (updates.start_time || updates.end_time) {
-        const [sh, sm] = newStart.split(":").map(Number);
-        const [eh, em] = newEnd.split(":").map(Number);
-        updates.duration_minutes = eh * 60 + em - (sh * 60 + sm);
-      }
-
-      const { data: updated, error } = await dashCtx.supabase
-        .from("class_sessions")
-        .update(updates)
-        .eq("id", id)
-        .select("*")
-        .single();
-
-      if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
-      }
-
-      return NextResponse.json(updated);
+      return await handleUpdate({
+        supabase: dashCtx.supabase,
+        studioId: dashCtx.studioId,
+        sessionId: id,
+        existing,
+        body,
+        scope,
+      });
     }
 
     // Fallback: instructor context
@@ -121,7 +78,7 @@ export async function PUT(
     const { data: existing } = await instrCtx.supabase
       .from("class_sessions")
       .select(
-        "id, studio_id, instructor_id, room_id, session_date, start_time, end_time"
+        "id, studio_id, instructor_id, room_id, session_date, start_time, end_time, recurrence_group_id"
       )
       .eq("id", id)
       .single();
@@ -137,65 +94,115 @@ export async function PUT(
       );
     }
 
-    const updates = buildUpdates(body);
+    return await handleUpdate({
+      supabase: instrCtx.supabase,
+      studioId: instrCtx.studioId,
+      sessionId: id,
+      existing,
+      body,
+      scope,
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
 
-    const newDate = (updates.session_date as string) || existing.session_date;
-    const newStart = (updates.start_time as string) || existing.start_time;
-    const newEnd = (updates.end_time as string) || existing.end_time;
+function parseScope(raw: unknown): Scope {
+  return raw === "future" || raw === "all" ? raw : "single";
+}
 
-    if (newEnd <= newStart) {
-      return NextResponse.json(
-        { error: "end_time must be after start_time" },
-        { status: 400 }
-      );
-    }
+type ExistingSession = {
+  id: string;
+  studio_id: string;
+  room_id: string | null;
+  session_date: string;
+  start_time: string;
+  end_time: string;
+  recurrence_group_id: string | null;
+};
 
-    // If room_id changes, check availability in the target room.
+async function handleUpdate(args: {
+  supabase: SupabaseClient;
+  studioId: string;
+  sessionId: string;
+  existing: ExistingSession;
+  body: Record<string, unknown>;
+  scope: Scope;
+}): Promise<NextResponse> {
+  const { supabase, studioId, sessionId, existing, body, scope } = args;
+
+  const allUpdates = buildUpdates(body);
+
+  // session_date is intentionally single-session only. Apply it to the
+  // target session, but never propagate it across the series.
+  const seriesUpdates: Record<string, unknown> = { ...allUpdates };
+  delete seriesUpdates.session_date;
+
+  const newDate = (allUpdates.session_date as string) || existing.session_date;
+  const newStart = (allUpdates.start_time as string) || existing.start_time;
+  const newEnd = (allUpdates.end_time as string) || existing.end_time;
+
+  if (newEnd <= newStart) {
+    return NextResponse.json(
+      { error: "end_time must be after start_time" },
+      { status: 400 }
+    );
+  }
+
+  // Recalculate duration_minutes once if times changed — applies to both
+  // single and series updates.
+  if (allUpdates.start_time || allUpdates.end_time) {
+    const [sh, sm] = newStart.split(":").map(Number);
+    const [eh, em] = newEnd.split(":").map(Number);
+    const duration = eh * 60 + em - (sh * 60 + sm);
+    allUpdates.duration_minutes = duration;
+    seriesUpdates.duration_minutes = duration;
+  }
+
+  // Single-session room conflict check (date + new times).
+  // For series scopes we skip per-occurrence conflict checks — the studio
+  // can resolve any future-room conflicts after the bulk apply, and the
+  // alternative would silently skip rows.
+  if (scope === "single") {
     if (
-      updates.room_id !== undefined &&
-      updates.room_id !== existing.room_id
+      allUpdates.room_id !== undefined &&
+      allUpdates.room_id !== existing.room_id
     ) {
-      const roomAvailResult = await checkRoomForUpdate(
-        instrCtx.supabase,
-        updates.room_id as string,
-        instrCtx.studioId,
+      const conflict = await checkRoomForUpdate(
+        supabase,
+        allUpdates.room_id as string,
+        studioId,
         newDate,
         newStart,
         newEnd,
-        id
+        sessionId
       );
-      if (roomAvailResult) return roomAvailResult;
+      if (conflict) return conflict;
     }
-
-    // If date or time changes but same room, re-check availability.
     if (
       existing.room_id &&
-      !updates.room_id &&
-      (updates.session_date || updates.start_time || updates.end_time)
+      !allUpdates.room_id &&
+      (allUpdates.session_date || allUpdates.start_time || allUpdates.end_time)
     ) {
-      const roomAvailResult = await checkRoomForUpdate(
-        instrCtx.supabase,
+      const conflict = await checkRoomForUpdate(
+        supabase,
         existing.room_id,
-        instrCtx.studioId,
+        studioId,
         newDate,
         newStart,
         newEnd,
-        id
+        sessionId
       );
-      if (roomAvailResult) return roomAvailResult;
+      if (conflict) return conflict;
     }
 
-    // Recalculate duration_minutes if times changed
-    if (updates.start_time || updates.end_time) {
-      const [sh, sm] = newStart.split(":").map(Number);
-      const [eh, em] = newEnd.split(":").map(Number);
-      updates.duration_minutes = eh * 60 + em - (sh * 60 + sm);
-    }
-
-    const { data: updated, error } = await instrCtx.supabase
+    const { data: updated, error } = await supabase
       .from("class_sessions")
-      .update(updates)
-      .eq("id", id)
+      .update(allUpdates)
+      .eq("id", sessionId)
       .select("*")
       .single();
 
@@ -203,7 +210,176 @@ export async function PUT(
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(updated);
+    return NextResponse.json({ session: updated, updated_count: 1, scope });
+  }
+
+  // --- Series scopes ---
+  if (!existing.recurrence_group_id) {
+    return NextResponse.json(
+      { error: "This session is not part of a recurring series" },
+      { status: 400 }
+    );
+  }
+
+  // 1) Update the originating session in full (includes session_date).
+  const { error: anchorError } = await supabase
+    .from("class_sessions")
+    .update(allUpdates)
+    .eq("id", sessionId);
+
+  if (anchorError) {
+    return NextResponse.json(
+      { error: anchorError.message },
+      { status: 500 }
+    );
+  }
+
+  // 2) Update the rest of the series with series-safe fields only.
+  let bulkUpdated = 1;
+  if (Object.keys(seriesUpdates).length > 0) {
+    let query = supabase
+      .from("class_sessions")
+      .update(seriesUpdates)
+      .eq("recurrence_group_id", existing.recurrence_group_id)
+      .eq("studio_id", studioId)
+      .neq("id", sessionId);
+
+    if (scope === "future") {
+      query = query.gte("session_date", existing.session_date);
+    }
+
+    const { data: bulk, error: bulkError } = await query.select("id");
+    if (bulkError) {
+      return NextResponse.json(
+        { error: bulkError.message },
+        { status: 500 }
+      );
+    }
+    bulkUpdated = 1 + (bulk?.length ?? 0);
+  }
+
+  return NextResponse.json({
+    updated_count: bulkUpdated,
+    scope,
+  });
+}
+
+/**
+ * GET /api/sessions/[id]?action=scope-impact
+ *
+ * Returns the number of sessions and active bookings that would be affected
+ * by scope=future and scope=all on this session's recurrence series.
+ * Used by the edit modal to show a "this affects N sessions / M bookings"
+ * preview before the user commits.
+ */
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const url = new URL(request.url);
+    if (url.searchParams.get("action") !== "scope-impact") {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    const dashCtx = await getDashboardContext();
+    let supabase: SupabaseClient;
+    let studioId: string;
+    let instructorId: string | null = null;
+
+    if (dashCtx) {
+      if (
+        dashCtx.role === "manager" &&
+        !dashCtx.permissions?.can_manage_classes
+      ) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      supabase = dashCtx.supabase;
+      studioId = dashCtx.studioId;
+    } else {
+      const instrCtx = await getInstructorContext();
+      if (!instrCtx) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      supabase = instrCtx.supabase;
+      studioId = instrCtx.studioId;
+      instructorId = instrCtx.instructorId;
+    }
+
+    const { data: existing } = await supabase
+      .from("class_sessions")
+      .select(
+        "id, studio_id, instructor_id, recurrence_group_id, session_date"
+      )
+      .eq("id", id)
+      .single();
+
+    if (
+      !existing ||
+      existing.studio_id !== studioId ||
+      (instructorId && existing.instructor_id !== instructorId)
+    ) {
+      return NextResponse.json(
+        { error: "Session not found" },
+        { status: 404 }
+      );
+    }
+
+    const groupId = existing.recurrence_group_id;
+    if (!groupId) {
+      return NextResponse.json({
+        recurring: false,
+        future: { sessions: 1, bookings: 0 },
+        all: { sessions: 1, bookings: 0 },
+      });
+    }
+
+    const { data: futureSessions } = await supabase
+      .from("class_sessions")
+      .select("id")
+      .eq("recurrence_group_id", groupId)
+      .eq("studio_id", studioId)
+      .eq("is_cancelled", false)
+      .gte("session_date", existing.session_date);
+
+    const { data: allSessions } = await supabase
+      .from("class_sessions")
+      .select("id")
+      .eq("recurrence_group_id", groupId)
+      .eq("studio_id", studioId)
+      .eq("is_cancelled", false);
+
+    const futureIds = (futureSessions ?? []).map((s) => s.id);
+    const allIds = (allSessions ?? []).map((s) => s.id);
+
+    const futureBookings = futureIds.length
+      ? await supabase
+          .from("bookings")
+          .select("id", { count: "exact", head: true })
+          .in("session_id", futureIds)
+          .in("status", ["confirmed", "waitlist"])
+      : { count: 0 };
+
+    const allBookings = allIds.length
+      ? await supabase
+          .from("bookings")
+          .select("id", { count: "exact", head: true })
+          .in("session_id", allIds)
+          .in("status", ["confirmed", "waitlist"])
+      : { count: 0 };
+
+    return NextResponse.json({
+      recurring: true,
+      future: {
+        sessions: futureIds.length,
+        bookings: futureBookings.count ?? 0,
+      },
+      all: {
+        sessions: allIds.length,
+        bookings: allBookings.count ?? 0,
+      },
+    });
   } catch {
     return NextResponse.json(
       { error: "Internal server error" },

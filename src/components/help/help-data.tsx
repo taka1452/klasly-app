@@ -444,6 +444,20 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
+          q: "Can I apply an edit to all future sessions, not just one?",
+          a: (
+            <>
+              Yes. When you open the <B>Edit</B> dialog on a session that&apos;s part of a recurring series, an <B>Apply to</B> selector appears with three options:
+              <ul className="ml-4 mt-2 list-disc">
+                <li><B>This session only</B> (default) — changes just the one session, like before.</li>
+                <li><B>This and following</B> — applies time, title and room changes to this session and every later session in the series.</li>
+                <li><B>All sessions in the series</B> — applies the change to every session in the series, past and future.</li>
+              </ul>
+              <Tip>Each option shows how many sessions and active bookings it will affect before you save. Date changes are always single-session only — the calendar date of every other session stays put.</Tip>
+            </>
+          ),
+        },
+        {
           q: "What is the \"Special instructions\" field on a class?",
           a: (
             <>

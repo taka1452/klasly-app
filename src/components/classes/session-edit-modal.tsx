@@ -8,6 +8,15 @@ type Session = {
   start_time: string;
   end_time: string | null;
   title?: string | null;
+  recurrence_group_id?: string | null;
+};
+
+type Scope = "single" | "future" | "all";
+
+type ScopeImpact = {
+  recurring: boolean;
+  future: { sessions: number; bookings: number };
+  all: { sessions: number; bookings: number };
 };
 
 type Props = {
@@ -18,6 +27,8 @@ type Props = {
     start_time: string;
     end_time: string;
     title?: string | null;
+    scope: Scope;
+    updated_count: number;
   }) => void;
 };
 
@@ -52,8 +63,14 @@ export default function SessionEditModal({ session, onClose, onSaved }: Props) {
   const [startTime, setStartTime] = useState(initialStart);
   const [endTime, setEndTime] = useState(initialEnd);
   const [title, setTitle] = useState(session.title || "");
+  const [scope, setScope] = useState<Scope>("single");
+  const [impact, setImpact] = useState<ScopeImpact | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isRecurring = Boolean(session.recurrence_group_id);
+  const dateChanged = sessionDate !== session.session_date;
+  const seriesScope = scope !== "single";
 
   useEffect(() => {
     const start = session.start_time.slice(0, 5);
@@ -61,8 +78,33 @@ export default function SessionEditModal({ session, onClose, onSaved }: Props) {
     setStartTime(start);
     setEndTime(normaliseEnd(session.end_time, start));
     setTitle(session.title || "");
+    setScope("single");
+    setImpact(null);
     setError(null);
   }, [session]);
+
+  // Fetch how many sessions / active bookings would be affected by future
+  // and all scopes, so the radio labels can preview the blast radius before
+  // the user commits. Informational only — failures are silent.
+  useEffect(() => {
+    if (!isRecurring) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/sessions/${session.id}?action=scope-impact`
+        );
+        if (!res.ok) return;
+        const data = (await res.json()) as ScopeImpact;
+        if (!cancelled) setImpact(data);
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [session.id, isRecurring]);
 
   // Auto-shift end-time when start-time moves forward past the current end.
   // Mirrors Google Calendar behaviour: keeps the duration sensible without
@@ -105,6 +147,7 @@ export default function SessionEditModal({ session, onClose, onSaved }: Props) {
         start_time: `${startTime}:00`,
         end_time: `${endTime}:00`,
         title: title.trim() || null,
+        scope,
       }),
     });
 
@@ -116,11 +159,17 @@ export default function SessionEditModal({ session, onClose, onSaved }: Props) {
       return;
     }
 
+    const data = (await res.json().catch(() => ({}))) as {
+      updated_count?: number;
+    };
+
     onSaved({
       session_date: sessionDate,
       start_time: `${startTime}:00`,
       end_time: `${endTime}:00`,
       title: title.trim() || null,
+      scope,
+      updated_count: data.updated_count ?? 1,
     });
   }
 
@@ -137,7 +186,9 @@ export default function SessionEditModal({ session, onClose, onSaved }: Props) {
           <div>
             <h2 className="text-lg font-semibold text-gray-900">Edit session</h2>
             <p className="mt-1 text-xs text-gray-500">
-              Change this single session&apos;s date and time. Other sessions in the series stay as they are.
+              {isRecurring
+                ? "Pick which sessions in the series this change applies to."
+                : "Change this single session’s date and time."}
             </p>
           </div>
           <button
@@ -207,6 +258,46 @@ export default function SessionEditModal({ session, onClose, onSaved }: Props) {
             />
           </div>
 
+          {isRecurring && (
+            <fieldset
+              className="panel-enter rounded-lg border border-gray-200 bg-gray-50/60 p-3"
+              aria-label="Apply changes to"
+            >
+              <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-gray-600">
+                Apply to
+              </legend>
+              <div className="space-y-1.5">
+                <ScopeRadio
+                  value="single"
+                  current={scope}
+                  onChange={setScope}
+                  label="This session only"
+                  hint="Other sessions in the series stay as they are."
+                />
+                <ScopeRadio
+                  value="future"
+                  current={scope}
+                  onChange={setScope}
+                  label="This and following"
+                  hint={impactHint(impact?.future)}
+                />
+                <ScopeRadio
+                  value="all"
+                  current={scope}
+                  onChange={setScope}
+                  label="All sessions in the series"
+                  hint={impactHint(impact?.all)}
+                />
+              </div>
+              {seriesScope && dateChanged && (
+                <p className="mt-2 rounded-md bg-amber-50 px-2 py-1.5 text-[11px] text-amber-700">
+                  Date change applies only to this session. Time and title
+                  changes will fan out across {scope === "all" ? "all" : "future"} sessions.
+                </p>
+              )}
+            </fieldset>
+          )}
+
           <div className="flex justify-end gap-2 pt-2">
             <button
               type="button"
@@ -218,7 +309,7 @@ export default function SessionEditModal({ session, onClose, onSaved }: Props) {
             </button>
             <button type="submit" disabled={loading} className="btn-primary">
               <span className="label-swap" data-pending={loading}>
-                {loading ? "Saving..." : "Save changes"}
+                {loading ? "Saving..." : saveLabel(scope, impact)}
               </span>
             </button>
           </div>
@@ -256,4 +347,61 @@ function normaliseEnd(rawEnd: string | null, start: string): string {
   if (/^\d{2}:\d{2}$/.test(candidate)) return candidate;
   if (/^\d{2}:\d{2}$/.test(start)) return addMinutesHHMM(start, 60);
   return "";
+}
+
+function impactHint(
+  s: { sessions: number; bookings: number } | undefined
+): string {
+  if (!s) return "";
+  const sessionsPart =
+    s.sessions === 1 ? "1 session" : `${s.sessions} sessions`;
+  const bookingsPart =
+    s.bookings === 0
+      ? "no bookings"
+      : s.bookings === 1
+        ? "1 booking"
+        : `${s.bookings} bookings`;
+  return `Affects ${sessionsPart}, ${bookingsPart}.`;
+}
+
+function saveLabel(scope: Scope, impact: ScopeImpact | null): string {
+  if (scope === "single") return "Save changes";
+  const target = scope === "future" ? impact?.future : impact?.all;
+  if (!target) return "Save changes";
+  return `Apply to ${target.sessions} sessions`;
+}
+
+function ScopeRadio(props: {
+  value: Scope;
+  current: Scope;
+  onChange: (s: Scope) => void;
+  label: string;
+  hint: string;
+}) {
+  const { value, current, onChange, label, hint } = props;
+  const checked = current === value;
+  return (
+    <label
+      className={`flex min-h-[44px] cursor-pointer items-start gap-2 rounded-md border px-2.5 py-2 text-sm transition-colors duration-150 ${
+        checked
+          ? "border-gray-900 bg-white shadow-sm"
+          : "border-transparent hover:border-gray-300 hover:bg-white/60"
+      }`}
+    >
+      <input
+        type="radio"
+        name="session-edit-scope"
+        value={value}
+        checked={checked}
+        onChange={() => onChange(value)}
+        className="mt-0.5 h-4 w-4 accent-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/40 focus-visible:ring-offset-1"
+      />
+      <span className="flex-1">
+        <span className="block font-medium text-gray-900">{label}</span>
+        {hint && (
+          <span className="mt-0.5 block text-[11px] text-gray-500">{hint}</span>
+        )}
+      </span>
+    </label>
+  );
 }

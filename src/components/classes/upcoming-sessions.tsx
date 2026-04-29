@@ -15,6 +15,7 @@ type Session = {
   confirmed_count: number;
   capacity: number;
   title?: string | null;
+  recurrence_group_id?: string | null;
 };
 
 type Props = {
@@ -48,6 +49,7 @@ export default function UpcomingSessions({ templateId }: Props) {
             instructor_name: string | null;
             capacity: number;
             title?: string | null;
+            recurrence_group_id?: string | null;
           }) => ({
             ...s,
             confirmed_count: data.confirmedCounts?.[s.id] || 0,
@@ -214,19 +216,26 @@ export default function UpcomingSessions({ templateId }: Props) {
           session={editingSession}
           onClose={() => setEditingSession(null)}
           onSaved={(updated) => {
-            setSessions((prev) =>
-              prev.map((s) =>
-                s.id === editingSession.id
-                  ? {
-                      ...s,
-                      session_date: updated.session_date,
-                      start_time: updated.start_time,
-                      end_time: updated.end_time,
-                      title: updated.title ?? s.title,
-                    }
-                  : s
-              )
-            );
+            // For series scopes (future / all) many rows changed at once;
+            // refetch to keep the list in sync rather than guess what
+            // moved. Single-session edits patch the local row inline.
+            if (updated.scope === "single") {
+              setSessions((prev) =>
+                prev.map((s) =>
+                  s.id === editingSession.id
+                    ? {
+                        ...s,
+                        session_date: updated.session_date,
+                        start_time: updated.start_time,
+                        end_time: updated.end_time,
+                        title: updated.title ?? s.title,
+                      }
+                    : s
+                )
+              );
+            } else {
+              fetchSessions();
+            }
             setEditingSession(null);
           }}
         />
