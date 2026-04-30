@@ -37,7 +37,7 @@ export default function InstructorDeleteButton({
     <>
       <button
         onClick={() => setShowConfirm(true)}
-        className="btn-danger mt-3 w-full text-sm"
+        className="btn-danger mt-3 w-full text-sm transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]"
       >
         Delete instructor
       </button>

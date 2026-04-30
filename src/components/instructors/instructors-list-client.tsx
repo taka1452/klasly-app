@@ -38,7 +38,7 @@ export default function InstructorsListClient({
               key={instructor.id}
               type="button"
               onClick={() => setSelectedId(instructor.id)}
-              className="card cursor-pointer text-left transition-colors hover:bg-gray-50"
+              className="card cursor-pointer text-left transition-[transform,background-color] duration-150 ease-out hover:bg-gray-50 active:scale-[0.98]"
             >
               <h3 className="font-medium text-gray-900">
                 {raw?.full_name || "—"}
