@@ -98,7 +98,7 @@ export default async function RoomsPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Link href="/rooms/manage" className="btn-secondary">
+          <Link href="/rooms/manage" className="btn-secondary transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]">
             Manage Rooms
           </Link>
         </div>

@@ -27,7 +27,7 @@ export default function RoomsPageClient({
     <button
       type="button"
       onClick={() => setShowAdminBooking(true)}
-      className="btn-primary"
+      className="btn-primary transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100"
       disabled={rooms.length === 0 || instructors.length === 0}
       title={
         rooms.length === 0
@@ -59,7 +59,7 @@ export default function RoomsPageClient({
             <button
               type="button"
               onClick={() => setActiveTab("usage")}
-              className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+              className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-[color,background-color,transform] duration-200 ease-out active:scale-[0.97] ${
                 activeTab === "usage"
                   ? "bg-white text-gray-900 shadow-sm"
                   : "text-gray-600 hover:text-gray-900"
@@ -70,7 +70,7 @@ export default function RoomsPageClient({
             <button
               type="button"
               onClick={() => setActiveTab("book")}
-              className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+              className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-[color,background-color,transform] duration-200 ease-out active:scale-[0.97] ${
                 activeTab === "book"
                   ? "bg-white text-gray-900 shadow-sm"
                   : "text-gray-600 hover:text-gray-900"
