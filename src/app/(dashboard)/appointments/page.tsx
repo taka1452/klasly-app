@@ -237,7 +237,7 @@ export default function AppointmentsPage() {
       <div className="mt-6 flex gap-1 rounded-lg bg-gray-100 p-1">
         <button
           onClick={() => setTab("types")}
-          className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+          className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-[color,background-color,transform] duration-200 ease-out active:scale-[0.97] ${
             tab === "types"
               ? "bg-white text-gray-900 shadow-sm"
               : "text-gray-500 hover:text-gray-700"
@@ -247,7 +247,7 @@ export default function AppointmentsPage() {
         </button>
         <button
           onClick={() => setTab("bookings")}
-          className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+          className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-[color,background-color,transform] duration-200 ease-out active:scale-[0.97] ${
             tab === "bookings"
               ? "bg-white text-gray-900 shadow-sm"
               : "text-gray-500 hover:text-gray-700"
@@ -263,7 +263,7 @@ export default function AppointmentsPage() {
             <h2 className="text-lg font-semibold text-gray-800">
               Appointment Types
             </h2>
-            <Link href="/appointments/types/new" className="btn-primary">
+            <Link href="/appointments/types/new" className="btn-primary transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]">
               + Create New Type
             </Link>
           </div>
@@ -288,7 +288,7 @@ export default function AppointmentsPage() {
               </p>
               <Link
                 href="/appointments/types/new"
-                className="btn-primary mt-4 inline-block"
+                className="btn-primary mt-4 inline-block transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]"
               >
                 + Create New Type
               </Link>
@@ -331,14 +331,14 @@ export default function AppointmentsPage() {
                   <div className="mt-4 flex items-center gap-2">
                     <Link
                       href={`/appointments/types/${type.id}/edit`}
-                      className="btn-secondary text-xs"
+                      className="btn-secondary text-xs transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]"
                     >
                       Edit
                     </Link>
                     <button
                       onClick={() => handleToggleActive(type)}
                       disabled={toggling === type.id}
-                      className="rounded border border-gray-200 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                      className="rounded border border-gray-200 px-3 py-1.5 text-xs text-gray-600 transition-[transform,background-color] duration-150 ease-out hover:bg-gray-50 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
                     >
                       {toggling === type.id ? "..." : "Deactivate"}
                     </button>
@@ -379,14 +379,14 @@ export default function AppointmentsPage() {
                     <div className="mt-4 flex items-center gap-2">
                       <Link
                         href={`/appointments/types/${type.id}/edit`}
-                        className="btn-secondary text-xs"
+                        className="btn-secondary text-xs transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]"
                       >
                         Edit
                       </Link>
                       <button
                         onClick={() => handleToggleActive(type)}
                         disabled={toggling === type.id}
-                        className="rounded border border-gray-200 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                        className="rounded border border-gray-200 px-3 py-1.5 text-xs text-gray-600 transition-[transform,background-color] duration-150 ease-out hover:bg-gray-50 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
                       >
                         {toggling === type.id ? "..." : "Reactivate"}
                       </button>
@@ -415,7 +415,7 @@ export default function AppointmentsPage() {
                 <button
                   key={opt.value}
                   onClick={() => setDateFilter(opt.value)}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition-[color,background-color,transform] duration-200 ease-out active:scale-[0.97] ${
                     dateFilter === opt.value
                       ? "bg-white text-gray-900 shadow-sm"
                       : "text-gray-500 hover:text-gray-700"
@@ -440,7 +440,7 @@ export default function AppointmentsPage() {
                 <button
                   key={opt.value}
                   onClick={() => setStatusFilter(opt.value)}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition-[color,background-color,transform] duration-200 ease-out active:scale-[0.97] ${
                     statusFilter === opt.value
                       ? "bg-white text-gray-900 shadow-sm"
                       : "text-gray-500 hover:text-gray-700"
@@ -489,7 +489,7 @@ export default function AppointmentsPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {bookings.map((b) => (
-                    <tr key={b.id} className="hover:bg-gray-50">
+                    <tr key={b.id} className="transition-colors duration-150 ease-out hover:bg-gray-50">
                       <td className="px-4 py-3 font-medium text-gray-900">
                         {b.members?.profiles?.full_name ?? "—"}
                       </td>
