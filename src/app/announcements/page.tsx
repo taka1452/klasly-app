@@ -61,7 +61,7 @@ export default function AnnouncementsPage() {
         <h1 className="text-2xl font-bold text-gray-900">What&apos;s New</h1>
         <Link
           href="/"
-          className="text-sm text-gray-500 hover:text-gray-700"
+          className="text-sm text-gray-500 transition-colors duration-150 hover:text-gray-700"
         >
           ← Back
         </Link>
@@ -73,7 +73,7 @@ export default function AnnouncementsPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {announcements.map((a) => {
+          {announcements.map((a, index) => {
             const isNew = !readIds.has(a.id);
             const date = new Date(a.published_at).toLocaleDateString("en-US", {
               year: "numeric",
@@ -82,7 +82,7 @@ export default function AnnouncementsPage() {
             });
 
             return (
-              <div key={a.id}>
+              <div key={a.id} className="stats-stagger" style={{ animationDelay: `${Math.min(index * 60, 300)}ms` }}>
                 <p className="mb-1.5 flex items-center gap-2 text-sm text-gray-400">
                   <span>📢</span> {date}
                 </p>
