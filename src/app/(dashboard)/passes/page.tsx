@@ -110,7 +110,7 @@ export default async function PassesPage() {
           </p>
           <Link
             href="/passes/distributions"
-            className="whitespace-nowrap text-sm font-medium text-amber-700 hover:text-amber-900"
+            className="whitespace-nowrap text-sm font-medium text-amber-700 transition-colors duration-150 hover:text-amber-900"
           >
             Review →
           </Link>
@@ -132,13 +132,13 @@ export default async function PassesPage() {
             <>
               <Link
                 href="/passes/distributions"
-                className="btn-secondary"
+                className="btn-secondary transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]"
               >
                 Distributions
               </Link>
               <Link
                 href="/passes/new"
-                className="btn-primary"
+                className="btn-primary transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]"
               >
                 + Create Pass
               </Link>
@@ -150,21 +150,21 @@ export default async function PassesPage() {
       {/* Stats Overview */}
       {passes && passes.length > 0 && (
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="card">
+          <div className="stats-stagger card" style={{ animationDelay: "0ms" }}>
             <p className="text-sm font-medium text-gray-500">Active Subscribers</p>
             <p className="mt-1 text-2xl font-bold text-gray-900">{totalActiveSubscribers}</p>
           </div>
-          <div className="card">
+          <div className="stats-stagger card" style={{ animationDelay: "60ms" }}>
             <p className="text-sm font-medium text-gray-500">Pass Bookings (This Month)</p>
             <p className="mt-1 text-2xl font-bold text-gray-900">{passBookingsThisMonth}</p>
           </div>
-          <div className="card">
+          <div className="stats-stagger card" style={{ animationDelay: "120ms" }}>
             <p className="text-sm font-medium text-gray-500">Monthly Recurring Revenue</p>
             <p className="mt-1 text-2xl font-bold text-gray-900">
               ${(mrr / 100).toFixed(2)}
             </p>
           </div>
-          <div className="card">
+          <div className="stats-stagger card" style={{ animationDelay: "180ms" }}>
             <p className="text-sm font-medium text-gray-500">Top Members (This Month)</p>
             {topMembers.length > 0 ? (
               <ul className="mt-1 space-y-1">
