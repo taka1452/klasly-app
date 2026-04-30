@@ -97,7 +97,7 @@ export default function BookingsClient({ sessions, year, month }: Props) {
             key={tab.key}
             type="button"
             onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+            className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-[color,background-color,transform] duration-200 ease-out active:scale-[0.97] ${
               activeTab === tab.key
                 ? "bg-white text-gray-900 shadow-sm"
                 : "text-gray-600 hover:text-gray-900"
@@ -117,7 +117,7 @@ export default function BookingsClient({ sessions, year, month }: Props) {
               key={f.key}
               type="button"
               onClick={() => setStatusFilter(f.key)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-[color,background-color,transform] duration-150 ease-out active:scale-[0.95] ${
                 statusFilter === f.key
                   ? "bg-brand-100 text-brand-700"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -145,7 +145,7 @@ export default function BookingsClient({ sessions, year, month }: Props) {
             {filtered.map((session) => (
               <div
                 key={session.id}
-                className="block cursor-pointer px-4 py-4 transition-colors hover:bg-gray-50 sm:px-6"
+                className="block cursor-pointer px-4 py-4 transition-colors duration-150 ease-out hover:bg-gray-50 sm:px-6"
                 onClick={() => setSelectedSession(session)}
               >
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -218,15 +218,15 @@ export default function BookingsClient({ sessions, year, month }: Props) {
       {selectedSession && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center">
           <div
-            className="absolute inset-0 bg-black/40"
+            className="backdrop-in absolute inset-0 bg-black/40"
             onClick={() => setSelectedSession(null)}
           />
-          <div className="relative mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+          <div className="dialog-in relative mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
             <button
               type="button"
               onClick={() => setSelectedSession(null)}
               aria-label="Close"
-              className="absolute right-4 top-4 tap-target rounded text-gray-500 hover:bg-gray-100 hover:text-gray-600"
+              className="absolute right-4 top-4 tap-target rounded text-gray-500 transition-[transform,background-color,color] duration-150 ease-out hover:bg-gray-100 hover:text-gray-600 active:scale-[0.95]"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -282,14 +282,14 @@ export default function BookingsClient({ sessions, year, month }: Props) {
             <div className="mt-6 flex gap-3">
               <Link
                 href={`/bookings/${selectedSession.id}`}
-                className="btn-primary flex-1 text-center"
+                className="btn-primary flex-1 text-center transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]"
               >
                 View Details
               </Link>
               <button
                 type="button"
                 onClick={() => setSelectedSession(null)}
-                className="btn-secondary"
+                className="btn-secondary transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]"
               >
                 Close
               </button>
