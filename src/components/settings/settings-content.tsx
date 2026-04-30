@@ -413,7 +413,7 @@ export default function SettingsContent({
               </p>
               <Link
                 href="/settings/collective-setup"
-                className="mt-4 inline-block rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
+                className="mt-4 inline-block rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:bg-amber-700 active:scale-[0.97]"
               >
                 Open Setup Guide &rarr;
               </Link>
@@ -613,7 +613,7 @@ export default function SettingsContent({
                 type="button"
                 onClick={handleReplayTutorial}
                 disabled={replayLoading}
-                className="btn-secondary"
+                className="btn-secondary transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100"
               >
                 {replayLoading ? "Starting\u2026" : "Replay Tutorial"}
               </button>
@@ -621,7 +621,7 @@ export default function SettingsContent({
                 <button
                   type="button"
                   onClick={() => setShowMarkCompleteConfirm(true)}
-                  className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-[transform,background-color] duration-150 ease-out hover:bg-gray-50 active:scale-[0.97]"
                 >
                   Mark Tutorial as Complete
                 </button>
@@ -635,7 +635,7 @@ export default function SettingsContent({
                       type="button"
                       onClick={handleMarkComplete}
                       disabled={markCompleteLoading}
-                      className="rounded bg-amber-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-50"
+                      className="rounded bg-amber-600 px-3 py-1.5 text-sm font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:bg-amber-700 active:scale-[0.95] disabled:opacity-50 disabled:active:scale-100"
                     >
                       {markCompleteLoading ? "Saving\u2026" : "Yes"}
                     </button>
@@ -643,7 +643,7 @@ export default function SettingsContent({
                       type="button"
                       onClick={() => setShowMarkCompleteConfirm(false)}
                       disabled={markCompleteLoading}
-                      className="rounded border border-amber-300 px-3 py-1.5 text-sm font-medium text-amber-800 hover:bg-amber-100"
+                      className="rounded border border-amber-300 px-3 py-1.5 text-sm font-medium text-amber-800 transition-[transform,background-color] duration-150 ease-out hover:bg-amber-100 active:scale-[0.95] disabled:active:scale-100"
                     >
                       Cancel
                     </button>
@@ -681,7 +681,7 @@ export default function SettingsContent({
             <button
               type="button"
               onClick={() => { setShowDeleteConfirm(true); setDeleteConfirmInput(""); }}
-              className="btn-danger mt-4"
+              className="btn-danger mt-4 transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]"
             >
               Delete my account
             </button>
@@ -690,10 +690,10 @@ export default function SettingsContent({
             {showDeleteConfirm && (
               <div className="fixed inset-0 z-[9999] flex items-center justify-center">
                 <div
-                  className="absolute inset-0 bg-black/40"
+                  className="backdrop-in absolute inset-0 bg-black/40"
                   onClick={() => setShowDeleteConfirm(false)}
                 />
-                <div className="relative mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+                <div className="dialog-in relative mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
                   <div className="flex items-start gap-4">
                     <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-red-100">
                       <svg className="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -728,7 +728,7 @@ export default function SettingsContent({
                       type="button"
                       onClick={() => setShowDeleteConfirm(false)}
                       disabled={deleteLoading}
-                      className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                      className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-[transform,background-color] duration-150 ease-out hover:bg-gray-50 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
                     >
                       Cancel
                     </button>
@@ -736,7 +736,7 @@ export default function SettingsContent({
                       type="button"
                       onClick={handleDelete}
                       disabled={deleteLoading || deleteConfirmInput !== studioName}
-                      className="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50"
+                      className="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:bg-red-700 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:active:scale-100"
                     >
                       {deleteLoading ? "Deleting..." : "Yes, delete everything"}
                     </button>
