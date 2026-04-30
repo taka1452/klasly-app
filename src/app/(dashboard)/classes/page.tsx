@@ -23,7 +23,7 @@ export default async function ClassesPage() {
           <p className="text-sm text-gray-500">Manage class templates</p>
           <ContextHelpLink href="/help/classes-scheduling/create-recurring-class" />
         </div>
-        <Link href="/classes/new" className="btn-primary">
+        <Link href="/classes/new" className="btn-primary transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]">
           + New Template
         </Link>
       </div>

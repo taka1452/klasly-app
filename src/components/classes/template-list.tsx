@@ -251,7 +251,7 @@ export default function TemplateList() {
         <p className="mt-1 text-sm text-gray-500 mx-auto max-w-sm">
           Create a class template to define the name, duration, capacity, and instructor. Then schedule sessions from it.
         </p>
-        <a href="/classes/new" className="btn-primary mt-5 inline-flex">
+        <a href="/classes/new" className="btn-primary mt-5 inline-flex transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]">
           + New Template
         </a>
       </div>
@@ -270,7 +270,7 @@ export default function TemplateList() {
 
     return (
       <div
-        className="card relative flex cursor-pointer transition-shadow hover:shadow-md"
+        className="card relative flex cursor-pointer transition-[transform,box-shadow] duration-150 ease-out hover:shadow-md active:scale-[0.98]"
         onClick={() => router.push(`/classes/${t.id}`)}
       >
         <div className="flex-1 min-w-0">
@@ -335,7 +335,7 @@ export default function TemplateList() {
                   e.stopPropagation();
                   router.push(`/classes/new?duplicate=${t.id}`);
                 }}
-                className="btn-secondary text-xs"
+                className="btn-secondary text-xs transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]"
               >
                 Duplicate
               </button>
@@ -344,7 +344,7 @@ export default function TemplateList() {
                   e.stopPropagation();
                   router.push(`/calendar?schedule=${t.id}`);
                 }}
-                className="btn-secondary text-xs"
+                className="btn-secondary text-xs transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]"
               >
                 Schedule
               </button>
