@@ -378,7 +378,7 @@ export default function ManagersClient() {
             <button
               type="button"
               onClick={() => setGuideOpen((o) => !o)}
-              className="font-medium text-brand-600 hover:text-brand-700"
+              className="font-medium text-brand-600 transition-colors duration-150 hover:text-brand-700"
             >
               {guideOpen ? "Hide" : "What does each permission do?"}
             </button>
@@ -386,7 +386,7 @@ export default function ManagersClient() {
         </div>
         <button
           onClick={() => setShowInvite(true)}
-          className="btn-primary"
+          className="btn-primary transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]"
         >
           + Invite manager
         </button>
@@ -408,7 +408,7 @@ export default function ManagersClient() {
             <button
               type="button"
               onClick={() => setGuideOpen(false)}
-              className="text-xs text-gray-500 hover:text-gray-600"
+              className="text-xs text-gray-500 transition-colors duration-150 hover:text-gray-600"
             >
               Close
             </button>
@@ -480,13 +480,13 @@ export default function ManagersClient() {
               required
               className="input-field flex-1"
             />
-            <button type="submit" disabled={inviteLoading} className="btn-primary">
+            <button type="submit" disabled={inviteLoading} className="btn-primary transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100">
               {inviteLoading ? "Sending..." : "Invite"}
             </button>
             <button
               type="button"
               onClick={() => setShowInvite(false)}
-              className="btn-secondary"
+              className="btn-secondary transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]"
             >
               Cancel
             </button>
