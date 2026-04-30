@@ -256,7 +256,7 @@ export default function MessagesClient({
               <button
                 type="button"
                 onClick={() => { setShowCompose(true); setComposeError(null); }}
-                className="flex items-center gap-1 rounded-lg bg-brand-500 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-brand-600 transition-colors"
+                className="flex items-center gap-1 rounded-lg bg-brand-500 px-2.5 py-1.5 text-xs font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:bg-brand-600 active:scale-[0.95]"
                 title="New Message"
               >
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -282,7 +282,7 @@ export default function MessagesClient({
                 key={conv.memberId}
                 type="button"
                 onClick={() => setSelectedId(conv.memberId)}
-                className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50 ${
+                className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors duration-150 ease-out hover:bg-gray-50 ${
                   selectedId === conv.memberId ? "bg-blue-50" : ""
                 }`}
               >
@@ -329,7 +329,7 @@ export default function MessagesClient({
                 // 会話がない場合は initialMemberId（オーナーID）を使用
                 if (initialMemberId) setSelectedId(initialMemberId);
               }}
-              className="btn-primary w-full text-sm"
+              className="btn-primary w-full text-sm transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]"
             >
               Message your studio
             </button>
@@ -349,7 +349,7 @@ export default function MessagesClient({
             <div className="flex items-center gap-3 border-b border-gray-200 px-4 py-3">
               <button
                 type="button"
-                className="tap-target rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-600 md:hidden"
+                className="tap-target rounded-lg text-gray-500 transition-[transform,background-color,color] duration-150 ease-out hover:bg-gray-100 hover:text-gray-600 active:scale-[0.95] md:hidden"
                 onClick={() => setSelectedId(null)}
                 aria-label="Back to conversations"
               >
@@ -447,7 +447,7 @@ export default function MessagesClient({
                   type="button"
                   onClick={handleSend}
                   disabled={!content.trim() || sending || isPending}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-500 text-white transition-colors hover:bg-brand-600 disabled:opacity-40"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-500 text-white transition-[transform,background-color] duration-150 ease-out hover:bg-brand-600 active:scale-[0.95] disabled:opacity-40 disabled:active:scale-100"
                   aria-label="Send message"
                 >
                   <svg
@@ -500,14 +500,14 @@ export default function MessagesClient({
       {showCompose && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center">
           <div
-            className="absolute inset-0 bg-black/40"
+            className="backdrop-in absolute inset-0 bg-black/40"
             onClick={() => setShowCompose(false)}
           />
-          <div className="relative mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+          <div className="dialog-in relative mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
             <button
               type="button"
               onClick={() => setShowCompose(false)}
-              className="absolute right-4 top-4 tap-target rounded text-gray-500 hover:bg-gray-100 hover:text-gray-600"
+              className="absolute right-4 top-4 tap-target rounded text-gray-500 transition-[transform,background-color,color] duration-150 ease-out hover:bg-gray-100 hover:text-gray-600 active:scale-[0.95]"
               aria-label="Close"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -566,14 +566,14 @@ export default function MessagesClient({
                 type="button"
                 onClick={handleComposeSend}
                 disabled={!composeRecipient || !composeBody.trim() || composeSending}
-                className="btn-primary flex-1 disabled:opacity-40"
+                className="btn-primary flex-1 transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100"
               >
                 {composeSending ? "Sending..." : "Send Message"}
               </button>
               <button
                 type="button"
                 onClick={() => setShowCompose(false)}
-                className="btn-secondary"
+                className="btn-secondary transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]"
               >
                 Cancel
               </button>
