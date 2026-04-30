@@ -499,6 +499,8 @@ function buildUpdates(body: Record<string, unknown>): Record<string, unknown> {
   if (body.start_time !== undefined) updates.start_time = body.start_time;
   if (body.end_time !== undefined) updates.end_time = body.end_time;
   if (body.room_id !== undefined) updates.room_id = body.room_id || null;
+  if (body.instructor_id !== undefined)
+    updates.instructor_id = body.instructor_id || null;
   if (body.template_id !== undefined)
     updates.template_id = body.template_id || null;
   if (body.is_cancelled !== undefined)

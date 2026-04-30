@@ -8,6 +8,7 @@ type Session = {
   start_time: string;
   end_time: string | null;
   title?: string | null;
+  instructor_id?: string | null;
   recurrence_group_id?: string | null;
 };
 
@@ -19,6 +20,11 @@ type ScopeImpact = {
   all: { sessions: number; bookings: number };
 };
 
+type InstructorOption = {
+  id: string;
+  name: string;
+};
+
 type Props = {
   session: Session;
   onClose: () => void;
@@ -27,6 +33,7 @@ type Props = {
     start_time: string;
     end_time: string;
     title?: string | null;
+    instructor_id: string | null;
     scope: Scope;
     updated_count: number;
   }) => void;
@@ -63,6 +70,10 @@ export default function SessionEditModal({ session, onClose, onSaved }: Props) {
   const [startTime, setStartTime] = useState(initialStart);
   const [endTime, setEndTime] = useState(initialEnd);
   const [title, setTitle] = useState(session.title || "");
+  const [instructorId, setInstructorId] = useState<string>(
+    session.instructor_id ?? ""
+  );
+  const [instructors, setInstructors] = useState<InstructorOption[]>([]);
   const [scope, setScope] = useState<Scope>("single");
   const [impact, setImpact] = useState<ScopeImpact | null>(null);
   const [loading, setLoading] = useState(false);
@@ -71,6 +82,8 @@ export default function SessionEditModal({ session, onClose, onSaved }: Props) {
   const isRecurring = Boolean(session.recurrence_group_id);
   const dateChanged = sessionDate !== session.session_date;
   const seriesScope = scope !== "single";
+  const instructorChanged =
+    (instructorId || null) !== (session.instructor_id ?? null);
 
   useEffect(() => {
     const start = session.start_time.slice(0, 5);
@@ -78,10 +91,30 @@ export default function SessionEditModal({ session, onClose, onSaved }: Props) {
     setStartTime(start);
     setEndTime(normaliseEnd(session.end_time, start));
     setTitle(session.title || "");
+    setInstructorId(session.instructor_id ?? "");
     setScope("single");
     setImpact(null);
     setError(null);
   }, [session]);
+
+  // Load the studio's active instructors so the picker is populated.
+  // Read-only — the API already enforces owner / manager / instructor scoping.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/dashboard/instructors");
+        if (!res.ok) return;
+        const data = (await res.json()) as InstructorOption[];
+        if (!cancelled) setInstructors(data);
+      } catch {
+        // ignore — modal still works without the picker
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Fetch how many sessions / active bookings would be affected by future
   // and all scopes, so the radio labels can preview the blast radius before
@@ -139,6 +172,8 @@ export default function SessionEditModal({ session, onClose, onSaved }: Props) {
 
     setLoading(true);
 
+    const normalisedInstructorId = instructorId || null;
+
     const res = await fetch(`/api/sessions/${session.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -147,6 +182,11 @@ export default function SessionEditModal({ session, onClose, onSaved }: Props) {
         start_time: `${startTime}:00`,
         end_time: `${endTime}:00`,
         title: title.trim() || null,
+        // Only send instructor_id when it actually changed so the API doesn't
+        // re-write the column unnecessarily on every save.
+        ...(instructorChanged
+          ? { instructor_id: normalisedInstructorId }
+          : {}),
         scope,
       }),
     });
@@ -168,6 +208,7 @@ export default function SessionEditModal({ session, onClose, onSaved }: Props) {
       start_time: `${startTime}:00`,
       end_time: `${endTime}:00`,
       title: title.trim() || null,
+      instructor_id: normalisedInstructorId,
       scope,
       updated_count: data.updated_count ?? 1,
     });
@@ -243,6 +284,31 @@ export default function SessionEditModal({ session, onClose, onSaved }: Props) {
                 className="input-field w-full"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">
+              Instructor
+            </label>
+            <select
+              value={instructorId}
+              onChange={(e) => setInstructorId(e.target.value)}
+              className="input-field w-full"
+              aria-label="Instructor"
+            >
+              <option value="">— Unassigned —</option>
+              {instructors.map((i) => (
+                <option key={i.id} value={i.id}>
+                  {i.name}
+                </option>
+              ))}
+            </select>
+            {instructorChanged && (
+              <p className="mt-1 text-[11px] text-brand-700">
+                Substituting instructor.
+                {seriesScope ? " Applies to the chosen scope." : ""}
+              </p>
+            )}
           </div>
 
           <div>

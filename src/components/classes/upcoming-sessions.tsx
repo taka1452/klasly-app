@@ -11,6 +11,7 @@ type Session = {
   end_time: string | null;
   is_cancelled: boolean;
   room_name: string | null;
+  instructor_id: string | null;
   instructor_name: string | null;
   confirmed_count: number;
   capacity: number;
@@ -46,6 +47,7 @@ export default function UpcomingSessions({ templateId }: Props) {
             end_time: string | null;
             is_cancelled: boolean;
             room_name: string | null;
+            instructor_id: string | null;
             instructor_name: string | null;
             capacity: number;
             title?: string | null;
@@ -215,27 +217,11 @@ export default function UpcomingSessions({ templateId }: Props) {
         <SessionEditModal
           session={editingSession}
           onClose={() => setEditingSession(null)}
-          onSaved={(updated) => {
-            // For series scopes (future / all) many rows changed at once;
-            // refetch to keep the list in sync rather than guess what
-            // moved. Single-session edits patch the local row inline.
-            if (updated.scope === "single") {
-              setSessions((prev) =>
-                prev.map((s) =>
-                  s.id === editingSession.id
-                    ? {
-                        ...s,
-                        session_date: updated.session_date,
-                        start_time: updated.start_time,
-                        end_time: updated.end_time,
-                        title: updated.title ?? s.title,
-                      }
-                    : s
-                )
-              );
-            } else {
-              fetchSessions();
-            }
+          onSaved={() => {
+            // Refetch to keep instructor name, room name, and date/time
+            // all in sync regardless of scope. Cheap because the list is
+            // already paginated in the API.
+            fetchSessions();
             setEditingSession(null);
           }}
         />

@@ -436,6 +436,23 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
+          q: "An instructor called in sick — how do I substitute another instructor?",
+          a: (
+            <>
+              Open the session from the schedule (or from <B>Classes → [template] → Upcoming Sessions</B>) and click <B>Edit</B>. The Edit Session dialog now includes an <B>Instructor</B> picker. Pick a different name and save. For a recurring class, the dialog also lets you fan the change out to <B>This and following</B> or <B>All sessions in the series</B> with a live count of how many sessions and active bookings will be affected before you commit.
+              <Tip>If you only need to swap one occurrence, leave the scope on &quot;This session only&quot; (the default).</Tip>
+            </>
+          ),
+        },
+        {
+          q: "Will Klasly warn me if an instructor is double-booked when I schedule a class?",
+          a: (
+            <>
+              Yes. After you pick an instructor, date, and start time in the <B>Add Session</B> dialog, Klasly checks for overlapping classes that already have that instructor and shows an <B>amber warning</B> right under the instructor selector. The warning is advisory — you can still create the session if the overlap is intentional (for example, two short classes split between rooms). Room conflicts continue to surface their own red warning under the room selector.
+            </>
+          ),
+        },
+        {
           q: "Can I print the weekly schedule to post at the front desk?",
           a: (
             <>

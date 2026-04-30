@@ -29,6 +29,12 @@ type RoomConflict = {
   end_time: string;
 };
 
+type InstructorConflict = {
+  title: string;
+  start_time: string;
+  end_time: string;
+};
+
 type Props = {
   open: boolean;
   onClose: () => void;
@@ -61,6 +67,9 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
   // Room conflict check state
   const [roomConflict, setRoomConflict] = useState<RoomConflict | null>(null);
   const [checkingRoom, setCheckingRoom] = useState(false);
+  // Instructor double-booking warning (advisory; doesn't block submit)
+  const [instructorConflict, setInstructorConflict] =
+    useState<InstructorConflict | null>(null);
   const conflictTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const modalRef = useRef<HTMLDivElement>(null);
@@ -163,6 +172,7 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
       setError("");
       setSuccess("");
       setRoomConflict(null);
+      setInstructorConflict(null);
       setCheckingRoom(false);
     }
   }, [open]);
@@ -183,19 +193,21 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
     }
   }
 
-  // Room conflict check
-  const checkRoomConflict = useCallback(async (
+  // Combined conflict check — room and instructor double-booking.
+  const checkConflicts = useCallback(async (
     checkRoomId: string,
+    checkInstructorId: string,
     checkDate: string,
     checkStartTime: string,
     durationMinutes: number
   ) => {
-    if (!checkRoomId || !checkDate || !checkStartTime || !durationMinutes) {
+    if (!checkDate || !checkStartTime || !durationMinutes) {
       setRoomConflict(null);
+      setInstructorConflict(null);
       return;
     }
 
-    // Calculate end time
+    // Calculate end time (HH:MM)
     const [h, m] = checkStartTime.split(":").map(Number);
     const totalMin = h * 60 + m + durationMinutes;
     const endH = Math.floor(totalMin / 60);
@@ -207,55 +219,93 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
       const res = await fetch(`/api/instructor/room-availability?date=${checkDate}`);
       if (!res.ok) {
         setRoomConflict(null);
+        setInstructorConflict(null);
         return;
       }
       const data = await res.json();
-      const events = data.events || [];
+      const events: Array<{
+        room_id: string;
+        instructor_id: string | null;
+        start_time: string;
+        end_time: string;
+        title: string;
+      }> = data.events || [];
 
-      // Check for overlapping events on this room
-      const conflict = events.find((evt: { room_id: string; start_time: string; end_time: string; title: string }) => {
-        if (evt.room_id !== checkRoomId) return false;
-        const evtStart = evt.start_time.slice(0, 5);
-        const evtEnd = evt.end_time.slice(0, 5);
-        return evtStart < endTime && evtEnd > checkStartTime;
-      });
+      const overlaps = (evtStart: string, evtEnd: string) =>
+        evtStart < endTime && evtEnd > checkStartTime;
 
-      if (conflict) {
-        setRoomConflict({
-          title: conflict.title,
-          start_time: conflict.start_time.slice(0, 5),
-          end_time: conflict.end_time.slice(0, 5),
+      // Room conflict
+      if (checkRoomId) {
+        const roomHit = events.find((evt) => {
+          if (evt.room_id !== checkRoomId) return false;
+          return overlaps(evt.start_time.slice(0, 5), evt.end_time.slice(0, 5));
         });
+        if (roomHit) {
+          setRoomConflict({
+            title: roomHit.title,
+            start_time: roomHit.start_time.slice(0, 5),
+            end_time: roomHit.end_time.slice(0, 5),
+          });
+        } else {
+          setRoomConflict(null);
+        }
       } else {
         setRoomConflict(null);
       }
+
+      // Instructor conflict (advisory — doesn't block, just warns).
+      if (checkInstructorId) {
+        const instrHit = events.find((evt) => {
+          if (evt.instructor_id !== checkInstructorId) return false;
+          return overlaps(evt.start_time.slice(0, 5), evt.end_time.slice(0, 5));
+        });
+        if (instrHit) {
+          setInstructorConflict({
+            title: instrHit.title,
+            start_time: instrHit.start_time.slice(0, 5),
+            end_time: instrHit.end_time.slice(0, 5),
+          });
+        } else {
+          setInstructorConflict(null);
+        }
+      } else {
+        setInstructorConflict(null);
+      }
     } catch {
       setRoomConflict(null);
+      setInstructorConflict(null);
     } finally {
       setCheckingRoom(false);
     }
   }, []);
 
-  // Debounced conflict check when room/date/time changes
+  // Debounced conflict check when room / instructor / date / time changes
   useEffect(() => {
     if (conflictTimerRef.current) {
       clearTimeout(conflictTimerRef.current);
     }
 
     const tmpl = templates.find((t) => t.id === templateId);
-    if (!roomId || !date || !startTime || !tmpl) {
+    if (!date || !startTime || !tmpl) {
       setRoomConflict(null);
+      setInstructorConflict(null);
       return;
     }
 
     conflictTimerRef.current = setTimeout(() => {
-      checkRoomConflict(roomId, date, startTime, tmpl.duration_minutes);
+      checkConflicts(
+        roomId,
+        instructorId,
+        date,
+        startTime,
+        tmpl.duration_minutes
+      );
     }, 500);
 
     return () => {
       if (conflictTimerRef.current) clearTimeout(conflictTimerRef.current);
     };
-  }, [roomId, date, startTime, templateId, templates, checkRoomConflict]);
+  }, [roomId, instructorId, date, startTime, templateId, templates, checkConflicts]);
 
   // ESC to close
   useEffect(() => {
@@ -437,6 +487,23 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
                     </option>
                   ))}
                 </select>
+
+                {/* Instructor double-booking — advisory, does not block submit */}
+                {instructorConflict && !checkingRoom && (
+                  <div className="panel-enter mt-2 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                    <div className="text-sm text-amber-800">
+                      <p className="font-medium">Instructor double-booked</p>
+                      <p className="text-amber-700">
+                        This instructor is already teaching &ldquo;
+                        {instructorConflict.title}&rdquo;{" "}
+                        {instructorConflict.start_time}–
+                        {instructorConflict.end_time} on this date. You can
+                        still create the session if that&apos;s intentional.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

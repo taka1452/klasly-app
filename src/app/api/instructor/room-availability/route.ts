@@ -113,6 +113,7 @@ export async function GET(request: NextRequest) {
     type AvailEvent = {
       id: string;
       room_id: string;
+      instructor_id: string | null;
       start_time: string;
       end_time: string;
       title: string;
@@ -156,6 +157,10 @@ export async function GET(request: NextRequest) {
       events.push({
         id: s.id,
         room_id: s.room_id,
+        // Only expose the instructor_id to people authorized to see who's
+        // teaching (owners / managers / themselves). Other instructors get
+        // null so we don't leak the schedule of their peers.
+        instructor_id: isOwn || isOwnerOrManager ? s.instructor_id : null,
         start_time: s.start_time,
         end_time: endTime,
         title,
