@@ -42,7 +42,7 @@ export default function CampaignsPage() {
             Send emails to your members
           </p>
         </div>
-        <Link href="/campaigns/new" className="btn-primary">
+        <Link href="/campaigns/new" className="btn-primary transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]">
           New Campaign
         </Link>
       </div>
@@ -59,8 +59,12 @@ export default function CampaignsPage() {
             </p>
           </div>
         ) : (
-          campaigns.map((c) => (
-            <div key={c.id} className="card flex items-center justify-between">
+          campaigns.map((c, index) => (
+            <div
+              key={c.id}
+              className="stats-stagger card flex items-center justify-between"
+              style={{ animationDelay: `${Math.min(index * 50, 250)}ms` }}
+            >
               <div>
                 <h3 className="font-medium text-gray-900">{c.subject}</h3>
                 <p className="text-sm text-gray-500">
