@@ -403,7 +403,7 @@ export default async function DashboardPage() {
         {canManageClasses && (
           <Link
             href="/classes/new"
-            className="inline-flex shrink-0 items-center justify-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700"
+            className="inline-flex shrink-0 items-center justify-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:bg-brand-700 active:scale-[0.97]"
             data-tour="create-class-button"
           >
             + Create class
@@ -435,7 +435,10 @@ export default async function DashboardPage() {
         data-tour="dashboard-stats"
       >
         {canViewPayments && (
-          <div className="flex flex-col justify-between rounded-xl border border-brand-100 bg-brand-50/60 p-5 shadow-sm md:p-7 lg:flex-1 lg:basis-1/2">
+          <div
+            className="stats-stagger flex flex-col justify-between rounded-xl border border-brand-100 bg-brand-50/60 p-5 shadow-sm md:p-7 lg:flex-1 lg:basis-1/2"
+            style={{ animationDelay: "0ms" }}
+          >
             <p className="text-sm font-medium text-brand-800/80">
               This Month&apos;s Revenue
             </p>
@@ -460,7 +463,10 @@ export default async function DashboardPage() {
         {(canManageMembers || canManageBookings) && (
           <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-3 md:gap-5">
             {canManageMembers && (
-              <div className="card flex flex-col justify-between">
+              <div
+                className="stats-stagger card flex flex-col justify-between"
+                style={{ animationDelay: "60ms" }}
+              >
                 <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
                   Active Members
                 </p>
@@ -469,7 +475,10 @@ export default async function DashboardPage() {
                 </p>
               </div>
             )}
-            <div className="card flex flex-col justify-between">
+            <div
+              className="stats-stagger card flex flex-col justify-between"
+              style={{ animationDelay: "120ms" }}
+            >
               <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
                 Today&apos;s Classes
               </p>
@@ -478,7 +487,10 @@ export default async function DashboardPage() {
               </p>
             </div>
             {canManageBookings && (
-              <div className="card flex flex-col justify-between">
+              <div
+                className="stats-stagger card flex flex-col justify-between"
+                style={{ animationDelay: "180ms" }}
+              >
                 <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
                   Today&apos;s Bookings
                 </p>
@@ -506,7 +518,7 @@ export default async function DashboardPage() {
             </div>
             <div className="mt-1 h-2 overflow-hidden rounded-full bg-gray-100">
               <div
-                className="h-full rounded-full bg-brand-500"
+                className="bar-grow h-full rounded-full bg-brand-500"
                 style={{
                   width: `${(revenueBreakdown.subscriptions / maxBarValue) * 100}%`,
                 }}
@@ -522,9 +534,10 @@ export default async function DashboardPage() {
             </div>
             <div className="mt-1 h-2 overflow-hidden rounded-full bg-gray-100">
               <div
-                className="h-full rounded-full bg-emerald-500"
+                className="bar-grow h-full rounded-full bg-emerald-500"
                 style={{
                   width: `${(revenueBreakdown.classPacks / maxBarValue) * 100}%`,
+                  animationDelay: "300ms",
                 }}
               />
             </div>
@@ -538,9 +551,10 @@ export default async function DashboardPage() {
             </div>
             <div className="mt-1 h-2 overflow-hidden rounded-full bg-gray-100">
               <div
-                className="h-full rounded-full bg-amber-500"
+                className="bar-grow h-full rounded-full bg-amber-500"
                 style={{
                   width: `${(revenueBreakdown.dropIns / maxBarValue) * 100}%`,
+                  animationDelay: "400ms",
                 }}
               />
             </div>
@@ -580,7 +594,7 @@ export default async function DashboardPage() {
                         memberEmail ? (
                           <a
                             href={`mailto:${memberEmail}`}
-                            className="underline hover:text-gray-600"
+                            className="underline transition-colors duration-150 hover:text-gray-600"
                           >
                             Contact member
                           </a>
@@ -588,7 +602,7 @@ export default async function DashboardPage() {
                           <span>Contact member to update card</span>
                         )
                       ) : (
-                        <a href="/settings/billing" className="underline hover:text-gray-600">
+                        <a href="/settings/billing" className="underline transition-colors duration-150 hover:text-gray-600">
                           Update billing →
                         </a>
                       )}
@@ -623,7 +637,7 @@ export default async function DashboardPage() {
                 return (
                   <div
                     key={session.id}
-                    className="flex items-center justify-between gap-4 px-4 py-3 md:px-6 md:py-4 transition-colors hover:bg-gray-50"
+                    className="flex items-center justify-between gap-4 px-4 py-3 md:px-6 md:py-4 transition-colors duration-150 ease-out hover:bg-gray-50"
                   >
                     <Link
                       href={`/bookings/${session.id}`}
@@ -643,14 +657,14 @@ export default async function DashboardPage() {
                     {canManageBookings && (classIdForLink ? (
                       <Link
                         href={`/calendar/${classIdForLink}/sessions/${session.id}`}
-                        className="shrink-0 text-sm text-blue-600 hover:text-blue-800"
+                        className="shrink-0 text-sm text-blue-600 transition-colors duration-150 hover:text-blue-800"
                       >
                         Take Attendance →
                       </Link>
                     ) : (
                       <Link
                         href={`/bookings/${session.id}`}
-                        className="shrink-0 text-sm text-blue-600 hover:text-blue-800"
+                        className="shrink-0 text-sm text-blue-600 transition-colors duration-150 hover:text-blue-800"
                       >
                         View →
                       </Link>
@@ -676,7 +690,7 @@ export default async function DashboardPage() {
             <h2 className="text-lg font-semibold text-gray-900">
               Upcoming Events
             </h2>
-            <Link href="/events" className="text-sm text-brand-600 hover:text-brand-700">
+            <Link href="/events" className="text-sm text-brand-600 transition-colors duration-150 hover:text-brand-700">
               View all →
             </Link>
           </div>
@@ -688,7 +702,7 @@ export default async function DashboardPage() {
                   <Link
                     key={ev.id}
                     href={`/events/${ev.id}/manage`}
-                    className="flex items-center justify-between gap-4 px-4 py-3 md:px-6 md:py-4 transition-colors hover:bg-gray-50"
+                    className="flex items-center justify-between gap-4 px-4 py-3 md:px-6 md:py-4 transition-colors duration-150 ease-out hover:bg-gray-50"
                   >
                     <div>
                       <p className="font-medium text-gray-900">{ev.name}</p>
