@@ -7,6 +7,11 @@ type Template = {
   id: string;
   name: string;
   duration_minutes: number;
+  /**
+   * Transition / buffer minutes between back-to-back classes for the same
+   * instructor. Used to surface a "tight gap" advisory when scheduling.
+   */
+  transition_minutes: number;
   capacity: number;
   instructor_id: string | null;
   instructor_name: string | null;
@@ -33,6 +38,18 @@ type InstructorConflict = {
   title: string;
   start_time: string;
   end_time: string;
+};
+
+/**
+ * Same instructor has another class close to (but not overlapping) the new
+ * one — shorter than the template's configured transition_minutes. Surfaced
+ * as a softer (blue) advisory than the amber double-booking warning.
+ */
+type TightGap = {
+  title: string;
+  gap_minutes: number;
+  /** "before" → other class ends before; "after" → other class starts after. */
+  side: "before" | "after";
 };
 
 type Props = {
@@ -70,6 +87,8 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
   // Instructor double-booking warning (advisory; doesn't block submit)
   const [instructorConflict, setInstructorConflict] =
     useState<InstructorConflict | null>(null);
+  // Tight transition gap (gap < template.transition_minutes) — softer advisory
+  const [tightGap, setTightGap] = useState<TightGap | null>(null);
   const conflictTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const modalRef = useRef<HTMLDivElement>(null);
@@ -113,6 +132,7 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
               id: t.id as string,
               name: t.name as string,
               duration_minutes: t.duration_minutes as number,
+              transition_minutes: (t.transition_minutes as number) ?? 0,
               capacity: t.capacity as number,
               instructor_id: (t.instructor_id as string) || null,
               instructor_name: instrName,
@@ -173,6 +193,7 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
       setSuccess("");
       setRoomConflict(null);
       setInstructorConflict(null);
+      setTightGap(null);
       setCheckingRoom(false);
     }
   }, [open]);
@@ -193,26 +214,33 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
     }
   }
 
-  // Combined conflict check — room and instructor double-booking.
+  // Combined conflict check — room conflict, instructor double-booking, and
+  // tight transition gap (instructor has another class within
+  // template.transition_minutes of this one).
   const checkConflicts = useCallback(async (
     checkRoomId: string,
     checkInstructorId: string,
     checkDate: string,
     checkStartTime: string,
-    durationMinutes: number
+    durationMinutes: number,
+    transitionMinutes: number
   ) => {
     if (!checkDate || !checkStartTime || !durationMinutes) {
       setRoomConflict(null);
       setInstructorConflict(null);
+      setTightGap(null);
       return;
     }
 
-    // Calculate end time (HH:MM)
-    const [h, m] = checkStartTime.split(":").map(Number);
-    const totalMin = h * 60 + m + durationMinutes;
-    const endH = Math.floor(totalMin / 60);
-    const endM = totalMin % 60;
-    const endTime = `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
+    const toMin = (hhmm: string) => {
+      const [h, m] = hhmm.split(":").map(Number);
+      return h * 60 + m;
+    };
+
+    const startMin = toMin(checkStartTime);
+    const endMin = startMin + durationMinutes;
+    const pad = (n: number) => n.toString().padStart(2, "0");
+    const endTime = `${pad(Math.floor(endMin / 60))}:${pad(endMin % 60)}`;
 
     setCheckingRoom(true);
     try {
@@ -220,6 +248,7 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
       if (!res.ok) {
         setRoomConflict(null);
         setInstructorConflict(null);
+        setTightGap(null);
         return;
       }
       const data = await res.json();
@@ -255,25 +284,63 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
 
       // Instructor conflict (advisory — doesn't block, just warns).
       if (checkInstructorId) {
-        const instrHit = events.find((evt) => {
-          if (evt.instructor_id !== checkInstructorId) return false;
-          return overlaps(evt.start_time.slice(0, 5), evt.end_time.slice(0, 5));
-        });
+        const instrEvents = events.filter(
+          (evt) => evt.instructor_id === checkInstructorId
+        );
+
+        // 1) hard overlap
+        const instrHit = instrEvents.find((evt) =>
+          overlaps(evt.start_time.slice(0, 5), evt.end_time.slice(0, 5))
+        );
         if (instrHit) {
           setInstructorConflict({
             title: instrHit.title,
             start_time: instrHit.start_time.slice(0, 5),
             end_time: instrHit.end_time.slice(0, 5),
           });
+          setTightGap(null);
         } else {
           setInstructorConflict(null);
+
+          // 2) tight gap (gap < transition_minutes)
+          if (transitionMinutes > 0) {
+            let closest: TightGap | null = null;
+            for (const evt of instrEvents) {
+              const evtStartMin = toMin(evt.start_time.slice(0, 5));
+              const evtEndMin = toMin(evt.end_time.slice(0, 5));
+              const gapBefore = startMin - evtEndMin; // other ends → ours starts
+              const gapAfter = evtStartMin - endMin; // ours ends → other starts
+              if (gapBefore > 0 && gapBefore < transitionMinutes) {
+                if (!closest || gapBefore < closest.gap_minutes) {
+                  closest = {
+                    title: evt.title,
+                    gap_minutes: gapBefore,
+                    side: "before",
+                  };
+                }
+              } else if (gapAfter > 0 && gapAfter < transitionMinutes) {
+                if (!closest || gapAfter < closest.gap_minutes) {
+                  closest = {
+                    title: evt.title,
+                    gap_minutes: gapAfter,
+                    side: "after",
+                  };
+                }
+              }
+            }
+            setTightGap(closest);
+          } else {
+            setTightGap(null);
+          }
         }
       } else {
         setInstructorConflict(null);
+        setTightGap(null);
       }
     } catch {
       setRoomConflict(null);
       setInstructorConflict(null);
+      setTightGap(null);
     } finally {
       setCheckingRoom(false);
     }
@@ -289,6 +356,7 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
     if (!date || !startTime || !tmpl) {
       setRoomConflict(null);
       setInstructorConflict(null);
+      setTightGap(null);
       return;
     }
 
@@ -298,7 +366,8 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
         instructorId,
         date,
         startTime,
-        tmpl.duration_minutes
+        tmpl.duration_minutes,
+        tmpl.transition_minutes ?? 0
       );
     }, 500);
 
@@ -500,6 +569,24 @@ export default function AddSessionModal({ open, onClose, onCreated, defaultTempl
                         {instructorConflict.start_time}–
                         {instructorConflict.end_time} on this date. You can
                         still create the session if that&apos;s intentional.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tight transition gap — softer blue advisory */}
+                {!instructorConflict && tightGap && !checkingRoom && (
+                  <div className="panel-enter mt-2 flex items-start gap-2 rounded-lg border border-sky-200 bg-sky-50 p-3">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-sky-500" />
+                    <div className="text-sm text-sky-800">
+                      <p className="font-medium">Tight transition</p>
+                      <p className="text-sky-700">
+                        Only {tightGap.gap_minutes} minute
+                        {tightGap.gap_minutes === 1 ? "" : "s"}{" "}
+                        {tightGap.side === "before" ? "after" : "before"}{" "}
+                        &ldquo;{tightGap.title}&rdquo; — less than this
+                        class&apos;s configured transition time. The
+                        instructor may be rushing.
                       </p>
                     </div>
                   </div>

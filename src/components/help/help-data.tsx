@@ -436,6 +436,19 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
+          q: "Can I cancel multiple upcoming sessions at once?",
+          a: (
+            <>
+              Yes. Open <B>Classes → [Class Template]</B> and scroll to <B>Upcoming Sessions</B>. Click <B>Select multiple</B> in the top-right of the list to enter selection mode — checkboxes appear next to each session. Tick the ones you want to cancel (or use <B>Select all</B>), then click <B>Cancel N sessions</B> in the floating bar.
+              <Steps>
+                <li>The confirm modal lets you add an <B>optional reason</B> that&apos;s saved on every cancelled session and surfaced to members.</li>
+                <li>All confirmed bookings on the affected sessions are cancelled and credits / pass uses are refunded automatically.</li>
+                <li>For an entire holiday day across every class, use <B>Settings → Studio Closures</B> instead — one click handles all classes that day.</li>
+              </Steps>
+            </>
+          ),
+        },
+        {
           q: "Can I record why a session was cancelled?",
           a: (
             <>
@@ -461,6 +474,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               Yes. After you pick an instructor, date, and start time in the <B>Add Session</B> dialog, Klasly checks for overlapping classes that already have that instructor and shows an <B>amber warning</B> right under the instructor selector. The warning is advisory — you can still create the session if the overlap is intentional (for example, two short classes split between rooms). Room conflicts continue to surface their own red warning under the room selector.
+              <Tip>If the new class doesn&apos;t overlap but starts (or ends) closer than the template&apos;s <B>Transition Time</B> to another class by the same instructor, you&apos;ll see a softer <B>blue &quot;tight transition&quot; advisory</B> instead — useful for catching back-to-back gaps an instructor can&apos;t realistically run.</Tip>
             </>
           ),
         },

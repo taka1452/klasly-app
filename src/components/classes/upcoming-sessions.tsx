@@ -30,6 +30,14 @@ export default function UpcomingSessions({ templateId }: Props) {
   const [confirmCancel, setConfirmCancel] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState("");
   const [editingSession, setEditingSession] = useState<Session | null>(null);
+  // Bulk-select mode lets the owner cancel several upcoming sessions at once
+  // (e.g. "skip the next four weeks of yoga"). Off by default; engaging it
+  // hides the per-row edit/cancel actions in favour of checkboxes.
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
+  const [bulkReason, setBulkReason] = useState("");
+  const [bulkSubmitting, setBulkSubmitting] = useState(false);
 
   const fetchSessions = useCallback(async () => {
     try {
@@ -69,6 +77,48 @@ export default function UpcomingSessions({ templateId }: Props) {
   useEffect(() => {
     fetchSessions();
   }, [fetchSessions]);
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function exitSelectMode() {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+    setBulkConfirmOpen(false);
+    setBulkReason("");
+  }
+
+  async function handleBulkCancel() {
+    if (selectedIds.size === 0) return;
+    setBulkSubmitting(true);
+    const reason = bulkReason.trim();
+    const ids = Array.from(selectedIds);
+    try {
+      // Fire DELETEs in parallel — the per-session route already wraps the
+      // booking refund flow, so we get correct credit / pass returns for each
+      // cancellation without a dedicated bulk endpoint.
+      await Promise.all(
+        ids.map((id) =>
+          fetch(`/api/sessions/${id}`, {
+            method: "DELETE",
+            headers: reason ? { "Content-Type": "application/json" } : undefined,
+            body: reason ? JSON.stringify({ reason }) : undefined,
+          }).catch(() => null)
+        )
+      );
+      // Refetch to pick up cancelled state + any side-effects.
+      await fetchSessions();
+      exitSelectMode();
+    } finally {
+      setBulkSubmitting(false);
+    }
+  }
 
   async function handleCancel(sessionId: string) {
     setCancelling(sessionId);
@@ -130,9 +180,46 @@ export default function UpcomingSessions({ templateId }: Props) {
 
   return (
     <div className="mt-6 rounded-lg border border-gray-200 bg-white p-6">
-      <h3 className="text-sm font-semibold text-gray-900 mb-3">
-        Upcoming Sessions ({activeSessions.length})
-      </h3>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold text-gray-900">
+          Upcoming Sessions ({activeSessions.length})
+        </h3>
+        {activeSessions.length >= 2 && !selectMode && (
+          <button
+            type="button"
+            onClick={() => setSelectMode(true)}
+            className="text-xs font-medium text-brand-600 transition-colors duration-150 hover:text-brand-700"
+          >
+            Select multiple
+          </button>
+        )}
+        {selectMode && (
+          <div className="flex items-center gap-2 text-xs">
+            <button
+              type="button"
+              onClick={() => {
+                if (selectedIds.size === activeSessions.length) {
+                  setSelectedIds(new Set());
+                } else {
+                  setSelectedIds(new Set(activeSessions.map((s) => s.id)));
+                }
+              }}
+              className="font-medium text-gray-500 hover:text-gray-700"
+            >
+              {selectedIds.size === activeSessions.length
+                ? "Clear"
+                : "Select all"}
+            </button>
+            <button
+              type="button"
+              onClick={exitSelectMode}
+              className="font-medium text-gray-500 hover:text-gray-700"
+            >
+              Done
+            </button>
+          </div>
+        )}
+      </div>
 
       {activeSessions.length === 0 && cancelledSessions.length === 0 ? (
         <p className="text-sm text-gray-500">
@@ -143,13 +230,24 @@ export default function UpcomingSessions({ templateId }: Props) {
           {sessions.map((session) => (
             <div
               key={session.id}
-              className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm ${
+              className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors duration-150 ${
                 session.is_cancelled
                   ? "border-gray-100 bg-gray-50 opacity-60"
-                  : "border-gray-200 bg-white"
+                  : selectMode && selectedIds.has(session.id)
+                    ? "border-brand-300 bg-brand-50/60"
+                    : "border-gray-200 bg-white"
               }`}
             >
               <div className="flex items-center gap-3">
+                {selectMode && !session.is_cancelled && (
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(session.id)}
+                    onChange={() => toggleSelect(session.id)}
+                    aria-label={`Select session on ${formatDate(session.session_date)}`}
+                    className="h-4 w-4 cursor-pointer accent-brand-600"
+                  />
+                )}
                 <span className="font-medium text-gray-900">
                   {formatDate(session.session_date)}
                 </span>
@@ -172,7 +270,7 @@ export default function UpcomingSessions({ templateId }: Props) {
                   <span className="rounded bg-gray-200 px-2 py-0.5 text-[10px] font-medium text-gray-600">
                     Cancelled
                   </span>
-                ) : confirmCancel === session.id ? (
+                ) : selectMode ? null : confirmCancel === session.id ? (
                   <div className="panel-enter flex flex-col items-stretch gap-1.5 rounded-md border border-red-200 bg-red-50/60 p-2 sm:flex-row sm:items-center">
                     <input
                       type="text"
@@ -245,6 +343,93 @@ export default function UpcomingSessions({ templateId }: Props) {
             setEditingSession(null);
           }}
         />
+      )}
+
+      {/* Floating action bar — appears once at least one session is checked */}
+      {selectMode && selectedIds.size > 0 && !bulkConfirmOpen && (
+        <div className="panel-enter sticky bottom-3 z-10 mt-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-brand-200 bg-white/95 px-3 py-2 shadow-lg backdrop-blur">
+          <p className="text-sm font-medium text-gray-700">
+            {selectedIds.size} session{selectedIds.size === 1 ? "" : "s"} selected
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={exitSelectMode}
+              className="btn-secondary"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => setBulkConfirmOpen(true)}
+              className="btn-danger"
+            >
+              Cancel {selectedIds.size} session
+              {selectedIds.size === 1 ? "" : "s"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk-cancel confirmation modal */}
+      {bulkConfirmOpen && (
+        <div
+          className="modal-backdrop-enter fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => !bulkSubmitting && setBulkConfirmOpen(false)}
+        >
+          <div
+            className="modal-dialog-enter w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-semibold text-gray-900">
+              Cancel {selectedIds.size} session
+              {selectedIds.size === 1 ? "" : "s"}?
+            </h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Affected members will be notified, and credits / pass uses
+              from confirmed bookings will be refunded automatically.
+            </p>
+            <div className="mt-4">
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">
+                Reason (optional)
+              </label>
+              <input
+                type="text"
+                value={bulkReason}
+                onChange={(e) => setBulkReason(e.target.value)}
+                placeholder="e.g. Owner vacation, Building maintenance"
+                maxLength={200}
+                className="input-field w-full"
+              />
+              <p className="mt-1 text-[11px] text-gray-400">
+                Shown to members on the cancelled tile and in the
+                cancellation email.
+              </p>
+            </div>
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setBulkConfirmOpen(false)}
+                className="btn-secondary"
+                disabled={bulkSubmitting}
+              >
+                Keep
+              </button>
+              <button
+                type="button"
+                onClick={handleBulkCancel}
+                className="btn-danger"
+                disabled={bulkSubmitting}
+              >
+                <span className="label-swap" data-pending={bulkSubmitting}>
+                  {bulkSubmitting
+                    ? "Cancelling…"
+                    : `Cancel ${selectedIds.size}`}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
