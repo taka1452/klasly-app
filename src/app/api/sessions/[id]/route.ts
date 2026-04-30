@@ -3,6 +3,8 @@ import { getInstructorContext } from "@/lib/auth/instructor-access";
 import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { unwrapRelation } from "@/lib/supabase/relation";
+import { sendEmail } from "@/lib/email/send";
+import { sessionInstructorChanged } from "@/lib/email/templates";
 
 type Scope = "single" | "future" | "all";
 
@@ -46,7 +48,7 @@ export async function PUT(
       const { data: existing } = await dashCtx.supabase
         .from("class_sessions")
         .select(
-          "id, studio_id, room_id, session_date, start_time, end_time, recurrence_group_id"
+          "id, studio_id, instructor_id, room_id, session_date, start_time, end_time, recurrence_group_id"
         )
         .eq("id", id)
         .single();
@@ -117,6 +119,7 @@ function parseScope(raw: unknown): Scope {
 type ExistingSession = {
   id: string;
   studio_id: string;
+  instructor_id: string | null;
   room_id: string | null;
   session_date: string;
   start_time: string;
@@ -210,6 +213,11 @@ async function handleUpdate(args: {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    await maybeNotifyInstructorChange(supabase, studioId, [sessionId], {
+      body,
+      previousInstructorId: existing.instructor_id,
+    });
+
     return NextResponse.json({ session: updated, updated_count: 1, scope });
   }
 
@@ -256,6 +264,15 @@ async function handleUpdate(args: {
       );
     }
     bulkUpdated = 1 + (bulk?.length ?? 0);
+
+    const notifyIds = [
+      sessionId,
+      ...((bulk ?? []).map((b) => b.id) as string[]),
+    ];
+    await maybeNotifyInstructorChange(supabase, studioId, notifyIds, {
+      body,
+      previousInstructorId: existing.instructor_id,
+    });
   }
 
   return NextResponse.json({
@@ -512,6 +529,140 @@ export async function DELETE(
 }
 
 // --- Helpers ---
+
+/**
+ * Send the "instructor changed" email to every confirmed booker on the
+ * sessions in `sessionIds`, but only when the request actually changed the
+ * instructor. Failures are swallowed — email outages must not break the
+ * underlying schedule edit.
+ */
+async function maybeNotifyInstructorChange(
+  supabase: SupabaseClient,
+  studioId: string,
+  sessionIds: string[],
+  args: {
+    body: Record<string, unknown>;
+    previousInstructorId: string | null;
+  }
+): Promise<void> {
+  // Did the caller actually pass an instructor_id?
+  if (!Object.prototype.hasOwnProperty.call(args.body, "instructor_id")) {
+    return;
+  }
+  // Caller can suppress notifications explicitly (default: notify).
+  if (args.body.notify_members === false) return;
+
+  const newInstructorId =
+    typeof args.body.instructor_id === "string" && args.body.instructor_id
+      ? args.body.instructor_id
+      : null;
+
+  if (newInstructorId === (args.previousInstructorId ?? null)) {
+    return;
+  }
+  if (sessionIds.length === 0) return;
+
+  try {
+    // Fetch all confirmed bookings on the affected sessions.
+    const { data: bookings } = await supabase
+      .from("bookings")
+      .select(
+        "id, session_id, member_id, profiles!inner(full_name, email), class_sessions!inner(session_date, start_time, class_templates(name), studios(name)), instructors(profiles(full_name))"
+      )
+      .in("session_id", sessionIds)
+      .eq("status", "confirmed");
+
+    if (!bookings || bookings.length === 0) return;
+
+    // Resolve instructor display names just once.
+    let newInstructorName = "your studio";
+    if (newInstructorId) {
+      const { data: instr } = await supabase
+        .from("instructors")
+        .select("profiles(full_name)")
+        .eq("id", newInstructorId)
+        .single();
+      const p = instr?.profiles
+        ? unwrapRelation<{ full_name?: string }>(instr.profiles)
+        : null;
+      if (p?.full_name) newInstructorName = p.full_name;
+    }
+
+    let previousInstructorName: string | null = null;
+    if (args.previousInstructorId) {
+      const { data: prev } = await supabase
+        .from("instructors")
+        .select("profiles(full_name)")
+        .eq("id", args.previousInstructorId)
+        .single();
+      const p = prev?.profiles
+        ? unwrapRelation<{ full_name?: string }>(prev.profiles)
+        : null;
+      previousInstructorName = p?.full_name ?? null;
+    }
+
+    type BookingRow = {
+      id: string;
+      session_id: string;
+      member_id: string;
+      profiles: { full_name: string; email: string } | { full_name: string; email: string }[];
+      class_sessions:
+        | {
+            session_date: string;
+            start_time: string;
+            class_templates: { name: string } | { name: string }[] | null;
+            studios: { name: string } | { name: string }[] | null;
+          }
+        | {
+            session_date: string;
+            start_time: string;
+            class_templates: { name: string } | { name: string }[] | null;
+            studios: { name: string } | { name: string }[] | null;
+          }[];
+    };
+
+    await Promise.all(
+      (bookings as unknown as BookingRow[]).map(async (b) => {
+        const member = unwrapRelation<{ full_name?: string; email?: string }>(
+          b.profiles
+        );
+        const session = unwrapRelation<{
+          session_date: string;
+          start_time: string;
+          class_templates: { name?: string } | { name?: string }[] | null;
+          studios: { name?: string } | { name?: string }[] | null;
+        }>(b.class_sessions);
+        if (!member?.email || !session) return;
+
+        const tmpl = session.class_templates
+          ? unwrapRelation<{ name?: string }>(session.class_templates)
+          : null;
+        const studio = session.studios
+          ? unwrapRelation<{ name?: string }>(session.studios)
+          : null;
+
+        const tpl = sessionInstructorChanged({
+          memberName: member.full_name || "there",
+          className: tmpl?.name || "your class",
+          sessionDate: session.session_date,
+          startTime: session.start_time.slice(0, 5),
+          studioName: studio?.name || "Klasly",
+          newInstructorName,
+          previousInstructorName,
+        });
+        await sendEmail({
+          to: member.email,
+          subject: tpl.subject,
+          html: tpl.html,
+          studioId,
+          templateName: "session_instructor_changed",
+        });
+      })
+    );
+  } catch (err) {
+    console.error("[notify] instructor change email batch failed", err);
+  }
+}
 
 function buildUpdates(body: Record<string, unknown>): Record<string, unknown> {
   const updates: Record<string, unknown> = {};

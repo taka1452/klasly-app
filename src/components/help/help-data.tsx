@@ -449,7 +449,10 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               Open the session from the schedule (or from <B>Classes → [template] → Upcoming Sessions</B>) and click <B>Edit</B>. The Edit Session dialog now includes an <B>Instructor</B> picker. Pick a different name and save. For a recurring class, the dialog also lets you fan the change out to <B>This and following</B> or <B>All sessions in the series</B> with a live count of how many sessions and active bookings will be affected before you commit.
-              <Tip>If you only need to swap one occurrence, leave the scope on &quot;This session only&quot; (the default).</Tip>
+              <Steps>
+                <li>By default Klasly emails every confirmed member when the instructor changes (so they know who&apos;s teaching and can re-decide whether to attend). Uncheck <B>&quot;Email confirmed members about the change&quot;</B> below the picker if you&apos;re doing a silent data fix.</li>
+                <li>If you only need to swap one occurrence, leave the scope on &quot;This session only&quot; (the default).</li>
+              </Steps>
             </>
           ),
         },

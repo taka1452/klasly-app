@@ -171,6 +171,52 @@ export function instructorRoomBookingCancelledByOwner(params: {
   };
 }
 
+/**
+ * Sent to confirmed-booking members when a session's instructor changes
+ * (substitution flow). Lets the member decide whether they still want to
+ * attend without having to chase the studio for context.
+ */
+export function sessionInstructorChanged(params: {
+  memberName: string;
+  className: string;
+  sessionDate: string;
+  startTime: string;
+  studioName: string;
+  newInstructorName: string;
+  previousInstructorName: string | null;
+}) {
+  const {
+    memberName,
+    className,
+    sessionDate,
+    startTime,
+    studioName,
+    newInstructorName,
+    previousInstructorName,
+  } = params;
+  const swapLine = previousInstructorName
+    ? `${previousInstructorName} → <strong>${newInstructorName}</strong>`
+    : `Your instructor for this class is now <strong>${newInstructorName}</strong>.`;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">Instructor change for your class</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${memberName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      Your booking is still confirmed — but the instructor for this session has changed.
+    </p>
+    <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-weight:600;color:${BRAND_COLOR};">${className}</p>
+      <p style="margin:8px 0 0;font-size:14px;">${sessionDate} · ${startTime}</p>
+      <p style="margin:4px 0 0;font-size:14px;color:#6b7280;">${studioName}</p>
+      <p style="margin:12px 0 0;font-size:14px;">${swapLine}</p>
+    </div>
+    <p style="margin:0;font-size:14px;">If this doesn't work for you, you can cancel your booking anytime from your account.</p>
+  `;
+  return {
+    subject: `Instructor change — ${className}`,
+    html: baseHtml(content),
+  };
+}
+
 export function bookingCancelled(params: BookingParams) {
   const { memberName, className, sessionDate, startTime, studioName } = params;
   const content = `

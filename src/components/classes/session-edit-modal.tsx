@@ -76,6 +76,9 @@ export default function SessionEditModal({ session, onClose, onSaved }: Props) {
   const [instructors, setInstructors] = useState<InstructorOption[]>([]);
   const [scope, setScope] = useState<Scope>("single");
   const [impact, setImpact] = useState<ScopeImpact | null>(null);
+  // When the instructor changes we default to notifying confirmed members
+  // by email. Owners can uncheck it for invisible swaps (e.g. data fixes).
+  const [notifyMembers, setNotifyMembers] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -94,6 +97,7 @@ export default function SessionEditModal({ session, onClose, onSaved }: Props) {
     setInstructorId(session.instructor_id ?? "");
     setScope("single");
     setImpact(null);
+    setNotifyMembers(true);
     setError(null);
   }, [session]);
 
@@ -185,7 +189,10 @@ export default function SessionEditModal({ session, onClose, onSaved }: Props) {
         // Only send instructor_id when it actually changed so the API doesn't
         // re-write the column unnecessarily on every save.
         ...(instructorChanged
-          ? { instructor_id: normalisedInstructorId }
+          ? {
+              instructor_id: normalisedInstructorId,
+              notify_members: notifyMembers,
+            }
           : {}),
         scope,
       }),
@@ -304,10 +311,23 @@ export default function SessionEditModal({ session, onClose, onSaved }: Props) {
               ))}
             </select>
             {instructorChanged && (
-              <p className="mt-1 text-[11px] text-brand-700">
-                Substituting instructor.
-                {seriesScope ? " Applies to the chosen scope." : ""}
-              </p>
+              <div className="mt-1 space-y-1.5">
+                <p className="text-[11px] text-brand-700">
+                  Substituting instructor.
+                  {seriesScope ? " Applies to the chosen scope." : ""}
+                </p>
+                <label className="flex items-start gap-2 text-[11px] text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={notifyMembers}
+                    onChange={(e) => setNotifyMembers(e.target.checked)}
+                    className="mt-0.5"
+                  />
+                  <span>
+                    Email confirmed members about the change.
+                  </span>
+                </label>
+              </div>
             )}
           </div>
 
