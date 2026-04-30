@@ -64,7 +64,7 @@ export default function PaymentsTable({
               <Link
                 key={t}
                 href={buildHref(t, statusFilter)}
-                className={`text-sm ${typeFilter === t ? "font-semibold text-brand-600" : "text-gray-600 hover:text-gray-900"}`}
+                className={`text-sm transition-colors duration-150 ${typeFilter === t ? "font-semibold text-brand-600" : "text-gray-600 hover:text-gray-900"}`}
               >
                 {t === "all" ? "All" : t === "class_pack" ? "Class pack" : t}
               </Link>
@@ -77,7 +77,7 @@ export default function PaymentsTable({
             <Link
               key={s}
               href={buildHref(typeFilter, s)}
-              className={`text-sm ${statusFilter === s ? "font-semibold text-brand-600" : "text-gray-600 hover:text-gray-900"}`}
+              className={`text-sm transition-colors duration-150 ${statusFilter === s ? "font-semibold text-brand-600" : "text-gray-600 hover:text-gray-900"}`}
             >
               {s}
             </Link>
@@ -165,7 +165,7 @@ export default function PaymentsTable({
                 </tr>
               ) : (
                 payments.map((p) => (
-                  <tr key={p.id}>
+                  <tr key={p.id} className="transition-colors duration-150 ease-out hover:bg-gray-50">
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
                       {formatDate(p.paid_at ?? p.created_at)}
                     </td>
