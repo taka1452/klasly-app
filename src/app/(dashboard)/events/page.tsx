@@ -75,7 +75,7 @@ export default async function EventsListPage() {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <ContextHelpLink href="/help/events-retreats/create-retreat" />
-        <Link href="/events/new" className="btn-primary">
+        <Link href="/events/new" className="btn-primary transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]">
           + Create Event
         </Link>
       </div>
@@ -100,7 +100,7 @@ export default async function EventsListPage() {
                 <Link
                   key={event.id}
                   href={`/events/${event.id}/manage`}
-                  className="flex flex-wrap items-center justify-between gap-4 px-4 py-3 transition-colors hover:bg-gray-50 md:px-6 md:py-4"
+                  className="flex flex-wrap items-center justify-between gap-4 px-4 py-3 transition-colors duration-150 ease-out hover:bg-gray-50 md:px-6 md:py-4"
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
