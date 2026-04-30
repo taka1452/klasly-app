@@ -70,11 +70,11 @@ export default async function ReviewsPage() {
 
       {/* Summary */}
       <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <div className="card">
+        <div className="stats-stagger card" style={{ animationDelay: "0ms" }}>
           <p className="text-sm text-gray-500">Total Reviews</p>
           <p className="text-2xl font-bold text-gray-900">{totalReviews}</p>
         </div>
-        <div className="card">
+        <div className="stats-stagger card" style={{ animationDelay: "60ms" }}>
           <p className="text-sm text-gray-500">Average Rating</p>
           <div className="flex items-center gap-2">
             <p className="text-2xl font-bold text-gray-900">
@@ -98,7 +98,7 @@ export default async function ReviewsPage() {
             </p>
           </div>
         ) : (
-          (reviews || []).map((review) => {
+          (reviews || []).map((review, index) => {
             const memberRel = unwrapRelation<{ profiles: { full_name: string } | { full_name: string }[] }>(review.members);
             const profileRel = memberRel ? unwrapRelation<{ full_name: string }>(memberRel.profiles) : null;
             const memberName = profileRel?.full_name || "Member";
@@ -106,7 +106,11 @@ export default async function ReviewsPage() {
             const sessionRel = unwrapRelation<{ session_date: string }>(review.class_sessions);
 
             return (
-              <div key={review.id} className="card">
+              <div
+                key={review.id}
+                className="stats-stagger card"
+                style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
+              >
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="font-medium text-gray-900">{classRel?.name || "Class"}</p>
