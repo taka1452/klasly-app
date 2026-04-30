@@ -184,6 +184,15 @@
 .dialog-in {
   animation: dialogIn 280ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
+/* Centered dialog: bakes translate(-50%, -50%) into the animation so it
+   composes with `left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2` */
+@keyframes dialogInCentered {
+  from { opacity: 0; transform: translate(-50%, calc(-50% + 8px)) scale(0.96); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+.dialog-in-centered {
+  animation: dialogInCentered 280ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
 
 /* Responsive: bottom-sheet on mobile, scale-in popover on md+ */
 @keyframes popoverInCentered {
@@ -212,6 +221,8 @@
   .dialog-in,
   .sheet-or-popover-in,
   .bar-grow { animation: none !important; opacity: 1 !important; transform: none !important; }
+  /* Centered dialog: keep transform so the modal stays centered */
+  .dialog-in-centered { animation: none !important; opacity: 1 !important; }
 }
 
 /* Hide scrollbar for horizontal scroll navigation */

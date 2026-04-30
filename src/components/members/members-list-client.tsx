@@ -31,7 +31,7 @@ export default function MembersListClient({ members }: Props) {
             key={member.id}
             type="button"
             onClick={() => setSelectedId(member.id)}
-            className="card block w-full cursor-pointer text-left transition-colors hover:bg-gray-50"
+            className="card block w-full cursor-pointer text-left transition-[transform,background-color] duration-150 ease-out hover:bg-gray-50 active:scale-[0.98]"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
@@ -104,7 +104,7 @@ export default function MembersListClient({ members }: Props) {
               <tr
                 key={member.id}
                 onClick={() => setSelectedId(member.id)}
-                className="cursor-pointer hover:bg-gray-50"
+                className="cursor-pointer transition-colors duration-150 ease-out hover:bg-gray-50"
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {

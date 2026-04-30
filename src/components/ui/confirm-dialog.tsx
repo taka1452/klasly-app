@@ -68,14 +68,14 @@ export default function ConfirmDialog({
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center">
       <div
-        className="absolute inset-0 bg-black/40"
+        className="backdrop-in absolute inset-0 bg-black/40"
         onClick={onClose}
       />
-      <div className="relative mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+      <div className="dialog-in relative mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-4 top-4 tap-target rounded text-gray-500 hover:bg-gray-100 hover:text-gray-600"
+          className="absolute right-4 top-4 tap-target rounded text-gray-500 transition-[transform,background-color,color] duration-150 ease-out hover:bg-gray-100 hover:text-gray-600 active:scale-[0.95]"
           aria-label="Close"
         >
           <X className="h-4 w-4" />
@@ -104,7 +104,7 @@ export default function ConfirmDialog({
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-[transform,background-color] duration-150 ease-out hover:bg-gray-50 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
           >
             Cancel
           </button>
@@ -112,7 +112,7 @@ export default function ConfirmDialog({
             type="button"
             onClick={onConfirm}
             disabled={loading}
-            className={`rounded-lg px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2 ${style.button}`}
+            className={`rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100 focus:outline-none focus:ring-2 focus:ring-offset-2 ${style.button}`}
           >
             {loading ? "Please wait..." : confirmLabel}
           </button>

@@ -112,12 +112,12 @@ export default function MemberProfileCard({
   return (
     <>
       <div
-        className="fixed inset-0 z-50 bg-black/40"
+        className="backdrop-in fixed inset-0 z-50 bg-black/40"
         onClick={onClose}
         aria-hidden
       />
       <div
-        className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-gray-200 bg-white p-6 shadow-xl"
+        className="dialog-in-centered fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-gray-200 bg-white p-6 shadow-xl"
         role="dialog"
         aria-modal="true"
         aria-labelledby="member-profile-title"
@@ -132,7 +132,7 @@ export default function MemberProfileCard({
           <button
             type="button"
             onClick={onClose}
-            className="tap-target rounded text-gray-500 hover:bg-gray-100 hover:text-gray-600"
+            className="tap-target rounded text-gray-500 transition-[transform,background-color,color] duration-150 ease-out hover:bg-gray-100 hover:text-gray-600 active:scale-[0.95]"
             aria-label="Close"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -231,14 +231,14 @@ export default function MemberProfileCard({
                     : "/messages"
                 }
                 onClick={onClose}
-                className="flex-1 rounded-lg bg-brand-600 px-4 py-2.5 text-center text-sm font-medium text-white hover:bg-brand-700"
+                className="flex-1 rounded-lg bg-brand-600 px-4 py-2.5 text-center text-sm font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:bg-brand-700 active:scale-[0.97]"
               >
                 Send Message
               </Link>
               <Link
                 href={`/members/${data.member.id}`}
                 onClick={onClose}
-                className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-center text-sm font-medium text-gray-700 transition-[transform,background-color] duration-150 ease-out hover:bg-gray-50 active:scale-[0.97]"
               >
                 Edit Plan
               </Link>
