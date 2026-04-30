@@ -51,7 +51,7 @@ function UTMLinkBuilder() {
             key={p.label}
             type="button"
             onClick={() => { setSource(p.source); setMedium(p.medium); }}
-            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+            className={`rounded-full px-3 py-1 text-xs font-medium transition-[color,background-color,transform] duration-150 ease-out active:scale-[0.95] ${
               source === p.source
                 ? "bg-brand-100 text-brand-700"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -105,7 +105,7 @@ function UTMLinkBuilder() {
             <button
               type="button"
               onClick={handleCopy}
-              className="shrink-0 rounded-lg bg-brand-500 px-3 py-2 text-xs font-medium text-white hover:bg-brand-600"
+              className="shrink-0 rounded-lg bg-brand-500 px-3 py-2 text-xs font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:bg-brand-600 active:scale-[0.95]"
             >
               {copied ? "Copied!" : "Copy"}
             </button>
@@ -172,7 +172,7 @@ export default function AnalyticsPage() {
         <ContextHelpLink href="/help/analytics/view-analytics" />
         <a
           href="/analytics/reports"
-          className="ml-auto inline-flex items-center gap-1 rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700 hover:bg-brand-100"
+          className="ml-auto inline-flex items-center gap-1 rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700 transition-[transform,background-color] duration-150 ease-out hover:bg-brand-100 active:scale-[0.95]"
         >
           Build &amp; save reports →
         </a>
@@ -189,7 +189,7 @@ export default function AnalyticsPage() {
           <p className="mt-2 text-sm text-gray-500">
             Enable it in <strong>Settings → Features</strong> to start tracking where your members come from.
           </p>
-          <a href="/settings/features" className="mt-3 inline-block text-sm font-medium text-brand-600 hover:text-brand-700">
+          <a href="/settings/features" className="mt-3 inline-block text-sm font-medium text-brand-600 transition-colors duration-150 hover:text-brand-700">
             Enable UTM Tracking →
           </a>
         </div>
@@ -237,7 +237,7 @@ export default function AnalyticsPage() {
                   </thead>
                   <tbody>
                     {sources.map((s) => (
-                      <tr key={s.name} className="border-b border-gray-100">
+                      <tr key={s.name} className="border-b border-gray-100 transition-colors duration-150 ease-out hover:bg-gray-50">
                         <td className="py-2 font-medium text-gray-900">
                           {s.name}
                         </td>
