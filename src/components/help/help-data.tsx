@@ -492,6 +492,19 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
+          q: "Can a member auto-book every weekly session of a class?",
+          a: (
+            <>
+              Yes. Open any session on the member-side <B>Schedule</B>, click the tile, and tap <B>&quot;Book me weekly at this time&quot;</B> at the bottom of the popover. From then on, when new sessions of that class are generated for the same weekday + start time, Klasly auto-confirms a booking — provided the member doesn&apos;t already have one and the class isn&apos;t full.
+              <Steps>
+                <li>The rule is keyed on <B>class template + day of week + start time</B>, so moving the class day doesn&apos;t double-book.</li>
+                <li>Tap the same toggle again to stop. Already-confirmed bookings stay until the member cancels them in the usual way.</li>
+                <li>Auto-booked rows are flagged so owners can audit them on the bookings list.</li>
+              </Steps>
+            </>
+          ),
+        },
+        {
           q: "I have members joining online from a different time zone — how does Klasly handle that?",
           a: (
             <>

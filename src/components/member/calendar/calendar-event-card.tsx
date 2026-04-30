@@ -68,6 +68,11 @@ export default function CalendarEventCard({
 
   const [showPopover, setShowPopover] = useState(false);
   const [showInstructorModal, setShowInstructorModal] = useState(false);
+  // "Book me into this slot every week" — the rule is created against
+  // (template, weekday, start_time) so it picks up future sessions in the
+  // same series automatically.
+  const [recurringActive, setRecurringActive] = useState<boolean | null>(null);
+  const [recurringSubmitting, setRecurringSubmitting] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -147,6 +152,65 @@ export default function CalendarEventCard({
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [showPopover]);
+
+  // Resolve whether the member already has a recurring rule for this slot
+  // when the popover opens. Cheap one-row read; no flicker on close.
+  useEffect(() => {
+    if (!showPopover) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/member/recurring-bookings?session_id=${encodeURIComponent(session.id)}`
+        );
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as {
+          rule: { id: string; is_active: boolean } | null;
+        };
+        if (!cancelled) setRecurringActive(Boolean(data.rule?.is_active));
+      } catch {
+        if (!cancelled) setRecurringActive(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [showPopover, session.id]);
+
+  async function toggleRecurring() {
+    if (recurringSubmitting) return;
+    setRecurringSubmitting(true);
+    try {
+      if (recurringActive) {
+        // Look up the rule then DELETE it.
+        const lookup = await fetch(
+          `/api/member/recurring-bookings?session_id=${encodeURIComponent(session.id)}`
+        );
+        if (!lookup.ok) return;
+        const { rule } = (await lookup.json()) as {
+          rule: { id: string } | null;
+        };
+        if (!rule) {
+          setRecurringActive(false);
+          return;
+        }
+        const res = await fetch(
+          `/api/member/recurring-bookings?id=${encodeURIComponent(rule.id)}`,
+          { method: "DELETE" }
+        );
+        if (res.ok) setRecurringActive(false);
+      } else {
+        const res = await fetch("/api/member/recurring-bookings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session_id: session.id }),
+        });
+        if (res.ok) setRecurringActive(true);
+      }
+    } finally {
+      setRecurringSubmitting(false);
+    }
+  }
 
   // Close popover on ESC
   useEffect(() => {
@@ -300,6 +364,31 @@ export default function CalendarEventCard({
               }}
             />
           </div>
+
+          {/* Recurring booking toggle — only shown to logged-in members */}
+          {memberId && canBook && (
+            <button
+              type="button"
+              onClick={toggleRecurring}
+              disabled={recurringSubmitting || recurringActive === null}
+              className={`mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-[transform,background-color,border-color] duration-150 ease-out active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 ${
+                recurringActive
+                  ? "border-brand-400 bg-brand-50 text-brand-700 hover:bg-brand-100"
+                  : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+              }`}
+              title="Automatically book me for every weekly session of this class at this time"
+            >
+              <span className="label-swap" data-pending={recurringSubmitting}>
+                {recurringSubmitting
+                  ? recurringActive
+                    ? "Stopping…"
+                    : "Setting up…"
+                  : recurringActive
+                    ? "✓ Booking weekly — tap to stop"
+                    : "Book me weekly at this time"}
+              </span>
+            </button>
+          )}
         </div>
       )}
 

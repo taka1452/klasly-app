@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isFeatureEnabled } from "@/lib/features/check-feature";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 import { unwrapRelation } from "@/lib/supabase/relation";
+import { sweepRecurringBookings } from "@/lib/recurring-bookings-sweep";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -73,6 +74,18 @@ export async function GET(request: NextRequest) {
 
     const memberId = member?.id ?? null;
     const memberCredits = member?.credits ?? 0;
+
+    // Auto-book sweep: any active recurring rule the member set up gets
+    // resolved to confirmed bookings before we hand the data back, so the
+    // calendar shows the new bookings without a second round-trip.
+    const recurringResult = await sweepRecurringBookings({
+      supabase,
+      memberProfileId: user.id,
+      memberRowId: memberId,
+      studioId,
+      startDate: start,
+      endDate: end,
+    });
 
     // Fetch sessions with expanded class + instructor info
     type SessionRow = {
@@ -241,6 +254,7 @@ export async function GET(request: NextRequest) {
       passInfo,
       memberCredits,
       studioTimezone,
+      recurringAutoBooked: recurringResult.created,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal error";
