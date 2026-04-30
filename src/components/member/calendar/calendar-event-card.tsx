@@ -7,6 +7,11 @@ import InstructorProfileModal from "@/components/member/instructor-profile-modal
 import { useFeature } from "@/lib/features/feature-context";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 import {
+  getTimezoneAbbreviation,
+  getViewerTimezone,
+  convertWallTimeToViewer,
+} from "@/lib/timezone";
+import {
   type SessionData,
   formatTimeShort,
   parseTime,
@@ -31,6 +36,12 @@ type Props = {
   payPerClass: boolean;
   classPrice?: number;
   passInfo?: { hasPass: boolean; hasCapacity: boolean; classesUsed: number; maxClasses: number | null };
+  /**
+   * Studio's IANA timezone, used to label online classes with the studio's
+   * TZ abbreviation and (when the viewer is in a different zone) show a
+   * "your time:" hint inside the popover.
+   */
+  studioTimezone?: string | null;
   onBookingComplete: () => void;
 };
 
@@ -48,6 +59,7 @@ export default function CalendarEventCard({
   payPerClass,
   classPrice,
   passInfo,
+  studioTimezone,
   onBookingComplete,
 }: Props) {
   const { isEnabled } = useFeature();
@@ -86,6 +98,38 @@ export default function CalendarEventCard({
   const endM = endMin % 60;
   const endAmpm = Math.floor(endMin / 60) < 12 ? "AM" : "PM";
   const endTimeStr = `${endH}${endM > 0 ? `:${String(endM).padStart(2, "0")}` : ""} ${endAmpm}`;
+
+  // For online classes, show the studio's TZ abbreviation alongside the
+  // time and (when the viewer is in a different IANA zone) a converted
+  // "your time:" hint inside the popover.
+  const showTzHint = showOnline && Boolean(studioTimezone);
+  const sessionDateObj = new Date(`${session.session_date}T00:00:00`);
+  const tzAbbrev = showTzHint
+    ? getTimezoneAbbreviation(studioTimezone, sessionDateObj)
+    : "";
+  const viewerTz = showTzHint ? getViewerTimezone() : "";
+  const tzDiffers =
+    showTzHint && viewerTz && studioTimezone && viewerTz !== studioTimezone;
+  const endHm = `${String(Math.floor(endMin / 60)).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
+  const viewerStartLocal = tzDiffers
+    ? convertWallTimeToViewer(
+        session.session_date,
+        session.start_time.slice(0, 5),
+        studioTimezone || "",
+        viewerTz
+      )
+    : "";
+  const viewerEndLocal = tzDiffers
+    ? convertWallTimeToViewer(
+        session.session_date,
+        endHm,
+        studioTimezone || "",
+        viewerTz
+      )
+    : "";
+  const viewerTzAbbrev = tzDiffers
+    ? getTimezoneAbbreviation(viewerTz, sessionDateObj)
+    : "";
 
   // Close popover on outside click
   useEffect(() => {
@@ -144,6 +188,7 @@ export default function CalendarEventCard({
             </div>
             <div className="truncate opacity-75">
               {formatTimeShort(session.start_time)}
+              {tzAbbrev ? ` ${tzAbbrev}` : ""}
               {session.instructor_name ? ` · ${session.instructor_name}` : ""}
             </div>
             {height >= 55 && (
@@ -178,8 +223,16 @@ export default function CalendarEventCard({
           </h3>
           <div className="mt-2 space-y-1 text-sm text-gray-600">
             <p>
-              {formatTimeShort(session.start_time)} – {endTimeStr} ({formatDuration(session.duration_minutes)})
+              {formatTimeShort(session.start_time)} – {endTimeStr}
+              {tzAbbrev ? ` ${tzAbbrev}` : ""} ({formatDuration(session.duration_minutes)})
             </p>
+            {tzDiffers && viewerStartLocal && (
+              <p className="text-xs text-gray-500">
+                Your time: {viewerStartLocal}
+                {viewerEndLocal ? ` – ${viewerEndLocal}` : ""}
+                {viewerTzAbbrev ? ` ${viewerTzAbbrev}` : ""}
+              </p>
+            )}
             {session.instructor_name && (
               <p>
                 Instructor:{" "}

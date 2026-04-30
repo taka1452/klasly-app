@@ -56,6 +56,10 @@ export default function ScheduleCalendar({
     maxClasses: number | null;
   }>({ hasPass: false, hasCapacity: false, classesUsed: 0, maxClasses: null });
   const [credits, setCredits] = useState(initialCredits);
+  // Studio's IANA timezone, returned alongside sessions. Used by online
+  // sessions to render the studio TZ abbreviation and a "your time:" hint
+  // when the viewer's local zone differs.
+  const [studioTimezone, setStudioTimezone] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -93,6 +97,9 @@ export default function ScheduleCalendar({
         setConfirmedCounts(data.confirmedCounts ?? {});
         if (data.passInfo) setPassInfo(data.passInfo);
         if (typeof data.memberCredits === "number") setCredits(data.memberCredits);
+        setStudioTimezone(
+          typeof data.studioTimezone === "string" ? data.studioTimezone : null
+        );
       } catch {
         setFetchError(true);
       } finally {
@@ -154,6 +161,7 @@ export default function ScheduleCalendar({
     payPerClass,
     classPrice,
     passInfo,
+    studioTimezone,
     onBookingComplete: handleBookingComplete,
   };
 

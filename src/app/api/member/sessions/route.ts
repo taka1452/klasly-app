@@ -52,6 +52,17 @@ export async function GET(request: NextRequest) {
 
     const studioId = profile.studio_id;
 
+    // Pull the studio's IANA timezone so the client can render online
+    // sessions with the studio TZ abbreviation and (when the viewer is in
+    // a different IANA zone) a "your time:" parenthetical.
+    const { data: studio } = await supabase
+      .from("studios")
+      .select("timezone")
+      .eq("id", studioId)
+      .single();
+    const studioTimezone =
+      (studio as { timezone?: string | null } | null)?.timezone ?? null;
+
     // Get member
     const { data: member } = await supabase
       .from("members")
@@ -229,6 +240,7 @@ export async function GET(request: NextRequest) {
       confirmedCounts: confirmedMap,
       passInfo,
       memberCredits,
+      studioTimezone,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal error";

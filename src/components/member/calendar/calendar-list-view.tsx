@@ -26,6 +26,7 @@ type Props = {
     classesUsed: number;
     maxClasses: number | null;
   };
+  studioTimezone?: string | null;
   onBookingComplete: () => void;
 };
 
@@ -41,6 +42,7 @@ export default function CalendarListView({
   payPerClass,
   classPrice,
   passInfo,
+  studioTimezone,
   onBookingComplete,
 }: Props) {
   const [instructorModalId, setInstructorModalId] = useState<string | null>(null);

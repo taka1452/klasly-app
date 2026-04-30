@@ -492,6 +492,19 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
+          q: "I have members joining online from a different time zone — how does Klasly handle that?",
+          a: (
+            <>
+              On any <B>online class</B> tile, the start time is now stamped with the studio&apos;s timezone abbreviation (e.g. <B>7:00 PM PT</B>). When a member opens the class popover from a different IANA timezone (say, ET), Klasly adds a <B>&quot;Your time:&quot;</B> hint with the converted local time so they don&apos;t have to do the math.
+              <Steps>
+                <li>The studio&apos;s timezone is the one set in <B>Settings → Studio</B> (your IANA zone).</li>
+                <li>Times for in-studio classes don&apos;t show the abbreviation — members are physically there, so it&apos;s just noise.</li>
+                <li>Booking confirmation emails for online classes also include the TZ suffix on the start time.</li>
+              </Steps>
+            </>
+          ),
+        },
+        {
           q: "Can I subscribe to my schedule from Google Calendar or Apple Calendar?",
           a: (
             <>
