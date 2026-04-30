@@ -28,6 +28,7 @@ export default function UpcomingSessions({ templateId }: Props) {
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState<string | null>(null);
   const [confirmCancel, setConfirmCancel] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
   const [editingSession, setEditingSession] = useState<Session | null>(null);
 
   const fetchSessions = useCallback(async () => {
@@ -71,9 +72,12 @@ export default function UpcomingSessions({ templateId }: Props) {
 
   async function handleCancel(sessionId: string) {
     setCancelling(sessionId);
+    const reason = cancelReason.trim();
     try {
       const res = await fetch(`/api/sessions/${sessionId}`, {
         method: "DELETE",
+        headers: reason ? { "Content-Type": "application/json" } : undefined,
+        body: reason ? JSON.stringify({ reason }) : undefined,
       });
       if (res.ok) {
         setSessions((prev) =>
@@ -87,6 +91,7 @@ export default function UpcomingSessions({ templateId }: Props) {
     } finally {
       setCancelling(null);
       setConfirmCancel(null);
+      setCancelReason("");
     }
   }
 
@@ -168,23 +173,38 @@ export default function UpcomingSessions({ templateId }: Props) {
                     Cancelled
                   </span>
                 ) : confirmCancel === session.id ? (
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs text-red-600">Cancel?</span>
-                    <button
-                      type="button"
-                      onClick={() => handleCancel(session.id)}
-                      disabled={cancelling === session.id}
-                      className="rounded bg-red-100 px-2 py-0.5 text-[10px] font-medium text-red-700 hover:bg-red-200 disabled:opacity-50"
-                    >
-                      {cancelling === session.id ? "..." : "Yes"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setConfirmCancel(null)}
-                      className="rounded bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600 hover:bg-gray-200"
-                    >
-                      No
-                    </button>
+                  <div className="panel-enter flex flex-col items-stretch gap-1.5 rounded-md border border-red-200 bg-red-50/60 p-2 sm:flex-row sm:items-center">
+                    <input
+                      type="text"
+                      value={cancelReason}
+                      onChange={(e) => setCancelReason(e.target.value)}
+                      placeholder="Reason (optional, shown to members)"
+                      className="min-w-0 flex-1 rounded border border-red-200 bg-white px-2 py-1 text-xs text-gray-900 placeholder:text-gray-400 focus:border-red-400 focus:outline-none focus:ring-1 focus:ring-red-300"
+                      autoFocus
+                      maxLength={200}
+                    />
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleCancel(session.id)}
+                        disabled={cancelling === session.id}
+                        className="rounded bg-red-600 px-2 py-1 text-[10px] font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:bg-red-700 active:scale-[0.95] disabled:opacity-50 disabled:active:scale-100"
+                      >
+                        <span className="label-swap" data-pending={cancelling === session.id}>
+                          {cancelling === session.id ? "Cancelling..." : "Cancel session"}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setConfirmCancel(null);
+                          setCancelReason("");
+                        }}
+                        className="rounded border border-gray-200 bg-white px-2 py-1 text-[10px] font-medium text-gray-600 transition-[transform,background-color] duration-150 ease-out hover:bg-gray-50 active:scale-[0.95]"
+                      >
+                        Keep
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <>

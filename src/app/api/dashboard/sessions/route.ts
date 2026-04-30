@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
         `
         id, template_id, room_id, instructor_id,
         session_date, start_time, end_time, duration_minutes,
-        capacity, is_cancelled, is_online, online_link,
+        capacity, is_cancelled, cancellation_reason, is_online, online_link,
         title, session_type, price_cents, location, recurrence_group_id,
         class_templates (
           name, duration_minutes, location, is_public, price_cents, online_link, class_type
@@ -207,6 +207,7 @@ export async function GET(request: NextRequest) {
         start_time: s.start_time,
         capacity: s.capacity,
         is_cancelled: s.is_cancelled,
+        cancellation_reason: (s as { cancellation_reason?: string | null }).cancellation_reason ?? null,
         class_name: isRoomOnly
           ? s.title || "Room Booking"
           : template?.name ?? s.title ?? "Class",

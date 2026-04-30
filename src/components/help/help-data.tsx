@@ -436,6 +436,15 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
+          q: "Can I record why a session was cancelled?",
+          a: (
+            <>
+              Yes. When you click <B>Cancel</B> on a session in <B>Classes → [Class Template] → Upcoming Sessions</B>, the confirm row now has an optional <B>reason</B> field. Whatever you type there is saved with the session and shown to staff on the cancelled tile in the schedule (hover or list view), so the next person looking at it knows whether it was a holiday, an instructor call-out, or a one-off closure.
+              <Tip>Studio Closures (Settings → Studio Closures) automatically fills the reason as &quot;Studio closed: [your label]&quot; for every session it cancels.</Tip>
+            </>
+          ),
+        },
+        {
           q: "An instructor called in sick — how do I substitute another instructor?",
           a: (
             <>

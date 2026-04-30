@@ -118,7 +118,10 @@ export default function DashboardListView({
                           </span>
                         )}
                         {session.is_cancelled && (
-                          <span className="shrink-0 rounded bg-gray-200 px-1.5 py-0.5 text-[10px] font-medium text-gray-600">
+                          <span
+                            className="shrink-0 rounded bg-gray-200 px-1.5 py-0.5 text-[10px] font-medium text-gray-600"
+                            title={session.cancellation_reason ?? undefined}
+                          >
                             Cancelled
                           </span>
                         )}
@@ -132,6 +135,11 @@ export default function DashboardListView({
                         {session.instructor_name}
                         {session.room_name && ` \u00b7 ${session.room_name}`}
                       </div>
+                      {session.is_cancelled && session.cancellation_reason && (
+                        <div className="mt-0.5 text-xs italic text-gray-500">
+                          Reason: {session.cancellation_reason}
+                        </div>
+                      )}
                     </div>
 
                     {/* Capacity */}

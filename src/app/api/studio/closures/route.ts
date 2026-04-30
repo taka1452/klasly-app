@@ -160,7 +160,12 @@ export async function POST(request: NextRequest) {
   let bookingsCancelled = 0;
 
   if (cancelSessions) {
-    const result = await cancelSessionsOnDate(adminDb, studioId, closureDate);
+    const result = await cancelSessionsOnDate(
+      adminDb,
+      studioId,
+      closureDate,
+      `Studio closed: ${label}`
+    );
     sessionsCancelled = result.sessionsCancelled;
     bookingsCancelled = result.bookingsCancelled;
   }
@@ -208,7 +213,8 @@ export async function DELETE(request: NextRequest) {
 async function cancelSessionsOnDate(
   adminDb: SupabaseClient,
   studioId: string,
-  date: string
+  date: string,
+  cancellationReason: string
 ): Promise<{ sessionsCancelled: number; bookingsCancelled: number }> {
   const { data: sessions } = await adminDb
     .from("class_sessions")
@@ -224,7 +230,10 @@ async function cancelSessionsOnDate(
 
   await adminDb
     .from("class_sessions")
-    .update({ is_cancelled: true })
+    .update({
+      is_cancelled: true,
+      cancellation_reason: cancellationReason,
+    })
     .in("id", sessionIds);
 
   // Refund bookings

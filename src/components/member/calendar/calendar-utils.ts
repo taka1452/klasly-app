@@ -8,6 +8,8 @@ export type SessionData = {
   start_time: string; // "HH:MM:SS"
   capacity: number;
   is_cancelled: boolean;
+  /** Why the session was cancelled — surfaced on cancelled tiles. */
+  cancellation_reason?: string | null;
   class_name: string;
   duration_minutes: number;
   instructor_id: string | null;

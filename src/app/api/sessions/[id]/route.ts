@@ -405,6 +405,25 @@ export async function DELETE(
     const url = new URL(request.url);
     const cancelFuture = url.searchParams.get("cancel_future") === "true";
 
+    // Optional cancellation reason — accept either query string or JSON body.
+    // Body takes precedence when both are provided.
+    let cancellationReason: string | null = null;
+    const reasonParam = url.searchParams.get("reason");
+    if (reasonParam && reasonParam.trim()) {
+      cancellationReason = reasonParam.trim().slice(0, 500);
+    }
+    try {
+      const text = await request.text();
+      if (text) {
+        const body = JSON.parse(text) as { reason?: unknown };
+        if (typeof body.reason === "string" && body.reason.trim()) {
+          cancellationReason = body.reason.trim().slice(0, 500);
+        }
+      }
+    } catch {
+      // body wasn't JSON — ignore
+    }
+
     // --- Auth: try dashboard first, then instructor ---
     const dashCtx = await getDashboardContext();
 
@@ -440,7 +459,8 @@ export async function DELETE(
         dashCtx.supabase,
         id,
         existing,
-        cancelFuture
+        cancelFuture,
+        cancellationReason
       );
     }
 
@@ -480,7 +500,8 @@ export async function DELETE(
       instrCtx.supabase,
       id,
       existing,
-      cancelFuture
+      cancelFuture,
+      cancellationReason
     );
   } catch {
     return NextResponse.json(
@@ -571,14 +592,23 @@ async function cancelSession(
     recurrence_group_id: string | null;
     session_date: string;
   },
-  cancelFuture: boolean
+  cancelFuture: boolean,
+  cancellationReason: string | null
 ) {
+  // Build the update payload. Only include cancellation_reason when one
+  // was provided so we don't blow away an existing reason on subsequent
+  // cancel calls.
+  const updatePayload: Record<string, unknown> = { is_cancelled: true };
+  if (cancellationReason) {
+    updatePayload.cancellation_reason = cancellationReason;
+  }
+
   // Cancel future recurring sessions if requested
   if (cancelFuture && existing.recurrence_group_id) {
     const today = new Date().toISOString().split("T")[0];
     const { data: cancelled, error } = await supabase
       .from("class_sessions")
-      .update({ is_cancelled: true })
+      .update(updatePayload)
       .eq("recurrence_group_id", existing.recurrence_group_id)
       .eq("is_cancelled", false)
       .gte("session_date", today)
@@ -605,7 +635,7 @@ async function cancelSession(
   // Single session cancel
   const { data: cancelled, error } = await supabase
     .from("class_sessions")
-    .update({ is_cancelled: true })
+    .update(updatePayload)
     .eq("id", sessionId)
     .select("*")
     .single();
