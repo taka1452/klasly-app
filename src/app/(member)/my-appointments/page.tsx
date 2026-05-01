@@ -171,7 +171,7 @@ export default function MemberAppointmentsPage() {
             Your 1-on-1 appointment bookings
           </p>
         </div>
-        <Link href="/my-appointments/book" className="btn-primary">
+        <Link href="/my-appointments/book" className="btn-primary transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]">
           Book Appointment
         </Link>
       </div>
@@ -258,7 +258,7 @@ export default function MemberAppointmentsPage() {
                           href={calendarUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="btn-secondary text-xs"
+                          className="btn-secondary text-xs transition-[transform,background-color] duration-150 ease-out active:scale-[0.95]"
                         >
                           Add to Calendar
                         </a>
@@ -336,7 +336,7 @@ export default function MemberAppointmentsPage() {
               <p className="text-sm text-gray-500">No appointments yet.</p>
               <Link
                 href="/my-appointments/book"
-                className="btn-primary mt-4 inline-block"
+                className="btn-primary mt-4 inline-block transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]"
               >
                 Book your first appointment
               </Link>
@@ -350,7 +350,7 @@ export default function MemberAppointmentsPage() {
               </p>
               <Link
                 href="/my-appointments/book"
-                className="btn-primary mt-4 inline-block"
+                className="btn-primary mt-4 inline-block transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]"
               >
                 Book an appointment
               </Link>

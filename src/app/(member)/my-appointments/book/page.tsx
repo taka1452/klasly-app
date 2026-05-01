@@ -344,7 +344,7 @@ export default function BookAppointmentPage() {
           <button
             type="button"
             onClick={() => setStep(1)}
-            className="btn-secondary mt-4"
+            className="btn-secondary mt-4 transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]"
           >
             &larr; Back
           </button>
@@ -446,7 +446,7 @@ export default function BookAppointmentPage() {
           <button
             type="button"
             onClick={() => setStep(2)}
-            className="btn-secondary mt-4"
+            className="btn-secondary mt-4 transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]"
           >
             &larr; Back
           </button>
@@ -513,7 +513,7 @@ export default function BookAppointmentPage() {
               <button
                 type="button"
                 onClick={() => setStep(3)}
-                className="btn-secondary"
+                className="btn-secondary transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]"
               >
                 &larr; Back
               </button>
@@ -521,7 +521,7 @@ export default function BookAppointmentPage() {
                 type="button"
                 onClick={handleBook}
                 disabled={booking}
-                className="btn-primary flex-1"
+                className="btn-primary flex-1 transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100"
               >
                 {booking ? "Booking..." : "Book Now"}
               </button>

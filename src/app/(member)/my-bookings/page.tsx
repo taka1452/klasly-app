@@ -363,7 +363,7 @@ export default async function MyBookingsPage() {
       {upcoming.length === 0 && past.length > 0 && (
         <div className="mt-6 card">
           <p className="text-sm text-gray-500">No upcoming bookings.</p>
-          <Link href="/schedule" className="btn-primary mt-4 inline-block">
+          <Link href="/schedule" className="btn-primary mt-4 inline-block transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]">
             Book a class
           </Link>
         </div>
@@ -372,7 +372,7 @@ export default async function MyBookingsPage() {
       {upcoming.length === 0 && past.length === 0 && (
         <div className="mt-6 card">
           <p className="text-sm text-gray-500">No bookings yet.</p>
-          <Link href="/schedule" className="btn-primary mt-4 inline-block">
+          <Link href="/schedule" className="btn-primary mt-4 inline-block transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]">
             View schedule
           </Link>
         </div>

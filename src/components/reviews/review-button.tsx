@@ -31,7 +31,7 @@ export default function ReviewButton({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="text-xs font-medium text-brand-600 hover:text-brand-700"
+        className="text-xs font-medium text-brand-600 transition-colors duration-150 hover:text-brand-700"
       >
         Rate
       </button>

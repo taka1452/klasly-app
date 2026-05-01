@@ -141,7 +141,7 @@ export default async function MyPaymentsPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
                   {(payments ?? []).map((p) => (
-                    <tr key={p.id}>
+                    <tr key={p.id} className="transition-colors duration-150 ease-out hover:bg-gray-50">
                       <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
                         {formatDate(p.paid_at ?? p.created_at)}
                       </td>

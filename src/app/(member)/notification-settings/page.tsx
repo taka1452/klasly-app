@@ -74,7 +74,7 @@ function Toggle({
       aria-checked={checked}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-[background-color,transform] duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 active:scale-[0.95] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 ${
         checked ? "bg-brand-600" : "bg-gray-200"
       }`}
     >
@@ -215,10 +215,11 @@ export default function MemberSettingsPage() {
                 </p>
               </div>
               <div className="divide-y divide-gray-100">
-                {notificationTypes.map((type) => (
+                {notificationTypes.map((type, index) => (
                   <div
                     key={type.key}
-                    className="flex items-center justify-between gap-4 px-4 py-3 md:px-6 md:py-4"
+                    className="stats-stagger flex items-center justify-between gap-4 px-4 py-3 md:px-6 md:py-4"
+                    style={{ animationDelay: `${Math.min(index * 40, 200)}ms` }}
                   >
                     <div>
                       <p className="text-sm font-medium text-gray-900">

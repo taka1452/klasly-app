@@ -16,7 +16,7 @@ export default async function PurchaseSuccessPage({
           It looks like you arrived here without completing a purchase.
         </p>
         <div className="mt-6">
-          <Link href="/purchase" className="btn-primary inline-block">
+          <Link href="/purchase" className="btn-primary inline-block transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]">
             Go to Purchase
           </Link>
         </div>
@@ -36,12 +36,12 @@ export default async function PurchaseSuccessPage({
         shortly.
       </p>
       <div className="mt-6 flex flex-wrap justify-center gap-3">
-        <Link href="/schedule" className="btn-primary inline-block">
+        <Link href="/schedule" className="btn-primary inline-block transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]">
           View Schedule
         </Link>
         <Link
           href="/my-payments"
-          className="btn-secondary inline-block"
+          className="btn-secondary inline-block transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]"
         >
           View Payment History
         </Link>

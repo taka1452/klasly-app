@@ -49,8 +49,8 @@ export default function ReviewDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+    <div className="backdrop-in fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="dialog-in w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
         <h3 className="text-lg font-semibold text-gray-900">Rate this class</h3>
         <p className="mt-1 text-sm text-gray-500">{className}</p>
 
@@ -82,14 +82,14 @@ export default function ReviewDialog({
             <button
               type="button"
               onClick={onClose}
-              className="btn-secondary flex-1"
+              className="btn-secondary flex-1 transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100"
               disabled={loading}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="btn-primary flex-1"
+              className="btn-primary flex-1 transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100"
               disabled={loading || rating === 0}
             >
               {loading ? "Submitting..." : "Submit Review"}

@@ -226,13 +226,13 @@ export default function MemberPasses({ memberId, passes, subscriptions }: Props)
                         <button
                           onClick={() => { setConfirmCancelId(null); handleCancel(sub.id); }}
                           disabled={loadingId === sub.id}
-                          className="flex-1 rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                          className="flex-1 rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:bg-red-700 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
                         >
                           {loadingId === sub.id ? "Cancelling..." : "Yes, Cancel"}
                         </button>
                         <button
                           onClick={() => setConfirmCancelId(null)}
-                          className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                          className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition-[transform,background-color] duration-150 ease-out hover:bg-gray-50 active:scale-[0.97]"
                         >
                           Keep Pass
                         </button>
@@ -241,7 +241,7 @@ export default function MemberPasses({ memberId, passes, subscriptions }: Props)
                   ) : (
                     <button
                       onClick={() => setConfirmCancelId(sub.id)}
-                      className="mt-3 w-full rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                      className="mt-3 w-full rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 transition-[transform,background-color] duration-150 ease-out hover:bg-red-50 active:scale-[0.97]"
                     >
                       Cancel Subscription
                     </button>
@@ -258,7 +258,7 @@ export default function MemberPasses({ memberId, passes, subscriptions }: Props)
                   <button
                     onClick={() => handleSubscribe(pass.id)}
                     disabled={loadingId === pass.id}
-                    className="btn-primary mt-3 w-full"
+                    className="btn-primary mt-3 w-full transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100"
                   >
                     {loadingId === pass.id
                       ? "Subscribing..."

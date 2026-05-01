@@ -74,8 +74,12 @@ export default function PurchaseOptions({ products, memberId }: Props) {
         </div>
       )}
     <div className="mt-8 grid gap-4 sm:grid-cols-2">
-      {products.map((product) => (
-        <div key={product.id} className="card flex flex-col">
+      {products.map((product, index) => (
+        <div
+          key={product.id}
+          className="stats-stagger card flex flex-col"
+          style={{ animationDelay: `${Math.min(index * 60, 240)}ms` }}
+        >
           <h3 className="text-lg font-semibold text-gray-900">{product.name}</h3>
           <p className="mt-1 text-2xl font-bold text-brand-600">
             {formatPrice(product)}
@@ -90,7 +94,7 @@ export default function PurchaseOptions({ products, memberId }: Props) {
             type="button"
             onClick={() => handleBuy(product.id)}
             disabled={!!loading}
-            className="btn-primary mt-4"
+            className="btn-primary mt-4 transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100"
           >
             {loading === product.id ? "Redirecting…" : "Buy"}
           </button>

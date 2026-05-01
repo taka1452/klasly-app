@@ -160,7 +160,7 @@ export default function BookingButton({
               type="button"
               onClick={() => handleBook("rebook", true)}
               disabled={loading}
-              className="btn-primary text-sm"
+              className="btn-primary text-sm transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100"
             >
               {loading ? "…" : "Re-book with Pass"}
             </button>
@@ -175,7 +175,7 @@ export default function BookingButton({
             </span>
             <Link
               href="/purchase"
-              className="text-sm font-medium text-brand-600 hover:text-brand-700"
+              className="text-sm font-medium text-brand-600 transition-colors duration-150 hover:text-brand-700"
             >
               Purchase
             </Link>
@@ -189,7 +189,7 @@ export default function BookingButton({
             type="button"
             onClick={() => handleBook("rebook")}
             disabled={loading}
-            className="btn-primary text-sm"
+            className="btn-primary text-sm transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100"
           >
             {loading ? "…" : "Re-book"}
           </button>
@@ -204,7 +204,7 @@ export default function BookingButton({
             type="button"
             onClick={() => handleBook("leave_waitlist")}
             disabled={loading}
-            className="btn-secondary text-sm"
+            className="btn-secondary text-sm transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100"
           >
             {loading ? "…" : "Leave waitlist"}
           </button>
@@ -224,7 +224,7 @@ export default function BookingButton({
                 handleBook("cancel");
               }}
               disabled={loading}
-              className="text-sm font-medium text-red-600 hover:text-red-700"
+              className="text-sm font-medium text-red-600 transition-colors duration-150 hover:text-red-700"
             >
               {loading ? "…" : "Yes, Cancel"}
             </button>
@@ -232,7 +232,7 @@ export default function BookingButton({
               type="button"
               onClick={() => setConfirmCancel(false)}
               disabled={loading}
-              className="text-sm text-gray-500 hover:text-gray-700"
+              className="text-sm text-gray-500 transition-colors duration-150 hover:text-gray-700"
             >
               Keep
             </button>
@@ -244,7 +244,7 @@ export default function BookingButton({
               type="button"
               onClick={() => setConfirmCancel(true)}
               disabled={loading}
-              className="text-sm text-gray-500 underline hover:text-red-600"
+              className="text-sm text-gray-500 underline transition-colors duration-150 hover:text-red-600"
             >
               Cancel
             </button>
@@ -263,7 +263,7 @@ export default function BookingButton({
           type="button"
           onClick={() => handleBook("book", true)}
           disabled={loading}
-          className="btn-primary text-sm"
+          className="btn-primary text-sm transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100"
         >
           {loading ? "…" : "Book with Pass"}
         </button>
@@ -281,7 +281,7 @@ export default function BookingButton({
         {hasNoCredits ? (
           <Link
             href="/purchase"
-            className="text-sm font-medium text-brand-600 hover:text-brand-700"
+            className="text-sm font-medium text-brand-600 transition-colors duration-150 hover:text-brand-700"
           >
             Purchase credits
           </Link>
@@ -290,7 +290,7 @@ export default function BookingButton({
             type="button"
             onClick={() => handleBook("book")}
             disabled={loading}
-            className="btn-primary text-sm"
+            className="btn-primary text-sm transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100"
           >
             {loading ? "…" : "Book"}
           </button>
@@ -325,7 +325,7 @@ export default function BookingButton({
           type="button"
           onClick={handlePayAndBook}
           disabled={loading}
-          className="btn-primary text-sm"
+          className="btn-primary text-sm transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100"
         >
           {loading ? "…" : `Book & Pay${priceLabel ? ` ${priceLabel}` : ""}`}
         </button>
@@ -340,7 +340,7 @@ export default function BookingButton({
         type="button"
         onClick={() => handleBook("book")}
         disabled={loading}
-        className={showWaitlist ? "btn-secondary text-sm" : "btn-primary text-sm"}
+        className={`text-sm transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100 ${showWaitlist ? "btn-secondary" : "btn-primary"}`}
       >
         {loading ? "…" : showWaitlist ? "Waitlist" : "Book"}
       </button>

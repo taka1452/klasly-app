@@ -60,18 +60,18 @@ export default function InstructorProfileModal({
   return (
     <>
       {/* Backdrop — z-60 so it sits above popover (z-50) */}
-      <div className="fixed inset-0 z-[60] bg-black/30" onClick={onClose} />
+      <div className="backdrop-in fixed inset-0 z-[60] bg-black/30" onClick={onClose} />
 
       {/* Modal — z-[61] above backdrop */}
       <div className="fixed inset-0 z-[61] flex items-center justify-center p-4 pointer-events-none">
         <div
-          className="relative w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl pointer-events-auto"
+          className="dialog-in relative w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl pointer-events-auto"
         >
           {/* Close button */}
           <button
             type="button"
             onClick={onClose}
-            className="absolute right-4 top-4 text-gray-500 hover:text-gray-600"
+            className="absolute right-4 top-4 text-gray-500 transition-[transform,color] duration-150 ease-out hover:text-gray-600 active:scale-[0.95]"
             aria-label="Close"
           >
             <svg
