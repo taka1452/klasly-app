@@ -43,7 +43,7 @@ export default function AdminHeader({
         type="button"
         aria-label="Open menu"
         onClick={onSidebarToggle ?? (() => {})}
-        className="rounded-lg p-2 text-slate-400 hover:bg-slate-700 hover:text-white md:hidden"
+        className="rounded-lg p-2 text-slate-400 transition-[transform,background-color,color] duration-150 ease-out hover:bg-slate-700 hover:text-white active:scale-[0.93] md:hidden"
       >
         <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
@@ -55,7 +55,7 @@ export default function AdminHeader({
           <button
             type="button"
             onClick={() => setLocale("ja")}
-            className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
+            className={`rounded px-2 py-1 text-xs font-medium transition-[color,background-color,transform] duration-150 ease-out active:scale-[0.95] ${
               locale === "ja" ? "bg-brand-600 text-white" : "text-slate-400 hover:text-white"
             }`}
             title="日本語"
@@ -65,7 +65,7 @@ export default function AdminHeader({
           <button
             type="button"
             onClick={() => setLocale("en")}
-            className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
+            className={`rounded px-2 py-1 text-xs font-medium transition-[color,background-color,transform] duration-150 ease-out active:scale-[0.95] ${
               locale === "en" ? "bg-brand-600 text-white" : "text-slate-400 hover:text-white"
             }`}
             title="English"
@@ -76,7 +76,7 @@ export default function AdminHeader({
 
         <Link
           href="/"
-          className="text-sm text-slate-400 hover:text-white"
+          className="text-sm text-slate-400 transition-colors duration-150 hover:text-white"
         >
           {t("header.backToApp")}
         </Link>
@@ -85,7 +85,7 @@ export default function AdminHeader({
           <button
             type="button"
             onClick={() => setMenuOpen(!menuOpen)}
-            className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-slate-300 hover:bg-slate-700 hover:text-white"
+            className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-slate-300 transition-[transform,background-color,color] duration-150 ease-out hover:bg-slate-700 hover:text-white active:scale-[0.97]"
           >
             <span className="hidden truncate max-w-[160px] sm:inline text-sm">
               {userEmail}
@@ -102,14 +102,14 @@ export default function AdminHeader({
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 mt-2 w-56 rounded-lg border border-slate-600 bg-slate-800 py-1 shadow-lg">
+            <div className="popover-in absolute right-0 mt-2 w-56 rounded-lg border border-slate-600 bg-slate-800 py-1 shadow-lg" style={{ ["--popover-origin" as string]: "top right" }}>
               <div className="border-b border-slate-600 px-4 py-3">
                 <p className="truncate text-sm text-slate-300">{userEmail}</p>
               </div>
               <button
                 type="button"
                 onClick={handleLogout}
-                className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-slate-700 hover:text-red-300"
+                className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-400 transition-colors duration-150 hover:bg-slate-700 hover:text-red-300"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />

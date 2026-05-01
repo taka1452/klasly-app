@@ -149,7 +149,7 @@ export default function AdminAnnouncementsPage() {
           <button
             type="submit"
             disabled={creating || roles.length === 0}
-            className="rounded bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-500 disabled:opacity-50"
+            className="rounded bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:bg-brand-500 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
           >
             {creating ? "Publishing..." : "Publish"}
           </button>
@@ -177,7 +177,7 @@ export default function AdminAnnouncementsPage() {
             </thead>
             <tbody>
               {announcements.map((a) => (
-                <tr key={a.id} className="border-b border-slate-700">
+                <tr key={a.id} className="border-b border-slate-700 transition-colors duration-150 ease-out hover:bg-slate-700/30">
                   <td className="p-2 text-white">{a.title}</td>
                   <td className="p-2 text-slate-300">
                     {(a.target_roles || []).join(", ")}
@@ -199,7 +199,7 @@ export default function AdminAnnouncementsPage() {
                   <td className="p-2">
                     <button
                       onClick={() => toggleActive(a.id, a.is_active)}
-                      className="rounded border border-slate-500 px-3 py-1 text-xs text-slate-300 hover:bg-slate-700"
+                      className="rounded border border-slate-500 px-3 py-1 text-xs text-slate-300 transition-[transform,background-color] duration-150 ease-out hover:bg-slate-700 active:scale-[0.95]"
                     >
                       {a.is_active ? "Deactivate" : "Activate"}
                     </button>

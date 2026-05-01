@@ -89,7 +89,7 @@ export default function AdminSidebar({
             key={item.href}
             href={item.href}
             onClick={onMobileClose}
-            className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+            className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-[color,background-color,transform] duration-150 ease-out active:scale-[0.97] ${
               isActive
                 ? "bg-brand-600 text-white"
                 : "text-slate-300 hover:bg-slate-700 hover:text-white"
@@ -107,8 +107,8 @@ export default function AdminSidebar({
     <>
       {/* Mobile overlay */}
       <div
-        className={`fixed inset-0 z-40 bg-black/50 md:hidden ${
-          isMobileOpen ? "block" : "hidden"
+        className={`fixed inset-0 z-40 bg-black/50 transition-opacity duration-200 ease-out md:hidden ${
+          isMobileOpen ? "block opacity-100" : "hidden opacity-0"
         }`}
         onClick={onMobileClose}
         aria-hidden
@@ -128,7 +128,7 @@ export default function AdminSidebar({
             type="button"
             aria-label="Close menu"
             onClick={onMobileClose}
-            className="rounded-lg p-2 text-slate-400 hover:bg-slate-700 hover:text-white md:hidden"
+            className="rounded-lg p-2 text-slate-400 transition-[transform,background-color,color] duration-150 ease-out hover:bg-slate-700 hover:text-white active:scale-[0.93] md:hidden"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -140,7 +140,7 @@ export default function AdminSidebar({
           <Link
             href="/"
             onClick={onMobileClose}
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-400 transition-colors hover:bg-slate-700 hover:text-white"
+            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-400 transition-[color,background-color,transform] duration-150 ease-out hover:bg-slate-700 hover:text-white active:scale-[0.97]"
           >
             <span className="shrink-0" aria-hidden>
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">

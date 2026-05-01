@@ -55,7 +55,7 @@ export default function AdminCouponsPageClient() {
         <button
           type="button"
           onClick={() => setShowCreateCoupon(true)}
-          className="rounded-lg border border-brand-500 bg-brand-500/20 px-4 py-2 text-sm font-medium text-brand-300 hover:bg-brand-500/30"
+          className="rounded-lg border border-brand-500 bg-brand-500/20 px-4 py-2 text-sm font-medium text-brand-300 transition-[transform,background-color] duration-150 ease-out hover:bg-brand-500/30 active:scale-[0.97]"
         >
           {t("coupons.createCoupon")}
         </button>
@@ -100,7 +100,7 @@ export default function AdminCouponsPageClient() {
                     <button
                       type="button"
                       onClick={() => setShowCreatePromo(showCreatePromo === c.id ? null : c.id)}
-                      className="rounded border border-slate-500 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700"
+                      className="rounded border border-slate-500 px-2 py-1 text-xs text-slate-300 transition-[transform,background-color] duration-150 ease-out hover:bg-slate-700 active:scale-[0.95]"
                     >
                       {t("coupons.addPromotionCode")}
                     </button>
@@ -196,7 +196,7 @@ function CouponStatusToggle({
       type="button"
       onClick={handleToggle}
       disabled={loading}
-      className="rounded border border-slate-500 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 disabled:opacity-50"
+      className="rounded border border-slate-500 px-2 py-1 text-xs text-slate-300 transition-[transform,background-color] duration-150 ease-out hover:bg-slate-700 active:scale-[0.95] disabled:opacity-50 disabled:active:scale-100"
     >
       Set {next}
     </button>
@@ -282,9 +282,9 @@ function CreateCouponForm({ onDone, onCancel }: { onDone: () => void; onCancel: 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onCancel}>
+    <div className="backdrop-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onCancel}>
       <div
-        className="w-full max-w-md rounded-lg border border-slate-600 bg-slate-800 p-6 shadow-xl"
+        className="dialog-in w-full max-w-md rounded-lg border border-slate-600 bg-slate-800 p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="text-lg font-medium text-white">{t("coupons.createCouponTitle")}</h3>
@@ -366,7 +366,7 @@ function CreateCouponForm({ onDone, onCancel }: { onDone: () => void; onCancel: 
             <button
               type="submit"
               disabled={loading}
-              className="rounded bg-brand-600 px-4 py-2 text-sm text-white hover:bg-brand-500 disabled:opacity-50"
+              className="rounded bg-brand-600 px-4 py-2 text-sm text-white transition-[transform,background-color] duration-150 ease-out hover:bg-brand-500 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
             >
               {loading ? "…" : t("coupons.addCode")}
             </button>

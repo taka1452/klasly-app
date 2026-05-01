@@ -93,7 +93,7 @@ export default function AdminStudiosList({ statusCounts }: { statusCounts: Statu
                 setStatus(s);
                 setPage(1);
               }}
-              className={`rounded px-3 py-1.5 text-sm font-medium capitalize ${
+              className={`rounded px-3 py-1.5 text-sm font-medium capitalize transition-[color,background-color,transform] duration-150 ease-out active:scale-[0.95] ${
                 status === s ? "bg-brand-600 text-white" : "text-slate-400 hover:text-white"
               }`}
             >
@@ -140,7 +140,7 @@ export default function AdminStudiosList({ statusCounts }: { statusCounts: Statu
                 return (
                   <tr
                     key={s.id}
-                    className={`border-b border-slate-700 ${
+                    className={`border-b border-slate-700 transition-colors duration-150 ease-out ${
                       s.is_demo
                         ? "bg-amber-900/10 hover:bg-amber-900/20"
                         : "hover:bg-slate-700/50"
@@ -148,7 +148,7 @@ export default function AdminStudiosList({ statusCounts }: { statusCounts: Statu
                   >
                     <td className="p-3">
                       <div className="flex items-center gap-2">
-                        <Link href={`/admin/studios/${s.id}`} className="font-medium text-white hover:text-brand-400">
+                        <Link href={`/admin/studios/${s.id}`} className="font-medium text-white transition-colors duration-150 hover:text-brand-400">
                           {s.name}
                         </Link>
                         {s.is_demo && (

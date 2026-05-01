@@ -80,7 +80,7 @@ export default function AdminBillingClient({
           href="https://dashboard.stripe.com"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 rounded-lg border border-brand-500 bg-brand-500/20 px-4 py-2 text-sm font-medium text-brand-300 hover:bg-brand-500/30"
+          className="inline-flex items-center gap-2 rounded-lg border border-brand-500 bg-brand-500/20 px-4 py-2 text-sm font-medium text-brand-300 transition-[transform,background-color] duration-150 ease-out hover:bg-brand-500/30 active:scale-[0.97]"
         >
           {t("billing.openStripeDashboard")} →
         </a>

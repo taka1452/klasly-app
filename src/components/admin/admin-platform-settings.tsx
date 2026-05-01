@@ -100,7 +100,7 @@ export default function AdminPlatformSettings({ className }: Props) {
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+            className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:bg-brand-700 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
           >
             {saving ? "Saving..." : "Save"}
           </button>

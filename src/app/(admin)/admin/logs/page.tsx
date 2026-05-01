@@ -84,19 +84,19 @@ export default async function AdminLogsPage({
       <div className="flex flex-wrap gap-2 border-b border-slate-700 pb-2">
         <Link
           href={tabLink("webhooks")}
-          className={`rounded px-3 py-1.5 text-sm font-medium ${currentTab === "webhooks" ? "bg-slate-600 text-white" : "text-slate-400 hover:bg-slate-700 hover:text-white"}`}
+          className={`rounded px-3 py-1.5 text-sm font-medium transition-[color,background-color] duration-150 ease-out ${currentTab === "webhooks" ? "bg-slate-600 text-white" : "text-slate-400 hover:bg-slate-700 hover:text-white"}`}
         >
           Webhooks
         </Link>
         <Link
           href={tabLink("cron")}
-          className={`rounded px-3 py-1.5 text-sm font-medium ${currentTab === "cron" ? "bg-slate-600 text-white" : "text-slate-400 hover:bg-slate-700 hover:text-white"}`}
+          className={`rounded px-3 py-1.5 text-sm font-medium transition-[color,background-color] duration-150 ease-out ${currentTab === "cron" ? "bg-slate-600 text-white" : "text-slate-400 hover:bg-slate-700 hover:text-white"}`}
         >
           Cron
         </Link>
         <Link
           href={tabLink("email")}
-          className={`rounded px-3 py-1.5 text-sm font-medium ${currentTab === "email" ? "bg-slate-600 text-white" : "text-slate-400 hover:bg-slate-700 hover:text-white"}`}
+          className={`rounded px-3 py-1.5 text-sm font-medium transition-[color,background-color] duration-150 ease-out ${currentTab === "email" ? "bg-slate-600 text-white" : "text-slate-400 hover:bg-slate-700 hover:text-white"}`}
         >
           Email
         </Link>

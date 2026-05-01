@@ -98,7 +98,7 @@ export default function AdminSupportList({
           />
         </div>
         <input type="hidden" name="page" value="1" />
-        <button type="submit" className="rounded bg-slate-600 px-3 py-1.5 text-sm text-white hover:bg-slate-500">
+        <button type="submit" className="rounded bg-slate-600 px-3 py-1.5 text-sm text-white transition-[transform,background-color] duration-150 ease-out hover:bg-slate-500 active:scale-[0.97]">
           {t("support.filter")}
         </button>
       </form>
@@ -125,7 +125,7 @@ export default function AdminSupportList({
                 </tr>
               ) : (
                 tickets.map((t) => (
-                  <tr key={t.id} className="border-b border-slate-700 hover:bg-slate-700/30">
+                  <tr key={t.id} className="border-b border-slate-700 transition-colors duration-150 ease-out hover:bg-slate-700/30">
                     <td className="p-3 font-mono text-slate-400">{t.ticket_number}</td>
                     <td className="p-3">
                       <Link href={`/admin/support/${t.id}`} className="text-white hover:underline">

@@ -120,7 +120,7 @@ export default function AdminDashboardClient({
               <li key={`${a.studioId}-${a.type}`}>
                 <Link
                   href={`/admin/studios/${a.studioId}`}
-                  className={`block rounded px-3 py-2 text-sm ${
+                  className={`block rounded px-3 py-2 text-sm transition-[transform,background-color] duration-150 ease-out active:scale-[0.99] ${
                     a.type === "past_due" || a.type === "grace"
                       ? "bg-red-900/50 text-red-200 hover:bg-red-900/70"
                       : a.type === "trial"

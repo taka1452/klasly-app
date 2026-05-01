@@ -112,7 +112,7 @@ export default function UserJourneyTable() {
               </thead>
               <tbody>
                 {users.map((u) => (
-                  <tr key={u.profileId} className="border-b border-slate-700/50 hover:bg-slate-700/30">
+                  <tr key={u.profileId} className="border-b border-slate-700/50 transition-colors duration-150 ease-out hover:bg-slate-700/30">
                     <td className="py-2.5 pr-4 text-slate-200">
                       {u.studioName ?? <span className="text-slate-500">—</span>}
                     </td>
@@ -137,7 +137,7 @@ export default function UserJourneyTable() {
                       {u.studioId && (
                         <Link
                           href={`/admin/studios/${u.studioId}`}
-                          className="text-xs text-brand-400 hover:text-brand-300"
+                          className="text-xs text-brand-400 transition-colors duration-150 hover:text-brand-300"
                         >
                           {t("dashboard.journey.view")}
                         </Link>
@@ -156,7 +156,7 @@ export default function UserJourneyTable() {
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page <= 1}
-                  className="rounded border border-slate-600 px-2 py-1 hover:bg-slate-700 disabled:opacity-40"
+                  className="rounded border border-slate-600 px-2 py-1 transition-[transform,background-color] duration-150 ease-out hover:bg-slate-700 active:scale-[0.95] disabled:opacity-40 disabled:active:scale-100"
                 >
                   ←
                 </button>
@@ -166,7 +166,7 @@ export default function UserJourneyTable() {
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page >= totalPages}
-                  className="rounded border border-slate-600 px-2 py-1 hover:bg-slate-700 disabled:opacity-40"
+                  className="rounded border border-slate-600 px-2 py-1 transition-[transform,background-color] duration-150 ease-out hover:bg-slate-700 active:scale-[0.95] disabled:opacity-40 disabled:active:scale-100"
                 >
                   →
                 </button>
