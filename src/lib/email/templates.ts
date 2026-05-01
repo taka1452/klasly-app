@@ -1588,3 +1588,35 @@ export function instructorBookingStaffNotice(params: {
     html: baseHtml(content),
   };
 }
+
+// ============================================================
+// Password Reset
+// ============================================================
+
+export function passwordReset(params: { resetUrl: string }) {
+  const { resetUrl } = params;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">Reset your password</h2>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      We received a request to reset your password. Click the button below to choose a new one:
+    </p>
+    <p style="margin:0 0 24px;">
+      <a href="${resetUrl}" style="display:inline-block;background:${BRAND_COLOR};color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;">
+        Reset Password
+      </a>
+    </p>
+    <p style="margin:0 0 8px;font-size:13px;color:#6b7280;">
+      Or copy and paste this link into your browser:
+    </p>
+    <p style="margin:0 0 16px;font-size:13px;color:${BRAND_COLOR};word-break:break-all;">
+      ${resetUrl}
+    </p>
+    <p style="margin:0;font-size:13px;color:#6b7280;">
+      This link expires in 1 hour. If you didn't request a password reset, you can safely ignore this email.
+    </p>
+  `;
+  return {
+    subject: "Reset your password — Klasly",
+    html: baseHtml(content),
+  };
+}
