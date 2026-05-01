@@ -35,6 +35,75 @@ function resolveValue(
   return isColumn ? getCell(row, mappingValue) : mappingValue;
 }
 
+/**
+ * Accept a wide range of date inputs (YYYY-MM-DD, MM/DD/YYYY, DD/MM/YYYY,
+ * "Apr 15, 1992") and normalise to ISO YYYY-MM-DD or null. Returning null
+ * on unparseable input is intentional — date_of_birth is optional during
+ * import even though required on the manual form.
+ *
+ * Two pitfalls this guards against:
+ * - Slash dates with a first segment > 12 (e.g. "15/4/1992") are
+ *   unambiguously DD/MM/YYYY. We swap segments instead of producing a
+ *   bogus "month=15" date.
+ * - Human-readable strings ("Apr 15, 1992") parse via the local-time JS
+ *   Date constructor; calling toISOString() in a negative-offset
+ *   timezone (US/Pacific etc.) shifts the date back by one day. We pull
+ *   year/month/day from the local-time fields instead.
+ */
+function normaliseDate(raw: string): string | null {
+  const v = raw.trim();
+  if (!v) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  const slash = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(v);
+  if (slash) {
+    let [, a, b, yyyy] = slash;
+    let mm: string;
+    let dd: string;
+    if (Number(a) > 12 && Number(b) <= 12) {
+      // First segment can't be a month — interpret as DD/MM/YYYY
+      dd = a;
+      mm = b;
+    } else {
+      // Default to MM/DD/YYYY (US convention dominates Mindbody / Zen
+      // Planner exports). Ambiguous values like 4/5/1992 still parse as
+      // April 5; users with EU-formatted data can pre-format to ISO.
+      mm = a;
+      dd = b;
+    }
+    if (Number(mm) < 1 || Number(mm) > 12 || Number(dd) < 1 || Number(dd) > 31) {
+      return null;
+    }
+    return `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
+  }
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return null;
+  // Use local-time fields, not toISOString(), so a date like
+  // "Apr 15, 1992" parsed in US/Pacific stays April 15 instead of
+  // becoming April 14 after UTC conversion.
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function normaliseGender(raw: string): string | null {
+  const v = raw.trim().toLowerCase();
+  if (!v) return null;
+  if (v === "f" || v === "female" || v === "woman") return "female";
+  if (v === "m" || v === "male" || v === "man") return "male";
+  if (
+    v === "prefer not to say" ||
+    v === "prefer_not_to_say" ||
+    v === "n/a" ||
+    v === "other" ||
+    v === "non-binary" ||
+    v === "nonbinary"
+  ) {
+    return "prefer_not_to_say";
+  }
+  return null;
+}
+
 export async function POST(request: Request) {
   try {
     const serverSupabase = await createServerClient();
@@ -141,11 +210,27 @@ export async function POST(request: Request) {
     const errors: RowResult[] = [];
     let imported = 0;
 
+    // Pre-flight plan-limit check. We reject the entire import up-front when
+    // the studio doesn't have enough headroom for the row count, instead of
+    // letting the first ~N succeed and the rest fail mid-flight.
     const limitCheck = await checkPlanLimit(adminSupabase, studioId);
     if (!limitCheck.allowed) {
       return NextResponse.json(
         {
           error: `Member limit reached. Your plan allows ${limitCheck.limit} members.`,
+        },
+        { status: 403 }
+      );
+    }
+    if (
+      typeof limitCheck.limit === "number" &&
+      typeof limitCheck.currentCount === "number" &&
+      limitCheck.currentCount + records.length > limitCheck.limit
+    ) {
+      const headroom = Math.max(0, limitCheck.limit - limitCheck.currentCount);
+      return NextResponse.json(
+        {
+          error: `This CSV has ${records.length} rows but your plan only has room for ${headroom} more members (limit: ${limitCheck.limit}). Upgrade or split the import.`,
         },
         { status: 403 }
       );
@@ -214,6 +299,24 @@ export async function POST(request: Request) {
       const phone = resolveValue(row, mapping.phone, columns) || null;
       const notes = resolveValue(row, mapping.notes, columns) || null;
 
+      // Demographics added 2026-04-30 (Jamie feedback). Phone/DOB/gender
+      // are required for manual member adds but kept optional during
+      // import so legacy data without them still flows through.
+      const dobRaw = resolveValue(row, mapping.date_of_birth, columns);
+      const dateOfBirth = normaliseDate(dobRaw);
+      const genderRaw = resolveValue(row, mapping.gender, columns);
+      const gender = normaliseGender(genderRaw);
+      const address = resolveValue(row, mapping.address, columns) || null;
+      const referredBy = resolveValue(row, mapping.referred_by, columns) || null;
+      const isMinorRaw = resolveValue(row, mapping.is_minor, columns);
+      const guardianEmail = resolveValue(row, mapping.guardian_email, columns) || null;
+      // Treat the column as a boolean only when it's clearly truthy. We do
+      // not auto-derive `is_minor` from DOB here — that's a calculated
+      // field on the manual form and CSV importers may already have their
+      // own age logic.
+      const isMinor =
+        /^(1|true|yes|y)$/i.test(isMinorRaw.trim()) || Boolean(guardianEmail);
+
       const profileId = randomUUID();
 
       const { error: profileError } = await adminSupabase.from("profiles").insert({
@@ -239,6 +342,12 @@ export async function POST(request: Request) {
         credits: creditsValue,
         status,
         notes: notes || null,
+        date_of_birth: dateOfBirth,
+        gender,
+        address,
+        referred_by: referredBy,
+        is_minor: isMinor,
+        guardian_email: isMinor ? guardianEmail : null,
       });
 
       if (memberError) {

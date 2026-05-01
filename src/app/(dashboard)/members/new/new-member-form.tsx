@@ -16,9 +16,15 @@ export default function NewMemberForm() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [planType, setPlanType] = useState("drop_in");
-  const [credits, setCredits] = useState(0);
+  // Jamie feedback 2026-04-30: removed the Plan Type picker from the Add
+  // Member form — most studios end up with members on multiple plan types,
+  // so this initial pick was misleading. New members default to a drop-in
+  // plan with zero credits; admins can change it from the member detail
+  // page once a real plan is purchased.
   const [dateOfBirth, setDateOfBirth] = useState("");
+  const [gender, setGender] = useState<"" | "female" | "male" | "prefer_not_to_say">("");
+  const [address, setAddress] = useState("");
+  const [referredBy, setReferredBy] = useState("");
   const [isMinor, setIsMinor] = useState(false);
   const [guardianEmail, setGuardianEmail] = useState("");
   const [error, setError] = useState("");
@@ -71,9 +77,14 @@ export default function NewMemberForm() {
         fullName,
         email,
         phone,
-        planType,
-        credits: planType === "monthly" ? -1 : credits,
-        dateOfBirth: dateOfBirth || null,
+        // New members always start on drop-in / 0 credits; the admin (or
+        // member) upgrades from their detail page once a plan is purchased.
+        planType: "drop_in",
+        credits: 0,
+        dateOfBirth,
+        gender,
+        address: address.trim() || null,
+        referredBy: referredBy.trim() || null,
         isMinor,
         guardianEmail: isMinor ? guardianEmail : null,
       }),
@@ -156,70 +167,79 @@ export default function NewMemberForm() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Phone (optional)
+              Phone *
             </label>
             <input
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+1 (555) 123-4567"
+              required
               className="input-field mt-1"
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Plan type *
-              <HelpTip
-                text="This is the initial plan. Members can purchase different plans from their dashboard."
-                helpSlug="payments"
-              />
-            </label>
-            <select
-              value={planType}
-              onChange={(e) => {
-                setPlanType(e.target.value);
-                if (e.target.value === "monthly") setCredits(-1);
-                else setCredits(0);
-              }}
-              className="input-field mt-1"
-            >
-              <option value="drop_in">Drop-in</option>
-              <option value="pack">Class Pack</option>
-              <option value="monthly">Monthly (Unlimited)</option>
-            </select>
-            <p className="mt-1 text-xs text-gray-500">
-              Changeable. This is only the initial state. Actual charges and purchases use Products &amp; Pricing.
-            </p>
-          </div>
-
-          {planType === "pack" && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Number of credits *
-              </label>
-              <input
-                type="number"
-                value={credits}
-                onChange={(e) => setCredits(parseInt(e.target.value) || 0)}
-                min={1}
-                placeholder="10"
-                required
-                className="input-field mt-1"
-              />
-            </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Date of Birth (optional)
+              Date of Birth *
             </label>
             <input
               type="date"
               value={dateOfBirth}
               onChange={(e) => handleDateOfBirthChange(e.target.value)}
+              required
               className="input-field mt-1"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Gender *
+            </label>
+            <select
+              value={gender}
+              onChange={(e) =>
+                setGender(e.target.value as "" | "female" | "male" | "prefer_not_to_say")
+              }
+              required
+              className="input-field mt-1"
+            >
+              <option value="" disabled>
+                Select…
+              </option>
+              <option value="female">Female</option>
+              <option value="male">Male</option>
+              <option value="prefer_not_to_say">Prefer not to say</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Address (optional)
+            </label>
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Street, city, ZIP"
+              className="input-field mt-1"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Referred by (optional)
+            </label>
+            <input
+              type="text"
+              value={referredBy}
+              onChange={(e) => setReferredBy(e.target.value)}
+              placeholder="A friend, Instagram, walk-in, etc."
+              className="input-field mt-1"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Where the member heard about your studio.
+            </p>
           </div>
 
           <div className="flex items-center gap-3">

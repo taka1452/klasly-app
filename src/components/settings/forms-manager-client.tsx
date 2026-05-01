@@ -8,6 +8,7 @@ import {
   FORM_TYPE_LABEL,
 } from "@/lib/forms/types";
 import FormBuilderModal from "@/components/settings/form-builder-modal";
+import SendForSigningModal from "@/components/contracts/send-for-signing-modal";
 
 type FormRow = CustomForm & { submission_count: number };
 
@@ -19,6 +20,7 @@ export default function FormsManagerClient() {
   const [editing, setEditing] = useState<FormRow | null>(null);
   const [creating, setCreating] = useState<FormType | null>(null);
   const [showSubmissionsFor, setShowSubmissionsFor] = useState<FormRow | null>(null);
+  const [sendingForSigningFor, setSendingForSigningFor] = useState<FormRow | null>(null);
 
   const fetchForms = useCallback(async () => {
     setLoading(true);
@@ -219,6 +221,15 @@ export default function FormsManagerClient() {
                 >
                   Submissions ({f.submission_count})
                 </button>
+                {f.form_type === "contract" && (
+                  <button
+                    type="button"
+                    onClick={() => setSendingForSigningFor(f)}
+                    className="rounded-lg border border-brand-200 bg-brand-50 px-2 py-1 text-xs font-medium text-brand-700 transition-[transform,background-color] duration-150 ease-out hover:bg-brand-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 active:scale-[0.97]"
+                  >
+                    Send for signing
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => toggleActive(f)}
@@ -293,6 +304,14 @@ export default function FormsManagerClient() {
         <SubmissionsModal
           form={showSubmissionsFor}
           onClose={() => setShowSubmissionsFor(null)}
+        />
+      )}
+
+      {/* Multi-signer envelope creation */}
+      {sendingForSigningFor && (
+        <SendForSigningModal
+          form={sendingForSigningFor}
+          onClose={() => setSendingForSigningFor(null)}
         />
       )}
     </div>

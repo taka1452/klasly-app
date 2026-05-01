@@ -92,6 +92,8 @@ export async function GET(request: NextRequest) {
       price_cents: number | null;
       location: string | null;
       recurrence_group_id: string | null;
+      cancelled_by_role: string | null;
+      hours_returned: boolean | null;
       class_templates?: {
         name?: string;
         duration_minutes?: number;
@@ -115,6 +117,7 @@ export async function GET(request: NextRequest) {
         session_date, start_time, end_time, duration_minutes,
         capacity, is_cancelled, cancellation_reason, is_online, online_link,
         title, session_type, price_cents, location, recurrence_group_id,
+        cancelled_by_role, hours_returned,
         class_templates (
           name, duration_minutes, location, is_public, price_cents, online_link, class_type
         ),
@@ -205,12 +208,14 @@ export async function GET(request: NextRequest) {
         class_id: s.template_id ?? s.id, // backward compat: template_id for classes, id for room_only
         session_date: s.session_date,
         start_time: s.start_time,
+        end_time: s.end_time ?? null,
         capacity: s.capacity,
         is_cancelled: s.is_cancelled,
         cancellation_reason: (s as { cancellation_reason?: string | null }).cancellation_reason ?? null,
         class_name: isRoomOnly
           ? s.title || "Room Booking"
           : template?.name ?? s.title ?? "Class",
+        title: s.title ?? null,
         duration_minutes: durationMinutes,
         instructor_id: s.instructor_id ?? null,
         instructor_name: instructorName,
@@ -222,6 +227,9 @@ export async function GET(request: NextRequest) {
           ? ("room_booking" as const)
           : ("class" as const),
         price_cents: s.price_cents ?? template?.price_cents ?? null,
+        recurrence_group_id: s.recurrence_group_id ?? null,
+        cancelled_by_role: s.cancelled_by_role ?? null,
+        hours_returned: s.hours_returned ?? null,
       };
     });
 

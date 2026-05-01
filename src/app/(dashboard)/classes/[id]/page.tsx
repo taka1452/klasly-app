@@ -1,6 +1,7 @@
 import Link from "next/link";
 import TemplateForm from "@/components/classes/template-form";
 import UpcomingSessions from "@/components/classes/upcoming-sessions";
+import TemplateHistory from "@/components/classes/template-history";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -30,6 +31,7 @@ export default async function EditClassTemplatePage({
 
       <TemplateForm templateId={id} />
       <UpcomingSessions templateId={id} />
+      <TemplateHistory templateId={id} />
     </div>
   );
 }

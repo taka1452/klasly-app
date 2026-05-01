@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useCallback, useState } from "react";
 import TourOverlay from "./TourOverlay";
+import { useViewerPermissions } from "@/lib/auth/viewer-context";
 
 type TourContextValue = {
   restartTour: () => void;
@@ -37,9 +38,17 @@ export default function TourProvider({
     setForceStart(true);
   }, []);
 
-  const showTour =
-    (role === "owner" || role === "instructor" || role === "member") &&
-    (!onboardingCompleted || forceStart);
+  // Managers respect the per-user Tutorial toggle on the Managers page; the
+  // default for that column is true so newly-invited managers see the tour
+  // unless an owner explicitly turns it off.
+  const { canShowTutorial } = useViewerPermissions();
+  const roleAllowsTour =
+    role === "owner" ||
+    role === "instructor" ||
+    role === "member" ||
+    (role === "manager" && canShowTutorial);
+
+  const showTour = roleAllowsTour && (!onboardingCompleted || forceStart);
 
   return (
     <TourContext.Provider value={{ restartTour }}>

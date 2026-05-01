@@ -229,6 +229,201 @@ export function sessionInstructorChanged(params: {
   };
 }
 
+/**
+ * Session has been rescheduled (date or time changed) — let confirmed
+ * members know so they can adjust their plans. Single-session granularity:
+ * if a series-wide change is made, the caller fans this out per session.
+ *
+ * Jamie feedback 2026-04-30: "when we make those changes, can we have
+ * an option to notify any bookings of the change/cancellation?"
+ */
+export function sessionRescheduled(params: {
+  memberName: string;
+  className: string;
+  oldDate: string;
+  oldStartTime: string;
+  newDate: string;
+  newStartTime: string;
+  newEndTime?: string | null;
+  studioName: string;
+}) {
+  const {
+    memberName,
+    className,
+    oldDate,
+    oldStartTime,
+    newDate,
+    newStartTime,
+    newEndTime,
+    studioName,
+  } = params;
+  const newWhen = `${newDate} · ${newStartTime}${newEndTime ? `–${newEndTime}` : ""}`;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">Class rescheduled</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${memberName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      Your booking is still confirmed — but the date or time for this session has changed.
+    </p>
+    <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-weight:600;color:${BRAND_COLOR};">${className}</p>
+      <p style="margin:8px 0 0;font-size:14px;color:#6b7280;text-decoration:line-through;">
+        Was: ${oldDate} · ${oldStartTime}
+      </p>
+      <p style="margin:4px 0 0;font-size:14px;font-weight:600;color:#111827;">
+        Now: ${newWhen}
+      </p>
+      <p style="margin:8px 0 0;font-size:13px;color:#6b7280;">${studioName}</p>
+    </div>
+    <p style="margin:0;font-size:14px;">If the new time doesn't work, you can cancel your booking anytime from your account.</p>
+  `;
+  return {
+    subject: `Class rescheduled — ${className}`,
+    html: baseHtml(content),
+  };
+}
+
+/**
+ * Session has been cancelled by the studio. Used by the schedule edit
+ * flow to optionally email confirmed bookers (default ON, owner can
+ * suppress for silent fixes). Distinct from `bookingCancelled` which is
+ * triggered when a single member cancels their own booking.
+ */
+export function sessionCancelledNotice(params: {
+  memberName: string;
+  className: string;
+  sessionDate: string;
+  startTime: string;
+  studioName: string;
+  reason?: string | null;
+  refundedCredits?: number | null;
+}) {
+  const {
+    memberName,
+    className,
+    sessionDate,
+    startTime,
+    studioName,
+    reason,
+    refundedCredits,
+  } = params;
+  const reasonLine = reason
+    ? `<p style="margin:8px 0 0;font-size:14px;color:#6b7280;">Reason: ${reason}</p>`
+    : "";
+  const refundLine =
+    typeof refundedCredits === "number" && refundedCredits > 0
+      ? `<p style="margin:8px 0 0;font-size:14px;color:#16a34a;">${refundedCredits} credit${refundedCredits === 1 ? "" : "s"} refunded to your account.</p>`
+      : "";
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">Class cancelled</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${memberName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      We're sorry — the studio has cancelled this session. Your booking has been removed.
+    </p>
+    <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-weight:600;color:${BRAND_COLOR};">${className}</p>
+      <p style="margin:8px 0 0;font-size:14px;">${sessionDate} · ${startTime}</p>
+      <p style="margin:4px 0 0;font-size:14px;color:#6b7280;">${studioName}</p>
+      ${reasonLine}
+      ${refundLine}
+    </div>
+    <p style="margin:0;font-size:14px;">Browse the schedule to book another class anytime.</p>
+  `;
+  return {
+    subject: `Class cancelled — ${className}`,
+    html: baseHtml(content),
+  };
+}
+
+/**
+ * "It's your turn to sign" email — sent to a signer when the previous
+ * signer in a contract envelope completes their signature, or to the
+ * very first signer when the envelope is created.
+ *
+ * Jamie feedback 2026-04-30: ordered multi-signature contracts (Jotform-
+ * style). The signLink carries a single-use token tied to one signer.
+ */
+export function contractSignRequest(params: {
+  signerName: string;
+  studioName: string;
+  contractTitle: string;
+  roleLabel?: string | null;
+  signLink: string;
+  totalSigners: number;
+  signOrder: number;
+}) {
+  const {
+    signerName,
+    studioName,
+    contractTitle,
+    roleLabel,
+    signLink,
+    totalSigners,
+    signOrder,
+  } = params;
+  const positionLine =
+    totalSigners > 1
+      ? `You're signer <strong>${signOrder} of ${totalSigners}</strong>${roleLabel ? ` (${roleLabel})` : ""}.`
+      : roleLabel
+        ? `You're signing as <strong>${roleLabel}</strong>.`
+        : "";
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">Action needed: sign ${contractTitle}</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${signerName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      ${studioName} has sent you a contract to review and sign.
+      ${positionLine}
+    </p>
+    <div style="margin:24px 0;text-align:center;">
+      <a href="${signLink}"
+         style="display:inline-block;padding:12px 24px;background:${BRAND_COLOR};color:#fff;border-radius:8px;font-size:15px;font-weight:600;text-decoration:none;">
+        Review &amp; sign
+      </a>
+    </div>
+    <p style="margin:0;font-size:13px;color:#6b7280;">
+      This link is unique to you. If you weren't expecting this, you can ignore the email.
+    </p>
+  `;
+  return {
+    subject: `Sign ${contractTitle} — ${studioName}`,
+    html: baseHtml(content),
+  };
+}
+
+/**
+ * "All signers have signed" email — sent to the studio admin who
+ * created the envelope once the last signer completes. Includes a
+ * link back to the envelope detail page so they can download/view the
+ * signed contract.
+ */
+export function contractSignComplete(params: {
+  adminName: string;
+  studioName: string;
+  contractTitle: string;
+  signerCount: number;
+  envelopeUrl: string;
+}) {
+  const { adminName, studioName, contractTitle, signerCount, envelopeUrl } = params;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">${contractTitle} — fully signed</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${adminName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      All ${signerCount} signer${signerCount === 1 ? "" : "s"} on the
+      <strong>${contractTitle}</strong> contract have signed. The envelope
+      is now sealed and accessible from ${studioName}'s dashboard.
+    </p>
+    <div style="margin:24px 0;text-align:center;">
+      <a href="${envelopeUrl}"
+         style="display:inline-block;padding:10px 20px;background:${BRAND_COLOR};color:#fff;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;">
+        View signed contract
+      </a>
+    </div>
+  `;
+  return {
+    subject: `${contractTitle} signed — ${studioName}`,
+    html: baseHtml(content),
+  };
+}
+
 export function bookingCancelled(params: BookingParams) {
   const { memberName, className, sessionDate, startTime, studioName } = params;
   const content = `

@@ -147,8 +147,11 @@ export default async function PassesPage() {
         </div>
       </div>
 
-      {/* Stats Overview */}
-      {passes && passes.length > 0 && (
+      {/* Stats Overview — financial summary is gated on the Payments
+          permission so a Settings-only manager (e.g. a yoga teacher who
+          only configures the studio side) doesn't see MRR / subscriber
+          counts. The pass list itself is still visible. */}
+      {passes && passes.length > 0 && (ctx.role === "owner" || ctx.permissions?.can_view_payments) && (
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="stats-stagger card" style={{ animationDelay: "0ms" }}>
             <p className="text-sm font-medium text-gray-500">Active Subscribers</p>

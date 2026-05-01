@@ -19,11 +19,39 @@ export async function POST(request: Request) {
     const adminSupabase = ctx.supabase;
 
     const body = await request.json();
-    const { fullName, email, phone, planType, credits, dateOfBirth, isMinor, guardianEmail } = body;
+    const {
+      fullName,
+      email,
+      phone,
+      planType,
+      credits,
+      dateOfBirth,
+      isMinor,
+      guardianEmail,
+      gender,
+      address,
+      referredBy,
+    } = body;
 
+    // Jamie feedback 2026-04-30: phone, birthdate and gender are now required
+    // intake fields. We still accept (and surface) the existing required
+    // fields plus the new ones.
+    const VALID_GENDERS = ["female", "male", "prefer_not_to_say"] as const;
     if (!fullName || !email) {
       return NextResponse.json(
         { error: "Missing required fields: fullName, email" },
+        { status: 400 }
+      );
+    }
+    if (!phone || typeof phone !== "string" || phone.trim() === "") {
+      return NextResponse.json({ error: "Phone number is required" }, { status: 400 });
+    }
+    if (!dateOfBirth) {
+      return NextResponse.json({ error: "Date of birth is required" }, { status: 400 });
+    }
+    if (!gender || !VALID_GENDERS.includes(gender)) {
+      return NextResponse.json(
+        { error: "Gender is required (female, male, or prefer_not_to_say)" },
         { status: 400 }
       );
     }
@@ -104,6 +132,10 @@ export async function POST(request: Request) {
         is_minor: isMinor || false,
         date_of_birth: dateOfBirth || null,
         guardian_email: isMinor ? (guardianEmail || null) : null,
+        gender,
+        address: typeof address === "string" && address.trim() !== "" ? address.trim() : null,
+        referred_by:
+          typeof referredBy === "string" && referredBy.trim() !== "" ? referredBy.trim() : null,
       })
       .select("id")
       .single();

@@ -138,6 +138,12 @@ export type Manager = {
   can_view_payments: boolean;
   can_send_messages: boolean;
   can_teach: boolean;
+  // Added 2026-04: granular toggles introduced in 20260426121557
+  can_manage_settings: boolean;
+  can_manage_class_pricing: boolean;
+  can_manage_contracts_tiers: boolean;
+  can_show_tutorial: boolean;
+  can_export_data: boolean;
   created_at: string;
 };
 

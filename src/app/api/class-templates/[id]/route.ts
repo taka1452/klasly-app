@@ -1,8 +1,105 @@
 import { getDashboardContext } from "@/lib/auth/dashboard-access";
 import { getInstructorContext } from "@/lib/auth/instructor-access";
 import { NextResponse } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { logClassAudit } from "@/lib/audit/class-audit";
 
 type RouteContext = { params: Promise<{ id: string }> };
+
+/**
+ * Diff the template's audit-relevant fields and write one history row
+ * per material change. Centralised so the dashboard PUT and the
+ * (separate) instructor PUT below stay consistent — and so adding new
+ * audited fields later only takes one edit.
+ */
+async function logTemplateAudits(
+  supabase: SupabaseClient,
+  args: {
+    studioId: string;
+    templateId: string;
+    actorProfileId: string;
+    actorRole: string;
+    before: Record<string, unknown>;
+    after: Record<string, unknown>;
+  }
+): Promise<void> {
+  const base = {
+    studioId: args.studioId,
+    templateId: args.templateId,
+    sessionId: null,
+    actorProfileId: args.actorProfileId,
+    actorRole: args.actorRole,
+  };
+
+  const changed = (key: string) =>
+    Object.prototype.hasOwnProperty.call(args.after, key) &&
+    args.after[key] !== args.before[key];
+
+  if (changed("duration_minutes")) {
+    await logClassAudit(supabase, {
+      ...base,
+      changeType: "template_duration_changed",
+      before: { duration_minutes: args.before.duration_minutes },
+      after: { duration_minutes: args.after.duration_minutes },
+      summary: `Duration ${args.before.duration_minutes ?? "—"} min → ${args.after.duration_minutes ?? "—"} min`,
+    });
+  }
+  if (changed("capacity")) {
+    await logClassAudit(supabase, {
+      ...base,
+      changeType: "template_capacity_changed",
+      before: { capacity: args.before.capacity },
+      after: { capacity: args.after.capacity },
+      summary: `Capacity ${args.before.capacity ?? "—"} → ${args.after.capacity ?? "—"}`,
+    });
+  }
+  if (changed("price_cents")) {
+    const fmt = (c: unknown) =>
+      typeof c === "number" ? `$${(c / 100).toFixed(2)}` : "—";
+    await logClassAudit(supabase, {
+      ...base,
+      changeType: "template_price_changed",
+      before: { price_cents: args.before.price_cents },
+      after: { price_cents: args.after.price_cents },
+      summary: `Price ${fmt(args.before.price_cents)} → ${fmt(args.after.price_cents)}`,
+    });
+  }
+  if (changed("instructor_id")) {
+    await logClassAudit(supabase, {
+      ...base,
+      changeType: "template_instructor_changed",
+      before: { instructor_id: args.before.instructor_id },
+      after: { instructor_id: args.after.instructor_id },
+      summary: "Default instructor changed",
+    });
+  }
+
+  // Catch-all for anything else (name, description, public flag, etc.)
+  // so the timeline reflects every save without listing micro-fields.
+  const otherChangedKeys = Object.keys(args.after).filter(
+    (k) =>
+      !["duration_minutes", "capacity", "price_cents", "instructor_id"].includes(k) &&
+      args.after[k] !== args.before[k]
+  );
+  if (otherChangedKeys.length > 0) {
+    await logClassAudit(supabase, {
+      ...base,
+      changeType: "template_updated",
+      before: pickKeys(args.before, otherChangedKeys),
+      after: pickKeys(args.after, otherChangedKeys),
+      summary: `Updated ${otherChangedKeys.join(", ")}`,
+    });
+  }
+}
+
+function pickKeys(
+  src: Record<string, unknown>,
+  keys: string[]
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const k of keys) out[k] = src[k];
+  return out;
+}
 
 /**
  * GET /api/class-templates/[id]
@@ -145,10 +242,13 @@ export async function PUT(request: Request, context: RouteContext) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
 
-      // Verify template belongs to this studio
+      // Verify template belongs to this studio. Pull the audit-relevant
+      // columns at the same time so we can diff after the update.
       const { data: existing } = await dashCtx.supabase
         .from("class_templates")
-        .select("id")
+        .select(
+          "id, name, duration_minutes, capacity, price_cents, instructor_id, room_id, class_type"
+        )
         .eq("id", id)
         .eq("studio_id", dashCtx.studioId)
         .single();
@@ -199,6 +299,19 @@ export async function PUT(request: Request, context: RouteContext) {
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
+
+      // Audit log per material change. Description / location / online_link
+      // / public-flag / special_instructions are not audited individually
+      // — they don't affect contracted hours, and a generic
+      // "template_updated" entry covers them.
+      await logTemplateAudits(dashCtx.supabase, {
+        studioId: dashCtx.studioId,
+        templateId: id,
+        actorProfileId: dashCtx.userId,
+        actorRole: dashCtx.role,
+        before: existing as Record<string, unknown>,
+        after: updates,
+      });
 
       return NextResponse.json(data);
     }

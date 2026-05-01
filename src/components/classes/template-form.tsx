@@ -8,6 +8,7 @@ import MarkdownEditor from "@/components/ui/markdown-editor";
 import { CalendarPlus, CheckCircle } from "lucide-react";
 import { useFeature } from "@/lib/features/feature-context";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
+import { useViewerPermissions } from "@/lib/auth/viewer-context";
 
 type InstructorOption = { id: string; full_name: string; isMe?: boolean };
 type RoomOption = { id: string; name: string };
@@ -45,6 +46,11 @@ export default function TemplateForm({ templateId, duplicateData }: Props) {
   const router = useRouter();
   const { isEnabled } = useFeature();
   const onlineEnabled = isEnabled(FEATURE_KEYS.ONLINE_CLASSES);
+  // Owners always edit price; managers need either the broad Classes
+  // permission or the more granular Class Pricing toggle. (Jamie feedback
+  // 2026-04-30: Sarah enabled Class Pricing for me but I still don't see
+  // the price field show up.)
+  const { canManageClassPricing } = useViewerPermissions();
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -518,29 +524,31 @@ export default function TemplateForm({ templateId, duplicateData }: Props) {
           </div>
         </div>
 
-        {/* Price */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Price (USD)
-          </label>
-          <div className="relative mt-1">
-            <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-              $
-            </span>
-            <input
-              type="number"
-              value={priceDollars}
-              onChange={(e) => setPriceDollars(e.target.value)}
-              placeholder="0.00"
-              min="0"
-              step="0.01"
-              className="input-field pl-7"
-            />
+        {/* Price (gated on Class Pricing permission for managers) */}
+        {canManageClassPricing && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Price (USD)
+            </label>
+            <div className="relative mt-1">
+              <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                $
+              </span>
+              <input
+                type="number"
+                value={priceDollars}
+                onChange={(e) => setPriceDollars(e.target.value)}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+                className="input-field pl-7"
+              />
+            </div>
+            <p className="mt-1 text-xs text-gray-500">
+              Leave blank for free or studio pricing.
+            </p>
           </div>
-          <p className="mt-1 text-xs text-gray-500">
-            Leave blank for free or studio pricing.
-          </p>
-        </div>
+        )}
 
         {/* Room (in-person/hybrid) */}
         {classType !== "online" && (

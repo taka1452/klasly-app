@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { X } from "lucide-react";
 
 type Session = {
   id: string;
@@ -87,6 +88,12 @@ export default function SessionEditModal({ session, onClose, onSaved }: Props) {
   const seriesScope = scope !== "single";
   const instructorChanged =
     (instructorId || null) !== (session.instructor_id ?? null);
+  const timeChanged =
+    startTime !== session.start_time.slice(0, 5);
+  // Members-visible change = anything they'd notice on their booking. The
+  // toggle below only renders for one of these so silent edits (title,
+  // end-time-only) don't bother members.
+  const memberVisibleChange = dateChanged || timeChanged || instructorChanged;
 
   useEffect(() => {
     const start = session.start_time.slice(0, 5);
@@ -189,11 +196,12 @@ export default function SessionEditModal({ session, onClose, onSaved }: Props) {
         // Only send instructor_id when it actually changed so the API doesn't
         // re-write the column unnecessarily on every save.
         ...(instructorChanged
-          ? {
-              instructor_id: normalisedInstructorId,
-              notify_members: notifyMembers,
-            }
+          ? { instructor_id: normalisedInstructorId }
           : {}),
+        // Caller-visible notification opt-in/out applies to instructor /
+        // time / date changes alike. The API ignores it for end-time-only
+        // edits because those don't fire a member email anyway.
+        notify_members: memberVisibleChange ? notifyMembers : false,
         scope,
       }),
     });
@@ -242,10 +250,10 @@ export default function SessionEditModal({ session, onClose, onSaved }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="text-gray-400 transition-colors duration-150 hover:text-gray-600"
+            className="-m-2 rounded-md p-2 text-gray-400 transition-[color,transform] duration-150 ease-out hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/20 active:scale-[0.97]"
             aria-label="Close"
           >
-            ×
+            <X className="h-4 w-4" aria-hidden />
           </button>
         </div>
 
@@ -311,23 +319,10 @@ export default function SessionEditModal({ session, onClose, onSaved }: Props) {
               ))}
             </select>
             {instructorChanged && (
-              <div className="mt-1 space-y-1.5">
-                <p className="text-[11px] text-brand-700">
-                  Substituting instructor.
-                  {seriesScope ? " Applies to the chosen scope." : ""}
-                </p>
-                <label className="flex items-start gap-2 text-[11px] text-gray-700">
-                  <input
-                    type="checkbox"
-                    checked={notifyMembers}
-                    onChange={(e) => setNotifyMembers(e.target.checked)}
-                    className="mt-0.5"
-                  />
-                  <span>
-                    Email confirmed members about the change.
-                  </span>
-                </label>
-              </div>
+              <p className="mt-1 text-[11px] text-brand-700">
+                Substituting instructor.
+                {seriesScope ? " Applies to the chosen scope." : ""}
+              </p>
             )}
           </div>
 
@@ -382,6 +377,26 @@ export default function SessionEditModal({ session, onClose, onSaved }: Props) {
                 </p>
               )}
             </fieldset>
+          )}
+
+          {memberVisibleChange && (
+            <label className="flex items-start gap-2 rounded-md bg-gray-50 px-2.5 py-2 text-xs text-gray-700">
+              <input
+                type="checkbox"
+                checked={notifyMembers}
+                onChange={(e) => setNotifyMembers(e.target.checked)}
+                className="mt-0.5 h-4 w-4 accent-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/20"
+              />
+              <span>
+                Email confirmed members about{" "}
+                {instructorChanged
+                  ? "the instructor change"
+                  : dateChanged
+                    ? "the new date"
+                    : "the new time"}
+                . Uncheck for silent fixes.
+              </span>
+            </label>
           )}
 
           <div className="flex justify-end gap-2 pt-2">

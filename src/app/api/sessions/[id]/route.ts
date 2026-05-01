@@ -4,7 +4,12 @@ import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { unwrapRelation } from "@/lib/supabase/relation";
 import { sendEmail } from "@/lib/email/send";
-import { sessionInstructorChanged } from "@/lib/email/templates";
+import {
+  sessionInstructorChanged,
+  sessionRescheduled,
+  sessionCancelledNotice,
+} from "@/lib/email/templates";
+import { logClassAudit } from "@/lib/audit/class-audit";
 
 type Scope = "single" | "future" | "all";
 
@@ -48,7 +53,7 @@ export async function PUT(
       const { data: existing } = await dashCtx.supabase
         .from("class_sessions")
         .select(
-          "id, studio_id, instructor_id, room_id, session_date, start_time, end_time, recurrence_group_id"
+          "id, studio_id, instructor_id, room_id, session_date, start_time, end_time, recurrence_group_id, template_id"
         )
         .eq("id", id)
         .single();
@@ -67,6 +72,7 @@ export async function PUT(
         existing,
         body,
         scope,
+        actor: { profileId: dashCtx.userId, role: dashCtx.role },
       });
     }
 
@@ -80,7 +86,7 @@ export async function PUT(
     const { data: existing } = await instrCtx.supabase
       .from("class_sessions")
       .select(
-        "id, studio_id, instructor_id, room_id, session_date, start_time, end_time, recurrence_group_id"
+        "id, studio_id, instructor_id, room_id, session_date, start_time, end_time, recurrence_group_id, template_id"
       )
       .eq("id", id)
       .single();
@@ -103,6 +109,7 @@ export async function PUT(
       existing,
       body,
       scope,
+      actor: { profileId: instrCtx.userId, role: "instructor" },
     });
   } catch {
     return NextResponse.json(
@@ -125,7 +132,10 @@ type ExistingSession = {
   start_time: string;
   end_time: string;
   recurrence_group_id: string | null;
+  template_id?: string | null;
 };
+
+type Actor = { profileId: string; role: "owner" | "manager" | "instructor" };
 
 async function handleUpdate(args: {
   supabase: SupabaseClient;
@@ -134,8 +144,9 @@ async function handleUpdate(args: {
   existing: ExistingSession;
   body: Record<string, unknown>;
   scope: Scope;
+  actor: Actor;
 }): Promise<NextResponse> {
-  const { supabase, studioId, sessionId, existing, body, scope } = args;
+  const { supabase, studioId, sessionId, existing, body, scope, actor } = args;
 
   const allUpdates = buildUpdates(body);
 
@@ -217,6 +228,37 @@ async function handleUpdate(args: {
       body,
       previousInstructorId: existing.instructor_id,
     });
+    // Date/time change notifications. The instructor-change email already
+    // mentions the slot, so we only fire the reschedule notice when the
+    // request didn't change the instructor (otherwise members get two
+    // overlapping emails for one edit).
+    if (
+      !Object.prototype.hasOwnProperty.call(body, "instructor_id") ||
+      (body.instructor_id ?? null) === (existing.instructor_id ?? null)
+    ) {
+      await maybeNotifyTimeChange(supabase, studioId, [sessionId], {
+        body,
+        previous: {
+          session_date: existing.session_date,
+          start_time: existing.start_time,
+        },
+        next: {
+          session_date: newDate,
+          start_time: newStart,
+          end_time: newEnd,
+        },
+      });
+    }
+
+    await logSessionEditAudits(supabase, {
+      studioId,
+      sessionId,
+      templateId: existing.template_id ?? null,
+      actor,
+      previous: existing,
+      next: { session_date: newDate, start_time: newStart, end_time: newEnd },
+      body,
+    });
 
     return NextResponse.json({ session: updated, updated_count: 1, scope });
   }
@@ -243,7 +285,13 @@ async function handleUpdate(args: {
   }
 
   // 2) Update the rest of the series with series-safe fields only.
+  // When the user picked a series scope but the only change is the
+  // session_date (stripped from seriesUpdates because dates don't fan
+  // out), seriesUpdates is empty and we skip the bulk update. Audit and
+  // notifications still need to fire for the anchor session in that
+  // case, so we move them out of this guard.
   let bulkUpdated = 1;
+  let bulkIds: string[] = [];
   if (Object.keys(seriesUpdates).length > 0) {
     let query = supabase
       .from("class_sessions")
@@ -263,17 +311,46 @@ async function handleUpdate(args: {
         { status: 500 }
       );
     }
-    bulkUpdated = 1 + (bulk?.length ?? 0);
+    bulkIds = (bulk ?? []).map((b) => b.id) as string[];
+    bulkUpdated = 1 + bulkIds.length;
+  }
 
-    const notifyIds = [
-      sessionId,
-      ...((bulk ?? []).map((b) => b.id) as string[]),
-    ];
-    await maybeNotifyInstructorChange(supabase, studioId, notifyIds, {
+  const notifyIds = [sessionId, ...bulkIds];
+  await maybeNotifyInstructorChange(supabase, studioId, notifyIds, {
+    body,
+    previousInstructorId: existing.instructor_id,
+  });
+  if (
+    !Object.prototype.hasOwnProperty.call(body, "instructor_id") ||
+    (body.instructor_id ?? null) === (existing.instructor_id ?? null)
+  ) {
+    await maybeNotifyTimeChange(supabase, studioId, notifyIds, {
       body,
-      previousInstructorId: existing.instructor_id,
+      previous: {
+        session_date: existing.session_date,
+        start_time: existing.start_time,
+      },
+      next: {
+        session_date: newDate,
+        start_time: newStart,
+        end_time: newEnd,
+      },
     });
   }
+  // Log the anchor session's diff plus a roll-up note of the fan-out count.
+  // Per-fan-out session entries would 10× the audit log without adding
+  // much insight, so we keep them as a single summary row.
+  await logSessionEditAudits(supabase, {
+    studioId,
+    sessionId,
+    templateId: existing.template_id ?? null,
+    actor,
+    previous: existing,
+    next: { session_date: newDate, start_time: newStart, end_time: newEnd },
+    body,
+    seriesScope: scope,
+    seriesUpdatedCount: bulkUpdated,
+  });
 
   return NextResponse.json({
     updated_count: bulkUpdated,
@@ -421,6 +498,11 @@ export async function DELETE(
     const { id } = await params;
     const url = new URL(request.url);
     const cancelFuture = url.searchParams.get("cancel_future") === "true";
+    // Notification opt-out: ?notify=false suppresses the cancelled-session
+    // email blast (used when the cancellation is a silent fix or the studio
+    // has already messaged members another way). Default is to notify.
+    const notifyParam = url.searchParams.get("notify");
+    let notifyMembers = notifyParam !== "false";
 
     // Optional cancellation reason — accept either query string or JSON body.
     // Body takes precedence when both are provided.
@@ -432,9 +514,12 @@ export async function DELETE(
     try {
       const text = await request.text();
       if (text) {
-        const body = JSON.parse(text) as { reason?: unknown };
+        const body = JSON.parse(text) as { reason?: unknown; notify_members?: unknown };
         if (typeof body.reason === "string" && body.reason.trim()) {
           cancellationReason = body.reason.trim().slice(0, 500);
+        }
+        if (body.notify_members === false) {
+          notifyMembers = false;
         }
       }
     } catch {
@@ -474,10 +559,14 @@ export async function DELETE(
 
       return await cancelSession(
         dashCtx.supabase,
+        dashCtx.studioId,
         id,
         existing,
         cancelFuture,
-        cancellationReason
+        cancellationReason,
+        notifyMembers,
+        dashCtx.role, // 'owner' | 'manager' — defaults hours_returned=true
+        { profileId: dashCtx.userId, role: dashCtx.role }
       );
     }
 
@@ -515,10 +604,14 @@ export async function DELETE(
 
     return await cancelSession(
       instrCtx.supabase,
+      instrCtx.studioId,
       id,
       existing,
       cancelFuture,
-      cancellationReason
+      cancellationReason,
+      notifyMembers,
+      "instructor", // self-cancel — defaults hours_returned=false
+      { profileId: instrCtx.userId, role: "instructor" }
     );
   } catch {
     return NextResponse.json(
@@ -664,6 +757,285 @@ async function maybeNotifyInstructorChange(
   }
 }
 
+/**
+ * Email confirmed bookers when a session's date or start time has been
+ * changed. We only fire when there's an *observable* change in either —
+ * end-time-only edits aren't worth a notification because the start time
+ * is what most members put in their calendar.
+ *
+ * Caller may pass `notify_members: false` in the body to suppress this
+ * (used when the change is a silent data fix, e.g. correcting a typo).
+ *
+ * Jamie feedback 2026-04-30 (Editing error thread): "when we make those
+ * changes, can we have an option to notify any bookings of the change?"
+ */
+async function maybeNotifyTimeChange(
+  supabase: SupabaseClient,
+  studioId: string,
+  sessionIds: string[],
+  args: {
+    body: Record<string, unknown>;
+    previous: { session_date: string; start_time: string };
+    next: {
+      session_date: string;
+      start_time: string;
+      end_time: string;
+    };
+  }
+): Promise<void> {
+  if (args.body.notify_members === false) return;
+  const dateChanged = args.previous.session_date !== args.next.session_date;
+  const timeChanged =
+    args.previous.start_time.slice(0, 5) !== args.next.start_time.slice(0, 5);
+  if (!dateChanged && !timeChanged) return;
+  if (sessionIds.length === 0) return;
+
+  try {
+    const { data: bookings } = await supabase
+      .from("bookings")
+      .select(
+        "id, profiles!inner(full_name, email), class_sessions!inner(session_date, start_time, end_time, class_templates(name), studios(name))"
+      )
+      .in("session_id", sessionIds)
+      .eq("status", "confirmed");
+
+    if (!bookings || bookings.length === 0) return;
+
+    type BookingRow = {
+      profiles: { full_name: string; email: string } | { full_name: string; email: string }[];
+      class_sessions:
+        | {
+            session_date: string;
+            start_time: string;
+            end_time: string | null;
+            class_templates: { name: string } | { name: string }[] | null;
+            studios: { name: string } | { name: string }[] | null;
+          }
+        | {
+            session_date: string;
+            start_time: string;
+            end_time: string | null;
+            class_templates: { name: string } | { name: string }[] | null;
+            studios: { name: string } | { name: string }[] | null;
+          }[];
+    };
+
+    await Promise.all(
+      (bookings as unknown as BookingRow[]).map(async (b) => {
+        const member = unwrapRelation<{ full_name?: string; email?: string }>(
+          b.profiles
+        );
+        const session = unwrapRelation<{
+          session_date: string;
+          start_time: string;
+          end_time: string | null;
+          class_templates: { name?: string } | { name?: string }[] | null;
+          studios: { name?: string } | { name?: string }[] | null;
+        }>(b.class_sessions);
+        if (!member?.email || !session) return;
+        const tmpl = session.class_templates
+          ? unwrapRelation<{ name?: string }>(session.class_templates)
+          : null;
+        const studio = session.studios
+          ? unwrapRelation<{ name?: string }>(session.studios)
+          : null;
+
+        const tpl = sessionRescheduled({
+          memberName: member.full_name || "there",
+          className: tmpl?.name || "your class",
+          oldDate: args.previous.session_date,
+          oldStartTime: args.previous.start_time.slice(0, 5),
+          newDate: session.session_date,
+          newStartTime: session.start_time.slice(0, 5),
+          newEndTime: session.end_time ? session.end_time.slice(0, 5) : null,
+          studioName: studio?.name || "Klasly",
+        });
+        await sendEmail({
+          to: member.email,
+          subject: tpl.subject,
+          html: tpl.html,
+          studioId,
+          templateName: "session_rescheduled",
+        });
+      })
+    );
+  } catch (err) {
+    console.error("[notify] reschedule email batch failed", err);
+  }
+}
+
+/**
+ * Email confirmed bookers that a session has been cancelled by the studio
+ * (distinct from a member cancelling their own booking). The cancel route
+ * accepts `?notify=false` to suppress, which is wired through to here.
+ */
+async function maybeNotifyCancellation(
+  supabase: SupabaseClient,
+  studioId: string,
+  sessionIds: string[],
+  args: { reason: string | null; notify: boolean }
+): Promise<void> {
+  if (!args.notify || sessionIds.length === 0) return;
+
+  try {
+    // Bookings list — pulls members who were confirmed *before* the
+    // auto-cancel ran. The booking rows may now be status=cancelled, so
+    // we don't filter on status here; we rely on the session_id match.
+    const { data: bookings } = await supabase
+      .from("bookings")
+      .select(
+        "id, profiles!inner(full_name, email), class_sessions!inner(session_date, start_time, class_templates(name), studios(name))"
+      )
+      .in("session_id", sessionIds);
+
+    if (!bookings || bookings.length === 0) return;
+
+    type Row = {
+      profiles: { full_name: string; email: string } | { full_name: string; email: string }[];
+      class_sessions:
+        | {
+            session_date: string;
+            start_time: string;
+            class_templates: { name: string } | { name: string }[] | null;
+            studios: { name: string } | { name: string }[] | null;
+          }
+        | {
+            session_date: string;
+            start_time: string;
+            class_templates: { name: string } | { name: string }[] | null;
+            studios: { name: string } | { name: string }[] | null;
+          }[];
+    };
+
+    await Promise.all(
+      (bookings as unknown as Row[]).map(async (b) => {
+        const member = unwrapRelation<{ full_name?: string; email?: string }>(
+          b.profiles
+        );
+        const session = unwrapRelation<{
+          session_date: string;
+          start_time: string;
+          class_templates: { name?: string } | { name?: string }[] | null;
+          studios: { name?: string } | { name?: string }[] | null;
+        }>(b.class_sessions);
+        if (!member?.email || !session) return;
+        const tmpl = session.class_templates
+          ? unwrapRelation<{ name?: string }>(session.class_templates)
+          : null;
+        const studio = session.studios
+          ? unwrapRelation<{ name?: string }>(session.studios)
+          : null;
+
+        const tpl = sessionCancelledNotice({
+          memberName: member.full_name || "there",
+          className: tmpl?.name || "your class",
+          sessionDate: session.session_date,
+          startTime: session.start_time.slice(0, 5),
+          studioName: studio?.name || "Klasly",
+          reason: args.reason,
+        });
+        await sendEmail({
+          to: member.email,
+          subject: tpl.subject,
+          html: tpl.html,
+          studioId,
+          templateName: "session_cancelled_notice",
+        });
+      })
+    );
+  } catch (err) {
+    console.error("[notify] cancellation email batch failed", err);
+  }
+}
+
+/**
+ * Write one or more rows to class_audit_log for the change just applied
+ * to a session. We split by change_type so the timeline UI can
+ * filter/colour individual updates (instructor swap vs reschedule vs
+ * room move) instead of having to parse a single blob.
+ */
+async function logSessionEditAudits(
+  supabase: SupabaseClient,
+  args: {
+    studioId: string;
+    sessionId: string;
+    templateId: string | null;
+    actor: Actor;
+    previous: ExistingSession;
+    next: { session_date: string; start_time: string; end_time: string };
+    body: Record<string, unknown>;
+    seriesScope?: Scope;
+    seriesUpdatedCount?: number;
+  }
+): Promise<void> {
+  const base = {
+    studioId: args.studioId,
+    templateId: args.templateId,
+    sessionId: args.sessionId,
+    actorProfileId: args.actor.profileId,
+    actorRole: args.actor.role,
+  };
+  const seriesSuffix =
+    args.seriesScope && args.seriesScope !== "single"
+      ? ` (across ${args.seriesUpdatedCount ?? 1} sessions in series)`
+      : "";
+
+  // Instructor change
+  if (
+    Object.prototype.hasOwnProperty.call(args.body, "instructor_id") &&
+    (args.body.instructor_id ?? null) !== (args.previous.instructor_id ?? null)
+  ) {
+    await logClassAudit(supabase, {
+      ...base,
+      changeType: "session_instructor_changed",
+      before: { instructor_id: args.previous.instructor_id },
+      after: { instructor_id: args.body.instructor_id ?? null },
+      summary: `Instructor changed${seriesSuffix}`,
+    });
+  }
+
+  // Date change
+  if (args.previous.session_date !== args.next.session_date) {
+    await logClassAudit(supabase, {
+      ...base,
+      changeType: "session_date_changed",
+      before: { session_date: args.previous.session_date },
+      after: { session_date: args.next.session_date },
+      summary: `Date moved ${args.previous.session_date} → ${args.next.session_date}`,
+    });
+  }
+
+  // Time change (start). End-time-only edits aren't worth a row — they
+  // don't affect contracted hours unless start moves too.
+  const prevStart = args.previous.start_time.slice(0, 5);
+  const nextStart = args.next.start_time.slice(0, 5);
+  const prevEnd = args.previous.end_time.slice(0, 5);
+  const nextEnd = args.next.end_time.slice(0, 5);
+  if (prevStart !== nextStart || prevEnd !== nextEnd) {
+    await logClassAudit(supabase, {
+      ...base,
+      changeType: "session_time_changed",
+      before: { start_time: prevStart, end_time: prevEnd },
+      after: { start_time: nextStart, end_time: nextEnd },
+      summary: `Time changed ${prevStart}–${prevEnd} → ${nextStart}–${nextEnd}${seriesSuffix}`,
+    });
+  }
+
+  // Room change
+  if (
+    Object.prototype.hasOwnProperty.call(args.body, "room_id") &&
+    (args.body.room_id ?? null) !== (args.previous.room_id ?? null)
+  ) {
+    await logClassAudit(supabase, {
+      ...base,
+      changeType: "session_room_changed",
+      before: { room_id: args.previous.room_id },
+      after: { room_id: args.body.room_id ?? null },
+      summary: `Room changed${seriesSuffix}`,
+    });
+  }
+}
+
 function buildUpdates(body: Record<string, unknown>): Record<string, unknown> {
   const updates: Record<string, unknown> = {};
 
@@ -738,18 +1110,38 @@ async function checkRoomForUpdate(
 
 async function cancelSession(
   supabase: import("@supabase/supabase-js").SupabaseClient,
+  studioId: string,
   sessionId: string,
   existing: {
     recurrence_group_id: string | null;
     session_date: string;
   },
   cancelFuture: boolean,
-  cancellationReason: string | null
+  cancellationReason: string | null,
+  notifyMembers: boolean,
+  cancelledByRole: "owner" | "manager" | "instructor",
+  actor: Actor
 ) {
+  // Pull the template_id once so we can index audit rows under the
+  // template even after the session is soft-deleted via is_cancelled.
+  const { data: parent } = await supabase
+    .from("class_sessions")
+    .select("template_id")
+    .eq("id", sessionId)
+    .single();
+  const templateId = (parent as { template_id?: string | null } | null)
+    ?.template_id ?? null;
   // Build the update payload. Only include cancellation_reason when one
   // was provided so we don't blow away an existing reason on subsequent
   // cancel calls.
-  const updatePayload: Record<string, unknown> = { is_cancelled: true };
+  const updatePayload: Record<string, unknown> = {
+    is_cancelled: true,
+    cancelled_by_role: cancelledByRole,
+    // Cancellation policy (Jamie 2026-04-30): admin cancellations refund
+    // the instructor's monthly minutes by default; instructor self-cancels
+    // forfeit them until an admin flips the toggle on the cancelled tile.
+    hours_returned: cancelledByRole !== "instructor",
+  };
   if (cancellationReason) {
     updatePayload.cancellation_reason = cancellationReason;
   }
@@ -774,6 +1166,26 @@ async function cancelSession(
     let bookingsCancelledCount = 0;
     if (cancelledIds.length > 0) {
       bookingsCancelledCount = await autoCancelBookingsForSessions(supabase, cancelledIds);
+      await maybeNotifyCancellation(supabase, studioId, cancelledIds, {
+        reason: cancellationReason,
+        notify: notifyMembers,
+      });
+      await logClassAudit(supabase, {
+        studioId,
+        templateId,
+        sessionId,
+        actorProfileId: actor.profileId,
+        actorRole: actor.role,
+        changeType: "session_cancelled",
+        before: { is_cancelled: false },
+        after: {
+          is_cancelled: true,
+          cancellation_reason: cancellationReason,
+          cancelled_by_role: cancelledByRole,
+          cascaded_session_count: cancelledIds.length,
+        },
+        summary: `Cancelled ${cancelledIds.length} future session${cancelledIds.length === 1 ? "" : "s"}${cancellationReason ? `: ${cancellationReason}` : ""}`,
+      });
     }
 
     return NextResponse.json({
@@ -797,6 +1209,28 @@ async function cancelSession(
 
   // 紐づく予約を自動キャンセル（クレジット/パス返却含む）
   const bookingsCancelledCount = await autoCancelBookingsForSessions(supabase, [sessionId]);
+  await maybeNotifyCancellation(supabase, studioId, [sessionId], {
+    reason: cancellationReason,
+    notify: notifyMembers,
+  });
+  await logClassAudit(supabase, {
+    studioId,
+    templateId,
+    sessionId,
+    actorProfileId: actor.profileId,
+    actorRole: actor.role,
+    changeType: "session_cancelled",
+    before: { is_cancelled: false },
+    after: {
+      is_cancelled: true,
+      cancellation_reason: cancellationReason,
+      cancelled_by_role: cancelledByRole,
+    },
+    summary:
+      cancelledByRole === "instructor"
+        ? `Cancelled by teacher${cancellationReason ? `: ${cancellationReason}` : ""}`
+        : `Cancelled${cancellationReason ? `: ${cancellationReason}` : ""}`,
+  });
 
   return NextResponse.json({
     success: true,

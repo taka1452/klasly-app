@@ -142,7 +142,8 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I add a member?",
           a: (
             <>
-              Go to <B>Members → New Member</B>. Enter their name and email address. They&apos;ll receive an invitation email with a link to set up their account and access the member portal.
+              Go to <B>Members → New Member</B>. The required fields are <B>Full name</B>, <B>Email</B>, <B>Phone</B>, <B>Date of Birth</B>, and <B>Gender</B>. <B>Address</B> and <B>Referred by</B> are optional. New members are created on the <B>Drop-in</B> plan with zero credits — change their plan from the member detail page once they purchase one. They receive an invitation email with a link to set up their account and access the member portal.
+              <Tip>Phone, date of birth and gender are required at create time so studios have the demographics they need for waivers, marketing, and emergency contact. Existing members imported before this change keep their original (possibly empty) values.</Tip>
             </>
           ),
         },
@@ -150,8 +151,18 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "Can I import members in bulk?",
           a: (
             <>
-              Yes. Go to <B>Members → Import</B>. Upload a CSV file with columns for name and email. The system will create accounts and send invitations automatically.
-              <Tip>Download the CSV template from the import page to ensure correct formatting.</Tip>
+              Yes. Go to <B>Members → Import</B>. The flow is four steps —
+              Upload, Map, Review, Done — and Klasly auto-detects column
+              headers from your file (Mindbody / Zen Planner / spreadsheet
+              exports all work).
+              <Steps>
+                <li><B>Upload</B> — drag in a .csv up to 5MB. Required columns are <B>Name</B> (one column or First+Last) and <B>Email</B>.</li>
+                <li><B>Map</B> — auto-detected fields show an <B>Auto-detected</B> badge. Optional columns: Phone, Date of Birth, Gender, Address, Referred By, Plan Type, Credits, Status, Is Minor, Guardian Email, Notes.</li>
+                <li><B>Review</B> — set defaults (plan type / credits / status) for rows where the column is blank, and choose whether to send a welcome email.</li>
+                <li><B>Done</B> — see imported / skipped / error counts. Failed rows can be exported as a CSV ("Download errors as CSV") so you can fix and re-import.</li>
+              </Steps>
+              <Tip>The new required-at-create fields (Phone, Date of Birth, Gender) are <B>optional</B> in the importer so legacy data still flows through. Click <B>Download template</B> on the upload step to get a sample CSV with all supported columns.</Tip>
+              <Tip>Dates accept ISO (1992-04-15), US (4/15/1992), and human-readable ("Apr 15, 1992") formats. Gender accepts female / male / prefer_not_to_say (or single-letter F / M).</Tip>
             </>
           ),
         },
@@ -463,9 +474,11 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             <>
               Open the session from the schedule (or from <B>Classes → [template] → Upcoming Sessions</B>) and click <B>Edit</B>. The Edit Session dialog now includes an <B>Instructor</B> picker. Pick a different name and save. For a recurring class, the dialog also lets you fan the change out to <B>This and following</B> or <B>All sessions in the series</B> with a live count of how many sessions and active bookings will be affected before you commit.
               <Steps>
-                <li>By default Klasly emails every confirmed member when the instructor changes (so they know who&apos;s teaching and can re-decide whether to attend). Uncheck <B>&quot;Email confirmed members about the change&quot;</B> below the picker if you&apos;re doing a silent data fix.</li>
+                <li>By default Klasly emails every confirmed member when the instructor, date, or time changes (so they know what's different and can re-decide whether to attend). Uncheck the <B>&quot;Email confirmed members&quot;</B> box at the bottom of the dialog for silent fixes — typo corrections, data cleanups, etc.</li>
                 <li>If you only need to swap one occurrence, leave the scope on &quot;This session only&quot; (the default).</li>
+                <li>Cancellations also send a "class cancelled" email by default. The cancel-confirm row has the same opt-out checkbox.</li>
               </Steps>
+              <Tip>For ad-hoc batches that aren't a recurrence series — say, four random sessions across a month that all need a sub — switch on <B>Select multiple</B> at the top of the Upcoming Sessions list, check the rows you want, and click <B>Edit time / instructor</B> in the floating action bar. You can change time, instructor, or both, and the same notify-members opt-out applies.</Tip>
             </>
           ),
         },
@@ -682,6 +695,40 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               Go to <B>Bookings → [Session]</B> and click the cancel button next to the member&apos;s booking. The member&apos;s credit will be returned automatically if the booking was confirmed.
+            </>
+          ),
+        },
+        {
+          q: "Where can I see the change history for a class?",
+          a: (
+            <>
+              Open the class from <B>Classes → [template]</B> and scroll
+              past <B>Upcoming Sessions</B>. The <B>Change history</B>{" "}
+              disclosure at the bottom expands to show every audited edit
+              for this class — both at the template level (price,
+              duration, default instructor) and at the session level
+              (instructor swaps, reschedules, cancellations, hours
+              returned / revoked overrides).
+              <Steps>
+                <li>Each entry shows what changed in plain English ("Time changed 18:00–19:00 → 18:30–19:30"), who made the change, and how long ago.</li>
+                <li>Coloured tags help you scan: blue = instructor, violet = time/date/room, rose = cancellation, amber = hours adjustment, emerald = price.</li>
+                <li>Up to 200 most recent entries are shown — older changes stay in the audit log and can be exported on request.</li>
+              </Steps>
+              <Tip>This is the audit trail you need when calculating contracted hours for an instructor — every cancellation, sub, and time change is right there with attribution.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "When an instructor cancels a class, do those hours come back to their monthly allowance?",
+          a: (
+            <>
+              Not by default. Klasly tracks <B>who</B> cancelled each session and uses that to decide whether the minutes go back into the instructor&apos;s monthly pool:
+              <Steps>
+                <li><B>Admin cancellations</B> (owner / manager) — hours are returned automatically. The studio cancelled, not the teacher.</li>
+                <li><B>Instructor self-cancellations</B> — hours are <B>forfeited</B> and still count against the instructor&apos;s monthly allowance.</li>
+              </Steps>
+              On any cancelled tile in the <B>Upcoming Sessions</B> list, admins can click <B>Return hours</B> to grant them back, or <B>Revoke hours</B> to take them away again. The badge on the tile shows the current state (<span className="font-semibold">Hours returned</span> / <span className="font-semibold">Hours forfeited</span>) at a glance.
+              <Tip>This means the instructor sees their available monthly minutes shrink the moment they cancel — and the studio keeps full control over whether that&apos;s permanent. The change takes effect immediately the next time the instructor's tier-overage report is calculated.</Tip>
             </>
           ),
         },
@@ -1785,7 +1832,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I run a paid on-demand class library?",
           a: (
             <>
-              Go to <B>Settings → Online library</B>. Enroll members manually in the <B>Basic</B> or <B>Premium</B> tier at a monthly price. Each published video in your <B>Library</B> can be tagged <B>free</B>, <B>members</B>, or <B>premium</B> so only the right subscribers can watch.
+              Open <B>Library</B> in the sidebar (under <B>Communication</B>) — or go to <B>Settings → Online library</B>, same page. Enroll members manually in the <B>Basic</B> or <B>Premium</B> tier at a monthly price. Each published video in your <B>Library</B> can be tagged <B>free</B>, <B>members</B>, or <B>premium</B> so only the right subscribers can watch.
               <Tip>Self-service Stripe Checkout enrollment is coming next. For now, admin-enrollment lets you grant access right away and pause / cancel from the same table.</Tip>
             </>
           ),
@@ -1794,7 +1841,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "Can I connect Klasly to Google?",
           a: (
             <>
-              Yes. <B>Settings → Integrations</B> lists every third-party service you can link (Google Workspace, Mailchimp, Zoom). Click <B>Connect Google</B> to start the OAuth handshake. Once it completes we sync Google Calendar events and use the connected email to match Google Pay / Wallet subscription charges to your library members.
+              Yes. Open <B>Integrations</B> in the sidebar — or go to <B>Settings → Integrations</B>, same page. It lists every third-party service you can link (Google Workspace, Mailchimp, Zoom). Click <B>Connect Google</B> to start the OAuth handshake. Once it completes we sync Google Calendar events and use the connected email to match Google Pay / Wallet subscription charges to your library members.
             </>
           ),
         },
@@ -1807,7 +1854,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I build custom forms — applications, contracts, medical intake?",
           a: (
             <>
-              Go to <B>Settings → Forms &amp; documents</B>. Click <B>+ New form</B> and pick a type: <B>Waiver</B>, <B>Application</B>, <B>Contract</B>, <B>Medical intake</B>, or <B>Custom</B> (blank). Each type starts with a sensible field template you can tweak — drag fields up/down, toggle required, change type, edit options, or add help text.
+              Open <B>Forms</B> in the sidebar — or go to <B>Settings → Forms &amp; documents</B>, same page. Click <B>+ New form</B> and pick a type: <B>Waiver</B>, <B>Application</B>, <B>Contract</B>, <B>Medical intake</B>, or <B>Custom</B> (blank). Each type starts with a sensible field template you can tweak — drag fields up/down, toggle required, change type, edit options, or add help text.
               <Steps>
                 <li>Edit the form&apos;s name, intro text, and success message.</li>
                 <li>Toggle <B>Active</B>, <B>Public</B>, and <B>Require signature</B> as needed.</li>
@@ -1826,6 +1873,21 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             </>
           ),
         },
+        {
+          q: "Can I send a contract for ordered multi-signature signing (Jotform-style)?",
+          a: (
+            <>
+              Yes. Open <B>Forms</B> in the sidebar, find a contract template, and click <B>Send for signing</B>. In the dialog:
+              <Steps>
+                <li>Add the signers in the order they should sign — use the up/down arrows to reorder.</li>
+                <li>Each signer takes a <B>Name</B> + <B>Email</B>; the optional <B>Role</B> label appears in the email subject and on the signing page so they know whose signature is being collected (e.g. "Studio owner", "Witness").</li>
+                <li>Optionally tie the envelope to an instructor — when set, the signed contract surfaces on that instructor&apos;s profile under <B>Signed contracts</B> for easy access later.</li>
+                <li>Klasly emails signer 1 a unique link. After they sign, signer 2 is emailed automatically. Once everyone signs, the envelope is sealed and you receive a "fully signed" email.</li>
+              </Steps>
+              <Tip>The signing page is a public URL secured by a one-time token — no Klasly login required for external signers (lawyers, witnesses, etc.).</Tip>
+            </>
+          ),
+        },
       ],
     },
     {
@@ -1835,7 +1897,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           q: "How do I invoice my instructors monthly?",
           a: (
             <>
-              Go to <B>Settings → Monthly invoices</B>. Pick a month, click <B>Generate for all instructors</B>, and Klasly creates a draft invoice per instructor that bundles:
+              Open <B>Invoices</B> in the sidebar (under <B>Money</B>) — or go to <B>Settings → Monthly invoices</B>, same page. Pick a month, click <B>Generate for all instructors</B>, and Klasly creates a draft invoice per instructor that bundles:
               <Steps>
                 <li><B>Tier subscription</B> — the instructor&apos;s active hourly plan monthly price.</li>
                 <li><B>Overage</B> — any overage charges for that month.</li>

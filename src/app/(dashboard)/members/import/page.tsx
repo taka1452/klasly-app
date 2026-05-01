@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useMemo } from "react";
 import Link from "next/link";
+import { Download } from "lucide-react";
 import {
   normalizePlanType,
   normalizeStatus,
@@ -24,7 +25,7 @@ const STATUS_OPTIONS = [
   { value: "paused", label: "Paused" },
 ] as const;
 
-function autoMapColumns(columns: string[]): {
+type AutoMapping = {
   nameMode: "combined" | "separate";
   firstNameColumn: string;
   lastNameColumn: string;
@@ -35,7 +36,15 @@ function autoMapColumns(columns: string[]): {
   creditsColumn: string;
   statusColumn: string;
   notesColumn: string;
-} {
+  dobColumn: string;
+  genderColumn: string;
+  addressColumn: string;
+  referredByColumn: string;
+  isMinorColumn: string;
+  guardianEmailColumn: string;
+};
+
+function autoMapColumns(columns: string[]): AutoMapping {
   const lower = (s: string) => s.trim().toLowerCase();
   const first = columns.find(
     (c) =>
@@ -51,7 +60,7 @@ function autoMapColumns(columns: string[]): {
   );
   const email = columns.find(
     (c) =>
-      /^email$|e-?mail|email\s*address/i.test(c)
+      /^email$|e-?mail|email\s*address/i.test(c) && !/guardian/i.test(c)
   );
   const phone = columns.find(
     (c) =>
@@ -73,6 +82,19 @@ function autoMapColumns(columns: string[]): {
     (c) =>
       /note/i.test(c)
   );
+  const dob = columns.find(
+    (c) =>
+      /date\s*of\s*birth|dob|birth\s*date|birthdate|birthday/i.test(c)
+  );
+  const gender = columns.find((c) => /gender|^sex$/i.test(c));
+  const address = columns.find((c) => /address|street|city|^location$/i.test(c));
+  const referredBy = columns.find(
+    (c) => /referr(ed|al)|how\s*did\s*you\s*hear|referer|source/i.test(c)
+  );
+  const isMinor = columns.find((c) => /minor|under\s*18/i.test(c));
+  const guardianEmail = columns.find(
+    (c) => /guardian|parent.*email/i.test(c)
+  );
 
   const nameMode =
     first && last ? NAME_SEPARATE : combined ? NAME_COMBINED : NAME_SEPARATE;
@@ -88,6 +110,12 @@ function autoMapColumns(columns: string[]): {
     creditsColumn: credits || "",
     statusColumn: status || "",
     notesColumn: notes || "",
+    dobColumn: dob || "",
+    genderColumn: gender || "",
+    addressColumn: address || "",
+    referredByColumn: referredBy || "",
+    isMinorColumn: isMinor || "",
+    guardianEmailColumn: guardianEmail || "",
   };
 }
 
@@ -125,6 +153,18 @@ export default function ImportMembersPage() {
   const [statusColumn, setStatusColumn] = useState("");
   const [statusFixed, setStatusFixed] = useState<string>("active");
   const [notesColumn, setNotesColumn] = useState("");
+  // Demographics added 2026-04-30 — see CSV template & /api/import/execute.
+  const [dobColumn, setDobColumn] = useState("");
+  const [genderColumn, setGenderColumn] = useState("");
+  const [addressColumn, setAddressColumn] = useState("");
+  const [referredByColumn, setReferredByColumn] = useState("");
+  const [isMinorColumn, setIsMinorColumn] = useState("");
+  const [guardianEmailColumn, setGuardianEmailColumn] = useState("");
+  // Captures which columns the auto-mapper picked, so we can render an
+  // "Auto-detected" badge next to those dropdowns. Manual changes are not
+  // tracked back to this — once the user touches a dropdown, the badge
+  // simply stays as a one-shot signal.
+  const [autoMappedColumns, setAutoMappedColumns] = useState<Set<string>>(new Set());
 
   const [defaultPlanType, setDefaultPlanType] = useState<string>("drop_in");
   const [defaultCredits, setDefaultCredits] = useState(0);
@@ -239,6 +279,34 @@ export default function ImportMembersPage() {
       setCreditsColumn(auto.creditsColumn);
       setStatusColumn(auto.statusColumn);
       setNotesColumn(auto.notesColumn);
+      setDobColumn(auto.dobColumn);
+      setGenderColumn(auto.genderColumn);
+      setAddressColumn(auto.addressColumn);
+      setReferredByColumn(auto.referredByColumn);
+      setIsMinorColumn(auto.isMinorColumn);
+      setGuardianEmailColumn(auto.guardianEmailColumn);
+
+      setAutoMappedColumns(
+        new Set(
+          [
+            auto.firstNameColumn && "first_name",
+            auto.lastNameColumn && "last_name",
+            auto.combinedNameColumn && "name",
+            auto.emailColumn && "email",
+            auto.phoneColumn && "phone",
+            auto.planTypeColumn && "plan_type",
+            auto.creditsColumn && "credits",
+            auto.statusColumn && "status",
+            auto.notesColumn && "notes",
+            auto.dobColumn && "date_of_birth",
+            auto.genderColumn && "gender",
+            auto.addressColumn && "address",
+            auto.referredByColumn && "referred_by",
+            auto.isMinorColumn && "is_minor",
+            auto.guardianEmailColumn && "guardian_email",
+          ].filter(Boolean) as string[]
+        )
+      );
 
       setStep(2);
     } finally {
@@ -261,6 +329,16 @@ export default function ImportMembersPage() {
         notes: notesColumn,
       };
 
+      // Reconcile the step-2 "Fixed: …" choice with the step-3 default.
+      // When the user explicitly picked a fixed value in step 2 (no
+      // column mapped), that's their intent for every row — it should
+      // override the step-3 default. Without this the step-2 choice was
+      // only used in the preview, never at import time. Fixed 2026-04-30
+      // alongside Jamie's other CSV improvements.
+      const resolvedPlanType = planTypeColumn ? defaultPlanType : planTypeFixed;
+      const resolvedCredits = creditsColumn ? defaultCredits : creditsFixed;
+      const resolvedStatus = statusColumn ? defaultStatus : statusFixed;
+
       const res = await fetch("/api/import/execute", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -277,10 +355,16 @@ export default function ImportMembersPage() {
             credits: creditsColumn || undefined,
             status: statusColumn || undefined,
             notes: notesColumn || undefined,
+            date_of_birth: dobColumn || undefined,
+            gender: genderColumn || undefined,
+            address: addressColumn || undefined,
+            referred_by: referredByColumn || undefined,
+            is_minor: isMinorColumn || undefined,
+            guardian_email: guardianEmailColumn || undefined,
           },
-          defaultPlanType,
-          defaultCredits: defaultCredits,
-          defaultStatus,
+          defaultPlanType: resolvedPlanType,
+          defaultCredits: resolvedCredits,
+          defaultStatus: resolvedStatus,
           sendWelcomeEmail,
         }),
       });
@@ -298,6 +382,46 @@ export default function ImportMembersPage() {
   }
 
   const dropdownOptions = [SKIP, ...columns];
+
+  // Helper to render a small auto-detection badge next to a mapped field.
+  // Quiet by design — green is reserved for the import-result tile in
+  // step 4 so the user doesn't read "auto-detected" as confirmation.
+  function autoBadge(fieldKey: string) {
+    if (!autoMappedColumns.has(fieldKey)) return null;
+    return (
+      <span className="ml-2 rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500">
+        Auto-detected
+      </span>
+    );
+  }
+
+  // Step 4: build a CSV of skipped + errored rows so the user can fix and
+  // re-import in one click instead of copying from the table. Filename
+  // includes the row count so multiple downloads in the same day don't
+  // collide with each other in Downloads/.
+  function downloadErrorsCsv() {
+    if (!result) return;
+    const rows = [...result.skipped, ...result.errors];
+    if (rows.length === 0) return;
+    const escape = (v: string) => `"${(v ?? "").replace(/"/g, '""')}"`;
+    const csv =
+      "Row,Email,Reason\n" +
+      rows
+        .map((r) => [r.row, escape(r.email || ""), escape(r.reason || "")].join(","))
+        .join("\n") +
+      "\n";
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `klasly-import-errors-${new Date()
+      .toISOString()
+      .slice(0, 10)}-${rows.length}rows.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  const STEP_LABELS = ["Upload", "Map", "Review", "Done"];
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -321,6 +445,53 @@ export default function ImportMembersPage() {
           {step === 3 && "Set defaults and confirm."}
           {step === 4 && "Summary of your import."}
         </p>
+
+        {/* Step indicator. Single brand-color hierarchy (active solid,
+            done desaturated, future muted) so progress reads as a single
+            dimension. The connector between steps is a real horizontal
+            line so completed runs visually fill — character arrows didn't
+            align with circle baselines and never reflected progress. */}
+        <ol className="mt-4 flex items-center gap-2 text-xs">
+          {STEP_LABELS.map((label, idx) => {
+            const stepNum = idx + 1;
+            const isActive = stepNum === step;
+            const isDone = stepNum < step;
+            return (
+              <li key={label} className="flex items-center gap-2">
+                <span
+                  className={`flex h-6 min-w-[24px] items-center justify-center rounded-full px-1.5 text-[11px] font-semibold transition-[background-color,color] duration-200 ease-out ${
+                    isActive
+                      ? "bg-brand-600 text-white"
+                      : isDone
+                        ? "bg-brand-100 text-brand-700"
+                        : "bg-gray-100 text-gray-400"
+                  }`}
+                >
+                  {isDone ? "✓" : stepNum}
+                </span>
+                <span
+                  className={`transition-colors duration-200 ease-out ${
+                    isActive
+                      ? "font-medium text-gray-900"
+                      : isDone
+                        ? "text-gray-600"
+                        : "text-gray-400"
+                  }`}
+                >
+                  {label}
+                </span>
+                {idx < STEP_LABELS.length - 1 && (
+                  <span
+                    aria-hidden
+                    className={`mx-1 h-px w-6 transition-colors duration-200 ease-out ${
+                      isDone ? "bg-brand-300" : "bg-gray-200"
+                    }`}
+                  />
+                )}
+              </li>
+            );
+          })}
+        </ol>
       </div>
 
       {step === 1 && (
@@ -360,15 +531,34 @@ export default function ImportMembersPage() {
           {uploadError && (
             <p className="mt-3 text-sm text-red-600">{uploadError}</p>
           )}
-          <p className="mt-6 text-center text-sm text-gray-500">
-            <a
-              href="/api/import/template"
-              download="klasly-member-import-template.csv"
-              className="text-brand-600 hover:text-brand-700"
-            >
-              Download Template
-            </a>
-          </p>
+
+          <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
+            <p className="font-medium text-gray-900">Required columns</p>
+            <p className="mt-1 text-gray-600">
+              <span className="font-medium">Name</span> (one column or
+              First+Last) and <span className="font-medium">Email</span> are
+              the minimum.
+            </p>
+            <p className="mt-3 font-medium text-gray-900">Optional columns</p>
+            <p className="mt-1 text-gray-600">
+              Phone, Date of Birth, Gender, Address, Referred By, Plan Type,
+              Credits, Status, Is Minor, Guardian Email, Notes — Klasly will
+              auto-detect them from your headers.
+            </p>
+            <div className="mt-3 flex items-center justify-between">
+              <a
+                href="/api/import/template"
+                download="klasly-member-import-template.csv"
+                className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm transition-[transform,background-color] duration-150 ease-out hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/20 active:scale-[0.97]"
+              >
+                <Download className="h-3.5 w-3.5" aria-hidden />
+                Download template
+              </a>
+              <span className="text-xs text-gray-500">
+                Headers are case-insensitive.
+              </span>
+            </div>
+          </div>
         </div>
       )}
 
@@ -378,7 +568,8 @@ export default function ImportMembersPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Name ★
+                  Name <span className="text-red-500">*</span>
+                  {autoBadge(nameMode === NAME_COMBINED ? "name" : "first_name")}
                 </label>
                 <div className="mt-1 flex gap-2">
                   <label className="flex items-center gap-2 text-sm">
@@ -439,19 +630,29 @@ export default function ImportMembersPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Email ★
+                  Email <span className="text-red-500">*</span>
+                  {autoBadge("email")}
                 </label>
                 <select
                   className="input-field mt-1 w-full"
                   value={emailColumn}
                   onChange={(e) => setEmailColumn(e.target.value)}
                 >
-                  {dropdownOptions.map((c) => (
-                    <option key={c} value={c === SKIP ? "" : c}>
+                  {/* No SKIP option — email is required. The dropdown opens
+                      with the first column pre-selected when auto-detect
+                      misses, forcing the user to make an explicit choice. */}
+                  {columns.length === 0 && <option value="">— No columns —</option>}
+                  {columns.map((c) => (
+                    <option key={c} value={c}>
                       {c}
                     </option>
                   ))}
                 </select>
+                {!emailColumn && (
+                  <p className="mt-1 text-xs text-red-600">
+                    Pick the column containing email addresses.
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
@@ -564,9 +765,115 @@ export default function ImportMembersPage() {
                   ))}
                 </select>
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Date of Birth
+                  {autoBadge("date_of_birth")}
+                </label>
+                <select
+                  className="input-field mt-1 w-full"
+                  value={dobColumn}
+                  onChange={(e) => setDobColumn(e.target.value)}
+                >
+                  {dropdownOptions.map((c) => (
+                    <option key={c} value={c === SKIP ? "" : c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Gender
+                  {autoBadge("gender")}
+                </label>
+                <select
+                  className="input-field mt-1 w-full"
+                  value={genderColumn}
+                  onChange={(e) => setGenderColumn(e.target.value)}
+                >
+                  {dropdownOptions.map((c) => (
+                    <option key={c} value={c === SKIP ? "" : c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Address
+                  {autoBadge("address")}
+                </label>
+                <select
+                  className="input-field mt-1 w-full"
+                  value={addressColumn}
+                  onChange={(e) => setAddressColumn(e.target.value)}
+                >
+                  {dropdownOptions.map((c) => (
+                    <option key={c} value={c === SKIP ? "" : c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Referred By
+                  {autoBadge("referred_by")}
+                </label>
+                <select
+                  className="input-field mt-1 w-full"
+                  value={referredByColumn}
+                  onChange={(e) => setReferredByColumn(e.target.value)}
+                >
+                  {dropdownOptions.map((c) => (
+                    <option key={c} value={c === SKIP ? "" : c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Is Minor
+                  {autoBadge("is_minor")}
+                </label>
+                <select
+                  className="input-field mt-1 w-full"
+                  value={isMinorColumn}
+                  onChange={(e) => setIsMinorColumn(e.target.value)}
+                >
+                  {dropdownOptions.map((c) => (
+                    <option key={c} value={c === SKIP ? "" : c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-[11px] text-gray-500">
+                  Recognises true / yes / 1.
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Guardian Email
+                  {autoBadge("guardian_email")}
+                </label>
+                <select
+                  className="input-field mt-1 w-full"
+                  value={guardianEmailColumn}
+                  onChange={(e) => setGuardianEmailColumn(e.target.value)}
+                >
+                  {dropdownOptions.map((c) => (
+                    <option key={c} value={c === SKIP ? "" : c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="sm:col-span-2">
                 <label className="block text-sm font-medium text-gray-700">
                   Notes
+                  {autoBadge("notes")}
                 </label>
                 <select
                   className="input-field mt-1 w-full"
@@ -700,14 +1007,24 @@ export default function ImportMembersPage() {
             </div>
           </div>
 
-          <label className="flex items-center gap-2">
+          <label className="flex items-start gap-2">
             <input
               type="checkbox"
               checked={sendWelcomeEmail}
               onChange={(e) => setSendWelcomeEmail(e.target.checked)}
+              className="mt-1"
             />
-            <span className="text-sm">
+            <span className="text-sm text-gray-700">
               Send a welcome email to all imported members
+              <span className="mt-0.5 block text-xs text-gray-500">
+                Each member receives a branded "we've moved to Klasly" email
+                from {""}
+                <span className="font-medium">your studio</span>. They can sign
+                up and link to this account when they're ready — no
+                magic-link login is sent automatically (use the Invite
+                button on the member page when you're ready to bring them
+                online).
+              </span>
             </span>
           </label>
 
@@ -772,27 +1089,46 @@ export default function ImportMembersPage() {
           </div>
 
           {(result.skipped.length > 0 || result.errors.length > 0) && (
-            <div className="overflow-x-auto rounded border border-gray-200">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-gray-50">
-                    <th className="px-3 py-2 text-left font-medium">Row</th>
-                    <th className="px-3 py-2 text-left font-medium">Email</th>
-                    <th className="px-3 py-2 text-left font-medium">Reason</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[...result.skipped, ...result.errors].map((item, i) => (
-                    <tr key={i} className="border-b">
-                      <td className="px-3 py-2">{item.row}</td>
-                      <td className="px-3 py-2">
-                        {item.email || "(empty)"}
-                      </td>
-                      <td className="px-3 py-2">{item.reason}</td>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-gray-700">
+                  Skipped &amp; failed rows
+                </p>
+                <button
+                  type="button"
+                  onClick={downloadErrorsCsv}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm transition-[transform,background-color] duration-150 ease-out hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/20 active:scale-[0.97]"
+                >
+                  <Download className="h-3.5 w-3.5" aria-hidden />
+                  Download errors as CSV
+                </button>
+              </div>
+              <div className="overflow-x-auto rounded border border-gray-200">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-gray-50">
+                      <th className="px-3 py-2 text-left font-medium">Row</th>
+                      <th className="px-3 py-2 text-left font-medium">Email</th>
+                      <th className="px-3 py-2 text-left font-medium">Reason</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {[...result.skipped, ...result.errors].map((item, i) => (
+                      <tr key={i} className="border-b">
+                        <td className="px-3 py-2">{item.row}</td>
+                        <td className="px-3 py-2">
+                          {item.email || "(empty)"}
+                        </td>
+                        <td className="px-3 py-2">{item.reason}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-xs text-gray-500">
+                Tip: fix the issues in the downloaded CSV (e.g. add missing
+                emails, dedupe) and re-upload it as a fresh batch.
+              </p>
             </div>
           )}
 

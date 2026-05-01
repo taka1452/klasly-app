@@ -12,6 +12,7 @@ import DevRoleSwitcher from "@/components/ui/dev-role-switcher";
 import { getStudioFeatures } from "@/lib/features/check-feature";
 import { getOwnerSetupTasks } from "@/lib/setup-tasks";
 import { FeatureProvider } from "@/lib/features/feature-context";
+import { ViewerProvider } from "@/lib/auth/viewer-context";
 import AnnouncementBanner from "@/components/announcements/announcement-banner";
 import { getManagerPermissions, type ManagerPermissions } from "@/lib/auth/check-manager-permission";
 
@@ -136,6 +137,7 @@ export default async function DashboardLayout({
 
   return (
     <FeatureProvider features={features}>
+    <ViewerProvider viewer={{ role: profile.role, managerPermissions }}>
     <AnnouncementBanner />
     <DashboardShell
       currentRole={profile.role}
@@ -174,6 +176,7 @@ export default async function DashboardLayout({
       {children}
       <DevRoleSwitcher />
     </DashboardShell>
+    </ViewerProvider>
     </FeatureProvider>
   );
 }

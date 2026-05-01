@@ -5,6 +5,7 @@ import Link from "next/link";
 import { formatDate, getDayName, formatTime } from "@/lib/utils";
 import InstructorEditForm from "@/components/instructors/instructor-edit-form";
 import InstructorDeleteButton from "@/components/instructors/instructor-delete-button";
+import InstructorContracts from "@/components/instructors/instructor-contracts";
 import InstructorManagerToggle from "@/components/instructors/instructor-manager-toggle";
 
 export default async function InstructorDetailPage({
@@ -256,6 +257,8 @@ export default async function InstructorDetailPage({
           {ownerProfile?.role === "owner" && (
             <InstructorManagerToggle instructorId={instructor.id} />
           )}
+
+          <InstructorContracts instructorId={instructor.id} />
 
           <div className="card">
             <h3 className="text-sm font-medium text-red-600">Danger Zone</h3>

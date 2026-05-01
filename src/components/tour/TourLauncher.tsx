@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useTourActions } from "./TourProvider";
+import { useViewerPermissions } from "@/lib/auth/viewer-context";
 
 /**
  * Mounts a tiny effect that launches the onboarding tour when the URL
@@ -16,8 +17,13 @@ import { useTourActions } from "./TourProvider";
  */
 export default function TourLauncher() {
   const tourActions = useTourActions();
+  // Tutorial is a per-user UX preference (Tutorial permission on the
+  // Managers page). Managers without it stay out of the onboarding overlay
+  // even when the deep-link `?tour=1` appears in their URL.
+  const { canShowTutorial } = useViewerPermissions();
 
   useEffect(() => {
+    if (!canShowTutorial) return;
     if (!tourActions) return;
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
@@ -30,7 +36,7 @@ export default function TourLauncher() {
     const qs = params.toString();
     const next = `${window.location.pathname}${qs ? `?${qs}` : ""}${window.location.hash}`;
     window.history.replaceState(window.history.state, "", next);
-  }, [tourActions]);
+  }, [tourActions, canShowTutorial]);
 
   return null;
 }

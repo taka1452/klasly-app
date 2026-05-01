@@ -25,6 +25,14 @@ type NavItem = {
   group?: string;
   /** マネージャーに必要な権限キー。未指定なら全マネージャーに表示 */
   permissionKey?: keyof ManagerPermissions;
+  /**
+   * Any-of permission set. Used when a page is logically reachable from
+   * multiple manager hats (e.g. Passes is both a "product / settings" page
+   * and a "payments" page — managers with either toggle should see it).
+   * `permissionKey` and `permissionKeys` are evaluated as an OR so an item
+   * shows up if at least one matches.
+   */
+  permissionKeys?: (keyof ManagerPermissions)[];
   icon: React.ReactNode;
 };
 
@@ -177,10 +185,27 @@ const ownerNavItems: NavItem[] = [
     dataTour: undefined,
     group: "money",
     featureKey: FEATURE_KEYS.STUDIO_PASS,
-    permissionKey: "can_view_payments",
+    // Passes are studio "products" — visible to managers who can either
+    // configure settings (product definitions) or see payments (subscriber
+    // counts / MRR). Jamie feedback 2026-04-30: Sarah created some passes
+    // but they didn't appear under Jamie's login because Jamie only had
+    // Settings access, not Payments.
+    permissionKeys: ["can_view_payments", "can_manage_settings"],
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z" />
+      </svg>
+    ),
+  },
+  {
+    label: "Invoices",
+    href: "/settings/invoices",
+    dataTour: undefined,
+    group: "money",
+    permissionKey: "can_manage_contracts_tiers",
+    icon: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
       </svg>
     ),
   },
@@ -235,7 +260,41 @@ const ownerNavItems: NavItem[] = [
       </svg>
     ),
   },
+  {
+    label: "Library",
+    href: "/settings/library",
+    dataTour: undefined,
+    group: "communication",
+    permissionKey: "can_manage_settings",
+    icon: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 19.5h16.5M5.25 6h13.5M6.75 6V19.5M17.25 6V19.5M9.75 9.75h4.5M9.75 13.5h4.5M9.75 17.25h4.5" />
+      </svg>
+    ),
+  },
   // ── UNGROUPED (bottom) ──
+  {
+    label: "Forms",
+    href: "/settings/forms",
+    dataTour: undefined,
+    permissionKey: "can_manage_settings",
+    icon: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+    ),
+  },
+  {
+    label: "Integrations",
+    href: "/settings/integrations",
+    dataTour: undefined,
+    permissionKey: "can_manage_settings",
+    icon: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+      </svg>
+    ),
+  },
   {
     label: "Analytics",
     href: "/analytics",
@@ -397,9 +456,13 @@ export default function Sidebar({
   );
   // マネージャーの場合、権限に基づいてナビアイテムをフィルタリング
   if (currentRole === "manager" && managerPermissions) {
-    navItems = navItems.filter(
-      (item) => !item.permissionKey || managerPermissions[item.permissionKey]
-    );
+    navItems = navItems.filter((item) => {
+      const single = !item.permissionKey || managerPermissions[item.permissionKey];
+      const anyOf =
+        !item.permissionKeys ||
+        item.permissionKeys.some((k) => managerPermissions[k]);
+      return single && anyOf;
+    });
   }
   // オーナー/マネージャーがインストラクター兼任の場合、My Classes と My Earnings を挿入
   if (isAlsoInstructor && (currentRole === "owner" || currentRole === "manager")) {
