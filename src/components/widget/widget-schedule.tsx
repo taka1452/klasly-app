@@ -228,7 +228,7 @@ export default function WidgetSchedule({ studioId }: Props) {
           <button
             type="button"
             onClick={() => setViewMode("day")}
-            className={`rounded-l-lg px-2.5 py-1 transition ${viewMode === "day" ? "text-white" : "text-gray-500 hover:bg-gray-50"}`}
+            className={`rounded-l-lg px-2.5 py-1 transition-[color,background-color,transform] duration-150 ease-out active:scale-[0.95] ${viewMode === "day" ? "text-white" : "text-gray-500 hover:bg-gray-50"}`}
             style={viewMode === "day" ? { backgroundColor: theme.primary } : undefined}
           >
             Day
@@ -236,7 +236,7 @@ export default function WidgetSchedule({ studioId }: Props) {
           <button
             type="button"
             onClick={() => setViewMode("week")}
-            className={`rounded-r-lg px-2.5 py-1 transition ${viewMode === "week" ? "text-white" : "text-gray-500 hover:bg-gray-50"}`}
+            className={`rounded-r-lg px-2.5 py-1 transition-[color,background-color,transform] duration-150 ease-out active:scale-[0.95] ${viewMode === "week" ? "text-white" : "text-gray-500 hover:bg-gray-50"}`}
             style={viewMode === "week" ? { backgroundColor: theme.primary } : undefined}
           >
             Week
@@ -249,7 +249,7 @@ export default function WidgetSchedule({ studioId }: Props) {
         <button
           type="button"
           onClick={() => { setWeekOffset((w) => w - 1); setSelectedDayIndex(0); }}
-          className="tap-target rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"
+          className="tap-target rounded-lg border border-gray-200 text-gray-500 transition-[transform,background-color] duration-150 ease-out hover:bg-gray-50 active:scale-[0.93]"
           aria-label="Previous week"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -267,7 +267,7 @@ export default function WidgetSchedule({ studioId }: Props) {
             <button
               type="button"
               onClick={() => { setWeekOffset(0); setSelectedDayIndex(0); }}
-              className="rounded-full px-2 py-0.5 text-[10px] font-medium text-white"
+              className="rounded-full px-2 py-0.5 text-[10px] font-medium text-white transition-[transform,filter] duration-150 ease-out hover:brightness-110 active:scale-[0.95]"
               style={{ backgroundColor: theme.primary }}
             >
               Today
@@ -278,7 +278,7 @@ export default function WidgetSchedule({ studioId }: Props) {
         <button
           type="button"
           onClick={() => { setWeekOffset((w) => w + 1); setSelectedDayIndex(0); }}
-          className="tap-target rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"
+          className="tap-target rounded-lg border border-gray-200 text-gray-500 transition-[transform,background-color] duration-150 ease-out hover:bg-gray-50 active:scale-[0.93]"
           aria-label="Next week"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -313,7 +313,7 @@ export default function WidgetSchedule({ studioId }: Props) {
                   key={date}
                   type="button"
                   onClick={() => setSelectedDayIndex(i)}
-                  className={`flex-1 rounded-lg py-2 text-center transition ${
+                  className={`flex-1 rounded-lg py-2 text-center transition-[color,background-color,transform] duration-150 ease-out active:scale-[0.97] ${
                     selected
                       ? "text-white shadow-sm"
                       : today
@@ -430,7 +430,7 @@ export default function WidgetSchedule({ studioId }: Props) {
             <button
               type="button"
               onClick={handleSignOut}
-              className="text-[10px] text-gray-500 hover:text-gray-600"
+              className="text-[10px] text-gray-500 transition-colors duration-150 hover:text-gray-600"
             >
               Sign out
             </button>
@@ -449,7 +449,7 @@ export default function WidgetSchedule({ studioId }: Props) {
               href="https://klasly.app"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[10px] text-gray-300 hover:text-gray-400"
+              className="text-[10px] text-gray-300 transition-colors duration-150 hover:text-gray-400"
             >
               Powered by Klasly
             </a>

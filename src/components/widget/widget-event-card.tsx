@@ -158,7 +158,7 @@ export default function WidgetEventCard({
         href={`${baseUrl}/events/${event.id}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="group block overflow-hidden rounded-2xl border border-gray-100 bg-white transition-all hover:shadow-lg"
+        className="group block overflow-hidden rounded-2xl border border-gray-100 bg-white transition-[transform,box-shadow] duration-200 ease-out hover:shadow-lg active:scale-[0.99]"
       >
         {/* Top section: image (compact) + badges */}
         <div className="relative">
@@ -327,7 +327,7 @@ export default function WidgetEventCard({
       href={`${baseUrl}/events/${event.id}`}
       target="_blank"
       rel="noopener noreferrer"
-      className="group block overflow-hidden rounded-xl border border-gray-100 bg-white p-3.5 transition-all hover:shadow-md"
+      className="group block overflow-hidden rounded-xl border border-gray-100 bg-white p-3.5 transition-[transform,box-shadow] duration-200 ease-out hover:shadow-md active:scale-[0.99]"
     >
       <div className="flex gap-3">
         {/* Small thumbnail */}

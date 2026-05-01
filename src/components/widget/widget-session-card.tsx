@@ -65,7 +65,7 @@ export default function WidgetSessionCard({
               type="button"
               onClick={() => onCancel(session.id)}
               disabled={loading}
-              className="text-[10px] text-gray-400 underline hover:text-red-500 disabled:opacity-50"
+              className="text-[10px] text-gray-400 underline transition-colors duration-150 hover:text-red-500 disabled:opacity-50"
             >
               Cancel
             </button>
@@ -78,7 +78,7 @@ export default function WidgetSessionCard({
             type="button"
             onClick={() => onLeaveWaitlist(session.id)}
             disabled={loading}
-            className="rounded-full border border-gray-300 px-2 py-0.5 text-[10px] font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+            className="rounded-full border border-gray-300 px-2 py-0.5 text-[10px] font-medium text-gray-600 transition-[transform,background-color] duration-150 ease-out hover:bg-gray-50 active:scale-[0.95] disabled:opacity-50 disabled:active:scale-100"
           >
             Leave waitlist
           </button>
@@ -90,7 +90,7 @@ export default function WidgetSessionCard({
             type="button"
             onClick={() => onRebook(session.id)}
             disabled={loading || (memberCredits === 0 && !isFull)}
-            className="rounded-full px-2.5 py-0.5 text-[10px] font-medium text-white disabled:opacity-50"
+            className="rounded-full px-2.5 py-0.5 text-[10px] font-medium text-white transition-[transform,filter] duration-150 ease-out hover:brightness-110 active:scale-[0.95] disabled:opacity-50 disabled:active:scale-100"
             style={{ backgroundColor: theme.primary }}
           >
             Re-book
@@ -111,7 +111,7 @@ export default function WidgetSessionCard({
         type="button"
         onClick={() => onBook(session.id)}
         disabled={loading}
-        className="rounded-full px-2.5 py-0.5 text-[10px] font-medium text-white disabled:opacity-50"
+        className="rounded-full px-2.5 py-0.5 text-[10px] font-medium text-white transition-[transform,filter] duration-150 ease-out hover:brightness-110 active:scale-[0.95] disabled:opacity-50 disabled:active:scale-100"
         style={{
           backgroundColor: isFull ? "#6b7280" : theme.primary,
         }}
@@ -130,7 +130,7 @@ export default function WidgetSessionCard({
   }
 
   return (
-    <div className="rounded-lg border border-gray-100 bg-white p-2.5 transition-shadow hover:shadow-sm">
+    <div className="rounded-lg border border-gray-100 bg-white p-2.5 transition-[transform,box-shadow] duration-150 ease-out hover:shadow-sm">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <p className="truncate text-xs font-semibold text-gray-900">
