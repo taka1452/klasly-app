@@ -313,13 +313,13 @@ export default function InstructorClassDetailPage() {
                     <button
                       onClick={handleToggleActive}
                       disabled={actionLoading}
-                      className="btn-danger text-sm"
+                      className="btn-danger text-sm transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100"
                     >
                       {actionLoading ? "..." : cls.is_active ? "Deactivate" : "Activate"}
                     </button>
                     <button
                       onClick={() => setConfirmDeactivate(false)}
-                      className="btn-secondary text-sm"
+                      className="btn-secondary text-sm transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]"
                     >
                       Cancel
                     </button>
@@ -328,7 +328,7 @@ export default function InstructorClassDetailPage() {
               ) : (
                 <button
                   onClick={() => setConfirmDeactivate(true)}
-                  className={`text-sm font-medium ${cls.is_active ? "text-amber-600 hover:text-amber-700" : "text-green-600 hover:text-green-700"}`}
+                  className={`text-sm font-medium transition-colors duration-150 ${cls.is_active ? "text-amber-600 hover:text-amber-700" : "text-green-600 hover:text-green-700"}`}
                 >
                   {cls.is_active ? "Deactivate class" : "Reactivate class"}
                 </button>
@@ -346,13 +346,13 @@ export default function InstructorClassDetailPage() {
                     <button
                       onClick={handleDelete}
                       disabled={actionLoading}
-                      className="btn-danger text-sm"
+                      className="btn-danger text-sm transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100"
                     >
                       {actionLoading ? "Deleting..." : "Yes, delete"}
                     </button>
                     <button
                       onClick={() => setConfirmDelete(false)}
-                      className="btn-secondary text-sm"
+                      className="btn-secondary text-sm transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]"
                     >
                       Cancel
                     </button>
@@ -361,7 +361,7 @@ export default function InstructorClassDetailPage() {
               ) : (
                 <button
                   onClick={() => setConfirmDelete(true)}
-                  className="text-sm font-medium text-red-600 hover:text-red-700"
+                  className="text-sm font-medium text-red-600 transition-colors duration-150 hover:text-red-700"
                 >
                   Delete class
                 </button>

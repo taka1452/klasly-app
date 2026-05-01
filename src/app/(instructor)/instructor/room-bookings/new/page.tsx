@@ -380,11 +380,11 @@ export default function NewRoomBookingPage() {
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary flex-1"
+              className="btn-primary flex-1 transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100"
             >
               {loading ? "Booking..." : "Book room"}
             </button>
-            <Link href="/instructor/room-bookings" className="btn-secondary">
+            <Link href="/instructor/room-bookings" className="btn-secondary transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]">
               Cancel
             </Link>
           </div>
@@ -446,8 +446,8 @@ function OverageConfirmModal({
       : "—";
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
+    <div className="backdrop-in fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4">
+      <div className="dialog-in w-full max-w-md rounded-xl bg-white shadow-xl">
         <div className="border-b border-gray-200 px-5 py-4">
           <h3 className="text-lg font-semibold text-gray-900">
             Overage charge required
@@ -506,7 +506,7 @@ function OverageConfirmModal({
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="btn-secondary flex-1"
+            className="btn-secondary flex-1 transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100"
           >
             Cancel
           </button>
@@ -514,7 +514,7 @@ function OverageConfirmModal({
             type="button"
             onClick={onConfirm}
             disabled={loading}
-            className="btn-primary flex-1"
+            className="btn-primary flex-1 transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100"
           >
             {loading ? "Booking..." : "Proceed & agree to charge"}
           </button>

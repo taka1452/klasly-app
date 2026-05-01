@@ -178,7 +178,7 @@ export default function ScheduleView({
         <button
           type="button"
           onClick={() => setViewMode((m) => (m === "week" ? "list" : "week"))}
-          className="btn-secondary text-sm"
+          className="btn-secondary text-sm transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]"
         >
           {viewMode === "week" ? "List View" : "Week View"}
         </button>

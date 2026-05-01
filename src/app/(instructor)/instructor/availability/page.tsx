@@ -142,7 +142,7 @@ export default function InstructorAvailabilityPage() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+          className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:bg-emerald-700 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
         >
           {saving ? "Saving..." : "Save"}
         </button>
@@ -174,7 +174,7 @@ export default function InstructorAvailabilityPage() {
                 </h3>
                 <button
                   onClick={() => addSlot(dayOfWeek)}
-                  className="text-sm font-medium text-emerald-600 hover:text-emerald-700"
+                  className="text-sm font-medium text-emerald-600 transition-colors duration-150 hover:text-emerald-700"
                 >
                   + Add Slot
                 </button>
@@ -202,7 +202,7 @@ export default function InstructorAvailabilityPage() {
                     />
                     <button
                       onClick={() => removeSlot(slot._idx)}
-                      className="tap-target rounded text-gray-500 hover:bg-red-50 hover:text-red-500"
+                      className="tap-target rounded text-gray-500 transition-[transform,background-color,color] duration-150 ease-out hover:bg-red-50 hover:text-red-500 active:scale-[0.9]"
                       aria-label="Remove slot"
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">

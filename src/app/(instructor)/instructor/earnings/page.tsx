@@ -189,7 +189,7 @@ export default function InstructorEarningsPage() {
                 type="button"
                 onClick={handleConnect}
                 disabled={onboardingLoading}
-                className="mt-4 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+                className="mt-4 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:bg-brand-700 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
               >
                 {onboardingLoading ? "Redirecting..." : "Connect with Stripe"}
               </button>
@@ -206,7 +206,7 @@ export default function InstructorEarningsPage() {
                 type="button"
                 onClick={handleConnect}
                 disabled={onboardingLoading}
-                className="mt-4 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+                className="mt-4 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:bg-brand-700 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
               >
                 {onboardingLoading ? "Redirecting..." : "Continue Setup"}
               </button>
@@ -233,25 +233,25 @@ export default function InstructorEarningsPage() {
       {/* Summary Cards */}
       {summary && (
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="card">
+          <div className="stats-stagger card" style={{ animationDelay: "0ms" }}>
             <p className="text-sm text-gray-500">Total Revenue</p>
             <p className="mt-1 text-2xl font-bold text-gray-900">
               {formatCents(summary.totalGross + (passSummary?.totalPayout ?? 0))}
             </p>
           </div>
-          <div className="card">
+          <div className="stats-stagger card" style={{ animationDelay: "60ms" }}>
             <p className="text-sm text-gray-500">Your Payout</p>
             <p className="mt-1 text-2xl font-bold text-green-600">
               {formatCents(summary.totalPayout + (passSummary?.totalPayout ?? 0))}
             </p>
           </div>
-          <div className="card">
+          <div className="stats-stagger card" style={{ animationDelay: "120ms" }}>
             <p className="text-sm text-gray-500">Studio Fee</p>
             <p className="mt-1 text-2xl font-bold text-gray-900">
               {formatCents(summary.totalStudioFee)}
             </p>
           </div>
-          <div className="card">
+          <div className="stats-stagger card" style={{ animationDelay: "180ms" }}>
             <p className="text-sm text-gray-500">Classes</p>
             <p className="mt-1 text-2xl font-bold text-gray-900">
               {summary.classCount + (passSummary?.totalClasses ?? 0)}
@@ -267,7 +267,7 @@ export default function InstructorEarningsPage() {
             type="button"
             onClick={handleOpenDashboard}
             disabled={dashboardLoading}
-            className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+            className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:bg-brand-700 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
           >
             {dashboardLoading ? "Opening..." : "Open Stripe Dashboard"}
           </button>

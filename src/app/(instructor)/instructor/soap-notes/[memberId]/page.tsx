@@ -154,7 +154,7 @@ export default function MemberSOAPNotesPage() {
             resetForm();
             setShowForm(true);
           }}
-          className="btn-primary mb-6"
+          className="btn-primary mb-6 transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]"
         >
           + New SOAP Note
         </button>
@@ -253,7 +253,7 @@ export default function MemberSOAPNotesPage() {
             </label>
 
             <div className="flex gap-3">
-              <button type="submit" disabled={saving} className="btn-primary">
+              <button type="submit" disabled={saving} className="btn-primary transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100">
                 {saving ? "Saving..." : "Save"}
               </button>
               <button

@@ -529,8 +529,8 @@ export default function InstructorRoomCalendar() {
 
       {/* Session creation form modal */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+        <div className="backdrop-in fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="dialog-in w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-bold text-gray-900">New Session</h3>
@@ -681,13 +681,13 @@ export default function InstructorRoomCalendar() {
               )}
 
               <div className="flex gap-3 pt-1">
-                <button type="submit" disabled={formSubmitting} className="btn-primary flex-1">
+                <button type="submit" disabled={formSubmitting} className="btn-primary flex-1 transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100">
                   {formSubmitting ? "Creating..." : formTemplateId ? "Create session" : "Book room"}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="btn-secondary"
+                  className="btn-secondary transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]"
                 >
                   Cancel
                 </button>

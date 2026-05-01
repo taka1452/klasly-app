@@ -74,7 +74,7 @@ export default function AttendanceChecklist({ bookings }: Props) {
             type="button"
             disabled={loading[b.id]}
             onClick={() => toggleAttendance(b.id, !b.attended)}
-            className={`flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-left transition-colors ${
+            className={`flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-left transition-[transform,border-color,background-color] duration-150 ease-out active:scale-[0.98] ${
               b.attended
                 ? "border-green-200 bg-green-50"
                 : "border-gray-100 bg-white"
@@ -113,7 +113,7 @@ export default function AttendanceChecklist({ bookings }: Props) {
           </thead>
           <tbody>
             {items.map((b) => (
-              <tr key={b.id} className="border-b border-gray-100">
+              <tr key={b.id} className="border-b border-gray-100 transition-colors duration-150 ease-out hover:bg-gray-50">
                 <td className="py-3 font-medium text-gray-900">
                   {b.memberName}
                 </td>
@@ -129,7 +129,7 @@ export default function AttendanceChecklist({ bookings }: Props) {
                     type="button"
                     disabled={loading[b.id]}
                     onClick={() => toggleAttendance(b.id, !b.attended)}
-                    className={`flex h-6 w-6 items-center justify-center rounded transition-colors ${
+                    className={`flex h-6 w-6 items-center justify-center rounded transition-[transform,background-color,border-color] duration-150 ease-out active:scale-[0.9] ${
                       b.attended
                         ? "bg-green-500 text-white"
                         : "border-2 border-gray-300 hover:border-green-400"

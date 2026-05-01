@@ -433,11 +433,11 @@ export default function InstructorNewClassPage() {
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary flex-1"
+              className="btn-primary flex-1 transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100"
             >
               {loading ? "Creating..." : "Create class"}
             </button>
-            <Link href="/instructor/classes" className="btn-secondary">
+            <Link href="/instructor/classes" className="btn-secondary transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]">
               Cancel
             </Link>
           </div>

@@ -200,7 +200,7 @@ export default function InstructorClassEditForm({
       )}
 
       <div className="pt-2">
-        <button type="submit" disabled={saving} className="btn-primary">
+        <button type="submit" disabled={saving} className="btn-primary transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100">
           {saving ? "Saving..." : "Save Changes"}
         </button>
       </div>

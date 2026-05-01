@@ -228,21 +228,21 @@ export default function InstructorAppointmentsPage() {
                       <button
                         onClick={() => handleComplete(apt.id)}
                         disabled={actionLoading === apt.id}
-                        className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                        className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:bg-blue-700 active:scale-[0.95] disabled:opacity-50 disabled:active:scale-100"
                       >
                         {actionLoading === apt.id ? "..." : "Complete"}
                       </button>
                       <button
                         onClick={() => handleCancel(apt.id)}
                         disabled={actionLoading === apt.id}
-                        className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                        className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition-[transform,background-color] duration-150 ease-out hover:bg-red-50 active:scale-[0.95] disabled:opacity-50 disabled:active:scale-100"
                       >
                         Cancel
                       </button>
                       {soapNotesEnabled && apt.members && (
                         <Link
                           href={`/instructor/soap-notes?member_id=${apt.members.id}&appointment_id=${apt.id}`}
-                          className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                          className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition-[transform,background-color] duration-150 ease-out hover:bg-gray-50 active:scale-[0.95]"
                         >
                           Add SOAP Note
                         </Link>
@@ -302,7 +302,7 @@ export default function InstructorAppointmentsPage() {
                     apt.members && (
                       <Link
                         href={`/instructor/soap-notes?member_id=${apt.members.id}&appointment_id=${apt.id}`}
-                        className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                        className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition-[transform,background-color] duration-150 ease-out hover:bg-gray-50 active:scale-[0.95]"
                       >
                         Add SOAP Note
                       </Link>

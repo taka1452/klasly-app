@@ -113,7 +113,7 @@ export default function InstructorClassesPage() {
             Manage your classes and pricing
           </p>
         </div>
-        <Link href="/instructor/classes/new" className="btn-primary">
+        <Link href="/instructor/classes/new" className="btn-primary transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]">
           + New class
         </Link>
       </div>
@@ -132,7 +132,7 @@ export default function InstructorClassesPage() {
           </p>
           <Link
             href="/instructor/classes/new"
-            className="mt-3 inline-block text-sm font-medium text-emerald-600 hover:text-emerald-700"
+            className="mt-3 inline-block text-sm font-medium text-emerald-600 transition-colors duration-150 hover:text-emerald-700"
           >
             Create your first class &rarr;
           </Link>
@@ -183,10 +183,10 @@ export default function InstructorClassesPage() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => handleSave(cls.id)} disabled={saving || !editForm.name.trim()} className="btn-primary text-sm">
+                    <button onClick={() => handleSave(cls.id)} disabled={saving || !editForm.name.trim()} className="btn-primary text-sm transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100">
                       {saving ? "Saving..." : "Save"}
                     </button>
-                    <button onClick={() => setEditingId(null)} className="btn-secondary text-sm">
+                    <button onClick={() => setEditingId(null)} className="btn-secondary text-sm transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]">
                       Cancel
                     </button>
                   </div>

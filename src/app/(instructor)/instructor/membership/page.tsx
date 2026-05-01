@@ -194,7 +194,7 @@ export default function InstructorMembershipPage() {
           <button
             onClick={handleSubscribe}
             disabled={actionLoading}
-            className="btn-primary mt-6"
+            className="btn-primary mt-6 transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100"
           >
             {actionLoading ? "Processing..." : "Start Subscription"}
           </button>

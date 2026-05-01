@@ -81,7 +81,7 @@ export default function SOAPNotesPage() {
             <Link
               key={m.id}
               href={`/instructor/soap-notes/${m.id}`}
-              className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4 transition-colors hover:border-emerald-200 hover:bg-emerald-50"
+              className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4 transition-[transform,border-color,background-color] duration-150 ease-out hover:border-emerald-200 hover:bg-emerald-50 active:scale-[0.98]"
             >
               <div>
                 <p className="font-medium text-gray-900">{m.name}</p>

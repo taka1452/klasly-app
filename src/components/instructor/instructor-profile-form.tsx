@@ -172,7 +172,7 @@ export default function InstructorProfileForm() {
         <button
           type="submit"
           disabled={saving}
-          className="btn-primary"
+          className="btn-primary transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100"
         >
           {saving ? "Saving..." : "Save"}
         </button>

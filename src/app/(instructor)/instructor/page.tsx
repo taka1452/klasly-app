@@ -189,7 +189,7 @@ export default async function InstructorDashboardPage() {
                 <Link
                   key={session.id}
                   href={`/instructor/sessions/${session.id}`}
-                  className="card block transition-colors hover:border-emerald-300 hover:bg-emerald-50/30"
+                  className="card block transition-[transform,border-color,background-color] duration-150 ease-out hover:border-emerald-300 hover:bg-emerald-50/30 active:scale-[0.98]"
                   {...(idx === 0 ? { "data-tour": "attendance-section" } : {})}
                 >
                   <p className="font-medium text-gray-900">
@@ -232,7 +232,7 @@ export default async function InstructorDashboardPage() {
       <div className="text-center">
         <Link
           href="/instructor/schedule"
-          className="inline-flex items-center gap-1 text-sm font-medium text-emerald-600 hover:text-emerald-700"
+          className="inline-flex items-center gap-1 text-sm font-medium text-emerald-600 transition-colors duration-150 hover:text-emerald-700"
         >
           View full schedule
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
