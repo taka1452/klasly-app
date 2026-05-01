@@ -180,51 +180,51 @@ export default async function MyBookingsPage() {
     confirmedBySession[r.session_id] = (confirmedBySession[r.session_id] || 0) + 1;
   });
 
+  const hasStatusBlock =
+    (showComeback && !!member) ||
+    (wrappedYear !== null && !!member) ||
+    (memberLevelsEnabled && !!member) ||
+    (achievements || []).length > 0;
+
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-900 md:text-2xl">My Bookings</h1>
-      <p className="mt-1 text-sm text-gray-500">
-        Your upcoming and past classes
-      </p>
+      <header>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl">
+          My Bookings
+        </h1>
+        <p className="mt-1.5 text-sm text-gray-500">
+          Your upcoming and past classes
+        </p>
+      </header>
 
-      {showComeback && member && (
-        <div className="mt-4">
-          <ComebackCard />
-        </div>
-      )}
-
-      {wrappedYear !== null && member && (
-        <div className="mt-4">
-          <WrappedEntryCard year={wrappedYear} />
-        </div>
-      )}
-
-      {memberLevelsEnabled && member && (
-        <div className="mt-4">
-          <RankCard
-            rank={
-              ((member as { current_rank?: string | null }).current_rank as Rank | undefined)
-                ?? rankFromCount((member as { lifetime_classes_attended?: number | null }).lifetime_classes_attended ?? 0)
-            }
-            lifetimeClasses={(member as { lifetime_classes_attended?: number | null }).lifetime_classes_attended ?? 0}
-          />
-        </div>
-      )}
-
-      {(achievements || []).length > 0 && (
-        <div className="mt-4">
-          <MemberAchievements
-            achievements={(achievements || []).map((a) => ({
-              achievement_type: a.achievement_type as AchievementType,
-              earned_at: a.earned_at,
-            }))}
-          />
-        </div>
+      {/* Personal status — grouped tightly so related cards read as one block */}
+      {hasStatusBlock && (
+        <section className="mt-6 space-y-3" aria-label="Your status">
+          {showComeback && member && <ComebackCard />}
+          {wrappedYear !== null && member && <WrappedEntryCard year={wrappedYear} />}
+          {memberLevelsEnabled && member && (
+            <RankCard
+              rank={
+                ((member as { current_rank?: string | null }).current_rank as Rank | undefined)
+                  ?? rankFromCount((member as { lifetime_classes_attended?: number | null }).lifetime_classes_attended ?? 0)
+              }
+              lifetimeClasses={(member as { lifetime_classes_attended?: number | null }).lifetime_classes_attended ?? 0}
+            />
+          )}
+          {(achievements || []).length > 0 && (
+            <MemberAchievements
+              achievements={(achievements || []).map((a) => ({
+                achievement_type: a.achievement_type as AchievementType,
+                earned_at: a.earned_at,
+              }))}
+            />
+          )}
+        </section>
       )}
 
       {upcoming.length > 0 && (
-        <div className="mt-6">
-          <h2 className="mb-3 text-lg font-semibold text-gray-900">
+        <section className={hasStatusBlock ? "mt-10" : "mt-8"}>
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
             Upcoming
           </h2>
           <div className="space-y-3">
@@ -305,12 +305,14 @@ export default async function MyBookingsPage() {
               );
             })}
           </div>
-        </div>
+        </section>
       )}
 
       {past.length > 0 && (
-        <div className="mt-8">
-          <h2 className="mb-3 text-lg font-semibold text-gray-900">Past</h2>
+        <section className={upcoming.length > 0 ? "mt-10" : hasStatusBlock ? "mt-10" : "mt-8"}>
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+            Past
+          </h2>
           <div className="space-y-3">
             {past.map((booking) => {
               const raw = booking.class_sessions as unknown;
@@ -357,11 +359,11 @@ export default async function MyBookingsPage() {
               );
             })}
           </div>
-        </div>
+        </section>
       )}
 
       {upcoming.length === 0 && past.length > 0 && (
-        <div className="mt-6 card">
+        <div className="mt-8 card">
           <p className="text-sm text-gray-500">No upcoming bookings.</p>
           <Link href="/schedule" className="btn-primary mt-4 inline-block transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]">
             Book a class
@@ -370,7 +372,7 @@ export default async function MyBookingsPage() {
       )}
 
       {upcoming.length === 0 && past.length === 0 && (
-        <div className="mt-6 card">
+        <div className="mt-8 card">
           <p className="text-sm text-gray-500">No bookings yet.</p>
           <Link href="/schedule" className="btn-primary mt-4 inline-block transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]">
             View schedule

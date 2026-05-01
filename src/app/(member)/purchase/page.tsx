@@ -64,10 +64,14 @@ export default async function PurchasePage() {
   if (!planAccess.canPurchase) {
     return (
       <div>
-        <h1 className="text-xl font-bold text-gray-900 md:text-2xl">Purchase Options</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Buy credits or monthly membership
-        </p>
+        <header>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl">
+            Purchase Options
+          </h1>
+          <p className="mt-1.5 text-sm text-gray-500">
+            Buy credits or monthly membership
+          </p>
+        </header>
         <div className="mt-6 card">
           <p className="text-amber-600">
             Purchases are temporarily unavailable. Please try again later.
@@ -83,10 +87,14 @@ export default async function PurchasePage() {
   ) {
     return (
       <div>
-        <h1 className="text-xl font-bold text-gray-900 md:text-2xl">Purchase Options</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Buy credits or monthly membership
-        </p>
+        <header>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl">
+            Purchase Options
+          </h1>
+          <p className="mt-1.5 text-sm text-gray-500">
+            Buy credits or monthly membership
+          </p>
+        </header>
         <div className="mt-6 card">
           <p className="text-amber-600">
             Online payments are not yet available for this studio. Please
@@ -99,10 +107,14 @@ export default async function PurchasePage() {
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-900 md:text-2xl">Purchase Options</h1>
-      <p className="mt-1 text-sm text-gray-500">
-        Buy credits or monthly membership
-      </p>
+      <header>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl">
+          Purchase Options
+        </h1>
+        <p className="mt-1.5 text-sm text-gray-500">
+          Buy credits or monthly membership
+        </p>
+      </header>
 
       <PurchaseOptions memberId={member.id} products={products ?? []} />
     </div>

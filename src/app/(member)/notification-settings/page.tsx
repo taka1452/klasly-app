@@ -148,9 +148,14 @@ export default function MemberSettingsPage() {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="space-y-6">
-        <h1 className="text-xl font-bold text-gray-900 md:text-2xl">
-          Notification Settings
-        </h1>
+        <header>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl">
+            Notification Settings
+          </h1>
+          <p className="mt-1.5 text-sm text-gray-500">
+            Choose what you want to be notified about
+          </p>
+        </header>
 
         {loading ? (
           <div className="animate-pulse space-y-4">

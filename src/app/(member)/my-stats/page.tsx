@@ -221,12 +221,14 @@ export default async function MyStatsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="stats-stagger" style={staggerStyle(0)}>
-        <h1 className="text-xl font-bold text-gray-900 md:text-2xl">Your Practice</h1>
-        <p className="mt-1 text-sm text-gray-500">
+      <header className="stats-stagger" style={staggerStyle(0)}>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl">
+          Your Practice
+        </h1>
+        <p className="mt-1.5 text-sm text-gray-500">
           A snapshot of your journey across this studio.
         </p>
-      </div>
+      </header>
 
       <div className="stats-stagger" style={staggerStyle(1)}>
         <RankCard rank={rank} lifetimeClasses={lifetime} />

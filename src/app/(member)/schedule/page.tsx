@@ -129,10 +129,12 @@ export default async function SchedulePage() {
         </div>
       )}
 
-      <h1 className="text-xl font-bold text-gray-900 md:text-2xl">Schedule</h1>
-      <p className="mt-1 mb-4 text-sm text-gray-500">
-        Book your classes
-      </p>
+      <header className="mb-5">
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl">
+          Schedule
+        </h1>
+        <p className="mt-1.5 text-sm text-gray-500">Book your classes</p>
+      </header>
 
       <ScheduleCalendar
         memberId={memberId}

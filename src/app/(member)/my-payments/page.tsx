@@ -72,8 +72,12 @@ export default async function MyPaymentsPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-900 md:text-2xl">My Payments</h1>
-      <p className="mt-1 text-sm text-gray-500">Your payment history</p>
+      <header>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl">
+          My Payments
+        </h1>
+        <p className="mt-1.5 text-sm text-gray-500">Your payment history</p>
+      </header>
 
       {(payments ?? []).length === 0 ? (
         <div className="mt-6 card">

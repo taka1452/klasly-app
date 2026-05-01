@@ -64,17 +64,17 @@ export default function CommunityPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900 md:text-2xl">Community</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Studio announcements and discussions
-          </p>
-        </div>
-      </div>
+      <header>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl">
+          Community
+        </h1>
+        <p className="mt-1.5 text-sm text-gray-500">
+          Studio announcements and discussions
+        </p>
+      </header>
 
       {canPost && studioId && (
-        <div className="mt-4">
+        <div className="mt-6">
           <PostForm
             onCreated={() => {
               if (studioId) loadPosts(studioId);

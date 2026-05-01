@@ -16,12 +16,14 @@ export default async function AccountPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Account</h1>
-        <p className="mt-1 text-sm text-gray-500">
+      <header className="mb-6">
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl">
+          Account
+        </h1>
+        <p className="mt-1.5 text-sm text-gray-500">
           Manage your profile, sign-in details, and photo.
         </p>
-      </div>
+      </header>
       <AccountForm />
     </div>
   );

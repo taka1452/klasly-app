@@ -162,19 +162,19 @@ export default function MemberAppointmentsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
+      <header className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 md:text-2xl">
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl">
             My Appointments
           </h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1.5 text-sm text-gray-500">
             Your 1-on-1 appointment bookings
           </p>
         </div>
         <Link href="/my-appointments/book" className="btn-primary transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]">
           Book Appointment
         </Link>
-      </div>
+      </header>
 
       {successMsg && (
         <div className="mt-4 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">
