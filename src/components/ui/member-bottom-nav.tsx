@@ -42,7 +42,7 @@ export default function MemberBottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors ${
+              className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-[color,transform] duration-150 ease-out active:scale-[0.92] ${
                 isActive
                   ? "text-brand-600"
                   : "text-gray-400 active:text-gray-600"

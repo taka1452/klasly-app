@@ -50,7 +50,7 @@ export default function MemberLayoutClient({
   const pathname = usePathname();
 
   const linkClass = (href: string) =>
-    `text-sm font-medium ${
+    `text-sm font-medium transition-colors duration-150 ${
       pathname === href
         ? "text-brand-700 font-semibold"
         : "text-gray-600 hover:text-gray-900"

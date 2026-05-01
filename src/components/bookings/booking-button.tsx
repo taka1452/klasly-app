@@ -307,7 +307,7 @@ export default function BookingButton({
         </span>
         <Link
           href="/purchase"
-          className="text-sm font-medium text-brand-600 hover:text-brand-700"
+          className="text-sm font-medium text-brand-600 transition-colors duration-150 hover:text-brand-700"
         >
           Purchase
         </Link>

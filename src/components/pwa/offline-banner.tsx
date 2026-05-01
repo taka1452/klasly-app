@@ -8,7 +8,7 @@ export default function OfflineBanner() {
   if (isOnline) return null;
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-amber-500 px-4 py-2 text-center text-sm font-medium text-white shadow-md">
+    <div className="fixed top-0 left-0 right-0 z-50 bg-amber-500 px-4 py-2 text-center text-sm font-medium text-white shadow-md animate-in slide-in-from-top-2 duration-200">
       <div className="flex items-center justify-center gap-2">
         <svg
           className="h-4 w-4"

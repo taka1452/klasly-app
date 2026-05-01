@@ -57,7 +57,7 @@ export default function PushPrompt({ studioId }: { studioId?: string }) {
   };
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-md animate-in slide-in-from-bottom-4 duration-300">
+    <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-md animate-in slide-in-from-bottom-4 duration-300 safe-bottom">
       <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-lg">
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0 rounded-full bg-blue-100 p-2">
@@ -86,13 +86,13 @@ export default function PushPrompt({ studioId }: { studioId?: string }) {
           <button
             onClick={handleEnable}
             disabled={isLoading}
-            className="flex-1 rounded-lg bg-brand-600 px-3 py-2 text-xs font-medium text-white hover:bg-brand-700 transition-colors disabled:opacity-50"
+            className="flex-1 rounded-lg bg-brand-600 px-3 py-2 text-xs font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:bg-brand-700 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
           >
             {isLoading ? "Enabling..." : "Enable Notifications"}
           </button>
           <button
             onClick={handleDismiss}
-            className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+            className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-600 transition-[transform,background-color] duration-150 ease-out hover:bg-gray-50 active:scale-[0.97]"
           >
             Not Now
           </button>
