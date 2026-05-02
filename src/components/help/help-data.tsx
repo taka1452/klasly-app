@@ -636,6 +636,16 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           a: (
             <>
               Yes. Instructor room bookings are shown on the <B>Schedule</B> calendar alongside class sessions. Room bookings appear in <B>teal</B> with a &quot;Room&quot; badge to distinguish them from classes.
+              <Tip>Use the <B>Room</B> dropdown above the calendar to filter the view to a specific room — handy when you want to see only what is scheduled in one studio space.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "Can a room booking be tied to a specific client?",
+          a: (
+            <>
+              Yes. From <B>Rooms → + Add booking</B>, search for the client in the <B>Client (optional)</B> field. If they have an active pass, a checkbox lets you deduct one session from their pass when the booking is created. The deducted session is automatically refunded if the booking is cancelled.
+              <Tip>This is built for private 1-on-1 sessions like body therapy or reiki where the booking represents the client using a session from their package.</Tip>
             </>
           ),
         },
@@ -738,6 +748,15 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             <>
               On the session attendance page, click the <B>Drop-in</B> tab. Search for the member and click <B>Add</B>. The member&apos;s credit will be deducted automatically. If the deduction was a mistake, click <B>Undo</B> to reverse it.
               <Tip>Drop-in attendees are listed separately from booked members and are counted in the total attendance.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "Can I mark a member as no-show or late cancel?",
+          a: (
+            <>
+              Yes. On the session attendance page, each booked member has a <B>Status</B> column with two quick actions: <B>No-show</B> (red) and <B>Late cancel</B> (amber). Click either to flag the booking — the attended checkbox is automatically cleared, and the badge stays visible on this session and in reports. Click <B>Clear</B> on the badge to undo.
+              <Tip>No-show and late cancel are tracked per booking, so the same member can attend on a different session without affecting this one.</Tip>
             </>
           ),
         },

@@ -221,6 +221,7 @@ export async function GET(request: NextRequest) {
         instructor_name: instructorName,
         location: s.location ?? template?.location ?? null,
         is_public: isPublic,
+        room_id: s.room_id ?? null,
         room_name: roomName,
         is_online: isOnline,
         event_type: isRoomOnly

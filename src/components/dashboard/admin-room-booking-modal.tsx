@@ -1,9 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Room = { id: string; name: string; capacity: number | null };
 type Instructor = { id: string; fullName: string; email: string };
+
+type MemberHit = {
+  id: string;
+  full_name: string;
+  email: string;
+  credits: number;
+  active_pass: {
+    subscriptionId: string;
+    used: number;
+    max: number | null;
+  } | null;
+};
 
 type Props = {
   rooms: Room[];
@@ -37,6 +49,49 @@ export default function AdminRoomBookingModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Client (member) attachment
+  const [memberQuery, setMemberQuery] = useState("");
+  const [memberHits, setMemberHits] = useState<MemberHit[]>([]);
+  const [selectedMember, setSelectedMember] = useState<MemberHit | null>(null);
+  const [usePass, setUsePass] = useState(true);
+  const [showHits, setShowHits] = useState(false);
+  const memberSearchTimer = useRef<NodeJS.Timeout | null>(null);
+
+  // Debounced typeahead
+  useEffect(() => {
+    if (selectedMember) return; // don't search while a pick is locked in
+    if (!showHits) return;
+    if (memberSearchTimer.current) clearTimeout(memberSearchTimer.current);
+    memberSearchTimer.current = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `/api/dashboard/members-search?q=${encodeURIComponent(memberQuery)}`
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        setMemberHits(data.members ?? []);
+      } catch {
+        // ignore
+      }
+    }, 200);
+    return () => {
+      if (memberSearchTimer.current) clearTimeout(memberSearchTimer.current);
+    };
+  }, [memberQuery, showHits, selectedMember]);
+
+  function pickMember(m: MemberHit) {
+    setSelectedMember(m);
+    setMemberQuery(m.full_name);
+    setShowHits(false);
+    if (!m.active_pass) setUsePass(false);
+  }
+
+  function clearMember() {
+    setSelectedMember(null);
+    setMemberQuery("");
+    setUsePass(true);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -54,6 +109,9 @@ export default function AdminRoomBookingModal({
         end_time: endTime,
         is_public: isPublic,
         notes: notes.trim() || undefined,
+        member_id: selectedMember?.id ?? null,
+        use_pass:
+          !!selectedMember && !!selectedMember.active_pass && usePass,
       }),
     });
 
@@ -67,6 +125,14 @@ export default function AdminRoomBookingModal({
 
     onCreated();
   }
+
+  const passInfo = selectedMember?.active_pass;
+  const passRemaining =
+    passInfo === null || passInfo === undefined
+      ? null
+      : passInfo.max === null
+        ? "unlimited"
+        : Math.max(0, passInfo.max - passInfo.used);
 
   return (
     <div
@@ -147,9 +213,114 @@ export default function AdminRoomBookingModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              placeholder="e.g. Private session with Jessica"
+              placeholder="e.g. Body Therapy with Geri"
               className="input-field w-full"
             />
+          </div>
+
+          {/* Client (member) — optional, with pass deduction */}
+          <div className="relative">
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">
+              Client (optional)
+            </label>
+            {selectedMember ? (
+              <div className="flex items-center justify-between rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm">
+                <div>
+                  <div className="font-medium text-gray-900">
+                    {selectedMember.full_name}
+                  </div>
+                  {selectedMember.email && (
+                    <div className="text-xs text-gray-500">
+                      {selectedMember.email}
+                    </div>
+                  )}
+                  {passInfo ? (
+                    <div className="mt-0.5 text-xs text-teal-700">
+                      Active pass · {passRemaining} session
+                      {passRemaining === 1 ? "" : "s"} remaining
+                    </div>
+                  ) : (
+                    <div className="mt-0.5 text-xs text-gray-500">
+                      No active pass
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={clearMember}
+                  className="text-xs text-gray-400 hover:text-gray-700"
+                >
+                  Change
+                </button>
+              </div>
+            ) : (
+              <input
+                type="text"
+                value={memberQuery}
+                onFocus={() => setShowHits(true)}
+                onChange={(e) => {
+                  setMemberQuery(e.target.value);
+                  setShowHits(true);
+                }}
+                placeholder="Search by name or email…"
+                className="input-field w-full"
+                autoComplete="off"
+              />
+            )}
+            {showHits && !selectedMember && memberHits.length > 0 && (
+              <div className="absolute left-0 right-0 top-full z-10 mt-1 max-h-56 overflow-auto rounded-md border border-gray-200 bg-white shadow-lg">
+                {memberHits.map((m) => {
+                  const r =
+                    m.active_pass?.max == null
+                      ? m.active_pass
+                        ? "unlimited"
+                        : null
+                      : Math.max(
+                          0,
+                          (m.active_pass?.max ?? 0) - (m.active_pass?.used ?? 0)
+                        );
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => pickMember(m)}
+                      className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-gray-50"
+                    >
+                      <span>
+                        <span className="font-medium text-gray-900">
+                          {m.full_name}
+                        </span>
+                        {m.email && (
+                          <span className="ml-2 text-xs text-gray-500">
+                            {m.email}
+                          </span>
+                        )}
+                      </span>
+                      {m.active_pass ? (
+                        <span className="shrink-0 rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-medium text-teal-700">
+                          {r} left
+                        </span>
+                      ) : (
+                        <span className="shrink-0 text-[10px] text-gray-400">
+                          no pass
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {selectedMember && passInfo && (
+              <label className="mt-2 flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={usePass}
+                  onChange={(e) => setUsePass(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                Deduct one session from this client&apos;s pass
+              </label>
+            )}
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { formatDate, formatTime, getPlanLabel } from "@/lib/utils";
 import Toast from "@/components/ui/toast";
 
+type AttendanceStatus = "no_show" | "late_cancel" | null;
+
 type BookedItem = {
   booking_id: string;
   member_id: string;
@@ -13,6 +15,7 @@ type BookedItem = {
   credits: number;
   attended: boolean;
   credit_deducted: boolean;
+  attendance_status: AttendanceStatus;
 };
 
 type DropInItem = {
@@ -167,6 +170,36 @@ export default function SessionAttendance({
     router.refresh();
   };
 
+  const handleSetStatus = async (
+    bookingId: string,
+    status: AttendanceStatus
+  ) => {
+    setData((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        booked: prev.booked.map((b) => {
+          if (b.booking_id !== bookingId) return b;
+          const newAttended = status === null ? b.attended : false;
+          return { ...b, attendance_status: status, attended: newAttended };
+        }),
+      };
+    });
+
+    const res = await fetch("/api/attendance/status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ booking_id: bookingId, status }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      setToastMessage(err.error || "Failed to update status");
+    }
+    await fetchData();
+    router.refresh();
+  };
+
   const handleRemoveDropIn = async (dropInId: string, memberName: string) => {
     const hasRefund = data?.drop_ins.find(
       (d) => d.drop_in_id === dropInId && d.credit_deducted
@@ -230,6 +263,7 @@ export default function SessionAttendance({
                   <th className="pb-2 font-medium">Plan</th>
                   <th className="pb-2 font-medium">Credits</th>
                   <th className="pb-2 font-medium">Attended</th>
+                  <th className="pb-2 font-medium">Status</th>
                   <th className="pb-2 font-medium">Credit</th>
                 </tr>
               </thead>
@@ -260,10 +294,71 @@ export default function SessionAttendance({
                         <input
                           type="checkbox"
                           checked={b.attended}
+                          disabled={b.attendance_status !== null}
                           onChange={() => handleToggle(b.booking_id, b.attended)}
-                          className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                          className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 disabled:opacity-40"
+                          title={
+                            b.attendance_status
+                              ? "Clear no-show / late cancel to mark attended"
+                              : ""
+                          }
                         />
                       </label>
+                    </td>
+                    <td className="py-3">
+                      {b.attendance_status === "no_show" ? (
+                        <span className="flex items-center gap-2">
+                          <span className="inline-flex rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+                            No-show
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleSetStatus(b.booking_id, null)
+                            }
+                            className="text-xs text-gray-500 hover:text-gray-700"
+                          >
+                            Clear
+                          </button>
+                        </span>
+                      ) : b.attendance_status === "late_cancel" ? (
+                        <span className="flex items-center gap-2">
+                          <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                            Late cancel
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleSetStatus(b.booking_id, null)
+                            }
+                            className="text-xs text-gray-500 hover:text-gray-700"
+                          >
+                            Clear
+                          </button>
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleSetStatus(b.booking_id, "no_show")
+                            }
+                            className="text-xs text-red-600 hover:text-red-800"
+                          >
+                            No-show
+                          </button>
+                          <span className="text-gray-300">·</span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleSetStatus(b.booking_id, "late_cancel")
+                            }
+                            className="text-xs text-amber-600 hover:text-amber-800"
+                          >
+                            Late cancel
+                          </button>
+                        </span>
+                      )}
                     </td>
                     <td className="py-3">
                       {!b.attended ? (

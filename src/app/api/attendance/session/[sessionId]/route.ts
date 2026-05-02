@@ -89,6 +89,7 @@ export async function GET(
         id,
         attended,
         credit_deducted,
+        attendance_status,
         member_id,
         members (
           plan_type,
@@ -118,6 +119,8 @@ export async function GET(
         credits: raw?.credits ?? 0,
         attended: b.attended ?? false,
         credit_deducted: b.credit_deducted ?? false,
+        attendance_status:
+          (b as { attendance_status?: string | null }).attendance_status ?? null,
       };
     });
 

@@ -73,7 +73,20 @@ export async function POST(request: Request) {
       end_time,
       is_public,
       notes,
-    } = body;
+      member_id,
+      use_pass,
+    } = body as {
+      room_id?: string;
+      instructor_id?: string;
+      title?: string;
+      booking_date?: string;
+      start_time?: string;
+      end_time?: string;
+      is_public?: boolean;
+      notes?: string;
+      member_id?: string | null;
+      use_pass?: boolean;
+    };
 
     if (!room_id || !instructor_id || !title || !booking_date || !start_time || !end_time) {
       return NextResponse.json(
@@ -145,6 +158,68 @@ export async function POST(request: Request) {
     const [eh, em] = end_time.split(":").map(Number);
     const durationMinutes = eh * 60 + em - (sh * 60 + sm);
 
+    // Validate member if provided, and resolve an active pass if use_pass is requested.
+    let validMemberId: string | null = null;
+    let passSubscriptionId: string | null = null;
+    let passSubscriptionForUsage: {
+      id: string;
+      classes_used: number;
+    } | null = null;
+
+    if (member_id) {
+      const { data: memberRow } = await ctx.supabase
+        .from("members")
+        .select("id, studio_id")
+        .eq("id", member_id)
+        .single();
+      if (!memberRow || memberRow.studio_id !== ctx.studioId) {
+        return NextResponse.json(
+          { error: "Member not found in this studio" },
+          { status: 404 }
+        );
+      }
+      validMemberId = memberRow.id;
+
+      if (use_pass) {
+        const today = new Date().toISOString().slice(0, 10);
+        const { data: passSubs } = await ctx.supabase
+          .from("pass_subscriptions")
+          .select(
+            "id, classes_used_this_period, studio_passes(max_classes_per_month)"
+          )
+          .eq("member_id", validMemberId)
+          .eq("status", "active")
+          .gte("current_period_end", today);
+
+        let chosen: { id: string; classes_used: number } | null = null;
+        for (const sub of passSubs ?? []) {
+          const sp = sub.studio_passes as
+            | { max_classes_per_month: number | null }
+            | { max_classes_per_month: number | null }[]
+            | null;
+          const max = Array.isArray(sp)
+            ? sp[0]?.max_classes_per_month ?? null
+            : sp?.max_classes_per_month ?? null;
+          const used = sub.classes_used_this_period ?? 0;
+          if (max === null || used < max) {
+            chosen = { id: sub.id, classes_used: used };
+            break;
+          }
+        }
+        if (!chosen) {
+          return NextResponse.json(
+            {
+              error:
+                "No active pass with remaining sessions for this member.",
+            },
+            { status: 400 }
+          );
+        }
+        passSubscriptionId = chosen.id;
+        passSubscriptionForUsage = chosen;
+      }
+    }
+
     const { data: inserted, error: insertError } = await ctx.supabase
       .from("class_sessions")
       .insert({
@@ -161,12 +236,39 @@ export async function POST(request: Request) {
         is_public: is_public ?? false,
         is_cancelled: false,
         location: notes || null,
+        client_member_id: validMemberId,
+        client_pass_subscription_id: passSubscriptionId,
       })
       .select("*")
       .single();
 
     if (insertError) {
       return NextResponse.json({ error: insertError.message }, { status: 500 });
+    }
+
+    // Record pass usage after the booking row exists so we can revert on cancel.
+    if (passSubscriptionForUsage && validMemberId) {
+      const { error: usageErr } = await ctx.supabase
+        .from("pass_class_usage")
+        .insert({
+          pass_subscription_id: passSubscriptionForUsage.id,
+          session_id: inserted.id,
+          instructor_id,
+        });
+      if (usageErr) {
+        // Roll back the session row so the booking and pass stay consistent.
+        await ctx.supabase
+          .from("class_sessions")
+          .delete()
+          .eq("id", inserted.id);
+        return NextResponse.json(
+          { error: `Failed to deduct pass session: ${usageErr.message}` },
+          { status: 500 }
+        );
+      }
+      await ctx.supabase.rpc("increment_pass_usage", {
+        p_subscription_id: passSubscriptionForUsage.id,
+      });
     }
 
     return NextResponse.json(inserted, { status: 201 });

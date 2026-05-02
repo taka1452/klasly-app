@@ -47,7 +47,7 @@ export default async function RoomBookingDetailPage({
   const { data: booking } = await supabase
     .from("class_sessions")
     .select(
-      "id, title, session_date, start_time, end_time, is_public, is_cancelled, instructor_id, room_id, studio_id, session_type, recurrence_group_id, location"
+      "id, title, session_date, start_time, end_time, is_public, is_cancelled, instructor_id, room_id, studio_id, session_type, recurrence_group_id, location, client_member_id, client_pass_subscription_id"
     )
     .eq("id", id)
     .single();
@@ -74,6 +74,44 @@ export default async function RoomBookingDetailPage({
   const instructorProfile = (Array.isArray(rawInstructorProfile)
     ? rawInstructorProfile[0]
     : rawInstructorProfile) as { full_name: string; email: string } | null;
+
+  // Resolve linked client + pass details (Sarah feedback 2026-05).
+  let clientName: string | null = null;
+  let clientEmail: string | null = null;
+  let passUsageInfo: { used: number; max: number | null } | null = null;
+  if (booking.client_member_id) {
+    const { data: memberRow } = await supabase
+      .from("members")
+      .select("profiles(full_name, email)")
+      .eq("id", booking.client_member_id)
+      .single();
+    const rawMemberProfile = memberRow?.profiles as unknown;
+    const memberProfile = (Array.isArray(rawMemberProfile)
+      ? rawMemberProfile[0]
+      : rawMemberProfile) as { full_name: string; email: string } | null;
+    clientName = memberProfile?.full_name ?? null;
+    clientEmail = memberProfile?.email ?? null;
+  }
+  if (booking.client_pass_subscription_id) {
+    const { data: sub } = await supabase
+      .from("pass_subscriptions")
+      .select(
+        "classes_used_this_period, studio_passes(max_classes_per_month)"
+      )
+      .eq("id", booking.client_pass_subscription_id)
+      .single();
+    const sp = sub?.studio_passes as
+      | { max_classes_per_month: number | null }
+      | { max_classes_per_month: number | null }[]
+      | null;
+    const max = Array.isArray(sp)
+      ? sp[0]?.max_classes_per_month ?? null
+      : sp?.max_classes_per_month ?? null;
+    passUsageInfo = {
+      used: sub?.classes_used_this_period ?? 0,
+      max,
+    };
+  }
 
   // Count remaining future sessions in the same recurrence group.
   let futureCount = 0;
@@ -146,6 +184,34 @@ export default async function RoomBookingDetailPage({
                 {booking.is_public ? "Public" : "Private"}
               </dd>
             </div>
+            {clientName && (
+              <div className="flex justify-between">
+                <dt className="text-gray-500">Client</dt>
+                <dd className="font-medium text-gray-900">
+                  {clientName}
+                  {clientEmail && (
+                    <span className="ml-2 text-xs text-gray-400">
+                      {clientEmail}
+                    </span>
+                  )}
+                </dd>
+              </div>
+            )}
+            {passUsageInfo && (
+              <div className="flex justify-between">
+                <dt className="text-gray-500">Pass</dt>
+                <dd className="font-medium text-teal-700">
+                  {passUsageInfo.max === null
+                    ? "Session deducted (unlimited pass)"
+                    : `Session deducted · ${passUsageInfo.used}/${passUsageInfo.max} used this period`}
+                  {!booking.is_cancelled && (
+                    <span className="ml-1 text-xs text-gray-400">
+                      (refunded if booking is cancelled)
+                    </span>
+                  )}
+                </dd>
+              </div>
+            )}
             {booking.location && (
               <div className="flex justify-between">
                 <dt className="text-gray-500">Notes</dt>

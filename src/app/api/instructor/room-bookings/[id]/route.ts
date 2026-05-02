@@ -218,7 +218,7 @@ export async function DELETE(
     const { data: existing } = await actor.supabase
       .from("class_sessions")
       .select(
-        "id, instructor_id, recurrence_group_id, session_date, room_id, start_time, end_time, title, studio_id, session_type"
+        "id, instructor_id, recurrence_group_id, session_date, room_id, start_time, end_time, title, studio_id, session_type, client_member_id, client_pass_subscription_id"
       )
       .eq("id", id)
       .eq("is_cancelled", false)
@@ -237,9 +237,23 @@ export async function DELETE(
     const reason = reasonRaw ? reasonRaw.slice(0, 500) : null;
 
     let cancelledCount = 0;
+    // Track which sessions had pass usage so we can revert it after cancel.
+    let passRevertSessionIds: string[] = [];
 
     if (cancelFuture && existing.recurrence_group_id) {
       const today = new Date().toISOString().split("T")[0];
+
+      // Capture sessions with linked pass usage BEFORE cancelling.
+      const { data: linkedRows } = await actor.supabase
+        .from("class_sessions")
+        .select("id, client_pass_subscription_id")
+        .eq("recurrence_group_id", existing.recurrence_group_id)
+        .eq("instructor_id", existing.instructor_id)
+        .eq("is_cancelled", false)
+        .gte("session_date", today)
+        .not("client_pass_subscription_id", "is", null);
+      passRevertSessionIds = (linkedRows ?? []).map((r) => r.id);
+
       const { data: cancelled, error } = await actor.supabase
         .from("class_sessions")
         .update({ is_cancelled: true })
@@ -253,6 +267,9 @@ export async function DELETE(
       }
       cancelledCount = cancelled?.length ?? 0;
     } else {
+      if (existing.client_pass_subscription_id) {
+        passRevertSessionIds = [id];
+      }
       const { error } = await actor.supabase
         .from("class_sessions")
         .update({ is_cancelled: true })
@@ -261,6 +278,24 @@ export async function DELETE(
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
       cancelledCount = 1;
+    }
+
+    // Revert pass usage for any cancelled sessions that consumed a pass.
+    for (const sid of passRevertSessionIds) {
+      const { data: usage } = await actor.supabase
+        .from("pass_class_usage")
+        .select("id, pass_subscription_id")
+        .eq("session_id", sid)
+        .maybeSingle();
+      if (!usage) continue;
+      const { error: delErr } = await actor.supabase
+        .from("pass_class_usage")
+        .delete()
+        .eq("id", usage.id);
+      if (delErr) continue;
+      await actor.supabase.rpc("decrement_pass_usage", {
+        p_subscription_id: usage.pass_subscription_id,
+      });
     }
 
     // If the action was taken by staff on the instructor's behalf, notify

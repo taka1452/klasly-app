@@ -40,6 +40,7 @@ export default function DashboardCalendar({ onSlotClick }: DashboardCalendarProp
   const [fetchError, setFetchError] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showCancelled, setShowCancelled] = useState(false);
+  const [selectedRoomId, setSelectedRoomId] = useState<string>("all");
 
   // Detect mobile on mount
   useEffect(() => {
@@ -112,9 +113,44 @@ export default function DashboardCalendar({ onSlotClick }: DashboardCalendarProp
     setView("day");
   }
 
-  const filteredSessions = showCancelled
-    ? sessions
-    : sessions.filter((s) => !s.is_cancelled);
+  // Build the unique room list from sessions currently in view (id + name).
+  // Includes a synthetic "no-room" bucket for sessions with no room assigned,
+  // so users can isolate those too.
+  const roomOptions = (() => {
+    const map = new Map<string, string>();
+    let hasUnassigned = false;
+    for (const s of sessions) {
+      if (s.room_id && s.room_name) {
+        map.set(s.room_id, s.room_name);
+      } else {
+        hasUnassigned = true;
+      }
+    }
+    const opts = Array.from(map.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+    if (hasUnassigned) opts.push({ id: "__none__", name: "No room" });
+    return opts;
+  })();
+
+  // If the previously selected room disappears (user navigates to a week
+  // where it has no sessions), reset to "all" so nothing looks empty.
+  useEffect(() => {
+    if (
+      selectedRoomId !== "all" &&
+      !roomOptions.some((r) => r.id === selectedRoomId)
+    ) {
+      setSelectedRoomId("all");
+    }
+  }, [roomOptions, selectedRoomId]);
+
+  const filteredSessions = sessions
+    .filter((s) => (showCancelled ? true : !s.is_cancelled))
+    .filter((s) => {
+      if (selectedRoomId === "all") return true;
+      if (selectedRoomId === "__none__") return !s.room_id;
+      return s.room_id === selectedRoomId;
+    });
 
   return (
     <div>
@@ -130,22 +166,47 @@ export default function DashboardCalendar({ onSlotClick }: DashboardCalendarProp
             onViewChange={handleViewChange}
           />
         </div>
-        <div className="flex cursor-pointer items-center gap-2 text-sm text-gray-600" onClick={() => setShowCancelled((v) => !v)}>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={showCancelled}
-            className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
-              showCancelled ? "bg-gray-500" : "bg-gray-300"
-            }`}
+        <div className="flex flex-wrap items-center gap-3">
+          {roomOptions.length > 0 && (
+            <label className="flex items-center gap-2 text-sm text-gray-600">
+              <span className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                Room
+              </span>
+              <select
+                value={selectedRoomId}
+                onChange={(e) => setSelectedRoomId(e.target.value)}
+                className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                aria-label="Filter by room"
+              >
+                <option value="all">All rooms</option>
+                {roomOptions.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <div
+            className="flex cursor-pointer items-center gap-2 text-sm text-gray-600"
+            onClick={() => setShowCancelled((v) => !v)}
           >
-            <span
-              className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
-                showCancelled ? "translate-x-[18px]" : "translate-x-[3px]"
+            <button
+              type="button"
+              role="switch"
+              aria-checked={showCancelled}
+              className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
+                showCancelled ? "bg-gray-500" : "bg-gray-300"
               }`}
-            />
-          </button>
-          <span>Show cancelled</span>
+            >
+              <span
+                className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
+                  showCancelled ? "translate-x-[18px]" : "translate-x-[3px]"
+                }`}
+              />
+            </button>
+            <span>Show cancelled</span>
+          </div>
         </div>
       </div>
 
