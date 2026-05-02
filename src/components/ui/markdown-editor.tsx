@@ -2,8 +2,13 @@
 
 import { useMemo, useRef, useState } from "react";
 import { Bold, Italic, List, ListOrdered, Eye, Pencil } from "lucide-react";
-import DOMPurify from "dompurify";
+import { useSanitizedHtml } from "@/lib/sanitize";
 import { markdownToHtml } from "@/lib/waiver-content";
+
+const PREVIEW_OPTIONS = {
+  ALLOWED_TAGS: ["strong", "em", "ul", "ol", "li", "br", "p"],
+  ALLOWED_ATTR: [],
+};
 
 type Props = {
   value: string;
@@ -71,14 +76,11 @@ export default function MarkdownEditor({
     });
   }
 
-  const previewHtml = useMemo(() => {
-    if (!value.trim()) return "";
-    const raw = markdownToHtml(value);
-    return DOMPurify.sanitize(raw, {
-      ALLOWED_TAGS: ["strong", "em", "ul", "ol", "li", "br", "p"],
-      ALLOWED_ATTR: [],
-    });
-  }, [value]);
+  const rawPreview = useMemo(
+    () => (value.trim() ? markdownToHtml(value) : ""),
+    [value]
+  );
+  const previewHtml = useSanitizedHtml(rawPreview, PREVIEW_OPTIONS);
 
   return (
     <div className="mt-1 overflow-hidden rounded-lg border border-gray-300 bg-white focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500">

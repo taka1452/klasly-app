@@ -2,7 +2,12 @@
 
 import { useMemo } from "react";
 import { markdownToHtml } from "@/lib/waiver-content";
-import DOMPurify from "dompurify";
+import { useSanitizedHtml } from "@/lib/sanitize";
+
+const SAFE_MARKDOWN_OPTIONS = {
+  ALLOWED_TAGS: ["p", "strong", "em", "ul", "ol", "li", "br", "h1", "h2", "h3", "h4", "h5", "h6", "blockquote", "code", "pre", "hr"],
+  ALLOWED_ATTR: [],
+};
 
 type Props = {
   content: string;
@@ -14,14 +19,8 @@ type Props = {
  * Disallows images and links for security.
  */
 export default function SafeMarkdown({ content, className = "" }: Props) {
-  const html = useMemo(() => {
-    if (!content) return "";
-    const raw = markdownToHtml(content);
-    return DOMPurify.sanitize(raw, {
-      ALLOWED_TAGS: ["p", "strong", "em", "ul", "ol", "li", "br", "h1", "h2", "h3", "h4", "h5", "h6", "blockquote", "code", "pre", "hr"],
-      ALLOWED_ATTR: [],
-    });
-  }, [content]);
+  const raw = useMemo(() => (content ? markdownToHtml(content) : ""), [content]);
+  const html = useSanitizedHtml(raw, SAFE_MARKDOWN_OPTIONS);
 
   if (!html) return null;
 

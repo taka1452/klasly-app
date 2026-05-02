@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import DOMPurify from "dompurify";
+import { useState } from "react";
+import { useSanitizedHtml } from "@/lib/sanitize";
 
 type Props = {
   memberId: string;
@@ -54,10 +54,7 @@ export default function InlineWaiverSign({
     }
   }
 
-  const sanitizedContent = useMemo(
-    () => DOMPurify.sanitize(waiverContent),
-    [waiverContent]
-  );
+  const sanitizedContent = useSanitizedHtml(waiverContent);
   const canSubmit = signedName.trim().length > 0 && agreed && !loading;
 
   return (

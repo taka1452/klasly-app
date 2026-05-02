@@ -33,14 +33,20 @@ export default function ScheduleCalendar({
   classPrice,
 }: Props) {
   const CALENDAR_VIEW_KEY = "klasly:member:calendar-view";
-  const [view, setView] = useState<CalendarView>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem(CALENDAR_VIEW_KEY);
-      if (saved === "week" || saved === "day" || saved === "month" || saved === "list") return saved;
-      if (window.innerWidth < 768) return "day";
+  // Always start with the same view on server and client to avoid a
+  // hydration mismatch — the persisted/preferred view is read in an
+  // effect below and then re-applied after hydration.
+  const [view, setView] = useState<CalendarView>("month");
+  useEffect(() => {
+    const saved = localStorage.getItem(CALENDAR_VIEW_KEY);
+    if (saved === "week" || saved === "day" || saved === "month" || saved === "list") {
+      setView(saved);
+      return;
     }
-    return "month";
-  });
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      setView("day");
+    }
+  }, []);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [sessions, setSessions] = useState<SessionData[]>([]);
   const [bookings, setBookings] = useState<

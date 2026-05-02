@@ -3,16 +3,16 @@
 import { useWidgetTheme } from "./widget-theme-provider";
 import { useMemo } from "react";
 import { markdownToHtml } from "@/lib/waiver-content";
-import DOMPurify from "dompurify";
+import { useSanitizedHtml } from "@/lib/sanitize";
+
+const DESCRIPTION_OPTIONS = {
+  ALLOWED_TAGS: ["strong", "em", "ul", "ol", "li", "br"],
+  ALLOWED_ATTR: [],
+};
 
 function DescriptionMarkdown({ content }: { content: string }) {
-  const html = useMemo(() => {
-    const raw = markdownToHtml(content);
-    return DOMPurify.sanitize(raw, {
-      ALLOWED_TAGS: ["strong", "em", "ul", "ol", "li", "br"],
-      ALLOWED_ATTR: [],
-    });
-  }, [content]);
+  const raw = useMemo(() => markdownToHtml(content), [content]);
+  const html = useSanitizedHtml(raw, DESCRIPTION_OPTIONS);
   if (!html) return null;
   return (
     <div

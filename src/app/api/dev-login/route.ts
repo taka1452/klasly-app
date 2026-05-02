@@ -7,8 +7,10 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json().catch(() => ({}));
-  const email = (process.env.DEV_LOGIN_EMAIL || body.email || "").trim();
-  const password = (process.env.DEV_LOGIN_PASSWORD || body.password || "").trim();
+  // Body credentials take precedence so the dev login can target any
+  // test account; env vars remain the fallback for one-click owner sign-in.
+  const email = (body.email || process.env.DEV_LOGIN_EMAIL || "").trim();
+  const password = (body.password || process.env.DEV_LOGIN_PASSWORD || "").trim();
 
   if (!email || !password) {
     return NextResponse.json({ error: "Missing credentials" }, { status: 400 });
