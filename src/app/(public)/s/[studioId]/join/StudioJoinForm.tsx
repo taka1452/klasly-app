@@ -94,7 +94,7 @@ export default function StudioJoinForm({ studioId, studioName }: Props) {
           htmlFor="join-name"
           className="block text-sm font-medium text-gray-700"
         >
-          Your name
+          Your name *
         </label>
         <input
           id="join-name"
@@ -112,12 +112,13 @@ export default function StudioJoinForm({ studioId, studioName }: Props) {
           htmlFor="join-email"
           className="block text-sm font-medium text-gray-700"
         >
-          Email
+          Email *
         </label>
         <input
           id="join-email"
           type="email"
           required
+          autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
@@ -130,7 +131,7 @@ export default function StudioJoinForm({ studioId, studioName }: Props) {
           htmlFor="join-password"
           className="block text-sm font-medium text-gray-700"
         >
-          Password
+          Password *
         </label>
         <input
           id="join-password"
@@ -142,7 +143,11 @@ export default function StudioJoinForm({ studioId, studioName }: Props) {
           onChange={(e) => setPassword(e.target.value)}
           className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           placeholder="At least 6 characters"
+          aria-describedby="join-password-hint"
         />
+        <p id="join-password-hint" className="mt-1 text-xs text-gray-500">
+          At least 6 characters.
+        </p>
       </div>
 
       <label className="flex items-start gap-2 text-xs text-gray-600">
@@ -178,10 +183,19 @@ export default function StudioJoinForm({ studioId, studioName }: Props) {
       <button
         type="submit"
         disabled={loading || !agreed}
-        className="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition-[transform,filter] duration-150 ease-out hover:brightness-110 active:scale-[0.97] disabled:opacity-60 disabled:active:scale-100"
+        aria-describedby={!agreed ? "join-agree-hint" : undefined}
+        className="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition-[transform,filter] duration-150 ease-out hover:brightness-110 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100 motion-reduce:transition-none motion-reduce:active:scale-100"
       >
         {loading ? "Creating account…" : `Join ${studioName}`}
       </button>
+      {!agreed && (
+        <p
+          id="join-agree-hint"
+          className="-mt-2 text-center text-xs text-gray-400"
+        >
+          Agree to the Terms and Privacy Policy to continue.
+        </p>
+      )}
     </form>
   );
 }

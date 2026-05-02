@@ -162,7 +162,7 @@ export default function WidgetLoginModal({ open, onClose, studioId }: Props) {
               href={`/s/${studioId}/join`}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-medium underline"
+              className="font-medium underline-offset-2 hover:underline focus:outline-none focus-visible:underline"
               style={{ color: theme.primary }}
             >
               Create an account

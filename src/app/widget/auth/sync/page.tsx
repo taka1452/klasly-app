@@ -100,6 +100,17 @@ function SyncContent() {
           </div>
         )}
         <p className="text-sm font-medium text-gray-900">{message}</p>
+        {status === "error" && (
+          <p className="mt-4 text-xs text-gray-500">
+            <button
+              type="button"
+              onClick={() => window.history.back()}
+              className="font-medium text-brand-600 underline-offset-2 hover:underline focus:outline-none focus-visible:underline"
+            >
+              ← Back to the previous page
+            </button>
+          </p>
+        )}
       </div>
     </div>
   );

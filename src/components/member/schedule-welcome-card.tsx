@@ -40,40 +40,37 @@ export default function ScheduleWelcomeCard() {
         type="button"
         onClick={handleDismiss}
         aria-label="Dismiss welcome message"
-        className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-md text-brand-700/70 transition-[transform,background-color,color] duration-150 ease-out hover:bg-brand-100 hover:text-brand-900 active:scale-[0.94] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+        className="tap-target absolute right-1.5 top-1.5 rounded-md text-brand-700/70 transition-[transform,background-color,color] duration-150 ease-out hover:bg-brand-100 hover:text-brand-900 active:scale-[0.94] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 motion-reduce:transition-none motion-reduce:active:scale-100"
       >
         <X className="h-4 w-4" />
       </button>
 
-      <h2 className="text-base font-semibold text-brand-900">Welcome!</h2>
-      <p className="mt-1 text-sm leading-relaxed text-brand-700">
+      <h2 className="pr-10 text-base font-semibold text-brand-900">Welcome!</h2>
+      <p className="mt-1 pr-10 text-sm leading-relaxed text-brand-700">
         Here&apos;s how to get started:
       </p>
       <ol className="mt-3 space-y-2 text-sm text-brand-700">
-        <li className="flex items-start gap-2">
-          <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-brand-200 text-xs font-bold text-brand-800">
-            1
-          </span>
-          <span>
+        {[
+          <>
             Browse the <strong>Schedule</strong> to find classes you like
-          </span>
-        </li>
-        <li className="flex items-start gap-2">
-          <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-brand-200 text-xs font-bold text-brand-800">
-            2
-          </span>
-          <span>
+          </>,
+          <>
             Click <strong>Book</strong> to reserve your spot
-          </span>
-        </li>
-        <li className="flex items-start gap-2">
-          <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-brand-200 text-xs font-bold text-brand-800">
-            3
-          </span>
-          <span>
+          </>,
+          <>
             Check <strong>My Bookings</strong> to see your upcoming classes
-          </span>
-        </li>
+          </>,
+        ].map((item, i) => (
+          <li key={i} className="flex items-start gap-2">
+            <span
+              aria-hidden
+              className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-brand-200 text-xs font-bold text-brand-800"
+            >
+              {i + 1}
+            </span>
+            <span>{item}</span>
+          </li>
+        ))}
       </ol>
       <Link
         href="/help/member-guide/member-book-class"
