@@ -100,13 +100,34 @@ export async function POST(request: Request) {
         },
       });
 
-    if (linkError) {
-      console.error("Failed to generate magic link for member:", linkError.message);
-    }
-
     const magicLinkUrl =
       (linkData as { properties?: { action_link?: string } })?.properties
         ?.action_link ?? (linkData as { action_link?: string })?.action_link ?? null;
+
+    // Without a magic link the welcome email can't onboard the member, so
+    // fail loudly instead of silently sending a broken email. Roll back the
+    // half-created auth user so the admin can retry cleanly.
+    if (linkError || !magicLinkUrl) {
+      console.error(
+        "Failed to generate magic link for member:",
+        linkError?.message ?? "no action_link"
+      );
+      try {
+        await adminSupabase.auth.admin.deleteUser(authUser.user.id);
+      } catch (rollbackErr) {
+        console.error(
+          "Failed to roll back auth user after missing magic link:",
+          rollbackErr instanceof Error ? rollbackErr.message : rollbackErr
+        );
+      }
+      return NextResponse.json(
+        {
+          error:
+            "We couldn't create the invitation link. The member was not added — please try again.",
+        },
+        { status: 502 }
+      );
+    }
 
     // 2. profiles を更新（トリガーで作成済みなので update）
     await adminSupabase

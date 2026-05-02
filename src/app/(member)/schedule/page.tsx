@@ -1,11 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { HelpCircle } from "lucide-react";
 import { getPlanAccess } from "@/lib/plan-guard";
 import { getRequiresCredits } from "@/lib/booking-utils";
 import ScheduleCalendar from "@/components/member/calendar/schedule-calendar";
+import ScheduleWelcomeCard from "@/components/member/schedule-welcome-card";
 import UTMTracker from "@/components/tracking/utm-tracker";
 
 export default async function SchedulePage() {
@@ -96,38 +95,9 @@ export default async function SchedulePage() {
     <div>
       <UTMTracker studioId={profile.studio_id} />
 
-      {/* First-time welcome */}
-      {!onboardingCompleted && (
-        <div className="mb-6 rounded-xl border border-brand-200 bg-brand-50 p-5">
-          <h2 className="text-base font-semibold text-brand-900">
-            Welcome!
-          </h2>
-          <p className="mt-1 text-sm text-brand-700 leading-relaxed">
-            Here&apos;s how to get started:
-          </p>
-          <ol className="mt-3 space-y-2 text-sm text-brand-700">
-            <li className="flex items-start gap-2">
-              <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-brand-200 text-xs font-bold text-brand-800">1</span>
-              <span>Browse the <strong>Schedule</strong> to find classes you like</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-brand-200 text-xs font-bold text-brand-800">2</span>
-              <span>Click <strong>Book</strong> to reserve your spot</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-brand-200 text-xs font-bold text-brand-800">3</span>
-              <span>Check <strong>My Bookings</strong> to see your upcoming classes</span>
-            </li>
-          </ol>
-          <Link
-            href="/help/member-guide/member-book-class"
-            className="mt-3 inline-flex items-center gap-1 text-xs text-brand-600 hover:text-brand-700"
-          >
-            <HelpCircle className="h-3.5 w-3.5" />
-            Detailed booking guide
-          </Link>
-        </div>
-      )}
+      {/* First-time welcome — server gates on onboarding_completed,
+          the client component handles per-device dismissal. */}
+      {!onboardingCompleted && <ScheduleWelcomeCard />}
 
       <header className="mb-5">
         <h1 className="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl">
