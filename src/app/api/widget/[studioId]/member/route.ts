@@ -4,6 +4,7 @@ import {
   getWidgetCorsHeaders,
   corsPreflightResponse,
 } from "@/lib/widget/cors";
+import { getRequiresCredits } from "@/lib/booking-utils";
 import { NextResponse } from "next/server";
 
 /**
@@ -55,6 +56,21 @@ export async function GET(
 
     const adminSupabase = createAdminClient();
 
+    // Studio settings that affect widget UI (e.g. credits gating).
+    // Match the server-side rule used in executeBookingAction so the UI
+    // and the booking outcome stay in sync.
+    const { data: studio } = await adminSupabase
+      .from("studios")
+      .select("booking_requires_credits, stripe_connect_onboarding_complete")
+      .eq("id", studioId)
+      .maybeSingle();
+
+    const requireCredits = getRequiresCredits({
+      booking_requires_credits: studio?.booking_requires_credits ?? null,
+      stripe_connect_onboarding_complete:
+        studio?.stripe_connect_onboarding_complete ?? false,
+    });
+
     // Get member record for this studio
     const { data: member } = await adminSupabase
       .from("members")
@@ -65,7 +81,7 @@ export async function GET(
 
     if (!member) {
       return NextResponse.json(
-        { member: null, bookings: [] },
+        { member: null, bookings: [], studio: { requireCredits } },
         { headers: corsHeaders }
       );
     }
@@ -108,6 +124,7 @@ export async function GET(
           waiverSigned: member.waiver_signed,
         },
         bookings: upcomingBookings,
+        studio: { requireCredits },
       },
       { headers: corsHeaders }
     );

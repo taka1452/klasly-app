@@ -50,7 +50,7 @@ export async function GET(
     // アクティブなパス一覧
     const { data: passes } = await supabase
       .from("studio_passes")
-      .select("id, name, description, price_cents, max_classes_per_month, billing_interval")
+      .select("id, name, description, price_cents, max_classes_per_month, billing_interval, pass_type")
       .eq("studio_id", studioId)
       .eq("is_active", true)
       .order("price_cents", { ascending: true });

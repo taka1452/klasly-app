@@ -829,6 +829,23 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
+          q: "How can new students sign up themselves?",
+          a: (
+            <>
+              Share your studio&apos;s public join link &mdash;{" "}
+              <B>https://yoursite.com/s/&lt;your-studio-id&gt;/join</B>.
+              Anyone with the link can create an account, and a member record
+              is created for your studio automatically once they confirm their
+              email. The same link is also surfaced from the booking
+              widget&apos;s &ldquo;New here?&rdquo; prompt, so students who
+              land on the schedule first can self-register without waiting
+              for an invitation. You can still invite members manually from{" "}
+              <B>Members → New Member</B> when you need to capture phone, date
+              of birth, or gender up front.
+            </>
+          ),
+        },
+        {
           q: "How do I configure payout settings?",
           a: (
             <>

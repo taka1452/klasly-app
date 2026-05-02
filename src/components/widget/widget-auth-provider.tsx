@@ -25,10 +25,15 @@ type BookingInfo = {
   status: string;
 };
 
+type StudioInfo = {
+  requireCredits: boolean;
+};
+
 type WidgetAuthState = {
   user: User | null;
   member: MemberInfo | null;
   bookings: BookingInfo[];
+  studio: StudioInfo;
   loading: boolean;
   supabase: SupabaseClient;
   signInWithPassword: (email: string, password: string) => Promise<string | null>;
@@ -57,6 +62,7 @@ export function WidgetAuthProvider({ studioId, children }: Props) {
   const [user, setUser] = useState<User | null>(null);
   const [member, setMember] = useState<MemberInfo | null>(null);
   const [bookings, setBookings] = useState<BookingInfo[]>([]);
+  const [studio, setStudio] = useState<StudioInfo>({ requireCredits: false });
   const [loading, setLoading] = useState(true);
 
   // Fetch member data for this studio
@@ -82,6 +88,9 @@ export function WidgetAuthProvider({ studioId, children }: Props) {
         const data = await res.json();
         setMember(data.member);
         setBookings(data.bookings || []);
+        if (data.studio) {
+          setStudio({ requireCredits: data.studio.requireCredits === true });
+        }
       }
     } catch {
       // Silently fail — member data is not critical for schedule viewing
@@ -109,6 +118,7 @@ export function WidgetAuthProvider({ studioId, children }: Props) {
       } else {
         setMember(null);
         setBookings([]);
+        setStudio({ requireCredits: false });
       }
     });
 
@@ -190,12 +200,14 @@ export function WidgetAuthProvider({ studioId, children }: Props) {
     setUser(null);
     setMember(null);
     setBookings([]);
+    setStudio({ requireCredits: false });
   }, [supabase]);
 
   const value: WidgetAuthState = {
     user,
     member,
     bookings,
+    studio,
     loading,
     supabase,
     signInWithPassword,

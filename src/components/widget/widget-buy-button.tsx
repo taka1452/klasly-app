@@ -10,6 +10,7 @@ type PassData = {
   price_cents: number;
   max_classes_per_month: number | null;
   billing_interval: string;
+  pass_type?: string;
 };
 
 type PassesResponse = {
@@ -67,6 +68,29 @@ export default function WidgetBuyButton({ studioId }: { studioId: string }) {
     return `${symbol}${amount}`;
   }
 
+  function isOneTime(pass: PassData) {
+    return (
+      pass.billing_interval === "one_time" || pass.pass_type === "class_pack"
+    );
+  }
+
+  function formatInterval(pass: PassData) {
+    if (isOneTime(pass)) return null;
+    if (pass.billing_interval === "year") return "/year";
+    if (pass.billing_interval === "week") return "/week";
+    return "/month";
+  }
+
+  function formatClassesIncluded(pass: PassData) {
+    const n = pass.max_classes_per_month;
+    if (!n) return null;
+    const noun = n === 1 ? "class" : "classes";
+    if (isOneTime(pass)) {
+      return `${n} ${noun} total`;
+    }
+    return `${n} ${noun} / month`;
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -111,28 +135,32 @@ export default function WidgetBuyButton({ studioId }: { studioId: string }) {
                       {pass.description}
                     </p>
                   )}
-                  <div className="mt-2 flex items-center gap-2">
+                  <div className="mt-2 flex items-baseline gap-1">
                     <span className="text-base font-bold text-gray-900">
                       {formatPrice(pass.price_cents, data.currency)}
                     </span>
-                    <span className="text-[11px] text-gray-400">
-                      /{pass.billing_interval === "year" ? "year" : "month"}
-                    </span>
+                    {formatInterval(pass) && (
+                      <span className="text-[11px] text-gray-400">
+                        {formatInterval(pass)}
+                      </span>
+                    )}
                   </div>
-                  {pass.max_classes_per_month && (
+                  {formatClassesIncluded(pass) && (
                     <p className="mt-1 text-[10px] text-gray-400">
-                      {pass.max_classes_per_month} classes/month
+                      {formatClassesIncluded(pass)}
                     </p>
                   )}
                 </div>
                 <a
-                  href={`${baseUrl}/my-passes`}
+                  href={`${baseUrl}/widget/auth/sync?next=${encodeURIComponent(
+                    "/my-passes"
+                  )}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="shrink-0 rounded-full px-4 py-2 text-xs font-semibold text-white transition-[transform,opacity,filter] duration-150 ease-out hover:opacity-90 hover:brightness-105 active:scale-[0.95]"
                   style={{ backgroundColor: theme.primary }}
                 >
-                  Subscribe
+                  {isOneTime(pass) ? "Buy" : "Subscribe"}
                 </a>
               </div>
             </div>

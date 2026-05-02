@@ -50,7 +50,7 @@ type ViewMode = "week" | "day";
 
 export default function WidgetSchedule({ studioId }: Props) {
   const theme = useWidgetTheme();
-  const { user, member, bookings, refreshMemberData, supabase, signOut } =
+  const { user, member, bookings, studio, refreshMemberData, supabase, signOut } =
     useWidgetAuth();
   const [scheduleData, setScheduleData] = useState<ScheduleResponse | null>(null);
   const [weekOffset, setWeekOffset] = useState(0);
@@ -211,6 +211,7 @@ export default function WidgetSchedule({ studioId }: Props) {
         onRebook={(id) => handleBookingAction(id, "rebook")}
         isLoggedIn={!!user}
         memberCredits={member?.credits ?? 0}
+        requireCredits={studio.requireCredits}
         loading={bookingLoading}
       />
     );
@@ -259,8 +260,8 @@ export default function WidgetSchedule({ studioId }: Props) {
 
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-gray-700">
-            {scheduleData?.weekStart
-              ? `${formatDateShort(scheduleData.weekStart)} - ${formatDateShort(scheduleData.weekEnd)}`
+            {weekDates.length > 0
+              ? `${formatDateShort(weekDates[0])} - ${formatDateShort(weekDates[weekDates.length - 1])}`
               : ""}
           </span>
           {weekOffset !== 0 && (
@@ -461,6 +462,7 @@ export default function WidgetSchedule({ studioId }: Props) {
       <WidgetLoginModal
         open={loginModalOpen}
         onClose={() => setLoginModalOpen(false)}
+        studioId={studioId}
       />
     </div>
   );

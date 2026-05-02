@@ -103,6 +103,73 @@ export async function GET(request: Request) {
           return NextResponse.redirect(`${origin}/admin`);
         }
 
+        // Public studio self-signup: a `pending_studio_id` was stashed in
+        // user_metadata at signup time. Hook the user up to that studio
+        // exactly once, then clear the metadata so we don't re-run.
+        const meta = (user.user_metadata ?? {}) as {
+          pending_studio_id?: string;
+          full_name?: string;
+        };
+        if (meta.pending_studio_id) {
+          const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+          const adminSupabase = serviceRoleKey
+            ? createClient(
+                process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                serviceRoleKey
+              )
+            : null;
+          if (adminSupabase) {
+            const studioId = meta.pending_studio_id;
+            const { data: studio } = await adminSupabase
+              .from("studios")
+              .select("id, is_demo, plan_status")
+              .eq("id", studioId)
+              .maybeSingle();
+            const acceptedStatuses = new Set([
+              "active",
+              "trial",
+              "trialing",
+              null,
+            ]);
+            if (
+              studio &&
+              !studio.is_demo &&
+              acceptedStatuses.has(studio.plan_status as string | null)
+            ) {
+              await adminSupabase
+                .from("profiles")
+                .update({
+                  studio_id: studioId,
+                  full_name: meta.full_name ?? null,
+                  role: "member",
+                })
+                .eq("id", user.id);
+
+              const { data: existingMember } = await adminSupabase
+                .from("members")
+                .select("id")
+                .eq("studio_id", studioId)
+                .eq("profile_id", user.id)
+                .maybeSingle();
+              if (!existingMember) {
+                await adminSupabase.from("members").insert({
+                  studio_id: studioId,
+                  profile_id: user.id,
+                  plan_type: "drop_in",
+                  credits: 0,
+                  status: "active",
+                  joined_at: new Date().toISOString(),
+                  waiver_signed: false,
+                });
+              }
+            }
+            // Clear the marker so this only runs once.
+            await adminSupabase.auth.admin.updateUserById(user.id, {
+              user_metadata: { ...meta, pending_studio_id: null },
+            });
+          }
+        }
+
         const url = await getRedirectUrl(user.id, type, next);
 
         // マジックリンク招待でパスワード未設定の場合は /set-password へ

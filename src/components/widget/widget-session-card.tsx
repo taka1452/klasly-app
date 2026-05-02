@@ -24,6 +24,7 @@ type Props = {
   onRebook: (sessionId: string) => void;
   isLoggedIn: boolean;
   memberCredits: number;
+  requireCredits: boolean;
   loading: boolean;
 };
 
@@ -44,6 +45,7 @@ export default function WidgetSessionCard({
   onRebook,
   isLoggedIn,
   memberCredits,
+  requireCredits,
   loading,
 }: Props) {
   const theme = useWidgetTheme();
@@ -89,7 +91,9 @@ export default function WidgetSessionCard({
           <button
             type="button"
             onClick={() => onRebook(session.id)}
-            disabled={loading || (memberCredits === 0 && !isFull)}
+            disabled={
+              loading || (requireCredits && memberCredits === 0 && !isFull)
+            }
             className="rounded-full px-2.5 py-0.5 text-[10px] font-medium text-white transition-[transform,filter] duration-150 ease-out hover:brightness-110 active:scale-[0.95] disabled:opacity-50 disabled:active:scale-100"
             style={{ backgroundColor: theme.primary }}
           >
@@ -99,8 +103,8 @@ export default function WidgetSessionCard({
       }
     }
 
-    // No existing booking
-    if (memberCredits === 0 && !isFull) {
+    // No existing booking — only block on credits when the studio requires them
+    if (requireCredits && memberCredits === 0 && !isFull) {
       return (
         <span className="text-[10px] text-amber-600">No credits</span>
       );

@@ -7,9 +7,10 @@ import { useWidgetTheme } from "./widget-theme-provider";
 type Props = {
   open: boolean;
   onClose: () => void;
+  studioId?: string;
 };
 
-export default function WidgetLoginModal({ open, onClose }: Props) {
+export default function WidgetLoginModal({ open, onClose, studioId }: Props) {
   const { signInWithPassword, signInWithGoogle } = useWidgetAuth();
   const theme = useWidgetTheme();
   const [email, setEmail] = useState("");
@@ -153,6 +154,24 @@ export default function WidgetLoginModal({ open, onClose }: Props) {
             Sign in with Google
           </button>
         </form>
+
+        <p className="mt-4 text-center text-[11px] leading-relaxed text-gray-500">
+          New here?{" "}
+          {studioId ? (
+            <a
+              href={`/s/${studioId}/join`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium underline"
+              style={{ color: theme.primary }}
+            >
+              Create an account
+            </a>
+          ) : (
+            <span>Ask the studio for an invitation email</span>
+          )}{" "}
+          to start booking classes.
+        </p>
       </div>
     </div>
   );
