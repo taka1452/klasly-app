@@ -248,7 +248,7 @@ export default function NewMemberForm() {
               id="isMinor"
               checked={isMinor}
               onChange={(e) => setIsMinor(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-brand-600"
+              className="h-4 w-4 accent-gray-900"
             />
             <label htmlFor="isMinor" className="text-sm font-medium text-gray-700">
               This member is a minor

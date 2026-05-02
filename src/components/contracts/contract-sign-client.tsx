@@ -201,7 +201,7 @@ export default function ContractSignClient({ token }: { token: string }) {
       </div>
 
       {data.form.intro_text && (
-        <div className="mb-5 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
+        <div className="mb-5 whitespace-pre-line rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm leading-relaxed text-gray-700">
           {data.form.intro_text}
         </div>
       )}
@@ -216,7 +216,7 @@ export default function ContractSignClient({ token }: { token: string }) {
           />
         ))}
 
-        <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white p-4">
+        <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white p-4 transition-colors duration-200 focus-within:border-gray-400">
           <label className="block text-xs font-semibold uppercase tracking-wide text-gray-600">
             Type your full name to sign
           </label>

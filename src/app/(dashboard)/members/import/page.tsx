@@ -319,16 +319,6 @@ export default function ImportMembersPage() {
     setImporting(true);
     setResult(null);
     try {
-      const mapping: Record<string, string> = {
-        full_name: nameMode === NAME_COMBINED ? combinedNameColumn : "",
-        email: emailColumn,
-        phone: phoneColumn,
-        plan_type: planTypeColumn || planTypeFixed,
-        credits: creditsColumn || String(creditsFixed),
-        status: statusColumn || statusFixed,
-        notes: notesColumn,
-      };
-
       // Reconcile the step-2 "Fixed: …" choice with the step-3 default.
       // When the user explicitly picked a fixed value in step 2 (no
       // column mapped), that's their intent for every row — it should
@@ -1012,7 +1002,7 @@ export default function ImportMembersPage() {
               type="checkbox"
               checked={sendWelcomeEmail}
               onChange={(e) => setSendWelcomeEmail(e.target.checked)}
-              className="mt-1"
+              className="mt-1 h-4 w-4 accent-gray-900"
             />
             <span className="text-sm text-gray-700">
               Send a welcome email to all imported members

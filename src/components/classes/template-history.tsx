@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronDown, ChevronRight, History } from "lucide-react";
+import { ChevronRight, History } from "lucide-react";
 
 /**
  * Per-template change history. Hidden by default behind a disclosure
@@ -80,11 +80,10 @@ export default function TemplateHistory({ templateId }: { templateId: string }) 
         aria-expanded={open}
         className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-semibold text-gray-900 transition-colors duration-150 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/20"
       >
-        {open ? (
-          <ChevronDown className="h-4 w-4 text-gray-400" aria-hidden />
-        ) : (
-          <ChevronRight className="h-4 w-4 text-gray-400" aria-hidden />
-        )}
+        <ChevronRight
+          className={`h-4 w-4 text-gray-400 transition-transform duration-200 ease-out ${open ? "rotate-90" : ""}`}
+          aria-hidden
+        />
         <History className="h-4 w-4 text-gray-400" aria-hidden />
         <span className="flex-1">Change history</span>
         {entries !== null && (

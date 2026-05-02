@@ -343,6 +343,7 @@ export default function UpcomingSessions({ templateId }: Props) {
                         type="checkbox"
                         checked={notifyOnCancel}
                         onChange={(e) => setNotifyOnCancel(e.target.checked)}
+                        className="h-3.5 w-3.5 accent-gray-900"
                       />
                       <span>
                         Email confirmed members about the cancellation
@@ -477,7 +478,7 @@ export default function UpcomingSessions({ templateId }: Props) {
                 type="checkbox"
                 checked={bulkNotifyMembers}
                 onChange={(e) => setBulkNotifyMembers(e.target.checked)}
-                className="mt-0.5"
+                className="mt-0.5 h-4 w-4 accent-gray-900"
               />
               <span>
                 Email confirmed members about the cancellations. Uncheck for
