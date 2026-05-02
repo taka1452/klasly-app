@@ -650,6 +650,23 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
           ),
         },
         {
+          q: "Can I mark a room-booking client as no-show or late cancel?",
+          a: (
+            <>
+              Yes. Open the room booking detail page (click the booking on the schedule or in <B>Rooms</B>). When a client is linked, a <B>Status</B> row appears with <B>Mark no-show</B> and <B>Mark late cancel</B> actions. The flag stays on the booking and is reflected in reports. Click <B>Clear</B> on the badge to undo.
+              <Tip>The pass session is not auto-refunded when you mark no-show — that&apos;s intentional, since most studios charge for no-shows. Cancel the booking instead if you want to refund the session.</Tip>
+            </>
+          ),
+        },
+        {
+          q: "Do clients get reminded about their room-booking appointment?",
+          a: (
+            <>
+              Yes. When a room booking is linked to a client, that client receives a push notification roughly one hour before the appointment, the same way class reminders work. No setup required — it kicks in automatically as long as the client has Klasly on their phone or in a browser tab with notifications enabled.
+            </>
+          ),
+        },
+        {
           q: "Do I get notified when instructors book rooms?",
           a: (
             <>

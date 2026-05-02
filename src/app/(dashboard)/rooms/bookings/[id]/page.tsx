@@ -7,6 +7,7 @@ import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
 import { isFeatureEnabled } from "@/lib/features/check-feature";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 import RoomBookingStaffActions from "@/components/dashboard/room-booking-staff-actions";
+import RoomBookingClientStatus from "@/components/dashboard/room-booking-client-status";
 
 type PageParams = Promise<{ id: string }>;
 
@@ -47,7 +48,7 @@ export default async function RoomBookingDetailPage({
   const { data: booking } = await supabase
     .from("class_sessions")
     .select(
-      "id, title, session_date, start_time, end_time, is_public, is_cancelled, instructor_id, room_id, studio_id, session_type, recurrence_group_id, location, client_member_id, client_pass_subscription_id"
+      "id, title, session_date, start_time, end_time, is_public, is_cancelled, instructor_id, room_id, studio_id, session_type, recurrence_group_id, location, client_member_id, client_pass_subscription_id, client_attendance_status"
     )
     .eq("id", id)
     .single();
@@ -185,17 +186,35 @@ export default async function RoomBookingDetailPage({
               </dd>
             </div>
             {clientName && (
-              <div className="flex justify-between">
-                <dt className="text-gray-500">Client</dt>
-                <dd className="font-medium text-gray-900">
-                  {clientName}
-                  {clientEmail && (
-                    <span className="ml-2 text-xs text-gray-400">
-                      {clientEmail}
-                    </span>
-                  )}
-                </dd>
-              </div>
+              <>
+                <div className="flex justify-between">
+                  <dt className="text-gray-500">Client</dt>
+                  <dd className="font-medium text-gray-900">
+                    {clientName}
+                    {clientEmail && (
+                      <span className="ml-2 text-xs text-gray-400">
+                        {clientEmail}
+                      </span>
+                    )}
+                  </dd>
+                </div>
+                {!booking.is_cancelled && (
+                  <div className="flex items-start justify-between">
+                    <dt className="text-gray-500">Status</dt>
+                    <dd className="flex justify-end">
+                      <RoomBookingClientStatus
+                        bookingId={booking.id}
+                        initialStatus={
+                          (booking.client_attendance_status as
+                            | "no_show"
+                            | "late_cancel"
+                            | null) ?? null
+                        }
+                      />
+                    </dd>
+                  </div>
+                )}
+              </>
             )}
             {passUsageInfo && (
               <div className="flex justify-between">

@@ -64,6 +64,9 @@ export async function GET(request: Request) {
         session_date,
         start_time,
         studio_id,
+        session_type,
+        title,
+        client_member_id,
         classes (name)
       `
       )
@@ -89,24 +92,50 @@ export async function GET(request: Request) {
     let totalSent = 0;
 
     for (const session of sessions) {
-      // このセッションの予約者を取得
-      const { data: bookings } = await adminDb
-        .from("bookings")
-        .select("member_id, members(profile_id)")
-        .eq("session_id", session.id)
-        .eq("status", "confirmed");
+      const sessionAny = session as {
+        session_type?: string;
+        title?: string | null;
+        client_member_id?: string | null;
+        classes?: { name?: string };
+      };
 
-      if (!bookings?.length) continue;
+      const isRoomOnly = sessionAny.session_type === "room_only";
 
-      const className =
-        (session as { classes?: { name?: string } }).classes?.name ?? "Class";
+      type ReminderTarget = { profileId: string };
+      const targets: ReminderTarget[] = [];
+
+      if (isRoomOnly) {
+        // Room booking with a linked client (Sarah's body therapy / reiki flow):
+        // notify the client directly.
+        if (!sessionAny.client_member_id) continue;
+        const { data: member } = await adminDb
+          .from("members")
+          .select("profile_id")
+          .eq("id", sessionAny.client_member_id)
+          .single();
+        if (member?.profile_id) targets.push({ profileId: member.profile_id });
+      } else {
+        const { data: bookings } = await adminDb
+          .from("bookings")
+          .select("member_id, members(profile_id)")
+          .eq("session_id", session.id)
+          .eq("status", "confirmed");
+        if (!bookings?.length) continue;
+        for (const booking of bookings) {
+          const profileId = (booking as { members?: { profile_id?: string } })
+            .members?.profile_id;
+          if (profileId) targets.push({ profileId });
+        }
+      }
+
+      if (targets.length === 0) continue;
+
+      const className = isRoomOnly
+        ? sessionAny.title || "Appointment"
+        : sessionAny.classes?.name ?? "Class";
       const startTime = session.start_time?.substring(0, 5) || "";
 
-      for (const booking of bookings) {
-        const profileId = (booking as { members?: { profile_id?: string } })
-          .members?.profile_id;
-        if (!profileId) continue;
-
+      for (const t of targets) {
         const pushPayload = pushClassReminder({
           className,
           sessionDate: session.session_date,
@@ -115,7 +144,7 @@ export async function GET(request: Request) {
 
         try {
           const result = await sendPushNotification({
-            profileId,
+            profileId: t.profileId,
             studioId: session.studio_id,
             type: "class_reminder",
             payload: pushPayload,
