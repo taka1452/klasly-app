@@ -306,25 +306,18 @@ export default function SessionAttendance({
                       </label>
                     </td>
                     <td className="py-3">
-                      {b.attendance_status === "no_show" ? (
+                      {b.attendance_status ? (
                         <span className="flex items-center gap-2">
-                          <span className="inline-flex rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
-                            No-show
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleSetStatus(b.booking_id, null)
-                            }
-                            className="text-xs text-gray-500 hover:text-gray-700"
+                          <span
+                            className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                              b.attendance_status === "no_show"
+                                ? "bg-red-100 text-red-700"
+                                : "bg-amber-100 text-amber-700"
+                            }`}
                           >
-                            Clear
-                          </button>
-                        </span>
-                      ) : b.attendance_status === "late_cancel" ? (
-                        <span className="flex items-center gap-2">
-                          <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
-                            Late cancel
+                            {b.attendance_status === "no_show"
+                              ? "No-show"
+                              : "Late cancel"}
                           </span>
                           <button
                             type="button"
@@ -347,7 +340,9 @@ export default function SessionAttendance({
                           >
                             No-show
                           </button>
-                          <span className="text-gray-300">·</span>
+                          <span className="text-gray-400" aria-hidden>
+                            ·
+                          </span>
                           <button
                             type="button"
                             onClick={() =>

@@ -5,17 +5,26 @@ import { useEffect, useRef, useState } from "react";
 type Room = { id: string; name: string; capacity: number | null };
 type Instructor = { id: string; fullName: string; email: string };
 
+type ActivePass = {
+  subscriptionId: string;
+  used: number;
+  max: number | null;
+};
+
 type MemberHit = {
   id: string;
   full_name: string;
   email: string;
   credits: number;
-  active_pass: {
-    subscriptionId: string;
-    used: number;
-    max: number | null;
-  } | null;
+  active_pass: ActivePass | null;
 };
+
+/** Short label for the pass badge — `8 left`, `Unlimited`, or null when no pass. */
+function passBadgeLabel(pass: ActivePass | null): string | null {
+  if (!pass) return null;
+  if (pass.max === null) return "Unlimited";
+  return `${Math.max(0, pass.max - pass.used)} left`;
+}
 
 type Props = {
   rooms: Room[];
@@ -126,13 +135,15 @@ export default function AdminRoomBookingModal({
     onCreated();
   }
 
-  const passInfo = selectedMember?.active_pass;
-  const passRemaining =
-    passInfo === null || passInfo === undefined
-      ? null
-      : passInfo.max === null
-        ? "unlimited"
-        : Math.max(0, passInfo.max - passInfo.used);
+  const passInfo = selectedMember?.active_pass ?? null;
+  // Phrase shown on the selected-member card. "8 sessions remaining" /
+  // "1 session remaining" / "Unlimited sessions". Null when there's no pass.
+  const passRemainingLabel = (() => {
+    if (!passInfo) return null;
+    if (passInfo.max === null) return "Unlimited sessions";
+    const left = Math.max(0, passInfo.max - passInfo.used);
+    return `${left} session${left === 1 ? "" : "s"} remaining`;
+  })();
 
   return (
     <div
@@ -234,10 +245,9 @@ export default function AdminRoomBookingModal({
                       {selectedMember.email}
                     </div>
                   )}
-                  {passInfo ? (
+                  {passRemainingLabel ? (
                     <div className="mt-0.5 text-xs text-teal-700">
-                      Active pass · {passRemaining} session
-                      {passRemaining === 1 ? "" : "s"} remaining
+                      Active pass · {passRemainingLabel}
                     </div>
                   ) : (
                     <div className="mt-0.5 text-xs text-gray-500">
@@ -267,47 +277,47 @@ export default function AdminRoomBookingModal({
                 autoComplete="off"
               />
             )}
-            {showHits && !selectedMember && memberHits.length > 0 && (
+            {showHits && !selectedMember && (
               <div className="absolute left-0 right-0 top-full z-10 mt-1 max-h-56 overflow-auto rounded-md border border-gray-200 bg-white shadow-lg">
-                {memberHits.map((m) => {
-                  const r =
-                    m.active_pass?.max == null
-                      ? m.active_pass
-                        ? "unlimited"
-                        : null
-                      : Math.max(
-                          0,
-                          (m.active_pass?.max ?? 0) - (m.active_pass?.used ?? 0)
-                        );
-                  return (
-                    <button
-                      key={m.id}
-                      type="button"
-                      onClick={() => pickMember(m)}
-                      className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-gray-50"
-                    >
-                      <span>
-                        <span className="font-medium text-gray-900">
-                          {m.full_name}
+                {memberHits.length === 0 ? (
+                  <p className="px-3 py-3 text-sm text-gray-500">
+                    {memberQuery.trim()
+                      ? `No members match "${memberQuery.trim()}".`
+                      : "Start typing to search members."}
+                  </p>
+                ) : (
+                  memberHits.map((m) => {
+                    const passLabel = passBadgeLabel(m.active_pass);
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => pickMember(m)}
+                        className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-gray-50"
+                      >
+                        <span className="min-w-0 flex-1 truncate">
+                          <span className="font-medium text-gray-900">
+                            {m.full_name}
+                          </span>
+                          {m.email && (
+                            <span className="ml-2 text-xs text-gray-500">
+                              {m.email}
+                            </span>
+                          )}
                         </span>
-                        {m.email && (
-                          <span className="ml-2 text-xs text-gray-500">
-                            {m.email}
+                        {passLabel ? (
+                          <span className="shrink-0 rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-medium text-teal-700">
+                            {passLabel}
+                          </span>
+                        ) : (
+                          <span className="shrink-0 text-[10px] text-gray-400">
+                            no pass
                           </span>
                         )}
-                      </span>
-                      {m.active_pass ? (
-                        <span className="shrink-0 rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-medium text-teal-700">
-                          {r} left
-                        </span>
-                      ) : (
-                        <span className="shrink-0 text-[10px] text-gray-400">
-                          no pass
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+                      </button>
+                    );
+                  })
+                )}
               </div>
             )}
             {selectedMember && passInfo && (

@@ -169,13 +169,11 @@ export default function DashboardCalendar({ onSlotClick }: DashboardCalendarProp
         <div className="flex flex-wrap items-center gap-3">
           {roomOptions.length > 0 && (
             <label className="flex items-center gap-2 text-sm text-gray-600">
-              <span className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                Room
-              </span>
+              <span>Room</span>
               <select
                 value={selectedRoomId}
                 onChange={(e) => setSelectedRoomId(e.target.value)}
-                className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                className="rounded-md border border-gray-300 bg-white py-1 pl-2 pr-7 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 aria-label="Filter by room"
               >
                 <option value="all">All rooms</option>
