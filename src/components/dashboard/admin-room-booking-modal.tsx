@@ -258,7 +258,7 @@ export default function AdminRoomBookingModal({
                 <button
                   type="button"
                   onClick={clearMember}
-                  className="text-xs text-gray-400 hover:text-gray-700"
+                  className="text-xs text-gray-400 transition-colors duration-150 hover:text-gray-700 active:text-gray-900"
                 >
                   Change
                 </button>
@@ -278,7 +278,10 @@ export default function AdminRoomBookingModal({
               />
             )}
             {showHits && !selectedMember && (
-              <div className="absolute left-0 right-0 top-full z-10 mt-1 max-h-56 overflow-auto rounded-md border border-gray-200 bg-white shadow-lg">
+              <div
+                className="popover-in absolute left-0 right-0 top-full z-10 mt-1 max-h-56 overflow-auto rounded-md border border-gray-200 bg-white shadow-lg"
+                style={{ ["--popover-origin" as string]: "top" }}
+              >
                 {memberHits.length === 0 ? (
                   <p className="px-3 py-3 text-sm text-gray-500">
                     {memberQuery.trim()
@@ -293,7 +296,7 @@ export default function AdminRoomBookingModal({
                         key={m.id}
                         type="button"
                         onClick={() => pickMember(m)}
-                        className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-gray-50"
+                        className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm transition-colors duration-150 hover:bg-gray-50 active:bg-gray-100"
                       >
                         <span className="min-w-0 flex-1 truncate">
                           <span className="font-medium text-gray-900">

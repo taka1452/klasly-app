@@ -324,7 +324,7 @@ export default function SessionAttendance({
                             onClick={() =>
                               handleSetStatus(b.booking_id, null)
                             }
-                            className="text-xs text-gray-500 hover:text-gray-700"
+                            className="text-xs text-gray-500 transition-colors duration-150 hover:text-gray-700 active:text-gray-900"
                           >
                             Clear
                           </button>
@@ -336,7 +336,7 @@ export default function SessionAttendance({
                             onClick={() =>
                               handleSetStatus(b.booking_id, "no_show")
                             }
-                            className="text-xs text-red-600 hover:text-red-800"
+                            className="text-xs text-red-600 transition-colors duration-150 hover:text-red-800 active:text-red-900"
                           >
                             No-show
                           </button>
@@ -348,7 +348,7 @@ export default function SessionAttendance({
                             onClick={() =>
                               handleSetStatus(b.booking_id, "late_cancel")
                             }
-                            className="text-xs text-amber-600 hover:text-amber-800"
+                            className="text-xs text-amber-600 transition-colors duration-150 hover:text-amber-800 active:text-amber-900"
                           >
                             Late cancel
                           </button>
