@@ -1017,12 +1017,12 @@ export default function ImportMembersPage() {
             <span className="text-sm text-gray-700">
               Send a welcome email to all imported members
               <span className="mt-0.5 block text-xs text-gray-500">
-                Each member receives a branded "we've moved to Klasly" email
+                Each member receives a branded &quot;we&apos;ve moved to Klasly&quot; email
                 from {""}
                 <span className="font-medium">your studio</span>. They can sign
-                up and link to this account when they're ready — no
+                up and link to this account when they&apos;re ready — no
                 magic-link login is sent automatically (use the Invite
-                button on the member page when you're ready to bring them
+                button on the member page when you&apos;re ready to bring them
                 online).
               </span>
             </span>

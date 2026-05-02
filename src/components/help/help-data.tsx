@@ -159,10 +159,10 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
                 <li><B>Upload</B> — drag in a .csv up to 5MB. Required columns are <B>Name</B> (one column or First+Last) and <B>Email</B>.</li>
                 <li><B>Map</B> — auto-detected fields show an <B>Auto-detected</B> badge. Optional columns: Phone, Date of Birth, Gender, Address, Referred By, Plan Type, Credits, Status, Is Minor, Guardian Email, Notes.</li>
                 <li><B>Review</B> — set defaults (plan type / credits / status) for rows where the column is blank, and choose whether to send a welcome email.</li>
-                <li><B>Done</B> — see imported / skipped / error counts. Failed rows can be exported as a CSV ("Download errors as CSV") so you can fix and re-import.</li>
+                <li><B>Done</B> — see imported / skipped / error counts. Failed rows can be exported as a CSV (&quot;Download errors as CSV&quot;) so you can fix and re-import.</li>
               </Steps>
               <Tip>The new required-at-create fields (Phone, Date of Birth, Gender) are <B>optional</B> in the importer so legacy data still flows through. Click <B>Download template</B> on the upload step to get a sample CSV with all supported columns.</Tip>
-              <Tip>Dates accept ISO (1992-04-15), US (4/15/1992), and human-readable ("Apr 15, 1992") formats. Gender accepts female / male / prefer_not_to_say (or single-letter F / M).</Tip>
+              <Tip>Dates accept ISO (1992-04-15), US (4/15/1992), and human-readable (&quot;Apr 15, 1992&quot;) formats. Gender accepts female / male / prefer_not_to_say (or single-letter F / M).</Tip>
             </>
           ),
         },
@@ -474,11 +474,11 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
             <>
               Open the session from the schedule (or from <B>Classes → [template] → Upcoming Sessions</B>) and click <B>Edit</B>. The Edit Session dialog now includes an <B>Instructor</B> picker. Pick a different name and save. For a recurring class, the dialog also lets you fan the change out to <B>This and following</B> or <B>All sessions in the series</B> with a live count of how many sessions and active bookings will be affected before you commit.
               <Steps>
-                <li>By default Klasly emails every confirmed member when the instructor, date, or time changes (so they know what's different and can re-decide whether to attend). Uncheck the <B>&quot;Email confirmed members&quot;</B> box at the bottom of the dialog for silent fixes — typo corrections, data cleanups, etc.</li>
+                <li>By default Klasly emails every confirmed member when the instructor, date, or time changes (so they know what&apos;s different and can re-decide whether to attend). Uncheck the <B>&quot;Email confirmed members&quot;</B> box at the bottom of the dialog for silent fixes — typo corrections, data cleanups, etc.</li>
                 <li>If you only need to swap one occurrence, leave the scope on &quot;This session only&quot; (the default).</li>
-                <li>Cancellations also send a "class cancelled" email by default. The cancel-confirm row has the same opt-out checkbox.</li>
+                <li>Cancellations also send a &quot;class cancelled&quot; email by default. The cancel-confirm row has the same opt-out checkbox.</li>
               </Steps>
-              <Tip>For ad-hoc batches that aren't a recurrence series — say, four random sessions across a month that all need a sub — switch on <B>Select multiple</B> at the top of the Upcoming Sessions list, check the rows you want, and click <B>Edit time / instructor</B> in the floating action bar. You can change time, instructor, or both, and the same notify-members opt-out applies.</Tip>
+              <Tip>For ad-hoc batches that aren&apos;t a recurrence series — say, four random sessions across a month that all need a sub — switch on <B>Select multiple</B> at the top of the Upcoming Sessions list, check the rows you want, and click <B>Edit time / instructor</B> in the floating action bar. You can change time, instructor, or both, and the same notify-members opt-out applies.</Tip>
             </>
           ),
         },
@@ -710,7 +710,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
               (instructor swaps, reschedules, cancellations, hours
               returned / revoked overrides).
               <Steps>
-                <li>Each entry shows what changed in plain English ("Time changed 18:00–19:00 → 18:30–19:30"), who made the change, and how long ago.</li>
+                <li>Each entry shows what changed in plain English (&quot;Time changed 18:00–19:00 → 18:30–19:30&quot;), who made the change, and how long ago.</li>
                 <li>Coloured tags help you scan: blue = instructor, violet = time/date/room, rose = cancellation, amber = hours adjustment, emerald = price.</li>
                 <li>Up to 200 most recent entries are shown — older changes stay in the audit log and can be exported on request.</li>
               </Steps>
@@ -728,7 +728,7 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
                 <li><B>Instructor self-cancellations</B> — hours are <B>forfeited</B> and still count against the instructor&apos;s monthly allowance.</li>
               </Steps>
               On any cancelled tile in the <B>Upcoming Sessions</B> list, admins can click <B>Return hours</B> to grant them back, or <B>Revoke hours</B> to take them away again. The badge on the tile shows the current state (<span className="font-semibold">Hours returned</span> / <span className="font-semibold">Hours forfeited</span>) at a glance.
-              <Tip>This means the instructor sees their available monthly minutes shrink the moment they cancel — and the studio keeps full control over whether that&apos;s permanent. The change takes effect immediately the next time the instructor's tier-overage report is calculated.</Tip>
+              <Tip>This means the instructor sees their available monthly minutes shrink the moment they cancel — and the studio keeps full control over whether that&apos;s permanent. The change takes effect immediately the next time the instructor&apos;s tier-overage report is calculated.</Tip>
             </>
           ),
         },
@@ -1880,9 +1880,9 @@ export const SECTIONS: Record<"owner" | "instructor" | "member", HelpSection[]> 
               Yes. Open <B>Forms</B> in the sidebar, find a contract template, and click <B>Send for signing</B>. In the dialog:
               <Steps>
                 <li>Add the signers in the order they should sign — use the up/down arrows to reorder.</li>
-                <li>Each signer takes a <B>Name</B> + <B>Email</B>; the optional <B>Role</B> label appears in the email subject and on the signing page so they know whose signature is being collected (e.g. "Studio owner", "Witness").</li>
+                <li>Each signer takes a <B>Name</B> + <B>Email</B>; the optional <B>Role</B> label appears in the email subject and on the signing page so they know whose signature is being collected (e.g. &quot;Studio owner&quot;, &quot;Witness&quot;).</li>
                 <li>Optionally tie the envelope to an instructor — when set, the signed contract surfaces on that instructor&apos;s profile under <B>Signed contracts</B> for easy access later.</li>
-                <li>Klasly emails signer 1 a unique link. After they sign, signer 2 is emailed automatically. Once everyone signs, the envelope is sealed and you receive a "fully signed" email.</li>
+                <li>Klasly emails signer 1 a unique link. After they sign, signer 2 is emailed automatically. Once everyone signs, the envelope is sealed and you receive a &quot;fully signed&quot; email.</li>
               </Steps>
               <Tip>The signing page is a public URL secured by a one-time token — no Klasly login required for external signers (lawyers, witnesses, etc.).</Tip>
             </>

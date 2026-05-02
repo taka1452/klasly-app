@@ -481,7 +481,7 @@ export default function UpcomingSessions({ templateId }: Props) {
               />
               <span>
                 Email confirmed members about the cancellations. Uncheck for
-                silent fixes (you'll still see the cancellation in the
+                silent fixes (you&apos;ll still see the cancellation in the
                 schedule).
               </span>
             </label>

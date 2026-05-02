@@ -175,7 +175,7 @@ export default function ContractSignClient({ token }: { token: string }) {
           Declined
         </h1>
         <p className="mt-2 text-sm text-gray-600">
-          We've let {data.envelope.studio_name} know you couldn't sign this
+          We&apos;ve let {data.envelope.studio_name} know you couldn&apos;t sign this
           contract. They can reach out or send a fresh envelope when
           things change.
         </p>

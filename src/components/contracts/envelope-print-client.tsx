@@ -99,7 +99,7 @@ export default function EnvelopePrintClient({
           Print or save as PDF
         </button>
         <span className="text-[11px] text-gray-400">
-          Tip: choose "Save as PDF" in the print dialog destination.
+          Tip: choose &quot;Save as PDF&quot; in the print dialog destination.
         </span>
       </div>
 
