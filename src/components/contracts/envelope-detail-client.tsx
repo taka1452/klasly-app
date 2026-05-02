@@ -257,12 +257,12 @@ export default function EnvelopeDetailClient({
       </div>
 
       {toast && (
-        <div className="panel-enter fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-gray-900 px-4 py-2 text-sm text-white shadow-lg">
+        <div className="toast-enter-bottom fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-gray-900 px-4 py-2 text-sm text-white shadow-lg">
           {toast}
           <button
             type="button"
             onClick={() => setToast(null)}
-            className="ml-3 text-xs text-gray-300 hover:text-white"
+            className="ml-3 text-xs text-gray-300 transition-colors duration-150 hover:text-white"
           >
             ×
           </button>

@@ -59,6 +59,21 @@
   animation: toastExitTop 180ms var(--ease-out-strong) forwards;
 }
 
+/* Bottom-positioned toast — enters from below, same scale/opacity pattern. */
+@keyframes toastEnterBottom {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.toast-enter-bottom {
+  animation: toastEnterBottom 220ms var(--ease-out-strong) forwards;
+}
+
 /* Generic list-item stagger — apply class + animationDelay inline.
    Stagger is decorative; keep delays short (30-80ms × n) per Emil. */
 @keyframes staggerFadeUp {
@@ -190,6 +205,7 @@
     page-break-inside: avoid;
   }
   .toast-enter-top,
+  .toast-enter-bottom,
   .toast-exit-top,
   .stagger-item,
   .panel-enter,
@@ -210,6 +226,7 @@
     transform: none;
   }
   .toast-enter-top,
+  .toast-enter-bottom,
   .toast-exit-top,
   .stagger-item,
   .inline-reveal-right,

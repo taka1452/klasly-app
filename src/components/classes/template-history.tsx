@@ -116,7 +116,7 @@ export default function TemplateHistory({ templateId }: { templateId: string }) 
               {entries.map((e) => (
                 <li
                   key={e.id}
-                  className="flex items-start gap-3 rounded-md px-2 py-2 text-sm hover:bg-gray-50"
+                  className="flex items-start gap-3 rounded-md px-2 py-2 text-sm transition-colors duration-150 hover:bg-gray-50"
                 >
                   <span
                     className={`mt-0.5 inline-flex shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${

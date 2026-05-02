@@ -487,7 +487,7 @@ export default function ImportMembersPage() {
       {step === 1 && (
         <div className="card">
           <div
-            className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50/50 py-12 transition hover:border-brand-500 hover:bg-brand-50/30"
+            className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50/50 py-12 transition-[border-color,background-color] duration-200 ease-out hover:border-brand-500 hover:bg-brand-50/30"
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => {
               e.preventDefault();

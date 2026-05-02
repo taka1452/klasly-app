@@ -319,7 +319,7 @@ export default function UpcomingSessions({ templateId }: Props) {
                           type="button"
                           onClick={() => handleCancel(session.id)}
                           disabled={cancelling === session.id}
-                          className="rounded bg-red-600 px-2 py-1 text-[10px] font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:bg-red-700 active:scale-[0.95] disabled:opacity-50 disabled:active:scale-100"
+                          className="rounded bg-red-600 px-2 py-1 text-[10px] font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:bg-red-700 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
                         >
                           <span className="label-swap" data-pending={cancelling === session.id}>
                             {cancelling === session.id ? "Cancelling..." : "Cancel session"}
@@ -332,7 +332,7 @@ export default function UpcomingSessions({ templateId }: Props) {
                             setCancelReason("");
                             setNotifyOnCancel(true);
                           }}
-                          className="rounded border border-gray-200 bg-white px-2 py-1 text-[10px] font-medium text-gray-600 transition-[transform,background-color] duration-150 ease-out hover:bg-gray-50 active:scale-[0.95]"
+                          className="rounded border border-gray-200 bg-white px-2 py-1 text-[10px] font-medium text-gray-600 transition-[transform,background-color] duration-150 ease-out hover:bg-gray-50 active:scale-[0.97]"
                         >
                           Keep
                         </button>
@@ -396,7 +396,7 @@ export default function UpcomingSessions({ templateId }: Props) {
 
       {/* Floating action bar — appears once at least one session is checked */}
       {selectMode && selectedIds.size > 0 && !bulkConfirmOpen && !bulkEditOpen && (
-        <div className="panel-enter sticky bottom-3 z-10 mt-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-brand-200 bg-white/95 px-3 py-2 shadow-lg backdrop-blur">
+        <div className="panel-enter sticky bottom-3 z-10 mt-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-brand-200 bg-white/95 px-3 py-2 shadow-lg backdrop-blur will-change-transform">
           <p className="text-sm font-medium text-gray-700">
             {selectedIds.size} session{selectedIds.size === 1 ? "" : "s"} selected
           </p>
