@@ -62,6 +62,30 @@
     {
       "path": "/api/cron/comeback-nudge",
       "schedule": "0 17 * * *"
+    },
+    {
+      "path": "/api/cron/owner-weekly-summary",
+      "schedule": "0 14 * * 1"
+    },
+    {
+      "path": "/api/cron/manager-morning-todo",
+      "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron/instructor-morning-briefing",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/instructor-low-fill",
+      "schedule": "0 23 * * *"
+    },
+    {
+      "path": "/api/cron/instructor-birthday-alerts",
+      "schedule": "30 12 * * *"
+    },
+    {
+      "path": "/api/cron/instructor-monthly-recap",
+      "schedule": "0 14 1 * *"
     }
   ]
 }

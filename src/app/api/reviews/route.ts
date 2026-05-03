@@ -1,6 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { sendPushNotification } from "@/lib/push/send";
+import { pushInstructorReviewReceived } from "@/lib/push/templates";
 
 export async function POST(req: Request) {
   const serverSupabase = await createServerClient();
@@ -92,6 +94,36 @@ export async function POST(req: Request) {
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // Notify the instructor (best-effort — never block the review)
+  if (session.instructor_id) {
+    try {
+      const { data: inst } = await supabase
+        .from("instructors")
+        .select("profile_id")
+        .eq("id", session.instructor_id)
+        .maybeSingle();
+      const { data: cls } = await supabase
+        .from("classes")
+        .select("name")
+        .eq("id", session.class_id)
+        .maybeSingle();
+      if (inst?.profile_id) {
+        await sendPushNotification({
+          profileId: inst.profile_id,
+          studioId: member.studio_id,
+          type: "instructor_review_received",
+          payload: pushInstructorReviewReceived({
+            rating,
+            className: cls?.name ?? "Class",
+            hasComment: Boolean(comment),
+          }),
+        });
+      }
+    } catch (err) {
+      console.error("review push failed:", err);
+    }
   }
 
   return NextResponse.json({ success: true });

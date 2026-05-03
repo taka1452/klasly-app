@@ -1061,4 +1061,10 @@ export type PushNotificationType =
   | "appointment_reminder"
   | "waitlist_promotion"
   | "new_message"
-  | "studio_announcement";
+  | "studio_announcement"
+  // Staff motivation / revenue notifications
+  | "instructor_morning_briefing"
+  | "instructor_review_received"
+  | "instructor_low_fill_warning"
+  | "instructor_birthday_alert"
+  | "manager_morning_todo";

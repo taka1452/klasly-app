@@ -1590,6 +1590,207 @@ export function instructorBookingStaffNotice(params: {
 }
 
 // ============================================================
+// Owner weekly summary — Monday morning recap
+// ============================================================
+
+type OwnerWeeklySummaryParams = {
+  ownerName: string;
+  studioName: string;
+  currency: string;
+  weekStart: string;
+  weekEnd: string;
+  revenueCents: number;
+  revenueDeltaPct: number | null; // null when prior week had zero
+  newMembers: number;
+  cancelledMembers: number;
+  topClasses: Array<{ name: string; bookings: number }>;
+  topInstructor: { name: string; bookings: number } | null;
+};
+
+function formatCurrencyCents(cents: number, currency: string) {
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency.toUpperCase(),
+      maximumFractionDigits: 0,
+    }).format(cents / 100);
+  } catch {
+    return `${(cents / 100).toFixed(0)} ${currency.toUpperCase()}`;
+  }
+}
+
+export function ownerWeeklySummary(params: OwnerWeeklySummaryParams) {
+  const {
+    ownerName,
+    studioName,
+    currency,
+    weekStart,
+    weekEnd,
+    revenueCents,
+    revenueDeltaPct,
+    newMembers,
+    cancelledMembers,
+    topClasses,
+    topInstructor,
+  } = params;
+
+  const deltaLabel =
+    revenueDeltaPct === null
+      ? ""
+      : revenueDeltaPct >= 0
+        ? `<span style="color:#059669;font-size:14px;font-weight:600;">▲ ${revenueDeltaPct.toFixed(0)}%</span>`
+        : `<span style="color:#dc2626;font-size:14px;font-weight:600;">▼ ${Math.abs(revenueDeltaPct).toFixed(0)}%</span>`;
+
+  const topClassesHtml = topClasses.length === 0
+    ? `<p style="margin:0;font-size:14px;color:#6b7280;">No bookings this week.</p>`
+    : topClasses
+        .map(
+          (c, i) =>
+            `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:${i === topClasses.length - 1 ? "none" : "1px solid #e5e7eb"};">
+              <span style="font-size:14px;">${i + 1}. ${c.name}</span>
+              <span style="font-size:14px;color:#6b7280;">${c.bookings}</span>
+            </div>`
+        )
+        .join("");
+
+  const topInstructorHtml = topInstructor
+    ? `<div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
+        <p style="margin:0;font-size:13px;color:#6b7280;">Top instructor</p>
+        <p style="margin:4px 0 0;font-size:16px;font-weight:600;color:${BRAND_COLOR};">${topInstructor.name}</p>
+        <p style="margin:4px 0 0;font-size:13px;color:#6b7280;">${topInstructor.bookings} bookings</p>
+      </div>`
+    : "";
+
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">Your week at ${studioName}</h2>
+    <p style="margin:0 0 16px;font-size:14px;color:#6b7280;">${weekStart} – ${weekEnd}</p>
+
+    <div style="background:${BG_LIGHT};border-radius:8px;padding:20px;margin:16px 0;">
+      <p style="margin:0;font-size:13px;color:#6b7280;">Revenue this week</p>
+      <p style="margin:6px 0 4px;font-size:28px;font-weight:700;color:${BRAND_COLOR};">${formatCurrencyCents(revenueCents, currency)}</p>
+      ${deltaLabel ? `<p style="margin:0;">${deltaLabel} <span style="font-size:13px;color:#6b7280;">vs prior week</span></p>` : ""}
+    </div>
+
+    <div style="display:flex;gap:12px;margin:16px 0;">
+      <div style="flex:1;background:#f9fafb;border-radius:8px;padding:14px;">
+        <p style="margin:0;font-size:13px;color:#6b7280;">New members</p>
+        <p style="margin:4px 0 0;font-size:22px;font-weight:700;">${newMembers}</p>
+      </div>
+      <div style="flex:1;background:#f9fafb;border-radius:8px;padding:14px;">
+        <p style="margin:0;font-size:13px;color:#6b7280;">Cancellations</p>
+        <p style="margin:4px 0 0;font-size:22px;font-weight:700;">${cancelledMembers}</p>
+      </div>
+    </div>
+
+    <h3 style="margin:24px 0 8px;font-size:15px;color:#111827;">Top classes</h3>
+    <div>${topClassesHtml}</div>
+
+    ${topInstructorHtml}
+
+    <p style="margin:24px 0 0;">
+      <a href="https://app.klasly.app/analytics" style="display:inline-block;background:${BRAND_COLOR};color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">
+        Open full analytics →
+      </a>
+    </p>
+
+    <p style="margin:24px 0 0;font-size:13px;color:#6b7280;">— Hi ${ownerName}, hope you have a great week.</p>
+  `;
+
+  return {
+    subject: `Your weekly summary — ${studioName}`,
+    html: baseHtml(content),
+  };
+}
+
+// ============================================================
+// Instructor monthly recap — earnings, classes, reviews
+// ============================================================
+
+type InstructorMonthlyRecapParams = {
+  instructorName: string;
+  monthLabel: string; // e.g. "April 2026"
+  currency: string;
+  earningsCents: number;
+  earningsDeltaPct: number | null;
+  classesTaught: number;
+  uniqueStudents: number;
+  averageRating: number | null;
+  reviewCount: number;
+  isPersonalBest: boolean;
+};
+
+export function instructorMonthlyRecap(params: InstructorMonthlyRecapParams) {
+  const {
+    instructorName,
+    monthLabel,
+    currency,
+    earningsCents,
+    earningsDeltaPct,
+    classesTaught,
+    uniqueStudents,
+    averageRating,
+    reviewCount,
+    isPersonalBest,
+  } = params;
+
+  const deltaLabel =
+    earningsDeltaPct === null
+      ? ""
+      : earningsDeltaPct >= 0
+        ? `<span style="color:#059669;font-size:14px;font-weight:600;">▲ ${earningsDeltaPct.toFixed(0)}% vs last month</span>`
+        : `<span style="color:#dc2626;font-size:14px;font-weight:600;">▼ ${Math.abs(earningsDeltaPct).toFixed(0)}% vs last month</span>`;
+
+  const ratingHtml = averageRating !== null
+    ? `<div style="background:#f9fafb;border-radius:8px;padding:14px;flex:1;">
+        <p style="margin:0;font-size:13px;color:#6b7280;">Average rating</p>
+        <p style="margin:4px 0 0;font-size:22px;font-weight:700;">${averageRating.toFixed(1)} ★</p>
+        <p style="margin:2px 0 0;font-size:12px;color:#6b7280;">${reviewCount} review${reviewCount === 1 ? "" : "s"}</p>
+      </div>`
+    : "";
+
+  const personalBestBadge = isPersonalBest
+    ? `<p style="margin:8px 0 0;font-size:14px;font-weight:600;color:#b45309;">🏆 Personal best month</p>`
+    : "";
+
+  const content = `
+    <h2 style="margin:0 0 8px;font-size:18px;color:#111827;">${monthLabel} recap</h2>
+    <p style="margin:0 0 16px;font-size:15px;">Hi ${instructorName},</p>
+
+    <div style="background:${BG_LIGHT};border-radius:8px;padding:20px;margin:16px 0;">
+      <p style="margin:0;font-size:13px;color:#6b7280;">Earnings</p>
+      <p style="margin:6px 0 4px;font-size:28px;font-weight:700;color:${BRAND_COLOR};">${formatCurrencyCents(earningsCents, currency)}</p>
+      ${deltaLabel ? `<p style="margin:0;">${deltaLabel}</p>` : ""}
+      ${personalBestBadge}
+    </div>
+
+    <div style="display:flex;gap:12px;margin:16px 0;">
+      <div style="background:#f9fafb;border-radius:8px;padding:14px;flex:1;">
+        <p style="margin:0;font-size:13px;color:#6b7280;">Classes taught</p>
+        <p style="margin:4px 0 0;font-size:22px;font-weight:700;">${classesTaught}</p>
+      </div>
+      <div style="background:#f9fafb;border-radius:8px;padding:14px;flex:1;">
+        <p style="margin:0;font-size:13px;color:#6b7280;">Unique students</p>
+        <p style="margin:4px 0 0;font-size:22px;font-weight:700;">${uniqueStudents}</p>
+      </div>
+      ${ratingHtml}
+    </div>
+
+    <p style="margin:24px 0 0;">
+      <a href="https://app.klasly.app/my-earnings" style="display:inline-block;background:${BRAND_COLOR};color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">
+        See full breakdown →
+      </a>
+    </p>
+
+    <p style="margin:24px 0 0;font-size:13px;color:#6b7280;">Thanks for showing up for your students this month. Onwards.</p>
+  `;
+
+  return {
+    subject: `${monthLabel} recap — ${formatCurrencyCents(earningsCents, currency)}`,
+    html: baseHtml(content),
+  };
+}
+
+// ============================================================
 // Password Reset
 // ============================================================
 

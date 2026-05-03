@@ -152,7 +152,52 @@ export const helpArticles: HelpArticle[] = [
     tips: [
       'Members can enable or disable notifications in their settings.',
     ],
-    relatedArticles: ['studio-setup-overview'],
+    relatedArticles: ['studio-setup-overview', 'staff-notifications-overview'],
+  },
+
+  {
+    id: 'staff-notifications-overview',
+    title: 'Staff notifications & motivation features',
+    summary: 'Owners, managers, and instructors get role-specific automated notifications and recap emails — designed to surface what matters and keep momentum.',
+    category: 'getting-started',
+    audience: ['owner', 'manager', 'instructor'],
+    keywords: ['staff', 'notification', 'motivation', 'morning', 'briefing', 'recap', 'summary', 'review', 'birthday', 'low fill', 'todo'],
+    steps: [
+      {
+        title: 'Owner — Monday weekly summary email',
+        description: 'Every Monday morning you get an email with last week\'s revenue (with delta vs. the prior week), new and cancelled members, your top three classes by bookings, and your top instructor. The aim is that you no longer need to log in just to check the numbers.',
+      },
+      {
+        title: 'Owner & manager — daily morning todo push',
+        description: 'A single push every morning surfacing what needs attention today: waitlisted bookings, recently failed payments, passes expiring within 7 days, and tomorrow\'s classes that are under 50% filled. If everything is clear, the notification says so.',
+      },
+      {
+        title: 'Instructor — morning briefing push',
+        description: 'Every morning instructors get a push showing how many classes they teach today, total student count, how many are new faces, and a loyalty highlight when a student is on a 3+ week booking streak.',
+      },
+      {
+        title: 'Instructor — instant review push',
+        description: 'When a student leaves a class review, the instructor gets a push with the star rating and class name immediately — so the dopamine hit doesn\'t get lost in an inbox.',
+      },
+      {
+        title: 'Instructor — low-fill warning the night before',
+        description: 'In the evening, instructors get a push for any class they\'re teaching tomorrow that\'s under 50% filled, giving them time to share on socials. Tapping the push opens My Classes scoped to that class.',
+      },
+      {
+        title: 'Instructor — birthday alerts',
+        description: 'When a recent student (attended in the last 60 days) has a birthday today, their instructors get a quick "Birthday today: {name}" push so they can say hello in person.',
+      },
+      {
+        title: 'Instructor — monthly recap email',
+        description: 'On the 1st of each month, instructors get an email with prior-month earnings and delta vs. the previous month, classes taught, unique students served, and average review rating. Hitting an all-time-high month also surfaces a "Personal best" badge.',
+      },
+    ],
+    tips: [
+      'Notifications respect each user\'s push preferences in Settings — anything they\'ve disabled is skipped.',
+      'Cron schedules live in vercel.json. Times are UTC; adjust if your studio operates on a markedly different time zone and you want briefings to land closer to local morning.',
+      'Failed payments in the daily todo look back 7 days so nothing slips through if you miss a day.',
+    ],
+    relatedArticles: ['push-notifications-overview'],
   },
 
   // ═══════════════════════════════════════
