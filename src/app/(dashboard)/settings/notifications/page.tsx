@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { Mail, Loader2 } from "lucide-react";
 import ContextHelpLink from "@/components/help/context-help-link";
 
@@ -122,9 +123,20 @@ export default function NotificationsSettingsPage() {
 
   return (
     <div>
+      <div className="mb-4">
+        <Link
+          href="/settings"
+          className="group inline-flex items-center gap-1 text-sm font-medium text-brand-600 transition-colors duration-150 hover:text-brand-700"
+        >
+          <span className="inline-block transition-transform duration-150 ease-out group-hover:-translate-x-0.5">
+            &larr;
+          </span>
+          Settings
+        </Link>
+      </div>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Notifications</h1>
           <p className="mt-1 text-sm text-gray-500">
             Choose which email notifications you receive.
           </p>

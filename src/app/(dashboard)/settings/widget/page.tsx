@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import type { Metadata } from "next";
 import WidgetSettingsClient from "@/components/settings/widget-settings-client";
 import { isFeatureEnabled } from "@/lib/features/check-feature";
@@ -43,7 +44,18 @@ export default async function WidgetSettingsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900">Website Widget</h1>
+      <div className="mb-4">
+        <Link
+          href="/settings"
+          className="group inline-flex items-center gap-1 text-sm font-medium text-brand-600 transition-colors duration-150 hover:text-brand-700"
+        >
+          <span className="inline-block transition-transform duration-150 ease-out group-hover:-translate-x-0.5">
+            &larr;
+          </span>
+          Settings
+        </Link>
+      </div>
+      <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Website Widget</h1>
       <p className="mt-1 text-sm text-gray-500">
         Embed your class schedule on your website so visitors can browse and
         book classes.

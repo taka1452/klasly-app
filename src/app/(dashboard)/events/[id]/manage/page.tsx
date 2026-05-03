@@ -141,19 +141,20 @@ export default async function EventManagePage({
 
   return (
     <div>
-      <div className="mb-6">
+      <div className="mb-4">
         <Link
           href="/events"
-          className="text-sm text-gray-500 hover:text-gray-700"
+          className="group inline-flex items-center gap-1 text-sm font-medium text-brand-600 transition-colors duration-150 hover:text-brand-700"
         >
-          &larr; Back to events
+          <span className="inline-block transition-transform duration-150 ease-out group-hover:-translate-x-0.5">&larr;</span>
+          Events
         </Link>
       </div>
 
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900">{event.name}</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-gray-900">{event.name}</h1>
             <span
               className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${badge.cls}`}
             >

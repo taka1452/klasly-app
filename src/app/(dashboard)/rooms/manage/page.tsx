@@ -44,13 +44,13 @@ export default async function ManageRoomsPage() {
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <Link
-            href="/rooms"
-            className="text-sm text-gray-500 hover:text-gray-700"
-          >
-            ← Back to bookings
-          </Link>
-          <h1 className="mt-2 text-2xl font-bold text-gray-900">
+          <div className="mb-4">
+            <Link href="/rooms" className="group inline-flex items-center gap-1 text-sm font-medium text-brand-600 transition-colors duration-150 hover:text-brand-700">
+              <span className="inline-block transition-transform duration-150 ease-out group-hover:-translate-x-0.5">&larr;</span>
+              Rooms
+            </Link>
+          </div>
+          <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
             Manage Rooms
           </h1>
           <p className="mt-1 text-sm text-gray-500">

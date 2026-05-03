@@ -80,7 +80,7 @@ export default function TourSuccessModal({
               <Link
                 href={cta.href}
                 onClick={onClose}
-                className="inline-flex items-center justify-center rounded-lg bg-brand-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-brand-700"
+                className="inline-flex items-center justify-center rounded-lg bg-brand-600 px-6 py-3 text-sm font-medium text-white transition-[transform,color,background-color] duration-150 ease-out hover:bg-brand-700 active:scale-[0.97]"
               >
                 {cta.label}
               </Link>
@@ -88,7 +88,7 @@ export default function TourSuccessModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="inline-flex items-center justify-center rounded-lg bg-brand-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-brand-700"
+                className="inline-flex items-center justify-center rounded-lg bg-brand-600 px-6 py-3 text-sm font-medium text-white transition-[transform,color,background-color] duration-150 ease-out hover:bg-brand-700 active:scale-[0.97]"
               >
                 {cta.label}
               </button>

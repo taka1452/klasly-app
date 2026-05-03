@@ -49,7 +49,7 @@ export default async function ReportsPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Reports</h1>
         <p className="mt-1 text-sm text-gray-500">
           Build, save and re-run reports on revenue, attendance, instructor
           payouts, member growth, drop-ins, and room utilization.

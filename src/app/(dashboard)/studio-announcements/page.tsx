@@ -86,7 +86,7 @@ export default function StudioAnnouncementsPage() {
   return (
     <div>
       <div className="flex items-center gap-2">
-        <h1 className="text-2xl font-bold text-gray-900">Announcements</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Announcements</h1>
         <ContextHelpLink href="/help/messaging/studio-announcements" />
       </div>
       <p className="mt-1 text-sm text-gray-500">

@@ -144,7 +144,7 @@ export default async function BookingsPage({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-gray-900">Bookings</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Bookings</h1>
             <ContextHelpLink href="/help/classes-scheduling/manage-bookings" />
           </div>
           <p className="mt-1 text-sm text-gray-500">

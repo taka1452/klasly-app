@@ -63,7 +63,7 @@ export default async function ReviewsPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-900 md:text-2xl">Class Reviews</h1>
+      <h1 className="text-xl font-semibold tracking-tight text-gray-900 md:text-2xl">Class Reviews</h1>
       <p className="mt-1 text-sm text-gray-500">
         See what members think about your classes
       </p>

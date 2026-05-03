@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import type { Metadata } from "next";
 import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
 import FormsManagerClient from "@/components/settings/forms-manager-client";
@@ -36,8 +37,19 @@ export default async function FormsSettingsPage() {
 
   return (
     <div>
+      <div className="mb-4">
+        <Link
+          href="/settings"
+          className="group inline-flex items-center gap-1 text-sm font-medium text-brand-600 transition-colors duration-150 hover:text-brand-700"
+        >
+          <span className="inline-block transition-transform duration-150 ease-out group-hover:-translate-x-0.5">
+            &larr;
+          </span>
+          Settings
+        </Link>
+      </div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Forms &amp; documents</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Forms &amp; documents</h1>
         <p className="mt-1 text-sm text-gray-500">
           Build waivers, applications, contracts, medical intake forms, or any
           custom form. Share the public link on your website; submissions show

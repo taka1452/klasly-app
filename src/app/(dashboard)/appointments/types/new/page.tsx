@@ -83,14 +83,17 @@ export default function NewAppointmentTypePage() {
 
   return (
     <div>
-      <Link
-        href="/appointments"
-        className="mb-4 inline-block text-sm text-gray-500 hover:text-gray-700"
-      >
-        &larr; Back to appointments
-      </Link>
+      <div className="mb-4">
+        <Link
+          href="/appointments"
+          className="group inline-flex items-center gap-1 text-sm font-medium text-brand-600 transition-colors duration-150 hover:text-brand-700"
+        >
+          <span className="inline-block transition-transform duration-150 ease-out group-hover:-translate-x-0.5">&larr;</span>
+          Appointments
+        </Link>
+      </div>
 
-      <h1 className="text-2xl font-bold text-gray-900">
+      <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
         Create Appointment Type{" "}
         <HelpTip
           text="Define a service that clients can book. Set the duration, price, and buffer time between appointments."

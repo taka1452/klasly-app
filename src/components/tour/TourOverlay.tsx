@@ -111,7 +111,7 @@ export default function TourOverlay({
               <button
                 type="button"
                 onClick={nextStep}
-                className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700"
+                className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-[transform,color,background-color] duration-150 ease-out hover:bg-brand-700 active:scale-[0.97]"
               >
                 {isLastStep ? "Finish" : "Next"}
               </button>

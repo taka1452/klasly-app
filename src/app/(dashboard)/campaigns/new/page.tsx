@@ -65,7 +65,7 @@ export default function NewCampaignPage() {
   if (sent) {
     return (
       <div>
-        <h1 className="text-xl font-bold text-gray-900">Campaign Sent!</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-gray-900">Campaign Sent!</h1>
         <p className="mt-2 text-sm text-gray-500">
           Successfully sent to {sentCount} member{sentCount !== 1 ? "s" : ""}.
         </p>
@@ -81,7 +81,7 @@ export default function NewCampaignPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-900 md:text-2xl">New Campaign</h1>
+      <h1 className="text-xl font-semibold tracking-tight text-gray-900 md:text-2xl">New Campaign</h1>
       <p className="mt-1 text-sm text-gray-500">
         Compose and send an email to all active members
       </p>

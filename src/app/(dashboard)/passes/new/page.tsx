@@ -118,7 +118,7 @@ export default function NewPassPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900">Create Pass</h1>
+      <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Create Pass</h1>
       <p className="mt-1 text-sm text-gray-500">
         Set up a new membership pass for your members
       </p>

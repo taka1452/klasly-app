@@ -62,7 +62,7 @@ export default function TrialBanner({
           </div>
           <Link
             href="/settings/billing"
-            className="inline-flex items-center rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 transition-colors flex-shrink-0"
+            className="inline-flex items-center rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white transition-[transform,color,background-color] duration-150 ease-out hover:bg-brand-700 active:scale-[0.97] flex-shrink-0"
           >
             Choose a plan →
           </Link>

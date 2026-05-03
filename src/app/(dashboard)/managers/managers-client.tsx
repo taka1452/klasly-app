@@ -322,13 +322,13 @@ export default function ManagersClient() {
         return;
       }
 
-      showToast("変更しました", "success");
+      showToast("Permission updated", "success");
     } catch {
       setManagers((prev) =>
         prev.map((m) => (m.id === manager.id ? { ...m, [key]: !value } : m)),
       );
       setError("Network error while updating permission");
-      showToast("変更に失敗しました", "error");
+      showToast("Failed to update permission", "error");
     }
   }
 
@@ -370,7 +370,7 @@ export default function ManagersClient() {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-gray-900">Managers</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Managers</h1>
             <ContextHelpLink href="/help/collective-mode/assign-manager-role" />
           </div>
           <p className="mt-1 text-sm text-gray-500">

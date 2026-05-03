@@ -88,7 +88,7 @@ export default async function SessionDetailPage({
         </nav>
         <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
               {effectiveIsOnline && <span title="Online">📹 </span>}
               {className}
             </h1>

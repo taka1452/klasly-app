@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { useFeature } from "@/lib/features/feature-context";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
@@ -151,14 +152,14 @@ export default function DistributionsPage() {
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 md:text-2xl">Pass Distributions</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-gray-900 md:text-2xl">Pass Distributions</h1>
           <p className="mt-1 text-sm text-gray-500">
             Review and approve monthly instructor payouts from pass revenue
           </p>
         </div>
-        <a href="/passes" className="btn-secondary shrink-0 text-sm">
+        <Link href="/passes" className="btn-secondary shrink-0 text-sm">
           ← Back to Passes
-        </a>
+        </Link>
       </div>
 
       {/* Period selector */}

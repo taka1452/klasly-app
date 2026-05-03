@@ -393,7 +393,7 @@ export default async function DashboardPage() {
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900">Dashboard</h1>
+            <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-gray-900">Dashboard</h1>
             <ContextHelpLink href="/help/getting-started/studio-setup-overview" />
           </div>
           <p className="mt-1 text-sm text-gray-500">
@@ -602,9 +602,9 @@ export default async function DashboardPage() {
                           <span>Contact member to update card</span>
                         )
                       ) : (
-                        <a href="/settings/billing" className="underline transition-colors duration-150 hover:text-gray-600">
+                        <Link href="/settings/billing" className="underline transition-colors duration-150 hover:text-gray-600">
                           Update billing →
-                        </a>
+                        </Link>
                       )}
                     </div>
                   </div>

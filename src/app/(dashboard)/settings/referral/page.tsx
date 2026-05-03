@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import type { Metadata } from "next";
 import ReferralSettingsClient from "@/components/settings/referral-settings-client";
 import HelpTip from "@/components/ui/help-tip";
@@ -66,7 +67,18 @@ export default async function ReferralSettingsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900">
+      <div className="mb-4">
+        <Link
+          href="/settings"
+          className="group inline-flex items-center gap-1 text-sm font-medium text-brand-600 transition-colors duration-150 hover:text-brand-700"
+        >
+          <span className="inline-block transition-transform duration-150 ease-out group-hover:-translate-x-0.5">
+            &larr;
+          </span>
+          Settings
+        </Link>
+      </div>
+      <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
         Referral Program
         <HelpTip
           text="Share your link. When they pay, you both get 1 month free. No limit on referrals."

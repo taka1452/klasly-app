@@ -78,15 +78,20 @@ export default function NewInstructorPage() {
 
   return (
     <div>
-      <div className="mb-6">
+      <div className="mb-4">
         <Link
           href="/instructors"
-          className="text-sm text-gray-500 hover:text-gray-700"
+          className="group inline-flex items-center gap-1 text-sm font-medium text-brand-600 transition-colors duration-150 hover:text-brand-700"
         >
-          ← Back to instructors
+          <span className="inline-block transition-transform duration-150 ease-out group-hover:-translate-x-0.5">
+            &larr;
+          </span>
+          Instructors
         </Link>
-        <div className="mt-2 flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-bold text-gray-900">
+      </div>
+      <div className="mb-6">
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
             Add new instructor
           </h1>
           <FlowHintPanel flowType="instructors" />

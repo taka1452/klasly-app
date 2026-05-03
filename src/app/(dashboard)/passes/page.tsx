@@ -120,7 +120,7 @@ export default async function PassesPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900">Passes</h1>
+            <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-gray-900">Passes</h1>
             <ContextHelpLink href="/help/payments/studio-pass-setup" />
           </div>
           <p className="mt-1 text-sm text-gray-500">

@@ -394,7 +394,7 @@ export default function AdminStudioDetail({
             type="button"
             onClick={() => setShowExtendModal(true)}
             disabled={!!actionLoading}
-            className="rounded border border-slate-500 px-3 py-1.5 text-sm text-slate-300 transition-[transform,background-color] duration-150 ease-out hover:bg-slate-700 active:scale-[0.95] disabled:opacity-50 disabled:active:scale-100"
+            className="rounded border border-slate-500 px-3 py-1.5 text-sm text-slate-300 transition-[transform,background-color] duration-150 ease-out hover:bg-slate-700 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
           >
             {actionLoading === "extend" ? "…" : t("studioDetail.extendTrial")}
           </button>
@@ -402,7 +402,7 @@ export default function AdminStudioDetail({
             type="button"
             onClick={() => setShowResetConfirm(true)}
             disabled={!!actionLoading}
-            className="rounded border border-slate-500 px-3 py-1.5 text-sm text-slate-300 transition-[transform,background-color] duration-150 ease-out hover:bg-slate-700 active:scale-[0.95] disabled:opacity-50 disabled:active:scale-100"
+            className="rounded border border-slate-500 px-3 py-1.5 text-sm text-slate-300 transition-[transform,background-color] duration-150 ease-out hover:bg-slate-700 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
           >
             {actionLoading === "reset" ? "…" : t("studioDetail.resetToTrial")}
           </button>
@@ -410,7 +410,7 @@ export default function AdminStudioDetail({
             type="button"
             onClick={() => setShowEmailModal(true)}
             disabled={!!actionLoading}
-            className="rounded border border-slate-500 px-3 py-1.5 text-sm text-slate-300 transition-[transform,background-color] duration-150 ease-out hover:bg-slate-700 active:scale-[0.95] disabled:opacity-50 disabled:active:scale-100"
+            className="rounded border border-slate-500 px-3 py-1.5 text-sm text-slate-300 transition-[transform,background-color] duration-150 ease-out hover:bg-slate-700 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
           >
             {actionLoading === "email" ? "…" : t("studioDetail.sendEmail")}
           </button>
@@ -420,7 +420,7 @@ export default function AdminStudioDetail({
                 type="button"
                 onClick={() => { setCancelImmediate(false); setShowCancelConfirm(true); }}
                 disabled={!!actionLoading}
-                className="rounded border border-orange-500/50 px-3 py-1.5 text-sm text-orange-300 transition-[transform,background-color] duration-150 ease-out hover:bg-orange-500/20 active:scale-[0.95] disabled:opacity-50 disabled:active:scale-100"
+                className="rounded border border-orange-500/50 px-3 py-1.5 text-sm text-orange-300 transition-[transform,background-color] duration-150 ease-out hover:bg-orange-500/20 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
               >
                 {actionLoading === "cancel" ? "…" : t("studioDetail.cancelSubscription")}
               </button>
@@ -428,7 +428,7 @@ export default function AdminStudioDetail({
                 type="button"
                 onClick={() => { setCancelImmediate(true); setShowCancelConfirm(true); }}
                 disabled={!!actionLoading}
-                className="rounded border border-red-500/50 px-3 py-1.5 text-sm text-red-300 transition-[transform,background-color] duration-150 ease-out hover:bg-red-500/20 active:scale-[0.95] disabled:opacity-50 disabled:active:scale-100"
+                className="rounded border border-red-500/50 px-3 py-1.5 text-sm text-red-300 transition-[transform,background-color] duration-150 ease-out hover:bg-red-500/20 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
               >
                 {actionLoading === "cancel" ? "…" : t("studioDetail.immediatelyCancel")}
               </button>
@@ -438,7 +438,7 @@ export default function AdminStudioDetail({
             type="button"
             onClick={() => setShowDeleteConfirm(true)}
             disabled={!!actionLoading}
-            className="rounded border border-red-600 px-3 py-1.5 text-sm text-red-400 transition-[transform,background-color] duration-150 ease-out hover:bg-red-500/20 active:scale-[0.95] disabled:opacity-50 disabled:active:scale-100"
+            className="rounded border border-red-600 px-3 py-1.5 text-sm text-red-400 transition-[transform,background-color] duration-150 ease-out hover:bg-red-500/20 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
           >
             {actionLoading === "delete" ? "…" : t("studioDetail.deleteStudio")}
           </button>
@@ -546,8 +546,8 @@ export default function AdminStudioDetail({
               <span className="text-slate-400">{t("studioDetail.days")}</span>
             </div>
             <div className="mt-4 flex justify-end gap-2">
-              <button type="button" onClick={() => setShowExtendModal(false)} className="rounded border border-slate-500 px-3 py-1 text-sm text-slate-300 transition-[transform,background-color] duration-150 ease-out hover:bg-slate-700 active:scale-[0.95]">{t("common.cancel")}</button>
-              <button type="button" onClick={doExtendTrial} disabled={!!actionLoading} className="rounded bg-brand-600 px-3 py-1 text-sm text-white transition-[transform,background-color] duration-150 ease-out hover:bg-brand-500 active:scale-[0.95] disabled:opacity-50 disabled:active:scale-100">{t("studioDetail.extend")}</button>
+              <button type="button" onClick={() => setShowExtendModal(false)} className="rounded border border-slate-500 px-3 py-1 text-sm text-slate-300 transition-[transform,background-color] duration-150 ease-out hover:bg-slate-700 active:scale-[0.97]">{t("common.cancel")}</button>
+              <button type="button" onClick={doExtendTrial} disabled={!!actionLoading} className="rounded bg-brand-600 px-3 py-1 text-sm text-white transition-[transform,background-color] duration-150 ease-out hover:bg-brand-500 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100">{t("studioDetail.extend")}</button>
             </div>
           </div>
         </div>
@@ -559,8 +559,8 @@ export default function AdminStudioDetail({
             <h4 className="text-sm font-medium text-white">{t("studioDetail.resetToTrial")}</h4>
             <p className="mt-1 text-xs text-slate-400">{t("studioDetail.resetTrialConfirm")}</p>
             <div className="mt-4 flex justify-end gap-2">
-              <button type="button" onClick={() => setShowResetConfirm(false)} className="rounded border border-slate-500 px-3 py-1 text-sm text-slate-300 transition-[transform,background-color] duration-150 ease-out hover:bg-slate-700 active:scale-[0.95]">{t("common.cancel")}</button>
-              <button type="button" onClick={doResetTrial} disabled={!!actionLoading} className="rounded bg-orange-600 px-3 py-1 text-sm text-white transition-[transform,background-color] duration-150 ease-out hover:bg-orange-500 active:scale-[0.95] disabled:opacity-50 disabled:active:scale-100">Reset</button>
+              <button type="button" onClick={() => setShowResetConfirm(false)} className="rounded border border-slate-500 px-3 py-1 text-sm text-slate-300 transition-[transform,background-color] duration-150 ease-out hover:bg-slate-700 active:scale-[0.97]">{t("common.cancel")}</button>
+              <button type="button" onClick={doResetTrial} disabled={!!actionLoading} className="rounded bg-orange-600 px-3 py-1 text-sm text-white transition-[transform,background-color] duration-150 ease-out hover:bg-orange-500 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100">Reset</button>
             </div>
           </div>
         </div>
@@ -586,8 +586,8 @@ export default function AdminStudioDetail({
               className="mt-2 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-white placeholder-slate-500"
             />
             <div className="mt-4 flex justify-end gap-2">
-              <button type="button" onClick={() => setShowEmailModal(false)} className="rounded border border-slate-500 px-3 py-1 text-sm text-slate-300 transition-[transform,background-color] duration-150 ease-out hover:bg-slate-700 active:scale-[0.95]">{t("common.cancel")}</button>
-              <button type="button" onClick={doSendEmail} disabled={!!actionLoading || !emailSubject.trim() || !emailBody.trim()} className="rounded bg-brand-600 px-3 py-1 text-sm text-white transition-[transform,background-color] duration-150 ease-out hover:bg-brand-500 active:scale-[0.95] disabled:opacity-50 disabled:active:scale-100">{t("studioDetail.send")}</button>
+              <button type="button" onClick={() => setShowEmailModal(false)} className="rounded border border-slate-500 px-3 py-1 text-sm text-slate-300 transition-[transform,background-color] duration-150 ease-out hover:bg-slate-700 active:scale-[0.97]">{t("common.cancel")}</button>
+              <button type="button" onClick={doSendEmail} disabled={!!actionLoading || !emailSubject.trim() || !emailBody.trim()} className="rounded bg-brand-600 px-3 py-1 text-sm text-white transition-[transform,background-color] duration-150 ease-out hover:bg-brand-500 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100">{t("studioDetail.send")}</button>
             </div>
           </div>
         </div>
@@ -601,8 +601,8 @@ export default function AdminStudioDetail({
               {cancelImmediate ? t("studioDetail.cancelImmediateDesc") : t("studioDetail.cancelConfirmDesc")}
             </p>
             <div className="mt-4 flex justify-end gap-2">
-              <button type="button" onClick={() => setShowCancelConfirm(false)} className="rounded border border-slate-500 px-3 py-1 text-sm text-slate-300 transition-[transform,background-color] duration-150 ease-out hover:bg-slate-700 active:scale-[0.95]">{t("common.cancel")}</button>
-              <button type="button" onClick={doCancelSubscription} disabled={!!actionLoading} className="rounded bg-red-600 px-3 py-1 text-sm text-white transition-[transform,background-color] duration-150 ease-out hover:bg-red-500 active:scale-[0.95] disabled:opacity-50 disabled:active:scale-100">{t("common.confirm")}</button>
+              <button type="button" onClick={() => setShowCancelConfirm(false)} className="rounded border border-slate-500 px-3 py-1 text-sm text-slate-300 transition-[transform,background-color] duration-150 ease-out hover:bg-slate-700 active:scale-[0.97]">{t("common.cancel")}</button>
+              <button type="button" onClick={doCancelSubscription} disabled={!!actionLoading} className="rounded bg-red-600 px-3 py-1 text-sm text-white transition-[transform,background-color] duration-150 ease-out hover:bg-red-500 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100">{t("common.confirm")}</button>
             </div>
           </div>
         </div>
@@ -622,8 +622,8 @@ export default function AdminStudioDetail({
               className="mt-2 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-white placeholder-slate-500"
             />
             <div className="mt-4 flex justify-end gap-2">
-              <button type="button" onClick={() => setShowDeleteConfirm(false)} className="rounded border border-slate-500 px-3 py-1 text-sm text-slate-300 transition-[transform,background-color] duration-150 ease-out hover:bg-slate-700 active:scale-[0.95]">{t("common.cancel")}</button>
-              <button type="button" onClick={doDeleteStudio} disabled={!!actionLoading || deleteConfirmName.trim() !== studio.name} className="rounded bg-red-600 px-3 py-1 text-sm text-white transition-[transform,background-color] duration-150 ease-out hover:bg-red-500 active:scale-[0.95] disabled:opacity-50 disabled:active:scale-100">{t("common.delete")}</button>
+              <button type="button" onClick={() => setShowDeleteConfirm(false)} className="rounded border border-slate-500 px-3 py-1 text-sm text-slate-300 transition-[transform,background-color] duration-150 ease-out hover:bg-slate-700 active:scale-[0.97]">{t("common.cancel")}</button>
+              <button type="button" onClick={doDeleteStudio} disabled={!!actionLoading || deleteConfirmName.trim() !== studio.name} className="rounded bg-red-600 px-3 py-1 text-sm text-white transition-[transform,background-color] duration-150 ease-out hover:bg-red-500 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100">{t("common.delete")}</button>
             </div>
           </div>
         </div>

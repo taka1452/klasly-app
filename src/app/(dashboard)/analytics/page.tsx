@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { useFeature } from "@/lib/features/feature-context";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 import HelpTip from "@/components/ui/help-tip";
@@ -158,7 +159,7 @@ export default function AnalyticsPage() {
     return (
       <div>
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Analytics</h1>
         </div>
         <p className="mt-2 text-sm text-gray-500">This feature is not enabled for your studio.</p>
       </div>
@@ -168,7 +169,7 @@ export default function AnalyticsPage() {
   return (
     <div>
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Analytics</h1>
         <ContextHelpLink href="/help/analytics/view-analytics" />
         <a
           href="/analytics/reports"
@@ -189,9 +190,9 @@ export default function AnalyticsPage() {
           <p className="mt-2 text-sm text-gray-500">
             Enable it in <strong>Settings → Features</strong> to start tracking where your members come from.
           </p>
-          <a href="/settings/features" className="mt-3 inline-block text-sm font-medium text-brand-600 transition-colors duration-150 hover:text-brand-700">
+          <Link href="/settings/features" className="mt-3 inline-block text-sm font-medium text-brand-600 transition-colors duration-150 hover:text-brand-700">
             Enable UTM Tracking →
-          </a>
+          </Link>
         </div>
       ) : loading ? (
         <div className="flex justify-center py-12">

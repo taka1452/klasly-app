@@ -73,15 +73,18 @@ export default function TaxReportPage() {
       <div className="mb-4">
         <Link
           href="/instructors"
-          className="text-sm font-medium text-brand-600 hover:text-brand-700"
+          className="group inline-flex items-center gap-1 text-sm font-medium text-brand-600 transition-colors duration-150 hover:text-brand-700"
         >
-          &larr; Instructors
+          <span className="inline-block transition-transform duration-150 ease-out group-hover:-translate-x-0.5">
+            &larr;
+          </span>
+          Instructors
         </Link>
       </div>
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Tax Report</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Tax Report</h1>
           <p className="mt-1 text-sm text-gray-500">
             Annual instructor payout summary for 1099-NEC compliance
           </p>

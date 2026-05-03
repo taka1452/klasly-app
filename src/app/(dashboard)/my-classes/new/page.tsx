@@ -106,14 +106,17 @@ export default function OwnerNewClassPage() {
 
   return (
     <div>
-      <div className="mb-6">
+      <div className="mb-4">
         <Link
           href="/my-classes"
-          className="text-sm text-gray-500 hover:text-gray-700"
+          className="group inline-flex items-center gap-1 text-sm font-medium text-brand-600 transition-colors duration-150 hover:text-brand-700"
         >
-          &larr; Back to my classes
+          <span className="inline-block transition-transform duration-150 ease-out group-hover:-translate-x-0.5">&larr;</span>
+          My Classes
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-gray-900">
+      </div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
           Create a class
         </h1>
         <p className="mt-1 text-sm text-gray-500">
