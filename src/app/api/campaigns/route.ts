@@ -27,6 +27,18 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  if (profile.role === "manager") {
+    const { data: mgr } = await supabase
+      .from("managers")
+      .select("can_send_messages")
+      .eq("studio_id", profile.studio_id)
+      .eq("profile_id", user.id)
+      .single();
+    if (!mgr?.can_send_messages) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
+
   const { data: campaigns } = await supabase
     .from("email_campaigns")
     .select("id, subject, status, sent_at, sent_count, created_at")
@@ -65,6 +77,18 @@ export async function POST(req: Request) {
 
   if (!profile?.studio_id || !["owner", "manager"].includes(profile.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  if (profile.role === "manager") {
+    const { data: mgr } = await supabase
+      .from("managers")
+      .select("can_send_messages")
+      .eq("studio_id", profile.studio_id)
+      .eq("profile_id", user.id)
+      .single();
+    if (!mgr?.can_send_messages) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
   }
 
   const { data, error } = await supabase.from("email_campaigns").insert({

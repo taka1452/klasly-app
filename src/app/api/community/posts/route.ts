@@ -3,17 +3,31 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const studioId = searchParams.get("studioId");
+  const serverSupabase = await createServerClient();
+  const {
+    data: { user },
+  } = await serverSupabase.auth.getUser();
 
-  if (!studioId) {
-    return NextResponse.json({ error: "studioId required" }, { status: 400 });
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("studio_id")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.studio_id) {
+    return NextResponse.json({ error: "No studio" }, { status: 403 });
+  }
+
+  const studioId = profile.studio_id;
 
   const { data: posts, error } = await supabase
     .from("community_posts")

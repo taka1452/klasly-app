@@ -33,6 +33,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "No studio" }, { status: 403 });
   }
 
+  // Verify the post belongs to the user's studio
+  const { data: post } = await supabase
+    .from("community_posts")
+    .select("id")
+    .eq("id", postId)
+    .eq("studio_id", profile.studio_id)
+    .single();
+
+  if (!post) {
+    return NextResponse.json({ error: "Post not found" }, { status: 404 });
+  }
+
   const { data, error } = await supabase.from("community_comments").insert({
     post_id: postId,
     author_id: user.id,

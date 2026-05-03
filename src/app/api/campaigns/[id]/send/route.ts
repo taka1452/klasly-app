@@ -32,6 +32,18 @@ export async function POST(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  if (profile.role === "manager") {
+    const { data: mgr } = await supabase
+      .from("managers")
+      .select("can_send_messages")
+      .eq("studio_id", profile.studio_id)
+      .eq("profile_id", user.id)
+      .single();
+    if (!mgr?.can_send_messages) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
+
   // Get campaign
   const { data: campaign } = await supabase
     .from("email_campaigns")
