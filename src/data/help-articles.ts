@@ -49,28 +49,30 @@ export const helpArticles: HelpArticle[] = [
   {
     id: 'connect-stripe',
     title: 'Connect Stripe to accept payments',
-    summary: 'Link your Stripe account so members can pay online.',
+    summary: 'Link your Stripe account so members can pay online. Pick the right country up front — postal / phone / bank formats follow.',
     category: 'getting-started',
     audience: ['owner'],
-    keywords: ['stripe', 'payment', 'connect', 'bank', 'money', 'payout'],
+    keywords: ['stripe', 'payment', 'connect', 'bank', 'money', 'payout', 'country', 'postal code', 'disconnect'],
     steps: [
       {
-        title: 'Go to Settings → Payments',
-        description: 'Click "Connect Stripe" in the Payments section.',
+        title: 'Choose your business country',
+        description: 'Settings → Stripe Connect. Pick the Business country (defaults to your studio\'s timezone — change it if your business is registered elsewhere). This determines the postal code, phone, and bank account formats Stripe will ask for.',
       },
       {
-        title: 'Complete Stripe onboarding',
-        description: 'You\'ll be redirected to Stripe to enter your business information, bank account, and identity verification. This typically takes about 5 minutes.',
+        title: 'Click "Connect with Stripe"',
+        description: 'You\'ll be redirected to Stripe\'s secure onboarding — enter your business type, legal details, and bank account. This typically takes about 5 minutes.',
       },
       {
         title: 'Return to Klasly',
-        description: 'After completing Stripe onboarding, you\'ll be redirected back. You\'ll see a green "Connected" badge.',
+        description: 'Once complete, you\'ll see a ✅ Stripe Connected status. Member payments now go directly to your Stripe account.',
       },
     ],
     tips: [
+      'If setup is incomplete (e.g., you left Stripe\'s page mid-way), return to Settings → Stripe Connect and click "Continue Setup."',
+      'Stripe doesn\'t allow changing a Connect account\'s country after it\'s created. If the postal code or phone format doesn\'t match your country, click Disconnect and start over while onboarding is still in progress — pick the correct country and reconnect. The old account is abandoned and can be deleted from your Stripe dashboard later.',
+      'Stripe Connect must be set up before members can purchase credits, subscriptions, or studio passes.',
       'You need a bank account and government ID to complete Stripe setup.',
       'Stripe may take 1-2 business days to verify your account. You can still set up classes in the meantime.',
-      'Klasly charges a 0.5% platform fee on each transaction. Stripe\'s own processing fees also apply.',
     ],
     relatedArticles: ['studio-setup-overview', 'create-products'],
   },
@@ -202,31 +204,40 @@ export const helpArticles: HelpArticle[] = [
   {
     id: 'edit-cancel-session',
     title: 'Edit or cancel a session',
-    summary: 'Change the time, instructor, or cancel a specific session without affecting the whole class.',
+    summary: 'Change time, instructor, room, or cancel — apply to one session, this and all future, or the entire series.',
     category: 'classes-scheduling',
     audience: ['owner', 'manager'],
-    keywords: ['session', 'edit', 'cancel', 'change', 'time', 'reschedule', 'delete'],
+    keywords: ['session', 'edit', 'cancel', 'change', 'time', 'reschedule', 'delete', 'substitute', 'sub', 'scope', 'future', 'series'],
     steps: [
       {
-        title: 'Go to Schedule',
-        description: 'Open the Schedule page. You can use the day, week, or month view.',
-      },
-      {
         title: 'Click on the session',
-        description: 'Click the session you want to edit. A detail panel will open.',
+        description: 'Open the Schedule page (Day / Week / Month / List view) and click the session you want to edit.',
       },
       {
-        title: 'Edit or Cancel',
-        description: 'To edit: Change the time, instructor, or room, then save. To cancel: Click "Cancel Session". Members who booked will receive a cancellation email automatically.',
+        title: 'Choose the scope',
+        description: 'For recurring sessions, pick This session only, This and all future sessions, or All sessions in this series. The dialog shows live "affects N sessions, M bookings" hints, and the Save button label updates to match ("Apply to 12 sessions").',
+      },
+      {
+        title: 'Edit time, instructor, or room',
+        description: 'Change start time and the end time follows automatically (Google Calendar–style). Use the Instructor picker to assign a substitute. The dialog warns in amber if the new instructor is already teaching at the same time, in red if the room conflicts.',
+      },
+      {
+        title: 'Notify members',
+        description: 'When the change touches date, time, or instructor, the "Email confirmed members" checkbox appears (default ON). Uncheck for silent fixes — typo corrections or data cleanups.',
+      },
+      {
+        title: 'Cancel with a reason',
+        description: 'Click Cancel session. The confirm row has an optional Reason field ("Instructor sick", "Snow day"). The reason saves with the session and shows on the cancelled tile so the next person knows what happened.',
       },
     ],
     tips: [
-      'Cancelling a session refunds credits to booked members automatically.',
-      'If you only need to swap the instructor, you can do it without cancelling.',
-      'Editing a session time sends a notification email to all booked members.',
-      'Sessions are color-coded: Blue = normal, Violet = private, Amber = fully booked, Gray = cancelled.',
+      'Cancelling refunds credits / pass uses to booked members automatically. The notify-members opt-out applies to cancel as well.',
+      'Day-of-week changes still need to be handled differently — open the next upcoming session, change the date to the correct day of the week, choose "This and all future sessions", and save.',
+      'For ad-hoc batches that aren\'t a recurrence series, use Bulk edit on Upcoming Sessions instead.',
+      'Studio Closures (Settings → Studio Closures) automatically fills the reason as "Studio closed: [your label]" for every session it cancels.',
+      'Sessions are color-coded: Blue = open, Amber = full, Violet = private, Teal = room booking, Gray = cancelled.',
     ],
-    relatedArticles: ['create-recurring-class', 'schedule-visibility'],
+    relatedArticles: ['create-recurring-class', 'schedule-visibility', 'bulk-edit-sessions', 'studio-closures', 'class-change-history'],
   },
 
   {
@@ -357,52 +368,57 @@ export const helpArticles: HelpArticle[] = [
   {
     id: 'manage-bookings',
     title: 'View and manage session bookings',
-    summary: 'See who booked a session, manage waitlists, and handle drop-in attendance.',
+    summary: 'See who booked, manage waitlists, take drop-ins, and mark no-shows or late cancels.',
     category: 'classes-scheduling',
     audience: ['owner', 'manager'],
-    keywords: ['booking', 'attendance', 'waitlist', 'drop-in', 'confirm', 'cancel booking'],
+    keywords: ['booking', 'attendance', 'waitlist', 'drop-in', 'confirm', 'cancel booking', 'no-show', 'no show', 'late cancel'],
     steps: [
       {
-        title: 'Go to Bookings',
-        description: 'Click "Bookings" in the sidebar, then click on a session.',
+        title: 'Open the session',
+        description: 'Click the class on the schedule, or go to Bookings → click on a session. You\'ll see confirmed and waitlisted members.',
       },
       {
-        title: 'View confirmed and waitlisted members',
-        description: 'You\'ll see confirmed members with reserved spots and waitlisted members waiting for a spot to open.',
+        title: 'Add a drop-in',
+        description: 'Click + Add drop-in to search for any member and book them on the spot. Their credit / pass is deducted automatically.',
+      },
+      {
+        title: 'Mark no-show or late cancel',
+        description: 'Each booked member has a Status column with quick No-show (red) and Late cancel (amber) buttons. Click either to flag the booking — the attended checkbox is automatically cleared. Click Clear on the badge to undo.',
       },
       {
         title: 'Cancel a booking',
-        description: 'Click the cancel button next to a member\'s booking. Their credit will be returned automatically.',
-      },
-      {
-        title: 'Record drop-in attendance',
-        description: 'Click the "Drop-in" tab, search for the member, and click "Add". Their credit will be deducted automatically.',
+        description: 'Click the cancel button next to a member\'s booking. Their credit is returned automatically and the first person on the waitlist is promoted.',
       },
     ],
     tips: [
-      'When a confirmed member cancels, the first person on the waitlist is automatically promoted.',
+      'No-show and late cancel are tracked per booking, so the same member can attend on a different session without affecting this one.',
+      'Pass sessions are NOT auto-refunded on no-show — that\'s intentional, since most studios charge for no-shows. Cancel the booking instead to refund.',
       'Waitlist bookings do not consume credits. Credits are only deducted when promoted to confirmed.',
       'Drop-in attendees are listed separately and counted in total attendance.',
     ],
-    relatedArticles: ['edit-cancel-session', 'create-recurring-class'],
+    relatedArticles: ['edit-cancel-session', 'create-recurring-class', 'mark-no-show-late-cancel'],
   },
 
   {
     id: 'manage-rooms',
     title: 'Set up and manage rooms',
-    summary: 'Define your studio spaces so instructors can book them.',
+    summary: 'Define studio spaces, link a client to a room booking, and filter the schedule by room.',
     category: 'classes-scheduling',
-    audience: ['owner'],
-    keywords: ['room', 'space', 'studio', 'practitioner', 'setup', 'manage', 'timeline'],
+    audience: ['owner', 'manager'],
+    keywords: ['room', 'space', 'studio', 'practitioner', 'setup', 'manage', 'timeline', 'filter', 'client', 'pass deduct'],
     featureFlag: 'collective.room_management',
     steps: [
       {
-        title: 'Go to Rooms',
-        description: 'Click "Rooms" in the sidebar. The default view shows a Room Usage timeline for the day.',
+        title: 'Add rooms',
+        description: 'Rooms → Manage Rooms → + Add room. Enter name, capacity, and description.',
       },
       {
-        title: 'Click "Manage Rooms"',
-        description: 'Click "+ Add room" and enter name, capacity, and description.',
+        title: 'Filter the main schedule by room',
+        description: 'Above the calendar there\'s a Room dropdown. Default is All rooms; pick a specific room to see only what\'s booked there. Handy for "what\'s happening in Studio B today?" without scrolling through the rest.',
+      },
+      {
+        title: 'Add a room booking with a client',
+        description: 'Rooms → + Add booking. Pick the client (e.g. for body therapy / Reiki) and tick "Deduct one session from this client\'s pass" — one session is automatically pulled from their active pass when the booking is created. The booking detail page shows who the client is and that a session was used.',
       },
       {
         title: 'Assign rooms to classes',
@@ -411,10 +427,182 @@ export const helpArticles: HelpArticle[] = [
     ],
     tips: [
       'Room bookings appear on the Schedule calendar in teal with a "Room" badge.',
-      'Double-booking is prevented automatically.',
+      'Double-booking is prevented automatically — overlapping room reservations are blocked in red.',
+      'When a client is linked, that client gets a 1-hour reminder push notification before the booking, the same way class reminders work.',
+      'If you cancel the booking, the deducted pass session is automatically refunded.',
+      'No-show / late cancel marks on a linked client do NOT auto-refund the pass session — cancel the booking instead to refund.',
       'If you also teach classes (owner-instructor), a "Book Room" tab appears on the Rooms page.',
     ],
-    relatedArticles: ['collective-overview', 'collective-self-scheduling'],
+    relatedArticles: ['collective-overview', 'collective-self-scheduling', 'room-booking-client-pass', 'mark-no-show-late-cancel'],
+  },
+
+  {
+    id: 'duplicate-class',
+    title: 'Duplicate a class',
+    summary: 'Create a new class from an existing one with all settings pre-filled.',
+    category: 'classes-scheduling',
+    audience: ['owner', 'manager'],
+    keywords: ['duplicate', 'copy', 'clone', 'class', 'template'],
+    steps: [
+      {
+        title: 'Open Classes',
+        description: 'On the Classes page, find the class card you want to copy.',
+      },
+      {
+        title: 'Click Duplicate',
+        description: 'Each card has a Duplicate button next to Schedule. The New Template page opens with every field pre-filled — description, duration, capacity, price, instructor, room, image, recurrence.',
+      },
+      {
+        title: 'Tweak and save',
+        description: 'Change the name (and anything else) and save. Sessions start generating immediately based on the recurrence settings you keep.',
+      },
+    ],
+    tips: [
+      'Great for variants of the same class — different times, different instructors, or seasonal versions.',
+      'Rich text formatting (bold, italic, bullets) carries over, including the SafeMarkdown rendering members see.',
+    ],
+    relatedArticles: ['create-recurring-class', 'edit-cancel-session'],
+  },
+
+  {
+    id: 'bulk-edit-sessions',
+    title: 'Bulk-edit or bulk-cancel upcoming sessions',
+    summary: 'Change time or instructor across many sessions at once, or cancel a batch with one click.',
+    category: 'classes-scheduling',
+    audience: ['owner', 'manager'],
+    keywords: ['bulk', 'multiple', 'batch', 'sessions', 'select', 'cancel', 'edit'],
+    steps: [
+      {
+        title: 'Open Upcoming Sessions',
+        description: 'Classes → [Class Template] → scroll to Upcoming Sessions.',
+      },
+      {
+        title: 'Click "Select multiple"',
+        description: 'Top-right of the list. Checkboxes appear next to each session — tick the ones you want or use Select all.',
+      },
+      {
+        title: 'Edit time / instructor or Cancel',
+        description: 'The floating action bar shows Edit time / instructor and Cancel N sessions. The edit dialog lets you change time, instructor, or both — only the fields you opt into get rewritten.',
+      },
+      {
+        title: 'Notify members',
+        description: 'Both edit and cancel dialogs include the "Email confirmed members" opt-out (default ON). Members get a single, clean reschedule or cancellation email per session.',
+      },
+    ],
+    tips: [
+      'For ad-hoc batches — say, four random sessions across a month that all need a sub — Select multiple is faster than editing each one.',
+      'For a whole holiday day across every class, use Studio Closures instead — one click handles all classes that day plus the credit refunds.',
+    ],
+    relatedArticles: ['edit-cancel-session', 'studio-closures', 'substitute-instructor'],
+  },
+
+  {
+    id: 'substitute-instructor',
+    title: 'Substitute an instructor for a session',
+    summary: 'Swap the teacher for one session, all future sessions, or the whole series — with automatic notify.',
+    category: 'classes-scheduling',
+    audience: ['owner', 'manager'],
+    keywords: ['substitute', 'sub', 'instructor', 'teacher', 'swap', 'replace', 'cover'],
+    steps: [
+      {
+        title: 'Open the Edit Session dialog',
+        description: 'Click the session on the Schedule. The dialog has an Instructor picker.',
+      },
+      {
+        title: 'Pick the substitute',
+        description: 'Choose a different teacher and select the scope — single occurrence, this and all future, or all in the series.',
+      },
+      {
+        title: 'Notify confirmed members',
+        description: 'Klasly automatically emails confirmed-booking members about the swap (e.g. "Sarah → Mei") so they\'re never surprised on arrival. Untick the "Email confirmed members" box if you\'re doing a silent data fix.',
+      },
+    ],
+    tips: [
+      'An amber warning shows if the new instructor is already teaching another class at the same time on the same day. You can still proceed if the overlap is intentional.',
+      'In Collective Mode, the substitute\'s hours count toward their monthly tier; the original instructor\'s do not for the swapped session.',
+    ],
+    relatedArticles: ['edit-cancel-session', 'bulk-edit-sessions', 'instructor-cancellation-hours'],
+  },
+
+  {
+    id: 'mark-no-show-late-cancel',
+    title: 'Mark a member as no-show or late cancel',
+    summary: 'Flag bookings that don\'t convert to attendance — for class sessions and room bookings alike.',
+    category: 'classes-scheduling',
+    audience: ['owner', 'manager', 'instructor'],
+    keywords: ['no-show', 'no show', 'noshow', 'late cancel', 'attendance', 'flag', 'penalty'],
+    steps: [
+      {
+        title: 'Class sessions',
+        description: 'On the session attendance page, each booked member has a Status column with quick No-show (red) and Late cancel (amber) buttons. Click either to flag the booking — the attended checkbox is automatically cleared.',
+      },
+      {
+        title: 'Room bookings',
+        description: 'Open the room-booking detail page (click the booking on the schedule or in Rooms). When a client is linked, a Status row appears with Mark no-show and Mark late cancel actions.',
+      },
+      {
+        title: 'Undo',
+        description: 'Click Clear on the badge to undo. The flag stays visible on this session and in reports until cleared.',
+      },
+    ],
+    tips: [
+      'Pass sessions are NOT auto-refunded when you mark no-show — that\'s intentional, since most studios charge for no-shows. Cancel the booking instead if you want to refund.',
+      'No-show / late cancel are tracked per booking, so the same member can attend on a different session without affecting this one.',
+    ],
+    relatedArticles: ['manage-bookings', 'manage-rooms', 'room-booking-client-pass'],
+  },
+
+  {
+    id: 'class-change-history',
+    title: 'See the change history for a class',
+    summary: 'A timeline of every audited edit on a template and its sessions — for contracted-hours tracking.',
+    category: 'classes-scheduling',
+    audience: ['owner', 'manager'],
+    keywords: ['history', 'audit', 'log', 'changes', 'tracked', 'who changed', 'when'],
+    steps: [
+      {
+        title: 'Open the class template',
+        description: 'Classes → [class] → scroll past Upcoming Sessions.',
+      },
+      {
+        title: 'Expand "Change history"',
+        description: 'The disclosure expands to a timeline of up to 200 most recent entries.',
+      },
+    ],
+    tips: [
+      'Template-level entries: price, duration, capacity, default instructor changes.',
+      'Session-level entries: instructor swaps, reschedules (date/time), room changes, cancellations, hours-returned overrides.',
+      'Each entry shows what changed in plain English ("Time changed 18:00–19:00 → 18:30–19:30"), who made the change, and how long ago — the audit trail you need for contracted-hours calculations.',
+    ],
+    relatedArticles: ['edit-cancel-session', 'instructor-cancellation-hours'],
+  },
+
+  {
+    id: 'print-schedule',
+    title: 'Print the weekly schedule',
+    summary: 'A clean, paper-friendly weekly view for the front desk or PDF email-outs.',
+    category: 'classes-scheduling',
+    audience: ['owner', 'manager', 'instructor'],
+    keywords: ['print', 'paper', 'pdf', 'schedule', 'front desk', 'weekly'],
+    steps: [
+      {
+        title: 'Click Print on the Schedule page',
+        description: 'A clean weekly view opens (time, class, instructor, room, capacity — one table per day) and the print dialog pops automatically.',
+      },
+      {
+        title: 'Pick a different week (optional)',
+        description: 'Use Previous week / Next week in the preview toolbar to navigate.',
+      },
+      {
+        title: 'Save as PDF',
+        description: 'Choose "Save as PDF" in your browser\'s print dialog to email it out.',
+      },
+    ],
+    tips: [
+      'You can deep-link to a specific week: /calendar/print?week=YYYY-MM-DD.',
+      'Cancelled sessions are shown struck-through so the staff knows what was off that week.',
+    ],
+    relatedArticles: ['create-recurring-class', 'edit-cancel-session'],
   },
 
   {
@@ -465,7 +653,7 @@ export const helpArticles: HelpArticle[] = [
     summary: 'Add a new member to your studio manually.',
     category: 'members',
     audience: ['owner', 'manager'],
-    keywords: ['member', 'add', 'new', 'create', 'register', 'sign up'],
+    keywords: ['member', 'add', 'new', 'create', 'register', 'sign up', 'phone', 'birthdate', 'gender'],
     steps: [
       {
         title: 'Go to Members',
@@ -473,19 +661,16 @@ export const helpArticles: HelpArticle[] = [
       },
       {
         title: 'Click "Add Member"',
-        description: 'Enter the member\'s name, email address, and phone number (optional).',
-      },
-      {
-        title: 'Set their plan (optional)',
-        description: 'Assign a membership plan or add credits manually.',
+        description: 'The required fields are Full name, Email, Phone, Date of Birth, and Gender (Female / Male / Prefer not to say). Address and Referred by are optional.',
       },
       {
         title: 'Save',
-        description: 'The member will receive a welcome email with a link to set their password.',
+        description: 'New members start on the Drop-in plan with zero credits — change their plan from the member detail page once they purchase one. They receive a welcome email with a one-click sign-in link.',
       },
     ],
     tips: [
-      'To add many members at once, use CSV Import instead.',
+      'Phone, date of birth, and gender are required at create time so studios have the demographics they need for waivers, marketing, and emergency contact. Existing members imported before this change keep their original (possibly empty) values.',
+      'To add many members at once, use CSV Import instead — required fields are optional in the importer so legacy data still flows through.',
       'Members can also sign up themselves through your booking page or widget.',
     ],
     relatedArticles: ['import-members-csv', 'manage-member-credits', 'member-minor-waiver'],
@@ -494,32 +679,34 @@ export const helpArticles: HelpArticle[] = [
   {
     id: 'import-members-csv',
     title: 'Import members from CSV',
-    summary: 'Add many members at once by uploading a spreadsheet.',
+    summary: 'Add many members at once by uploading a spreadsheet. Welcome emails default off so you can stage your roster before launch.',
     category: 'members',
     audience: ['owner', 'manager'],
-    keywords: ['csv', 'import', 'bulk', 'members', 'upload', 'spreadsheet', 'migrate', 'transfer'],
+    keywords: ['csv', 'import', 'bulk', 'members', 'upload', 'spreadsheet', 'migrate', 'transfer', 'welcome', 'launch'],
     steps: [
       {
-        title: 'Download the template',
-        description: 'Go to Members → Import CSV. Click "Download Template".',
+        title: 'Upload',
+        description: 'Go to Members → Import. Drag in a .csv up to 5MB. Required columns are Name (one column or First+Last) and Email.',
       },
       {
-        title: 'Fill in your data',
-        description: 'Open in Excel or Google Sheets. Fill in name, email, and optionally phone and plan for each member.',
+        title: 'Map',
+        description: 'Klasly auto-detects column headers (Mindbody / Zen Planner / spreadsheet exports all work) — auto-detected fields show an "Auto-detected" badge. Optional columns: Phone, Date of Birth, Gender, Address, Referred By, Plan Type, Credits, Status, Is Minor, Guardian Email, Notes.',
       },
       {
-        title: 'Upload and preview',
-        description: 'Upload the CSV file. Review the preview to check for errors.',
+        title: 'Review',
+        description: 'Set defaults (plan type / credits / status) for rows where the column is blank, and decide whether to send a welcome email — the toggle defaults to OFF so you can stage your roster without flooding inboxes.',
       },
       {
-        title: 'Import',
-        description: 'Click "Import". Each member will receive a welcome email.',
+        title: 'Done',
+        description: 'See imported / skipped / error counts. Failed rows can be exported as a CSV ("Download errors as CSV") so you can fix and re-import.',
       },
     ],
     tips: [
-      'Great for migrating from another platform — export your member list from your old tool and reformat it to match the template.',
+      'Recommended migration workflow: (1) import existing members with welcome emails OFF, (2) finish setting up waivers / passes / schedule, (3) when ready to launch, send invitations from the Members page or re-import a batch with the toggle ON.',
+      'The new required-at-create fields (Phone, Date of Birth, Gender) are optional in the importer so legacy data still flows through.',
+      'Dates accept ISO (1992-04-15), US (4/15/1992), EU (15/4/1992), and human-readable ("Apr 15, 1992") formats. Gender accepts female / male / prefer_not_to_say (or single-letter F / M).',
+      'Click Download template on the upload step to get a sample CSV with all supported columns and three sample rows including a minor with a separate guardian email.',
       'Duplicate emails are skipped automatically.',
-      'The import will skip rows with invalid email addresses and show you which rows were skipped.',
     ],
     relatedArticles: ['add-member', 'export-data'],
   },
@@ -888,27 +1075,33 @@ export const helpArticles: HelpArticle[] = [
 
   {
     id: 'assign-manager-role',
-    title: 'Assign manager permissions to an instructor',
-    summary: 'Give an instructor elevated access to help manage the studio.',
+    title: 'Assign manager permissions',
+    summary: 'Invite a manager and grant fine-grained access via 13 permission toggles.',
     category: 'collective-mode',
     audience: ['owner'],
-    keywords: ['manager', 'role', 'permission', 'promote', 'access', 'staff'],
+    keywords: ['manager', 'role', 'permission', 'promote', 'access', 'staff', 'class pricing', 'tutorial', 'export'],
     steps: [
       {
-        title: 'Go to Managers',
-        description: 'Click "Managers" in the sidebar and click "+ Invite manager".',
+        title: 'Invite',
+        description: 'Click "Managers" in the sidebar and click "+ Invite manager". Enter the person\'s email — they receive an invitation to join your studio.',
       },
       {
         title: 'Set permissions',
-        description: 'Each manager has 8 permission toggles: Members, Classes, Instructors, Bookings, Rooms, Payments, Messages, and Teach.',
+        description: 'Each manager has 13 permission toggles: Members, Classes, Instructors, Bookings, Rooms, Payments, Messages, Teach, Settings, Class Pricing, Instructor Contracts & Membership Tiers, Tutorial, and Export Your Data.',
+      },
+      {
+        title: 'Use the permission guide',
+        description: 'Click "What does each permission do?" next to the page description — this opens a guide showing exactly what each permission grants and what it does not include. Hover over each permission badge for the same hint.',
       },
     ],
     tips: [
-      'Managers cannot change Stripe settings, billing, or delete the studio.',
-      'You can have multiple managers.',
-      'Managers with "Teach" permission can also create and teach their own classes.',
+      'Managers cannot change Stripe Connect settings, Klasly billing, or delete the studio — those stay owner-only by design.',
+      'Settings includes the Test Accounts switcher — it\'s called out with a blue badge so you can see it before toggling.',
+      'Class Pricing is separate from Classes so you can allow schedule edits without price changes.',
+      'Tutorial is a UX preference, not a capability — controls whether onboarding tooltips and the dashboard checklist appear for that user.',
+      'Export Your Data controls whether CSV / PDF export buttons appear on Members, Bookings, Payments, etc.',
     ],
-    relatedArticles: ['understanding-roles', 'invite-instructor'],
+    relatedArticles: ['understanding-roles', 'invite-instructor', 'test-accounts-switcher'],
   },
 
   {
@@ -976,37 +1169,101 @@ export const helpArticles: HelpArticle[] = [
 
   {
     id: 'collective-tiers',
-    title: 'Set up instructor membership tiers',
-    summary: 'Create monthly plans that instructors pay to use your space.',
+    title: 'Set up instructor contracts (hourly, flat, overage)',
+    summary: 'Three contract models in one place: hourly tiers with optional overage, flat / per-class fees, and a ledger of every overage charge.',
     category: 'collective-mode',
     audience: ['owner'],
-    keywords: ['tier', 'membership', 'instructor', 'billing', 'rent', 'monthly', 'hours', 'plan', 'overage'],
+    keywords: ['tier', 'membership', 'instructor', 'billing', 'rent', 'monthly', 'hours', 'plan', 'overage', 'contract', 'flat fee', 'per class'],
     featureFlag: 'collective.instructor_billing',
     steps: [
       {
-        title: 'Go to Settings → Tiers',
-        description: 'Click "Create Tier".',
+        title: 'Open Settings → Contracts',
+        description: 'Three tabs: Hourly plans / Flat & per-class fees / Overage charges.',
       },
       {
-        title: 'Set tier details',
-        description: 'Enter the tier name, monthly price, and included hours. You can create multiple tiers for different rooms or usage levels.',
+        title: 'Hourly plans',
+        description: 'Create subscription plans (e.g. "10h / month — $300"). For each plan, choose either: Block further bookings once the monthly limit is reached, OR Allow overage and charge per extra hour ($/hour rate you set).',
       },
       {
-        title: 'Configure overage (optional)',
-        description: 'Choose "Allow overage with hourly charge" and set the rate, or "Block scheduling when limit is reached".',
+        title: 'Flat & per-class fees',
+        description: 'For instructors who pay a simple fixed monthly amount or per-class fee. Manual settlement via the monthly invoice report.',
+      },
+      {
+        title: 'Overage charges ledger',
+        description: 'See every overage with status (pending / charged / failed). Waive any one of them — if it\'s already charged, the refund happens automatically.',
       },
       {
         title: 'Assign to instructors',
-        description: 'When inviting or editing an instructor, assign them to a tier. They\'ll be billed monthly through Stripe.',
+        description: 'On the instructor\'s edit page, open the Contract section and choose No contract, Hourly plan, or Flat / per-class fee. They\'re billed monthly through Stripe.',
       },
     ],
     tips: [
       'Hours are tracked in 15-minute increments automatically.',
-      'If an instructor exceeds their tier hours, overage fees apply automatically.',
-      'Instructors are warned when they approach 90% of their monthly limit.',
-      'You can waive overage charges before they\'re processed.',
+      'When an instructor books a room that would put them over their tier, they get a confirmation modal saying "This booking will cost you $X in overage — proceed?" (explicit consent required).',
+      'At month-end, overage is auto-charged to their card on file via Stripe.',
+      'Instructors see "This month: 12h used of 10h, estimated overage $50" on /instructor/membership.',
     ],
-    relatedArticles: ['collective-overview', 'invite-instructor'],
+    relatedArticles: ['collective-overview', 'invite-instructor', 'instructor-cancellation-hours'],
+  },
+
+  {
+    id: 'room-booking-client-pass',
+    title: 'Link a client to a room booking and deduct from their pass',
+    summary: 'For body-therapy / Reiki / 1-on-1 sessions: pull one session from the client\'s active pass automatically.',
+    category: 'collective-mode',
+    audience: ['owner', 'manager', 'instructor'],
+    keywords: ['room', 'booking', 'client', 'pass', 'deduct', 'session', 'body therapy', 'reiki', '1-on-1'],
+    featureFlag: 'collective.room_management',
+    steps: [
+      {
+        title: 'Add the booking',
+        description: 'Rooms → + Add booking. Search the member in the Client (optional) field.',
+      },
+      {
+        title: 'Tick "Deduct one session from this client\'s pass"',
+        description: 'If they have an active pass, the checkbox appears. Hit Create — one session is automatically pulled from their active pass. The booking detail page shows who the client is and that a session was used.',
+      },
+      {
+        title: 'Auto-reminders',
+        description: 'When linked, the client gets a push notification ~1 hour before the appointment, the same way class reminders work.',
+      },
+    ],
+    tips: [
+      'For the auto-deduct to work, the pass needs to live on the client\'s account in Klasly. If you\'ve been tracking sessions outside of Klasly, import the pass first.',
+      'If you cancel the booking, the session is automatically refunded back to the client\'s pass.',
+      'Marking no-show does NOT auto-refund the pass — most studios charge for no-shows. Cancel the booking instead if you want to refund.',
+      'Stripe checkout flow: client pays once for the pass (or recurring subscription); thereafter every linked booking ticks down their remaining count (14 → 13 → 12 …) without a separate "checkout" step at the door.',
+    ],
+    relatedArticles: ['manage-rooms', 'mark-no-show-late-cancel', 'studio-pass-setup'],
+  },
+
+  {
+    id: 'instructor-cancellation-hours',
+    title: 'Return or forfeit instructor hours on cancellation',
+    summary: 'Admin cancels return hours; instructor self-cancels forfeit them. Override per session if you need to.',
+    category: 'collective-mode',
+    audience: ['owner', 'manager'],
+    keywords: ['hours', 'returned', 'forfeited', 'cancellation', 'policy', 'instructor', 'tier'],
+    featureFlag: 'collective.instructor_billing',
+    steps: [
+      {
+        title: 'Default behavior',
+        description: 'Admin cancellations (owner / manager): hours are returned to the instructor\'s monthly pool automatically — the studio cancelled, not the teacher. Instructor self-cancellations: hours are FORFEITED and still count against the monthly allowance.',
+      },
+      {
+        title: 'Override on the cancelled tile',
+        description: 'In the Upcoming Sessions list, every cancelled tile has a Return hours / Revoke hours toggle. The badge shows the current state ("Hours returned" / "Hours forfeited") and a "By teacher" / "By admin" attribution badge so you can spot self-cancels at a glance.',
+      },
+      {
+        title: 'Effects flow through',
+        description: 'Whatever you set is reflected immediately on the next tier-overage report calculation for that instructor.',
+      },
+    ],
+    tips: [
+      'This is the audit trail you need for contracted-hours calculations — every cancellation is right there with attribution.',
+      'For deeper history, expand Change history on the class template (200 most recent entries).',
+    ],
+    relatedArticles: ['collective-tiers', 'edit-cancel-session', 'class-change-history'],
   },
 
   {
@@ -1206,6 +1463,151 @@ export const helpArticles: HelpArticle[] = [
   // ═══════════════════════════════════════
   // SETTINGS
   // ═══════════════════════════════════════
+
+  {
+    id: 'studio-closures',
+    title: 'Mark a holiday or closure day',
+    summary: 'Cancel every class on a specific day with one click — credits and pass uses are auto-refunded.',
+    category: 'settings',
+    audience: ['owner', 'manager'],
+    keywords: ['closure', 'holiday', 'closed', 'vacation', 'break', 'cancel day', 'snow day', 'maintenance'],
+    steps: [
+      {
+        title: 'Open Settings → Studio Closures',
+        description: 'Click + Add closure.',
+      },
+      {
+        title: 'Pick a date and label',
+        description: 'Set the date and give it a label (e.g. "Independence Day", "Owner vacation"). Save.',
+      },
+      {
+        title: 'Auto-cancel + refund',
+        description: 'Every non-cancelled class session on that date is automatically cancelled and the affected bookings have their credits or pass uses refunded in one step. The reason on each cancelled session is auto-set to "Studio closed: [your label]".',
+      },
+    ],
+    tips: [
+      'You can list multiple closure days — the page shows all upcoming ones.',
+      'Removing a closure later does NOT automatically restore cancelled sessions — recreate them manually if needed.',
+      'Owners can always manage closures. Managers need the Settings permission.',
+    ],
+    relatedArticles: ['edit-cancel-session', 'bulk-edit-sessions'],
+  },
+
+  {
+    id: 'multi-signature-contracts',
+    title: 'Send a contract for ordered multi-signature signing',
+    summary: 'Jotform-style: route a contract to multiple signers in a specific order, with a public signing link per signer.',
+    category: 'settings',
+    audience: ['owner', 'manager'],
+    keywords: ['contract', 'sign', 'signer', 'multi', 'order', 'jotform', 'envelope', 'witness'],
+    steps: [
+      {
+        title: 'Open Settings → Forms',
+        description: 'Find the contract template and click Send for signing.',
+      },
+      {
+        title: 'Configure the envelope',
+        description: 'Set the title (defaults to the form name) and optionally tie the envelope to an instructor — when set, the signed contract automatically appears on that instructor\'s profile under "Signed contracts."',
+      },
+      {
+        title: 'Add signers in order',
+        description: 'Enter Name + Email + optional Role label ("Studio owner", "Witness", etc.) for each. Use the up/down arrows to reorder.',
+      },
+      {
+        title: 'Send',
+        description: 'Click Send to first signer. Klasly emails them a unique signing link. After they sign, the next signer is emailed automatically. Once everyone signs, you get a "fully signed" email and the envelope is sealed.',
+      },
+    ],
+    tips: [
+      'External signers (lawyers, witnesses) don\'t need a Klasly login — the signing page is a public URL secured by a one-time token.',
+      'Signers can decline ("I can\'t sign this"); the studio gets notified and the envelope is voided.',
+      'Resend rotates the token, so the old link becomes invalid. Void cancels the envelope entirely.',
+      'Print signed copy on the envelope detail page opens a clean letter-style view — Cmd-P → Save as PDF gives you a real PDF.',
+    ],
+    relatedArticles: ['setup-waiver-template'],
+  },
+
+  {
+    id: 'test-accounts-switcher',
+    title: 'Use the Test Accounts switcher to preview as instructor or member',
+    summary: 'Click the person icon (bottom-right) to instantly sign in as a test account — see your studio from every role without logging out.',
+    category: 'settings',
+    audience: ['owner', 'manager'],
+    keywords: ['test', 'preview', 'impersonate', 'switch', 'account', 'instructor view', 'member view', 'client view'],
+    steps: [
+      {
+        title: 'Find the person icon',
+        description: 'Bottom-right of every screen (owner / manager with Settings permission). Click to open a panel with all test accounts in your studio.',
+      },
+      {
+        title: 'Click any test account',
+        description: 'You\'re instantly signed in as them. An orange banner stays at the top: "Viewing as {name} — Return to your account." One click returns you to your owner account.',
+      },
+      {
+        title: 'Or copy credentials',
+        description: 'Test account credentials are also listed on Settings → Test Accounts (with copy buttons), in case you want to log in with them in another browser.',
+      },
+    ],
+    tips: [
+      'You can only switch to accounts flagged as test accounts — real members / instructors can never be impersonated.',
+      'Test accounts are blocked from real Stripe actions (they can\'t accidentally charge a real card).',
+      'Every switch is recorded in an audit log.',
+      'Pre-launch checklist: book a class as the test member, take attendance as the test instructor, then review the booking + payout trail back as the owner.',
+    ],
+    relatedArticles: ['assign-manager-role', 'studio-setup-overview'],
+  },
+
+  {
+    id: 'calendar-feed-ical',
+    title: 'Subscribe to your Klasly schedule from Google or Apple Calendar',
+    summary: 'A per-user iCal feed — owners see everything, instructors see their classes, members see their bookings.',
+    category: 'settings',
+    audience: ['owner', 'manager', 'instructor', 'member'],
+    keywords: ['ical', 'calendar', 'google calendar', 'apple calendar', 'subscribe', 'feed', 'sync', 'outlook'],
+    steps: [
+      {
+        title: 'Open Settings → Calendar feed',
+        description: 'Click Generate subscribe URL. Copy the URL.',
+      },
+      {
+        title: 'Add to your calendar app',
+        description: 'In Google Calendar / Apple Calendar / Outlook, paste it as a subscribed (URL) calendar. Your Klasly schedule appears alongside your personal calendar and refreshes automatically about every hour.',
+      },
+      {
+        title: 'Revoke / regenerate',
+        description: 'Revoke and regenerate your URL anytime — useful if you ever shared it by accident.',
+      },
+    ],
+    tips: [
+      'Each role sees their own scope: owners and managers see every session; instructors see classes assigned to them; members see only their confirmed bookings.',
+      'Each user has their own URL — you cannot share one feed across people.',
+    ],
+    relatedArticles: ['create-recurring-class', 'manage-bookings'],
+  },
+
+  {
+    id: 'account-settings',
+    title: 'Update your name, email, password, or profile picture',
+    summary: 'One page for all personal account changes — owners, managers, instructors, and members.',
+    category: 'settings',
+    audience: ['owner', 'manager', 'instructor', 'member'],
+    keywords: ['account', 'email', 'password', 'profile picture', 'avatar', 'name', 'phone', 'change'],
+    steps: [
+      {
+        title: 'Open the user menu',
+        description: 'Click your avatar in the top-right corner and choose Account settings.',
+      },
+      {
+        title: 'Update what you need',
+        description: 'Change your name, phone, profile picture, login email (with double-confirmation links to both old and new inboxes), or password.',
+      },
+    ],
+    tips: [
+      'Display name, bio, and specialties are edited on the Profile page, not here.',
+      'After an email change, Klasly notifications start going to the new address automatically — the database keeps profiles.email in sync with the auth email.',
+    ],
+    relatedArticles: ['understanding-roles'],
+  },
 
   {
     id: 'manage-feature-flags',

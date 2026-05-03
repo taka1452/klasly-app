@@ -1,8 +1,10 @@
-# Klasly - Studio Management App
+# Klasly — Studio Management App
 
 **Built for small studios. Not enterprise gyms.**
 
-小規模ヨガ・フィットネス・ダンススタジオ向け（会員30〜50名）のオールインワン管理ツール。
+小規模ヨガ・フィットネス・ダンス・ピラティス・ボディワーク系スタジオ向けのオールインワン管理ツール（会員 30〜300 名規模）。会員管理・スケジュール・予約・決済・コミュニケーション・コンテンツ配信までを一画面でまかなう SaaS。
+
+---
 
 ## Tech Stack
 
@@ -11,229 +13,270 @@
 | Frontend | Next.js 14 (App Router) + TypeScript + Tailwind CSS |
 | Backend / DB / Auth | Supabase (PostgreSQL + Auth + RLS) |
 | Hosting | Vercel |
-| Payment | Stripe |
-| Email | Resend (notifications@klasly.app) |
+| Payment | Stripe + **Stripe Connect**（スタジオごとに直接受領） |
+| Email | Resend (`notifications@klasly.app`) |
+| Push | Web Push（VAPID）+ Service Worker（PWA） |
 | Domain | klasly.app (Porkbun) |
 
 ## URL構成
 
 | URL | 用途 |
 |---|---|
-| klasly.app | LP（静的HTML） |
-| app.klasly.app | Webアプリ（Next.js） |
+| klasly.app | LP（静的 HTML） |
+| app.klasly.app | Web アプリ（Next.js） |
+| app.klasly.app/s/`<slug>` | スタジオごとの公開ブッキングページ |
+| app.klasly.app/widget/`<slug>` | WordPress 等への iframe 埋め込み |
 
 ## 料金プラン
 
-- **Pro $19/月** または **$190/年**（約17%割引）
-- 30日間無料トライアル（カード登録必須）
+- **Pro $19/月** または **$190/年**（約 17% 割引）
+- 30 日間無料トライアル
 - 無料プランなし
 
-## 機能一覧
-
-### Phase 1: MVP
-- 認証（サインアップ・ログイン・ログアウト・パスワードリセット）
-- オンボーディング（スタジオ作成）
-- 会員管理（CRUD・ステータス・プラン・残回数）
-- インストラクター管理
-- クラス管理（登録・編集・削除）
-- セッション自動生成（4週間分）
-- 予約機能（予約・キャンセル・定員管理・キャンセル待ち）
-- ダッシュボード（今日のクラス・会員数・売上・未払いアラート）
-- ロール別アクセス制御（Owner / Instructor / Member）
-
-### Phase 2: Stripe決済連携
-- Stripeサンドボックス接続
-- Webhook処理
-- サブスクリプション管理
-- 支払い履歴・未払いアラート
-
-### Phase 3: メール・CSV・ウェイトリスト
-- Resendメール送信（8テンプレート）
-- CSVエクスポート（会員・予約・支払い）
-- キャンセル待ち自動繰り上げ
-
-### Phase 4: 拡張機能
-- Waiver（電子同意書・署名管理）
-- 出席管理（Attendance・ドロップイン対応・回数券手動消費）
-- Instructorポータル（スケジュール・予約者一覧・プロフィール編集）
-
-### Phase 5: コミュニケーション強化
-- **アプリ内メッセージング**: オーナーメンバー間の1対1チャット
- - 未読バッジ・既読管理
- - メンバー一覧表示（メッセージなしのメンバーも含む）
- - メッセージ受信時にメール通知（`messageNotification`）
-- **予約クレジット自動判定**: Stripe Connect 状況に応じてクレジット要否を自動判定
- - `null`（Auto）: Stripe Connect 完了 → 必須 / 未完了 → 不要（現金スタジオ）
- - `true`（常に必須）/ `false`（常に不要）でオーナーが手動オーバーライド可能
- - Settings ページから設定変更（Booking Credit Requirement）
-
-### System Admin Dashboard
-- KPIダッシュボード（MRR・ARR・Churn Rate・アラート）
-- スタジオ一覧・詳細管理（トライアル延長・プラン変更・キャンセル・削除）
-- 課金ステータス管理（Trialing / Past Due / Grace / Canceled）
-- クーポン管理（Stripe連携・プロモーションコード発行・利用追跡）
-- ビジネス指標（成長グラフ・コンバージョン・Churn予兆）
-- サポートチケット管理
-- ログビューア（Webhook・Cron・メール）
+---
 
 ## ユーザーロール
 
 | ロール | 説明 | デフォルトページ |
 |---|---|---|
-| Admin | Klaslyシステム管理者（ADMIN_EMAILS環境変数で制御） | /admin |
-| Owner | スタジオオーナー。全機能にアクセス可能 | / |
-| Instructor | 自分のクラス・予約者一覧のみ（閲覧中心） | /instructor |
-| Member | 自分の予約・残回数・支払い履歴・メッセージ | /schedule |
+| Admin | Klasly システム管理者（`ADMIN_EMAILS` で制御） | `/admin` |
+| Owner | スタジオオーナー。全機能にアクセス可能 | `/dashboard` |
+| Manager | Owner が権限を細かく付与（後述） | Owner と同じレイアウト・付与権限の範囲のみ |
+| Instructor | 自分のクラス・予約者・収益・部屋予約・契約 | `/instructor` |
+| Member | 予約・残回数・パス・支払い・メッセージ・実績 | `/schedule` |
 
-## フォルダ構成
+### Manager 権限フラグ（`managers.permissions_*`）
 
-```
-src/
-├── app/
-│ ├── (admin)/ ← System Admin管理画面
-│ │ ├── page.tsx ダッシュボード（KPI）
-│ │ ├── studios/ スタジオ一覧・詳細
-│ │ ├── billing/ 課金ステータス管理
-│ │ ├── coupons/ クーポン管理
-│ │ ├── metrics/ ビジネス指標
-│ │ ├── support/ サポートチケット
-│ │ ├── logs/ ログビューア
-│ │ └── layout.tsx Adminレイアウト（ダークテーマ）
-│ ├── (auth)/ ← 認証系
-│ │ ├── login/
-│ │ ├── signup/
-│ │ ├── forgot-password/
-│ │ ├── reset-password/
-│ │ └── auth/callback/
-│ ├── (dashboard)/ ← Owner用
-│ │ ├── page.tsx ダッシュボード
-│ │ ├── members/ 会員管理
-│ │ ├── classes/ クラス管理
-│ │ │ └── [classId]/sessions/[sessionId]/ 出席管理
-│ │ ├── bookings/ 予約管理
-│ │ ├── payments/ 支払い管理
-│ │ ├── settings/ 設定（Booking Credit Requirement含む）
-│ │ │ ├── billing/ 料金・サブスクリプション管理
-│ │ │ ├── connect/ Stripe Connect設定
-│ │ │ ├── pricing/ 料金プラン設定
-│ │ │ ├── waiver/ Waiver設定
-│ │ │ └── support/ サポートチケット
-│ │ └── layout.tsx
-│ ├── (instructor)/ ← Instructor用
-│ │ ├── page.tsx Instructorダッシュボード
-│ │ ├── schedule/ スケジュール
-│ │ ├── sessions/[sessionId]/ セッション詳細（閲覧のみ）
-│ │ ├── profile/ プロフィール編集
-│ │ └── layout.tsx
-│ ├── (member)/ ← 会員用
-│ │ ├── schedule/ スケジュール・予約
-│ │ ├── my-bookings/ 予約履歴
-│ │ ├── my-payments/ 支払い履歴
-│ │ ├── purchase/ クレジット・プラン購入
-│ │ ├── waiver/ Waiver確認・署名
-│ │ └── layout.tsx
-│ ├── messages/ ← アプリ内メッセージ（ルートグループ外・Owner/Member共用）
-│ │ ├── page.tsx メッセージ一覧・スレッド表示
-│ │ └── layout.tsx
-│ ├── waiver/sign/[token]/ ← Waiver署名（公開ページ）
-│ ├── privacy/ ← Privacy Policy
-│ ├── terms/ ← Terms of Service
-│ └── api/
-│ ├── admin/ Admin系API（service role key使用）
-│ │ ├── studios/
-│ │ ├── coupons/
-│ │ ├── support/
-│ │ └── logs/
-│ ├── stripe/webhook/
-│ ├── attendance/
-│ ├── bookings/
-│ ├── messages/ アプリ内メッセージAPI
-│ │ └── [memberId]/ スレッド取得・既読更新
-│ ├── studio/
-│ │ └── booking-settings/ 予約クレジット設定（PATCH）
-│ ├── waiver/
-│ ├── coupons/ ユーザー向けクーポンAPI
-│ ├── cron/ Cronジョブ
-│ │ ├── trial-reminder/
-│ │ ├── past-due-check/
-│ │ └── grace-check/
-│ └── export/ CSVエクスポート
-├── components/
-│ ├── bookings/
-│ │ └── booking-button.tsx 予約ボタン（requiresCredits対応）
-│ ├── messages/
-│ │ └── messages-client.tsx メッセージUI（会話リスト・バブルスレッド）
-│ └── settings/
-│ └── booking-settings-card.tsx 予約クレジット設定カード
-├── lib/
-│ ├── admin/
-│ │ ├── auth.ts Admin認証（ADMIN_EMAILS判定）
-│ │ └── supabase.ts Admin用Supabaseクライアント（service role）
-│ ├── supabase/
-│ │ ├── client.ts ブラウザ用
-│ │ └── server.ts サーバー用
-│ ├── stripe/
-│ │ └── config.ts Stripe設定
-│ ├── email/
-│ │ ├── client.ts
-│ │ ├── templates.ts
-│ │ └── send.ts
-│ └── booking-utils.ts 予約クレジット判定ヘルパー
-└── types/
- └── database.ts
-```
+`can_manage_members` / `can_manage_classes` / `can_manage_bookings` / `can_manage_instructors` / `can_manage_payments` / `can_manage_settings` / `can_manage_rooms` / `can_manage_announcements` / `can_manage_contracts` / `can_manage_events` / `can_manage_passes` / `can_manage_campaigns` / `can_manage_videos` 等。
 
-## データベース（テーブル一覧）
+---
+
+## 機能一覧
+
+### Phase 1: コア（MVP）
+- 認証（メール/パスワード・パスワードリセット・OAuth コールバック）
+- スタジオオンボーディング（7 ステップウィザード）
+- 会員管理（CRUD・必須属性: name/email/phone/DOB/gender、CSV インポート）
+- インストラクター管理（CRUD・自己招待リンク・CSV インポート）
+- クラステンプレート（曜日・時間・定員・部屋・価格・繰り返し終了日・遷移時間・特定日スキップ・複製）
+- セッション自動生成（cron で 4 週間先まで延伸、Never-ending repeat 対応）
+- 予約（クラス予約・キャンセル・定員管理・キャンセル待ち・自動繰り上げ）
+- ダッシュボード（KPI・セットアップタスク・クイックアクション）
+- ロール別アクセス制御（RLS + ミドルウェア）
+
+### Phase 2: 決済
+- Stripe Connect（国別オンボーディング、postal/bank format 自動切替、再オンボード）
+- 月額/年額サブスクリプション（Klasly Pro）
+- スタジオ側の Stripe Webhook 処理（`invoice.paid` / `invoice.payment_failed` / `customer.subscription.*` ほか）
+- メンバー側のクレジット購入・パス購入・サブスク
+- 支払い履歴・領収書・未払いアラート
+- **予約クレジット要否の自動判定**: `studios.booking_requires_credits = null` で Stripe Connect 完了状況により自動。`true`/`false` で手動オーバーライド
+
+### Phase 3: 通知・エクスポート・ウェイトリスト
+- Resend メールテンプレート（40 種以上、後述）
+- CSV エクスポート（members / instructors / classes / bookings / payments ほか）
+- CSV インポート（members / instructors / classes / pricing）— Map → Review → Done フロー、エラー行 CSV 再ダウンロード可
+- ウェイトリスト自動繰り上げ
+- スタジオ閉店日（`studio_closures`）— 一括キャンセル + 自動クレジット返金
+
+### Phase 4: 出席・契約・Instructor ポータル
+- ドロップイン出席記録 / 出席サマリー（ビュー）
+- 電子 Waiver（成人 + 未成年保護者署名・公開トークンリンク・SafeMarkdown）
+- Instructor ポータル（`/instructor` 配下）
+  - Today / My Schedule / My Classes / Room Bookings / Membership / My Earnings / My Profile / Overage / Appointments
+- Instructor 月次インボイス（PDF 生成）
+- Membership Tiers（時間枠・超過課金）+ Tier Overage 月次請求 cron
+
+### Phase 5: コミュニケーション
+- アプリ内メッセージング（オーナー⇔メンバー、未読バッジ、メール通知）
+- スタジオ Announcements（ニュースフィード・既読追跡）
+- Community Board（投稿・コメント・通知）
+- メールキャンペーン（受信箱送信・テンプレート・配信リスト）
+- Web Push 通知（PWA・1 時間前リマインダー・予約通知・新着メッセージ）
+
+### Phase 6: 拡張機能（Feature Flags）
+スタジオごとに有効化（`studio_features` テーブル + `lib/features/` API）。
+
+| カテゴリ | フラグ |
+|---|---|
+| Core（既定 ON） | Members / Classes / Bookings / Attendance / Payments / Waiver / Messaging / Instructor Portal / CSV Export・Import |
+| Collective Mode（既定 OFF） | Instructor Direct Payout / Room Management / Instructor Self-Scheduling / Hour Tracking / Instructor Billing / Schedule Visibility / Manager Role |
+| Extensions（既定 OFF） | Embed Widget / Analytics / Custom Forms / Minor Waiver / Retreat Booking / Studio Pass / Enhanced PWA / UTM Tracking / SOAP Notes / Online Classes / Appointments / Class Reviews / Achievements & Badges / Community Board / Favorites / Email Campaigns / Video Content / Member Levels |
+| Payout Phase 3（既定 OFF） | Class Fee Override / Fee Schedules / Instructor Invite Link / Tax Report |
+
+#### 主要拡張機能の概要
+- **Rooms**: 部屋ごとカラムカレンダー、Room-Only 予約（インストラクター単独利用）、料金、キャンセル時メール通知
+- **Studio Passes**: 月額サブスクパス（Monthly Unlimited / 10-pack / 5-pack / Drop-in）、回数券消費追跡、月初の自動配布 + 自動払い出し cron
+- **Events / Retreats**: 多日程イベント、分割払い・分割払いリマインダー、ウェイトリスト、オプション物販
+- **Appointments**: 1on1 予約タイプ（時間/価格/受付枠）、メンバー自己予約、インストラクター承認
+- **Custom Forms**: フォームビルダー、回答収集、メンバー入会用カスタム項目
+- **Online Library / Videos**: 月額 Basic/Premium 会員、動画 free/members/premium タグ、購入記録
+- **Class Reviews**: メンバーによるクラス評価、平均レーティング表示
+- **Achievements & Member Levels**: Bronze/Silver/Gold/Platinum/Diamond ランク、出席ストリーク、バッジ
+- **SOAP Notes**: ボディワーカー向け施術記録（部位・所見・プラン）
+- **Analytics**: UTM リンクビルダー、クリック追跡、保存レポート（売上/出席/インストラクター払い出し/会員成長/ドロップイン/部屋稼働）
+- **Referral Program**: 紹介コード、紹介報酬の自動付与
+- **Embed Widget**: WordPress 用 iframe（公開スケジュール / イベント登録）
+- **Calendar Sync**: iCal フィード公開（Google Calendar 等の購読）
+- **Closures**: スタジオ休業日 → 該当日のセッション一括キャンセル + クレジット/パス返金
+
+### System Admin Dashboard (`/admin`)
+- KPI（MRR / ARR / Churn / アラート）
+- スタジオ一覧・詳細管理（トライアル延長・プラン変更・キャンセル・削除）
+- 課金ステータス管理（Trialing / Past Due / Grace / Canceled）
+- クーポン管理（Stripe Coupon / Promotion Code 連携）
+- ビジネス指標、サポートチケット、ログビューア（Webhook / Cron / Email）
+- テストアカウントなりすまし（`test_account_impersonation_logs` で監査）
+
+---
+
+## ルート一覧
+
+### `(dashboard)/` — Owner / Manager
+`dashboard` / `members` / `instructors`（earnings, import, rental, tax-report）/ `managers` / `classes` / `calendar`（import, print, `[id]/sessions/[sessionId]`）/ `bookings`（`[sessionId]`）/ `appointments`（types CRUD）/ `events`（`[id]/manage`, bookings, edit）/ `rooms`（manage, bookings, `[id]`）/ `passes`（distributions, new）/ `payments` / `analytics`（reports）/ `campaigns` / `reviews` / `studio-announcements` / `contracts/envelopes/[id]` / `my-classes` / `my-earnings` / `settings/*`
+
+### `(dashboard)/settings/`
+`billing` / `pricing` / `connect` (Stripe Connect) / `payout` / `collective-setup` / `tiers`（+ `tiers/overage`）/ `closures` / `notifications` / `waiver` / `contracts` / `forms` / `library` / `widget` / `integrations` / `referral` / `invoices` / `features` / `support`
+
+### `(instructor)/` — Instructor
+`instructor`（Today・My Schedule・My Classes・Room Bookings・Membership・My Earnings・My Profile・Overage・Appointments）
+
+### `(member)/` — Member
+`schedule` / `my-bookings` / `my-payments` / `my-passes` / `my-appointments` / `my-stats` / `purchase` / `videos` / `community` / `notification-settings` / `waiver` / `wrapped`
+
+### `(admin)/` — System Admin
+`admin`（KPI / studios / billing / coupons / metrics / support / logs）
+
+### `(public)/`
+`s/[slug]`（スタジオ公開ブッキングページ）/ `events/[slug]` / `privacy` / `terms` / `cookies`
+
+### Root-level
+`account` / `announcements` / `messages` / `instructor-join` / `forms` / `widget` / `waiver/sign/[token]` / `ref` / `onboarding` / `help` / `contracts/[envelopeId]` / `dev-login`（dev のみ）/ `offline`
+
+---
+
+## API ルート
+
+`src/app/api/` 配下。主要グループ:
+
+| グループ | 概要 |
+|---|---|
+| `account/*` | プロフィール・メール・パスワード変更 |
+| `admin/*` | システム管理（service role） |
+| `analytics/*` | リンククリック集計 |
+| `announcements/*` | スタジオお知らせ |
+| `appointments/*` | 1on1 予約 |
+| `attendance/*` | 出席記録・ドロップイン |
+| `auth/*` | OAuth コールバック |
+| `bookings/*` | クラス予約・キャンセル（パス連動） |
+| `calendar/*` / `ical/*` | iCal フィード |
+| `campaigns/*` | メール一括送信 |
+| `class-templates/*` | クラステンプレート CRUD・セッション再生成 |
+| `community/*` | 掲示板 |
+| `contracts/*` | 契約エンベロープ・署名 Webhook |
+| `cron/*` | Vercel Cron 入口（後述） |
+| `dashboard/*` | KPI 集計 |
+| `events/*` | イベント・分割払い・ウェイトリスト |
+| `export/*` | CSV エクスポート |
+| `favorites/*` | お気に入り |
+| `forms/*` | カスタムフォーム |
+| `import/*` | CSV インポート |
+| `instructor/*` | Instructor ポータル各種 |
+| `instructor-earnings/*` / `instructor-overage/*` / `instructor-membership-tiers/*` / `instructor-memberships/*` / `instructors/*` | 収益・超過・契約 |
+| `instructor-join/*` | 自己招待 |
+| `integrations/*` | Google / Mailchimp / Zoom 連携 |
+| `invoices/*` | インストラクター月次インボイス |
+| `library/*` / `videos/*` | 動画ライブラリ |
+| `managers/*` | マネージャ CRUD |
+| `members/*` | 会員 CRUD・レベル |
+| `messages/*` | アプリ内メッセージ |
+| `notifications/*` / `push/*` | Web Push |
+| `og/*` | OG 画像 |
+| `onboarding/*` | セットアップウィザード |
+| `passes/*` | スタジオパス |
+| `products/*` | Stripe Product / Price 同期 |
+| `public/*` | 公開スケジュール |
+| `referral/*` | 紹介プログラム |
+| `reports/*` | 保存レポート |
+| `reviews/*` | クラスレビュー |
+| `rooms/*` | 部屋予約 |
+| `sessions/*` | セッション CRUD・差し替え |
+| `soap-notes/*` | SOAP 記録 |
+| `stripe/*` | Webhook・Payment Intent・Connect |
+| `studio/*` | スタジオ設定・ブランド・タイムゾーン・通貨 |
+| `support/*` | サポートチケット |
+| `waiver/*` | Waiver テンプレ・署名 |
+| `widget/*` | 埋め込みウィジェット |
+
+---
+
+## データベース（主要テーブル）
 
 ### コア
-| テーブル | 説明 |
-|---|---|
-| studios | スタジオ情報・課金状態・`booking_requires_credits`（予約設定） |
-| profiles | ユーザープロフィール（auth.usersと1:1） |
-| members | 会員詳細（プラン・回数券・ステータス） |
-| instructors | インストラクター詳細 |
-| classes | クラス定義（曜日・時間・定員） |
-| class_sessions | クラスの各回（日付ごと） |
-| bookings | 予約 |
-| payments | 支払い履歴 |
+`studios` / `profiles` / `members` / `instructors` / `managers` / `class_templates` / `class_sessions` / `bookings` / `payments` / `rooms` / `instructor_room_bookings`
 
-### メッセージ
-| テーブル | 説明 |
-|---|---|
-| messages | オーナーメンバー間メッセージ（スタジオ・送信者・受信者・既読） |
+### 拡張
+- 出席: `drop_in_attendances`, `session_attendance_summary`(view), `member_achievements`, `recurring_bookings`
+- メッセージ: `messages`, `community_posts`, `community_comments`, `announcements`, `announcement_reads`
+- パス: `studio_passes`, `pass_subscriptions`, `pass_class_usage`, `pass_distributions`
+- イベント: `events`, `event_bookings`, `event_options`, `event_payment_schedule`, `event_schedule_items`
+- アポイント: `appointment_types`, `appointments`, `instructor_availability`
+- Waiver / 契約: `waiver_templates`, `waiver_signatures`, `custom_forms`, `custom_form_submissions`
+- 動画: `video_content`, `video_purchases`, `library_memberships`
+- インストラクター契約: `instructor_membership_tiers`, `instructor_memberships`, `instructor_overage_charges`, `instructor_earnings`, `instructor_invoices`, `instructor_fee_overrides`, `class_fee_overrides`, `fee_schedules`, `instructor_invite_tokens`
+- 通知 / Push: `notification_preferences`, `push_subscriptions`, `push_logs`
+- お気に入り / レビュー: `member_favorites`, `class_reviews`
+- 分析: `link_clicks`, `saved_reports`
+- フォーム / Widget: `widget_settings`, `integration_connections`
+- リフェラル: `referral_codes`, `referral_rewards`
+- フィーチャーフラグ: `studio_features`
+- 閉店日: `studio_closures`
+- SOAP: `soap_notes`
+- メールキャンペーン: `email_campaigns`
+- Admin / クーポン: `admin_notes`, `support_tickets`, `support_ticket_comments`, `coupons`, `promotion_codes`, `coupon_redemptions`, `test_account_impersonation_logs`
+- ログ: `webhook_logs`, `cron_logs`, `email_logs`
 
-### 出席管理
-| テーブル | 説明 |
-|---|---|
-| drop_in_attendances | ドロップイン出席記録 |
-| session_attendance_summary | 出席サマリー（ビュー） |
+> マイグレーションは `supabase/migrations/`。**新規ファイルは `YYYYMMDDHHMMSS_<snake_case_name>.sql` 形式**（CLAUDE.md 参照）。
 
-### Waiver
-| テーブル | 説明 |
-|---|---|
-| waiver_templates | 同意書テンプレート（スタジオに1つ） |
-| waiver_signatures | 署名記録 |
+---
 
-### クーポン
-| テーブル | 説明 |
-|---|---|
-| coupons | 割引ルール（Stripe Coupon連携） |
-| promotion_codes | プロモーションコード（Stripe Promotion Code連携） |
-| coupon_redemptions | 利用履歴 |
+## Cron ジョブ（`vercel.json`）
 
-### Admin管理
-| テーブル | 説明 |
-|---|---|
-| admin_notes | スタジオ管理メモ |
-| support_tickets | サポートチケット |
-| support_ticket_comments | チケットコメント |
+| Cron | 頻度 (UTC) | 処理 |
+|---|---|---|
+| `/api/cron/trial-reminder` | 09:00 daily | トライアル残 3 日のスタジオに通知 |
+| `/api/cron/past-due-check` | 10:00 daily | past_due → 7 日超で grace 移行 |
+| `/api/cron/grace-check` | 11:00 daily | grace → 7 日超で canceled |
+| `/api/cron/generate-sessions` | 00:00 daily | 4 週間先までセッション延伸 |
+| `/api/cron/event-installments` | 08:00 daily | イベント分割払いの自動課金 |
+| `/api/cron/event-installment-reminder` | 09:00 daily | 分割払いリマインダー送信 |
+| `/api/cron/pass-distribution` | 月初 00:00 | スタジオパスの月次配布 |
+| `/api/cron/pass-payout` | 月初 02:00 | パス売上のインストラクター按分 |
+| `/api/cron/tier-overage-billing` | 月初 01:00 | Tier 超過分の月次請求 |
+| `/api/cron/class-reminder` | 15 分ごと | 1 時間前リマインダー Push/Email |
+| `/api/cron/streak-decay` | 毎週月 00:05 | 出席ストリーク減衰計算 |
+| `/api/cron/comeback-nudge` | 17:00 daily | 休眠メンバーへの再エンゲージ通知 |
 
-### ログ
-| テーブル | 説明 |
-|---|---|
-| webhook_logs | Stripe Webhookログ |
-| cron_logs | Cronジョブ実行ログ |
-| email_logs | メール送信ログ |
+---
+
+## メールテンプレート（40 種以上、`src/lib/email/templates.ts`）
+
+予約系 / イベント系 / パス系 / 契約系 / 支払い系 / 通知系で構成。
+
+- **予約**: bookingConfirmation, bookingCancelled, waitlistPromoted, sessionRescheduled, sessionCancelledNotice, sessionInstructorChanged, ownerNewBookingNotification
+- **アポイント**: appointmentConfirmation, appointmentCancelled
+- **イベント**: eventBookingConfirmation, eventBookingConfirmedFull, eventBookingConfirmedInstallment, eventBookingCancelled, eventWaitlistConfirmation, eventWaitlistPromoted, eventPaymentCompleted, installmentReminder, installmentPaymentFailed, ownerInstallmentFailedNotification
+- **パス**: passDistributionPaid, passDistributionFailed, passDistributionReview
+- **Stripe**: paymentReceipt, paymentFailed
+- **Tier 超過**: tierOverageWarning, tierOverageCharged, tierOverageChargeFailed
+- **インストラクター**: instructorInvite, instructorBookingStaffNotice, instructorRoomBooking, instructorRoomBookingConfirmation, instructorRoomBookingCancelledByOwner, instructorPaymentNotification
+- **会員**: welcomeMember, passwordReset, messageNotification
+- **Waiver**: waiverInvite, guardianWaiverInvite
+- **契約**: contractSignRequest, contractSignComplete
+- **リフェラル**: referralSignup, referralRewardReferrer, referralRewardReferred
+- **管理**: newStudioSignupAdmin
+
+---
 
 ## 環境変数
 
@@ -246,6 +289,7 @@ SUPABASE_SERVICE_ROLE_KEY=
 # Stripe
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
+STRIPE_CONNECT_WEBHOOK_SECRET=
 STRIPE_PRO_MONTHLY_PRICE_ID=
 STRIPE_PRO_YEARLY_PRICE_ID=
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
@@ -253,76 +297,97 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 # Resend
 RESEND_API_KEY=
 
+# Web Push
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+VAPID_SUBJECT=
+
 # App
 NEXT_PUBLIC_APP_URL=https://app.klasly.app
+NEXT_PUBLIC_LANDING_URL=https://klasly.app
 
 # Admin
 ADMIN_EMAILS=your-email@example.com
+
+# Dev login（dev のみ）
+DEV_LOGIN_EMAIL=
+DEV_LOGIN_PASSWORD=
 ```
 
-## セットアップ手順
+---
 
-### 1. Supabase プロジェクト作成
-1. https://supabase.com/dashboard で新規プロジェクト作成
-2. SQLエディタでマイグレーションSQLを実行
-3. Settings → API から URL, anon key, service role key をメモ
+## セットアップ
 
-### 2. Stripe設定
-1. Stripe Dashboardで Product「Klasly Pro」を作成
-2. Price を2つ作成: $19/month, $190/year
-3. Webhook Endpointを設定
-
-### 3. Resend設定
-1. klasly.app ドメインを検証
-2. APIキーを取得
-
-### 4. 環境変数の設定
-`.env.local` ファイルに環境変数を設定
-
-### 5. 開発サーバー起動
 ```bash
 npm install
 npm run dev
 ```
-http://localhost:3000 で確認。
+http://localhost:3000 で起動。
 
-### 6. Vercel デプロイ
-GitHub にプッシュ後、Vercel で Import。
-環境変数を Vercel Settings → Environment Variables で設定。
+### dev-login
+`NODE_ENV=development` のとき `/dev-login` から `DEV_LOGIN_EMAIL` / `DEV_LOGIN_PASSWORD` でワンクリックサインイン可能。本番では 404。
 
-## Cron Jobs（vercel.json）
+### マイグレーション適用
+- 新規: `YYYYMMDDHHMMSS_<name>.sql` を `supabase/migrations/` に追加
+- 適用: `mcp__supabase__apply_migration` または `supabase db push`
+- 確認: `mcp__supabase__list_migrations` でリモート履歴を確認
 
-| Cron | 頻度 | 処理 |
-|---|---|---|
-| /api/cron/trial-reminder | 毎日 9AM UTC | トライアル残り3日のスタジオにメール |
-| /api/cron/past-due-check | 6時間ごと | past_due → 7日超過でgrace移行 |
-| /api/cron/grace-check | 毎日 0AM UTC | grace → 7日超過でcanceled移行 |
+### Stripe 設定
+1. Product「Klasly Pro」を作成、$19/month と $190/year の Price を作る
+2. 2 種の Webhook Endpoint を設定（プラットフォーム / Connect）
+3. `lib/stripe/connect-countries.ts` の対応国を確認
 
-## メールテンプレート（計8種）
+### Resend
+- `klasly.app` ドメインを検証
+- `notifications@klasly.app` を送信元に設定
 
-| テンプレート | トリガー |
-|---|---|
-| bookingConfirmation | 予約確定時 |
-| bookingCancelled | 予約キャンセル時 |
-| waitlistPromoted | キャンセル待ち繰り上げ時 |
-| paymentReceipt | Stripe invoice.paid |
-| paymentFailed | Stripe invoice.payment_failed |
-| welcomeMember | 会員作成時 |
-| waiverInvite | Waiver署名依頼 |
-| instructorInvite | Instructor招待 |
-| messageNotification | アプリ内メッセージ受信時 |
+---
 
-## 予約クレジット判定ロジック
+## 予約クレジット判定
 
 ```
 studios.booking_requires_credits
- ├── null（Auto・デフォルト）
- │ stripe_connect_onboarding_complete = true → クレジット必須
- │ stripe_connect_onboarding_complete = false → クレジット不要（現金スタジオ）
- ├── true → 常にクレジット必須（Stripe の有無に関わらず）
- └── false → 常にクレジット不要（手動出席管理スタジオ向け）
+ ├── null（Auto・既定）
+ │ stripe_connect_onboarding_complete = true → 必須
+ │ stripe_connect_onboarding_complete = false → 不要（現金スタジオ）
+ ├── true → 常に必須
+ └── false → 常に不要（手動出席管理）
 ```
 
-Helper: `src/lib/booking-utils.ts` `getRequiresCredits()`
+ヘルパー: `src/lib/booking-utils.ts#getRequiresCredits()`
+設定箇所: Settings → **Booking Credit Requirement**
 
-設定場所: Settings → **Booking Credit Requirement**（Auto / Always require / Never require）
+---
+
+## Customer-Driven Features
+
+Klasly の差別化機能の多くは、軸足顧客 **The Elizabeth Mind and Movement Collective** (Sarah Haroldsen / Jamie Bischoff) の運用フィードバック (2026-03〜05) を直接の起源として実装したもの。詳細マッピングはメモリ `project_elizabeth_email_features.md` 参照。
+
+| 機能 | 起源メール | 実装ポイント |
+|---|---|---|
+| **Collective Mode + Stripe Connect direct payouts** | Sarah 2026-03-12 | Settings → Connect / Collective setup, `instructors.stripe_connect_*` |
+| **Instructor Contracts (Hourly / Flat / Overage)** | Jamie 2026-04-15 | Settings → Contracts (3タブ), `tier-overage-billing` cron |
+| **Test Accounts Switcher** (impersonation w/ audit log) | Jamie 2026-04-15 | 右下人型アイコン、`test_account_impersonation_logs` |
+| **Class duplicate / Never-end recurrence / Rich-text description** | Jamie 2026-04-15 | Classes ページ Duplicate ボタン |
+| **Calendar 色凡例 (Open/Full/Private/Room/Cancelled) + Capacity badge** | Jamie 2026-04-21 + 2026-04-28 | calendar 凡例 + タイル "5/10" "FULL" |
+| **iCal calendar feed (per-user, per-role)** | Jamie 2026-04-28 | Settings → Calendar feed, `/api/ical/[token]` |
+| **Substitute instructor + auto-notify confirmed bookings** | Jamie 2026-04-28 | Edit Session dialog、`sessionInstructorChanged` |
+| **Edit scope: this only / this+future / all in series** + member-notify opt-out | Jamie 2026-04-28 | Bulk-affected count をライブ表示 |
+| **Studio Closures (一括 cancel + クレジット返還)** | Jamie 2026-04-28 | Settings → Studio Closures |
+| **Print weekly schedule** | Jamie 2026-04-28 | `/calendar/print` |
+| **Class Change History (200件 audit trail)** | Jamie 2026-04-30 | クラステンプレート詳細の折りたたみ |
+| **Cancellation policy: hours-returned vs forfeited toggle** | Jamie 2026-04-30 | cancelled タイル上で admin が切替、attribution badge |
+| **Multi-signature ordered contracts (Jotform-like)** | Jamie 2026-04-30 | Settings → Forms → Send for signing、外部 signer はログイン不要 |
+| **Bulk edit / Bulk cancel on Upcoming Sessions** | Jamie 2026-04-30 | Select multiple → time/instructor 一括 |
+| **Member form 再構成 (Phone/DoB/Gender required)** | Jamie 2026-04-30 | `members/new/new-member-form.tsx` |
+| **Welcome email toggle on CSV import** (運用ガイダンス) | Jamie 2026-05-01 | デフォルト OFF、launch 時にバッチ送信 |
+| **Room booking + Client link + Pass auto-deduction** | Sarah 2026-05-01 | `admin-room-booking-modal`、cancel で自動返還、no-show は保留 |
+| **Room dropdown filter on schedule + click-to-add drop-in / no-show / late-cancel** | Sarah 2026-05-01 | Schedule ヘッダー + session attendance ページ |
+| **Room booking 1h reminder** | Sarah 2026-05-01 | `class-reminder` cron に統合 |
+| **Stripe Connect 国別オンボーディング + Disconnect & start over** | Sarah 2026-04-22 | postal/phone format を国に合わせて切替 |
+
+## CLAUDE.md ルール（運用上の重要事項）
+
+- **ユーザー向け機能の追加・変更・削除時は `src/components/help/help-data.tsx` を必ず更新**
+- マイグレーションは `YYYYMMDDHHMMSS_<snake_case>.sql` 形式（旧連番形式は新規追加禁止）
+- プレビュー検証は `/dev-login` から開始（`.env.local` に `DEV_LOGIN_EMAIL` / `DEV_LOGIN_PASSWORD` を設定）

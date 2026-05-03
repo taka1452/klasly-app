@@ -1,6 +1,6 @@
 ## Rules
 
-- When any user-facing feature is added, changed, or removed, the help page content in `src/components/help/help-data.tsx` MUST be updated to reflect the change.
+- When any user-facing feature is added, changed, or removed, the help page content in `src/data/help-articles.ts` (and `src/data/help-categories.ts` if a new category is needed) MUST be updated to reflect the change. This is what `https://app.klasly.app/help` and every dashboard `?` icon (`ContextHelpLink` → `/help/<category>/<article>`) actually render.
 
 ## Supabase migrations naming
 
