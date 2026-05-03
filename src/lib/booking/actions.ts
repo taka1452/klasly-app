@@ -93,7 +93,8 @@ async function recordPassUsage(
   passSubscriptionId: string,
   sessionId: string,
   instructorId: string,
-  _classesUsed: number
+  _classesUsed: number,
+  maxClasses?: number | null
 ) {
   // Insert usage record first — if it fails (e.g. unique constraint), don't touch the counter
   const { error } = await adminSupabase.from("pass_class_usage").insert({
@@ -103,12 +104,21 @@ async function recordPassUsage(
   });
   if (error) {
     logger.error("recordPassUsage insert failed", { error: error.message });
-    return;
+    return { success: false };
   }
-  // Atomically increment counter after successful insert
-  await adminSupabase.rpc("increment_pass_usage", {
+  // Atomically check capacity + increment to prevent race condition
+  const { data: result } = await adminSupabase.rpc("atomic_increment_pass_usage", {
     p_subscription_id: passSubscriptionId,
+    p_max_classes: maxClasses ?? null,
   });
+  if (result === -1) {
+    // At capacity — undo the usage record
+    await adminSupabase.from("pass_class_usage").delete()
+      .eq("pass_subscription_id", passSubscriptionId)
+      .eq("session_id", sessionId);
+    return { success: false };
+  }
+  return { success: true };
 }
 
 /**
@@ -252,14 +262,17 @@ export async function executeBookingAction({
   let waitlistMemberProfileId: string | null = null;
 
   if (action === "book" || action === "rebook") {
-    const { count: confirmedCount } = await adminSupabase
-      .from("bookings")
-      .select("id", { count: "exact", head: true })
-      .eq("session_id", sessionId)
-      .eq("status", "confirmed");
-
-    const isFull = (confirmedCount ?? 0) >= session.capacity;
-    const status = isFull ? "waitlist" : "confirmed";
+    // Capacity check for rebook path (book path uses atomic_book_session)
+    let preCheckFull = false;
+    if (action === "rebook") {
+      const { count: confirmedCount } = await adminSupabase
+        .from("bookings")
+        .select("id", { count: "exact", head: true })
+        .eq("session_id", sessionId)
+        .eq("status", "confirmed");
+      preCheckFull = (confirmedCount ?? 0) >= session.capacity;
+    }
+    const status = preCheckFull ? "waitlist" : "confirmed";
 
     // --- Pass check ---
     let bookingViaPass = false;
@@ -350,17 +363,22 @@ export async function executeBookingAction({
         }
       }
 
-      // Record pass usage
+      // Record pass usage (atomic capacity check)
       if (bookingViaPass && passInfo && status === "confirmed") {
         const instructorId = sessionAny.classes?.instructor_id;
         if (instructorId) {
-          await recordPassUsage(
+          const passResult = await recordPassUsage(
             adminSupabase,
             passInfo.subscriptionId,
             sessionId,
             instructorId,
-            passInfo.classesUsed
+            passInfo.classesUsed,
+            passInfo.maxClasses
           );
+          if (!passResult.success) {
+            await adminSupabase.from("bookings").update({ status: "cancelled" }).eq("session_id", sessionId).eq("member_id", memberId);
+            return { success: false, error: "Pass limit reached", status: 400 };
+          }
         }
       }
 
@@ -376,21 +394,24 @@ export async function executeBookingAction({
         }).catch((err) => logger.warn("Push notification failed", { error: err instanceof Error ? err.message : String(err) }));
       }
     } else {
-      // book
-      const { error } = await adminSupabase.from("bookings").insert({
-        studio_id: member.studio_id,
-        session_id: sessionId,
-        member_id: memberId,
-        status,
-        booked_via_pass: bookingViaPass,
+      // book — use atomic DB function to prevent capacity race condition
+      const { data: atomicStatus, error } = await adminSupabase.rpc("atomic_book_session", {
+        p_session_id: sessionId,
+        p_member_id: memberId,
+        p_studio_id: member.studio_id,
+        p_capacity: session.capacity,
+        p_booked_via_pass: bookingViaPass,
       });
 
       if (error) {
         return { success: false, error: error.message, status: 400 };
       }
 
+      // Use the status returned by the atomic function (may differ from pre-check)
+      const finalStatus = atomicStatus as string;
+
       // Atomic credit deduction: skip if booking via pass
-      if (!bookingViaPass && status === "confirmed" && member.credits >= 0) {
+      if (!bookingViaPass && finalStatus === "confirmed" && member.credits >= 0) {
         const { data: creditResult } = await adminSupabase.rpc("decrement_member_credits", {
           p_member_id: memberId,
         });
@@ -401,21 +422,26 @@ export async function executeBookingAction({
         }
       }
 
-      // Record pass usage
-      if (bookingViaPass && passInfo && status === "confirmed") {
+      // Record pass usage (atomic capacity check)
+      if (bookingViaPass && passInfo && finalStatus === "confirmed") {
         const instructorId = sessionAny.classes?.instructor_id;
         if (instructorId) {
-          await recordPassUsage(
+          const passResult = await recordPassUsage(
             adminSupabase,
             passInfo.subscriptionId,
             sessionId,
             instructorId,
-            passInfo.classesUsed
+            passInfo.classesUsed,
+            passInfo.maxClasses
           );
+          if (!passResult.success) {
+            await adminSupabase.from("bookings").delete().eq("session_id", sessionId).eq("member_id", memberId);
+            return { success: false, error: "Pass limit reached", status: 400 };
+          }
         }
       }
 
-      if (status === "confirmed" && memberEmail) {
+      if (finalStatus === "confirmed" && memberEmail) {
         const { subject, html } = bookingConfirmation(emailPayload);
         await sendEmail({ to: memberEmail, subject, html });
         // Push notification
