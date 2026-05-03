@@ -35,7 +35,7 @@ export default function ScheduleWelcomeCard() {
   if (!visible) return null;
 
   return (
-    <div className="relative mb-6 rounded-xl border border-brand-200 bg-brand-50 p-5">
+    <div className="welcome-card-in relative mb-6 rounded-xl border border-brand-200 bg-brand-50 p-5">
       <button
         type="button"
         onClick={handleDismiss}

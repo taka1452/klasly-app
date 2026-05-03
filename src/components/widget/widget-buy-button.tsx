@@ -123,7 +123,7 @@ export default function WidgetBuyButton({ studioId }: { studioId: string }) {
           {data.passes.map((pass) => (
             <div
               key={pass.id}
-              className="rounded-xl border border-gray-100 bg-white p-4 transition-[transform,box-shadow] duration-200 ease-out hover:shadow-md"
+              className="rounded-xl border border-gray-100 bg-white p-4 transition-shadow duration-200 ease-out hover:shadow-md"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
@@ -157,7 +157,7 @@ export default function WidgetBuyButton({ studioId }: { studioId: string }) {
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="shrink-0 rounded-full px-4 py-2 text-xs font-semibold text-white transition-[transform,opacity,filter] duration-150 ease-out hover:opacity-90 hover:brightness-105 active:scale-[0.95]"
+                  className="shrink-0 rounded-full px-4 py-2 text-xs font-semibold text-white transition-[transform,filter] duration-150 ease-out hover:brightness-110 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100"
                   style={{ backgroundColor: theme.primary }}
                 >
                   {isOneTime(pass) ? "Buy" : "Subscribe"}

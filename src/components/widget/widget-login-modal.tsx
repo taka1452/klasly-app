@@ -45,7 +45,7 @@ export default function WidgetLoginModal({ open, onClose, studioId }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="tap-target rounded-lg text-gray-500 transition-[transform,background-color,color] duration-150 ease-out hover:bg-gray-100 hover:text-gray-600 active:scale-[0.95]"
+            className="tap-target rounded-lg text-gray-500 transition-[transform,background-color,color] duration-150 ease-out hover:bg-gray-100 hover:text-gray-600 active:scale-[0.95] motion-reduce:transition-none motion-reduce:active:scale-100"
             aria-label="Close"
           >
             <svg
@@ -110,7 +110,7 @@ export default function WidgetLoginModal({ open, onClose, studioId }: Props) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-[transform,filter] duration-150 ease-out hover:brightness-110 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
+            className="w-full rounded-lg px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-[transform,filter] duration-150 ease-out hover:brightness-110 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 motion-reduce:transition-none motion-reduce:active:scale-100"
             style={{ backgroundColor: theme.primary }}
           >
             {loading ? "Signing in..." : "Sign in"}
@@ -131,7 +131,7 @@ export default function WidgetLoginModal({ open, onClose, studioId }: Props) {
           <button
             type="button"
             onClick={signInWithGoogle}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-[transform,background-color] duration-150 ease-out hover:bg-gray-50 active:scale-[0.97]"
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-[transform,background-color] duration-150 ease-out hover:bg-gray-50 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24">
               <path
