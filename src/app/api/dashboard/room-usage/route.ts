@@ -24,10 +24,13 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const date = searchParams.get("date");
+    const start = searchParams.get("start");
+    const end = searchParams.get("end");
+    const rangeMode = !!(start && end);
 
-    if (!date) {
+    if (!date && !rangeMode) {
       return NextResponse.json(
-        { error: "date query param required (YYYY-MM-DD)" },
+        { error: "Either ?date=YYYY-MM-DD or ?start=&end= required" },
         { status: 400 },
       );
     }
@@ -78,6 +81,7 @@ export async function GET(request: NextRequest) {
       id: string;
       room_id: string | null;
       instructor_id: string | null;
+      session_date: string;
       start_time: string;
       end_time: string | null;
       duration_minutes: number | null;
@@ -96,25 +100,35 @@ export async function GET(request: NextRequest) {
       } | null;
     };
 
-    const { data: sessions } = await supabase
+    let sessionQuery = supabase
       .from("class_sessions")
       .select(
         `
-        id, room_id, instructor_id, start_time, end_time, duration_minutes,
+        id, room_id, instructor_id, session_date, start_time, end_time, duration_minutes,
         is_cancelled, title, session_type, is_online, recurrence_group_id,
         class_templates (name, duration_minutes, is_public),
         instructors (profiles (full_name))
       `,
       )
       .eq("studio_id", studioId)
-      .eq("session_date", date)
       .eq("is_cancelled", false)
       .not("room_id", "is", null);
+
+    if (rangeMode) {
+      sessionQuery = sessionQuery
+        .gte("session_date", start!)
+        .lte("session_date", end!);
+    } else {
+      sessionQuery = sessionQuery.eq("session_date", date!);
+    }
+
+    const { data: sessions } = await sessionQuery;
 
     // Build events array
     type RoomEvent = {
       id: string;
       room_id: string;
+      session_date: string;
       title: string;
       start_time: string;
       end_time: string;
@@ -152,6 +166,7 @@ export async function GET(request: NextRequest) {
       events.push({
         id: s.id,
         room_id: s.room_id,
+        session_date: s.session_date,
         title: isRoomOnly
           ? s.title || "Room Booking"
           : template?.name ?? s.title ?? "Class",
@@ -161,6 +176,18 @@ export async function GET(request: NextRequest) {
         event_type: isRoomOnly ? "room_booking" : "class",
         is_public: isRoomOnly ? !s.is_online : (template?.is_public ?? true),
         recurring: !!s.recurrence_group_id,
+      });
+    }
+
+    if (rangeMode) {
+      const eventsByDate: Record<string, RoomEvent[]> = {};
+      for (const e of events) {
+        if (!eventsByDate[e.session_date]) eventsByDate[e.session_date] = [];
+        eventsByDate[e.session_date].push(e);
+      }
+      return NextResponse.json({
+        rooms: rooms ?? [],
+        eventsByDate,
       });
     }
 

@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type Room = { id: string; name: string; capacity: number | null };
 type RoomEvent = {
   id: string;
   room_id: string;
+  session_date?: string;
   title: string;
   start_time: string;
   end_time: string;
@@ -18,6 +19,31 @@ type RoomEvent = {
 type RoomView = "day" | "week" | "month";
 
 const HOUR_HEIGHT = 60; // px per hour
+
+// Static class strings so Tailwind keeps them in the final bundle.
+type RoomColor = {
+  bg: string;
+  border: string;
+  dot: string;
+  text: string;
+  badge: string;
+  header: string;
+};
+const ROOM_PALETTE: RoomColor[] = [
+  { bg: "bg-brand-50", border: "border-brand-500", dot: "bg-brand-500", text: "text-brand-900", badge: "bg-brand-100 text-brand-800", header: "bg-brand-100 text-brand-800" },
+  { bg: "bg-teal-50", border: "border-teal-500", dot: "bg-teal-500", text: "text-teal-900", badge: "bg-teal-100 text-teal-800", header: "bg-teal-100 text-teal-800" },
+  { bg: "bg-violet-50", border: "border-violet-500", dot: "bg-violet-500", text: "text-violet-900", badge: "bg-violet-100 text-violet-800", header: "bg-violet-100 text-violet-800" },
+  { bg: "bg-amber-50", border: "border-amber-500", dot: "bg-amber-500", text: "text-amber-900", badge: "bg-amber-100 text-amber-800", header: "bg-amber-100 text-amber-800" },
+  { bg: "bg-rose-50", border: "border-rose-500", dot: "bg-rose-500", text: "text-rose-900", badge: "bg-rose-100 text-rose-800", header: "bg-rose-100 text-rose-800" },
+  { bg: "bg-emerald-50", border: "border-emerald-500", dot: "bg-emerald-500", text: "text-emerald-900", badge: "bg-emerald-100 text-emerald-800", header: "bg-emerald-100 text-emerald-800" },
+  { bg: "bg-sky-50", border: "border-sky-500", dot: "bg-sky-500", text: "text-sky-900", badge: "bg-sky-100 text-sky-800", header: "bg-sky-100 text-sky-800" },
+  { bg: "bg-fuchsia-50", border: "border-fuchsia-500", dot: "bg-fuchsia-500", text: "text-fuchsia-900", badge: "bg-fuchsia-100 text-fuchsia-800", header: "bg-fuchsia-100 text-fuchsia-800" },
+];
+
+function colorIndexFor(roomId: string, rooms: Room[]): number {
+  const idx = rooms.findIndex((r) => r.id === roomId);
+  return idx >= 0 ? idx % ROOM_PALETTE.length : 0;
+}
 
 function parseMin(t: string) {
   const [h, m] = t.split(":").map(Number);
@@ -40,66 +66,53 @@ function formatDateLabel(d: Date) {
   });
 }
 
+function ymd(d: Date) {
+  return d.toISOString().split("T")[0];
+}
+
 export default function RoomTimeline() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<RoomView>("day");
   const [rooms, setRooms] = useState<Room[]>([]);
   const [events, setEvents] = useState<RoomEvent[]>([]);
-  const [weekEvents, setWeekEvents] = useState<Map<string, RoomEvent[]>>(new Map());
+  const [eventsByDate, setEventsByDate] = useState<Record<string, RoomEvent[]>>(
+    {},
+  );
   const [loading, setLoading] = useState(true);
 
-  const dateStr = currentDate.toISOString().split("T")[0];
+  const dateStr = ymd(currentDate);
 
   const fetchData = useCallback(async (d: Date, v: RoomView) => {
     setLoading(true);
     try {
       if (v === "day") {
-        const date = d.toISOString().split("T")[0];
-        const res = await fetch(`/api/dashboard/room-usage?date=${date}`);
+        const res = await fetch(`/api/dashboard/room-usage?date=${ymd(d)}`);
         if (res.ok) {
           const data = await res.json();
           setRooms(data.rooms ?? []);
           setEvents(data.events ?? []);
         }
-      } else if (v === "week") {
-        // Fetch 7 days (Sunday-start week)
-        const dayOfWeek = d.getDay();
-        const sunday = new Date(d);
-        sunday.setDate(d.getDate() - dayOfWeek);
-        const weekMap = new Map<string, RoomEvent[]>();
-        let allRooms: Room[] = [];
-
-        for (let i = 0; i < 7; i++) {
-          const day = new Date(sunday);
-          day.setDate(sunday.getDate() + i);
-          const dayStr = day.toISOString().split("T")[0];
-          const res = await fetch(`/api/dashboard/room-usage?date=${dayStr}`);
-          if (res.ok) {
-            const data = await res.json();
-            weekMap.set(dayStr, data.events ?? []);
-            if (data.rooms && data.rooms.length > allRooms.length) allRooms = data.rooms;
-          }
-        }
-        setRooms(allRooms);
-        setWeekEvents(weekMap);
       } else {
-        // Month: fetch whole month (daily summaries)
-        const firstDay = new Date(d.getFullYear(), d.getMonth(), 1);
-        const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-        const weekMap = new Map<string, RoomEvent[]>();
-        let allRooms: Room[] = [];
-
-        for (let day = new Date(firstDay); day <= lastDay; day.setDate(day.getDate() + 1)) {
-          const dayStr = day.toISOString().split("T")[0];
-          const res = await fetch(`/api/dashboard/room-usage?date=${dayStr}`);
-          if (res.ok) {
-            const data = await res.json();
-            if (data.events?.length) weekMap.set(dayStr, data.events);
-            if (data.rooms && data.rooms.length > allRooms.length) allRooms = data.rooms;
-          }
+        // Week / month: single range fetch (was N sequential requests).
+        let start: Date, end: Date;
+        if (v === "week") {
+          const dayOfWeek = d.getDay();
+          start = new Date(d);
+          start.setDate(d.getDate() - dayOfWeek);
+          end = new Date(start);
+          end.setDate(start.getDate() + 6);
+        } else {
+          start = new Date(d.getFullYear(), d.getMonth(), 1);
+          end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
         }
-        setRooms(allRooms);
-        setWeekEvents(weekMap);
+        const res = await fetch(
+          `/api/dashboard/room-usage?start=${ymd(start)}&end=${ymd(end)}`,
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setRooms(data.rooms ?? []);
+          setEventsByDate(data.eventsByDate ?? {});
+        }
       }
     } catch {
       // ignore
@@ -152,9 +165,22 @@ export default function RoomTimeline() {
 
   // Current time
   const now = new Date();
-  const isToday = dateStr === now.toISOString().split("T")[0];
+  const isToday = dateStr === ymd(now);
   const nowMin = now.getHours() * 60 + now.getMinutes();
   const nowTop = ((nowMin - gridStartHour * 60) / 60) * HOUR_HEIGHT;
+
+  // Rooms that actually have at least one booking somewhere in view (for legend).
+  const roomsInView = useMemo(() => {
+    if (view === "day") {
+      const ids = new Set(events.map((e) => e.room_id));
+      return rooms.filter((r) => ids.has(r.id));
+    }
+    const ids = new Set<string>();
+    Object.values(eventsByDate).forEach((evts) =>
+      evts.forEach((e) => ids.add(e.room_id)),
+    );
+    return rooms.filter((r) => ids.has(r.id));
+  }, [view, rooms, events, eventsByDate]);
 
   return (
     <div>
@@ -198,6 +224,27 @@ export default function RoomTimeline() {
         </div>
       </div>
 
+      {/* Room color legend */}
+      {!loading && roomsInView.length > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <span className="text-[11px] font-medium uppercase tracking-wider text-gray-400">
+            Rooms
+          </span>
+          {roomsInView.map((r) => {
+            const c = ROOM_PALETTE[colorIndexFor(r.id, rooms)];
+            return (
+              <span
+                key={r.id}
+                className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${c.badge}`}
+              >
+                <span className={`h-1.5 w-1.5 rounded-full ${c.dot}`} />
+                {r.name}
+              </span>
+            );
+          })}
+        </div>
+      )}
+
       {/* Week view: list summary by day */}
       {view === "week" && !loading && (
         <div className="space-y-3">
@@ -209,28 +256,47 @@ export default function RoomTimeline() {
             for (let i = 0; i < 7; i++) {
               const d = new Date(sunday);
               d.setDate(sunday.getDate() + i);
-              days.push(d.toISOString().split("T")[0]);
+              days.push(ymd(d));
             }
-            return days.map((dayStr) => {
-              const dayEvents = weekEvents.get(dayStr) || [];
-              const d = new Date(dayStr + "T00:00:00");
+            return days.map((day) => {
+              const dayEvents = eventsByDate[day] || [];
+              const d = new Date(day + "T00:00:00");
               return (
-                <div key={dayStr}>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-1">
+                <div key={day}>
+                  <h4 className="mb-1 text-sm font-semibold text-gray-700">
                     {d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
                   </h4>
                   {dayEvents.length === 0 ? (
-                    <p className="text-xs text-gray-400 ml-2">No bookings</p>
+                    <p className="ml-2 text-xs text-gray-400">No bookings</p>
                   ) : (
-                    <div className="space-y-1 ml-2">
+                    <div className="ml-2 space-y-1.5">
                       {dayEvents.map((evt) => {
                         const roomName = rooms.find((r) => r.id === evt.room_id)?.name || "";
+                        const c = ROOM_PALETTE[colorIndexFor(evt.room_id, rooms)];
+                        const isClass = evt.event_type === "class";
                         return (
-                          <div key={evt.id} className="flex items-center gap-2 text-sm">
-                            <span className={`inline-block h-2 w-2 rounded-full ${evt.event_type === "class" ? "bg-brand-500" : "bg-teal-500"}`} />
-                            <span className="text-gray-500">{formatShort(evt.start_time)}–{formatShort(evt.end_time)}</span>
-                            <span className="font-medium text-gray-800">{evt.title}</span>
-                            <span className="text-xs text-gray-400">{roomName}</span>
+                          <div
+                            key={evt.id}
+                            className={`flex items-center gap-2 rounded-md border-l-[3px] ${c.border} ${c.bg} px-2 py-1.5`}
+                          >
+                            <span className="shrink-0 text-xs tabular-nums text-gray-600">
+                              {formatShort(evt.start_time)}–{formatShort(evt.end_time)}
+                            </span>
+                            <span
+                              className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
+                                isClass
+                                  ? "bg-white/70 text-gray-700"
+                                  : "bg-white text-gray-700 ring-1 ring-gray-200"
+                              }`}
+                            >
+                              {isClass ? "Class" : "Room"}
+                            </span>
+                            <span className="min-w-0 flex-1 truncate text-sm font-medium text-gray-900">
+                              {evt.title}
+                            </span>
+                            <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${c.badge}`}>
+                              {roomName}
+                            </span>
                           </div>
                         );
                       })}
@@ -243,7 +309,7 @@ export default function RoomTimeline() {
         </div>
       )}
 
-      {/* Month view: calendar grid */}
+      {/* Month view: calendar grid with colored dots */}
       {view === "month" && !loading && (
         <p className="mb-2 text-xs text-gray-400">Click any day to switch to Day view.</p>
       )}
@@ -273,24 +339,50 @@ export default function RoomTimeline() {
             return weeks.map((week, wi) => (
               <div key={wi} className="grid grid-cols-7">
                 {week.map((date, di) => {
-                  const dayStr = date ? date.toISOString().split("T")[0] : "";
-                  const dayEvts = date ? (weekEvents.get(dayStr) || []) : [];
-                  const today = date && dayStr === new Date().toISOString().split("T")[0];
+                  const day = date ? ymd(date) : "";
+                  const dayEvts = date ? eventsByDate[day] || [] : [];
+                  const today = date && day === ymd(new Date());
+                  // One badge per unique room booked on this day, up to 4
+                  const uniqueRoomIds = Array.from(
+                    new Set(dayEvts.map((e) => e.room_id)),
+                  );
                   return (
                     <div
                       key={di}
-                      className={`min-h-[70px] border-b border-r border-gray-200 p-1 last:border-r-0 ${!date ? "bg-gray-50/50" : ""} ${today ? "bg-brand-50/30" : ""}`}
+                      className={`min-h-[88px] border-b border-r border-gray-200 p-1.5 last:border-r-0 ${!date ? "bg-gray-50/50" : ""} ${today ? "bg-brand-50/30" : ""}`}
                       onClick={() => date && (setCurrentDate(date), setView("day"))}
                       style={{ cursor: date ? "pointer" : "default" }}
                     >
                       {date && (
                         <>
-                          <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-medium ${today ? "bg-brand-600 text-white" : "text-gray-700"}`}>
-                            {date.getDate()}
-                          </span>
-                          {dayEvts.length > 0 && (
-                            <div className="mt-0.5 text-[10px] text-gray-500">
-                              {dayEvts.length} booking{dayEvts.length > 1 ? "s" : ""}
+                          <div className="flex items-center justify-between">
+                            <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-medium ${today ? "bg-brand-600 text-white" : "text-gray-700"}`}>
+                              {date.getDate()}
+                            </span>
+                            {dayEvts.length > 0 && (
+                              <span className="text-[10px] tabular-nums text-gray-400">
+                                {dayEvts.length}
+                              </span>
+                            )}
+                          </div>
+                          {uniqueRoomIds.length > 0 && (
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {uniqueRoomIds.slice(0, 4).map((rid) => {
+                                const c = ROOM_PALETTE[colorIndexFor(rid, rooms)];
+                                const room = rooms.find((r) => r.id === rid);
+                                return (
+                                  <span
+                                    key={rid}
+                                    title={room?.name}
+                                    className={`h-2 w-2 rounded-full ${c.dot}`}
+                                  />
+                                );
+                              })}
+                              {uniqueRoomIds.length > 4 && (
+                                <span className="text-[9px] text-gray-400">
+                                  +{uniqueRoomIds.length - 4}
+                                </span>
+                              )}
                             </div>
                           )}
                         </>
@@ -327,9 +419,7 @@ export default function RoomTimeline() {
           <div className="flex" style={{ minWidth: `${60 + activeRooms.length * 180}px` }}>
             {/* Time gutter */}
             <div className="w-[60px] shrink-0 border-r border-gray-200">
-              {/* Header spacer */}
               <div className="h-10 border-b border-gray-200" />
-              {/* Hour labels */}
               <div className="relative" style={{ height: `${gridHeight}px` }}>
                 {Array.from({ length: totalHours }, (_, i) => {
                   const h = gridStartHour + i;
@@ -349,6 +439,7 @@ export default function RoomTimeline() {
             {/* Room columns */}
             {activeRooms.map((room) => {
               const roomEvents = events.filter((e) => e.room_id === room.id);
+              const c = ROOM_PALETTE[colorIndexFor(room.id, rooms)];
 
               return (
                 <div
@@ -356,14 +447,13 @@ export default function RoomTimeline() {
                   className="flex-1 border-r border-gray-100 last:border-r-0"
                   style={{ minWidth: "160px" }}
                 >
-                  {/* Room header */}
-                  <div className="flex h-10 items-center justify-center border-b border-gray-200 bg-gray-50 px-2">
-                    <p className="truncate text-xs font-semibold text-gray-700">{room.name}</p>
+                  {/* Room header — colored per room */}
+                  <div className={`flex h-10 items-center justify-center border-b border-gray-200 px-2 ${c.header}`}>
+                    <p className="truncate text-xs font-semibold">{room.name}</p>
                   </div>
 
                   {/* Time grid + events */}
                   <div className="relative" style={{ height: `${gridHeight}px` }}>
-                    {/* Hour lines */}
                     {Array.from({ length: totalHours }, (_, i) => (
                       <div
                         key={i}
@@ -372,7 +462,6 @@ export default function RoomTimeline() {
                       />
                     ))}
 
-                    {/* Current time line */}
                     {isToday && nowTop > 0 && nowTop < gridHeight && (
                       <div
                         className="absolute left-0 right-0 z-20 h-0.5 bg-red-400"
@@ -380,49 +469,44 @@ export default function RoomTimeline() {
                       />
                     )}
 
-                    {/* Event blocks */}
                     {roomEvents.map((evt) => {
                       const startMin = parseMin(evt.start_time);
                       const endMin = parseMin(evt.end_time);
                       const top = ((startMin - gridStartHour * 60) / 60) * HOUR_HEIGHT;
-                      const height = Math.max(((endMin - startMin) / 60) * HOUR_HEIGHT, 24);
+                      const height = Math.max(((endMin - startMin) / 60) * HOUR_HEIGHT, 28);
 
                       const isClass = evt.event_type === "class";
-                      const bg = isClass
-                        ? "bg-brand-50 border-l-[3px] border-brand-500 text-brand-900"
-                        : "bg-teal-50 border-l-[3px] border-teal-500 text-teal-900";
-
-                      const isCompact = height < 40;
+                      const isCompact = height < 48;
 
                       return (
                         <div
                           key={evt.id}
-                          className={`absolute left-1 right-1 z-10 overflow-hidden rounded-md px-1.5 py-0.5 text-xs leading-tight ${bg}`}
+                          className={`absolute left-1 right-1 z-10 overflow-hidden rounded-md border-l-[3px] px-2 py-1 text-[13px] leading-snug ${c.bg} ${c.border} ${c.text}`}
                           style={{ top: `${top}px`, height: `${height}px` }}
                         >
                           {isCompact ? (
-                            <span className="truncate font-medium">
-                              {!isClass && (
-                                <span className="mr-1 inline-block rounded bg-teal-200 px-0.5 text-[9px] font-semibold uppercase text-teal-700">
-                                  Room
-                                </span>
-                              )}
-                              {evt.title}
+                            <span className="flex items-center gap-1 truncate font-medium">
+                              <span className={`shrink-0 rounded px-1 text-[10px] font-semibold uppercase tracking-wider ${
+                                isClass ? "bg-white/70 text-gray-700" : "bg-white text-gray-700 ring-1 ring-gray-200"
+                              }`}>
+                                {isClass ? "Class" : "Room"}
+                              </span>
+                              <span className="truncate">{evt.title}</span>
                             </span>
                           ) : (
                             <>
-                              <div className="truncate font-medium">
-                                {!isClass && (
-                                  <span className="mr-1 inline-block rounded bg-teal-200 px-0.5 text-[9px] font-semibold uppercase text-teal-700">
-                                    Room
-                                  </span>
-                                )}
-                                {evt.title}
+                              <div className="flex items-center gap-1 truncate font-medium">
+                                <span className={`shrink-0 rounded px-1 text-[10px] font-semibold uppercase tracking-wider ${
+                                  isClass ? "bg-white/70 text-gray-700" : "bg-white text-gray-700 ring-1 ring-gray-200"
+                                }`}>
+                                  {isClass ? "Class" : "Room"}
+                                </span>
+                                <span className="truncate">{evt.title}</span>
                               </div>
                               <div className="truncate opacity-75">
                                 {formatShort(evt.start_time)} – {formatShort(evt.end_time)}
                               </div>
-                              {height >= 55 && evt.instructor_name && (
+                              {height >= 60 && evt.instructor_name && (
                                 <div className="truncate opacity-60">
                                   {evt.instructor_name}
                                 </div>
