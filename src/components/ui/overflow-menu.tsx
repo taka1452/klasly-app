@@ -80,10 +80,16 @@ export default function OverflowMenu({
           className="popover-in absolute right-0 z-40 mt-1.5 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
           style={{ ["--popover-origin" as string]: "top right" }}
         >
-          {items.map((item) => {
+          {items.map((item, i) => {
+            const staggerDelay = `${i * 30}ms`;
             if (item.render) {
               return (
-                <div key={item.label} role="menuitem">
+                <div
+                  key={item.label}
+                  role="menuitem"
+                  className="stagger-item"
+                  style={{ animationDelay: staggerDelay }}
+                >
                   {item.render(() => setOpen(false))}
                 </div>
               );
@@ -93,7 +99,7 @@ export default function OverflowMenu({
               setOpen(false);
               item.onClick?.();
             };
-            const baseClass = `flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors duration-150 ${
+            const baseClass = `stagger-item flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors duration-150 ${
               item.destructive
                 ? "text-red-600 hover:bg-red-50"
                 : "text-gray-700 hover:bg-gray-50"
@@ -116,6 +122,7 @@ export default function OverflowMenu({
                 href={item.href}
                 role="menuitem"
                 className={baseClass}
+                style={{ animationDelay: staggerDelay }}
                 onClick={() => setOpen(false)}
               >
                 {content}
@@ -127,6 +134,7 @@ export default function OverflowMenu({
                 type="button"
                 onClick={handleClick}
                 className={baseClass}
+                style={{ animationDelay: staggerDelay }}
               >
                 {content}
               </button>

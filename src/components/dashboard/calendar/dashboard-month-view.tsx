@@ -127,7 +127,7 @@ export default function DashboardMonthView({
                     when the selected class/instructor is on this day. */}
                 {isMobile && hasActiveFilter && daySessions.length > 0 && (
                   <div className="mt-1 flex flex-wrap gap-1">
-                    {daySessions.slice(0, 4).map((s) => {
+                    {daySessions.slice(0, 4).map((s, i) => {
                       const isCancelled = s.is_cancelled;
                       const conf = confirmedCounts[s.id] ?? 0;
                       const full = !isCancelled && conf >= s.capacity;
@@ -139,7 +139,8 @@ export default function DashboardMonthView({
                       return (
                         <span
                           key={s.id}
-                          className={`rounded px-1 text-[10px] font-medium tabular-nums ${chipBg}`}
+                          className={`stagger-item rounded px-1 text-[10px] font-medium tabular-nums ${chipBg}`}
+                          style={{ animationDelay: `${i * 25}ms` }}
                         >
                           {formatTimeShort(s.start_time)}
                         </span>
