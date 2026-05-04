@@ -34,7 +34,8 @@ export default function MemberBottomNav() {
               href={item.href}
               aria-label={item.label}
               aria-current={isActive ? "page" : undefined}
-              className={`group relative flex min-w-[52px] flex-col items-center justify-center rounded-full px-3 py-2 text-[10px] font-semibold transition-[color,transform,background-color] duration-200 ease-out active:scale-[0.92] ${
+              style={{ transitionTimingFunction: "var(--ease-out-strong)" }}
+              className={`group relative flex min-w-[52px] flex-col items-center justify-center rounded-full px-3 py-2 text-[10px] font-semibold transition-[color,transform,background-color] duration-200 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100 ${
                 isActive
                   ? "bg-brand-600 text-white shadow-[0_4px_10px_-2px_rgba(0,116,197,0.45)]"
                   : "text-gray-500 hover:text-gray-800"

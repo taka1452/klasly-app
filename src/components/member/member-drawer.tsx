@@ -101,6 +101,7 @@ export default function MemberDrawer({
   return (
     <>
       <div
+        style={{ transitionTimingFunction: "var(--ease-out-strong)" }}
         className={`fixed inset-0 z-[60] bg-black/40 backdrop-blur-[2px] transition-opacity duration-200 md:hidden ${
           open ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
@@ -108,7 +109,8 @@ export default function MemberDrawer({
         aria-hidden="true"
       />
       <aside
-        className={`fixed right-0 top-0 z-[61] flex h-[100dvh] w-[82%] max-w-sm flex-col bg-white shadow-2xl transition-transform duration-300 ease-out md:hidden ${
+        style={{ transitionTimingFunction: "var(--ease-drawer)" }}
+        className={`fixed right-0 top-0 z-[61] flex h-[100dvh] w-[82%] max-w-sm flex-col bg-white shadow-2xl transition-transform duration-300 motion-reduce:transition-none md:hidden ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
         role="dialog"
@@ -119,19 +121,27 @@ export default function MemberDrawer({
           <span className="text-base font-semibold text-gray-900">Menu</span>
           <button
             onClick={onClose}
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-500 transition-[transform,background-color] duration-150 ease-out hover:bg-gray-100 active:scale-[0.93]"
+            style={{ transitionTimingFunction: "var(--ease-out-strong)" }}
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-500 transition-[transform,background-color] duration-150 hover:bg-gray-100 active:scale-[0.97] motion-reduce:active:scale-100"
             aria-label="Close menu"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto px-3 py-3 pb-[env(safe-area-inset-bottom)]">
+        <div
+          key={open ? "open" : "closed"}
+          className="flex-1 overflow-y-auto px-3 py-3 pb-[env(safe-area-inset-bottom)]"
+        >
           <ul className="space-y-1">
-            {primary.map((item) => {
+            {primary.map((item, i) => {
               const active = isActive(item.href);
               const Icon = item.icon;
               return (
-                <li key={item.href}>
+                <li
+                  key={item.href}
+                  className={open ? "stagger-item" : undefined}
+                  style={open ? { animationDelay: `${80 + i * 35}ms` } : undefined}
+                >
                   <Link
                     href={item.href}
                     onClick={onClose}
@@ -157,11 +167,23 @@ export default function MemberDrawer({
             More
           </p>
           <ul className="space-y-1">
-            {secondary.map((item) => {
+            {secondary.map((item, i) => {
               const active = isActive(item.href);
               const Icon = item.icon;
               return (
-                <li key={item.href}>
+                <li
+                  key={item.href}
+                  className={open ? "stagger-item" : undefined}
+                  style={
+                    open
+                      ? {
+                          animationDelay: `${
+                            80 + (primary.length + i) * 35
+                          }ms`,
+                        }
+                      : undefined
+                  }
+                >
                   <Link
                     href={item.href}
                     onClick={onClose}

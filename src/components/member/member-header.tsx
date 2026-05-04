@@ -64,7 +64,7 @@ export default function MemberHeader({
       <Link
         href="/help"
         target="_blank"
-        className="hidden h-11 w-11 items-center justify-center rounded-lg text-gray-500 transition-[transform,background-color,color] duration-150 ease-out hover:bg-gray-100 hover:text-gray-600 active:scale-[0.93] md:flex"
+        className="hidden h-11 w-11 items-center justify-center rounded-lg text-gray-500 transition-[transform,background-color,color] duration-150 ease-out hover:bg-gray-100 hover:text-gray-600 active:scale-[0.97] md:flex"
         title="Help"
       >
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -131,7 +131,7 @@ export default function MemberHeader({
       {onMenuClick && (
         <button
           onClick={onMenuClick}
-          className="flex h-11 w-11 items-center justify-center rounded-lg text-gray-700 transition-[transform,background-color] duration-150 ease-out hover:bg-gray-100 active:scale-[0.93] md:hidden"
+          className="flex h-11 w-11 items-center justify-center rounded-lg text-gray-700 transition-[transform,background-color] duration-150 ease-out hover:bg-gray-100 active:scale-[0.97] md:hidden"
           aria-label="Open menu"
         >
           <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
