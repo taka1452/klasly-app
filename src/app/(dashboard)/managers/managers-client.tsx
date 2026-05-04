@@ -552,21 +552,6 @@ export default function ManagersClient() {
                         key={p.key}
                         className="flex items-start gap-3 px-3 py-2.5"
                       >
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleTogglePermission(mgr, p.key, !isEnabled)
-                          }
-                          aria-pressed={isEnabled}
-                          className={`mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-[transform,background-color,color] duration-150 ease-out active:scale-[0.95] ${
-                            isEnabled
-                              ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-100"
-                              : "bg-gray-100 text-gray-400 ring-1 ring-gray-200 hover:bg-gray-200"
-                          }`}
-                        >
-                          <span aria-hidden>{isEnabled ? "✓" : "—"}</span>
-                          {p.label}
-                        </button>
                         <div className="min-w-0 flex-1">
                           <p
                             className={`text-sm font-medium ${
@@ -575,7 +560,7 @@ export default function ManagersClient() {
                           >
                             {p.label}
                             {p.calloutLabel && (
-                              <span className="ml-2 rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-brand-700">
+                              <span className="ml-2 inline-block rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-brand-700">
                                 + {p.calloutLabel}
                               </span>
                             )}
@@ -584,6 +569,27 @@ export default function ManagersClient() {
                             {p.short}
                           </p>
                         </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleTogglePermission(mgr, p.key, !isEnabled)
+                          }
+                          role="switch"
+                          aria-checked={isEnabled}
+                          aria-label={`${p.label}: ${isEnabled ? "on" : "off"}`}
+                          style={{
+                            transitionTimingFunction: "var(--ease-out-strong)",
+                          }}
+                          className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 motion-reduce:transition-none ${
+                            isEnabled ? "bg-emerald-500" : "bg-gray-300"
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 motion-reduce:transition-none ${
+                              isEnabled ? "translate-x-[22px]" : "translate-x-0.5"
+                            }`}
+                          />
+                        </button>
                       </li>
                     );
                   })}

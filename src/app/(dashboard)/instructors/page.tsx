@@ -1,11 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
-import Link from "next/link";
 import EmptyState from "@/components/ui/empty-state";
 import { getEmptyStateVideo } from "@/lib/empty-state-videos";
 import InstructorsListClient from "@/components/instructors/instructors-list-client";
+import InstructorsToolbarActions from "@/components/instructors/instructors-toolbar-actions";
 import FlowHintPanel from "@/components/ui/flow-hint-panel";
-import ExportCsvButton from "@/components/ui/export-csv-button";
 import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
 import { redirect } from "next/navigation";
 import ContextHelpLink from "@/components/help/context-help-link";
@@ -90,34 +89,20 @@ export default async function InstructorsPage() {
 
   return (
     <div>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-wrap items-center gap-3">
           <p className="text-sm text-gray-500">
             {(instructors || []).length} instructor
             {(instructors || []).length !== 1 ? "s" : ""}
           </p>
           <ContextHelpLink href="/help/collective-mode/invite-instructor" />
-          <FlowHintPanel flowType="instructors" />
+          <div className="hidden sm:block">
+            <FlowHintPanel flowType="instructors" />
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <ExportCsvButton
-            url="/api/export/instructors"
-            filename={`instructors-${new Date().toISOString().slice(0, 10)}.csv`}
-            label="Export"
-          />
-          <Link href="/instructors/earnings" className="btn-secondary">
-            Earnings
-          </Link>
-          <Link href="/instructors/tax-report" className="btn-secondary">
-            Tax
-          </Link>
-          <Link href="/instructors/import" className="btn-secondary">
-            Import
-          </Link>
-          <Link href="/instructors/new" className="btn-primary">
-            + Add
-          </Link>
-        </div>
+        <InstructorsToolbarActions
+          exportFilename={`instructors-${new Date().toISOString().slice(0, 10)}.csv`}
+        />
       </div>
 
       <div className="mt-6">
