@@ -74,6 +74,12 @@ export const ActionButton = forwardRef<HTMLButtonElement, Props>(
         </span>
       );
 
+    // Bake press feedback (transform: scale(0.97) on :active) and a
+    // strong ease-out transition into every consumer. "Buttons must
+    // feel responsive" should be the default, not opt-in.
+    const pressFeedback =
+      "transition-transform duration-150 ease-out active:scale-[0.97] disabled:active:scale-100";
+
     return (
       <button
         ref={ref}
@@ -82,7 +88,7 @@ export const ActionButton = forwardRef<HTMLButtonElement, Props>(
         disabled={disabled || state !== "idle"}
         aria-busy={state === "loading" || undefined}
         aria-live="polite"
-        className={className}
+        className={[pressFeedback, className].filter(Boolean).join(" ")}
         {...rest}
       >
         {label}
