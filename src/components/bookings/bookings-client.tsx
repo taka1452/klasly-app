@@ -138,55 +138,95 @@ export default function BookingsClient({ sessions, year, month }: Props) {
         </div>
       </div>
 
-      {/* Sessions list */}
+      {/* Sessions list — grouped by date */}
       <div className="mt-4">
         {filtered.length > 0 ? (
-          <div className="card divide-y divide-gray-200 overflow-hidden p-0">
-            {filtered.map((session) => (
-              <div
-                key={session.id}
-                className="block cursor-pointer px-4 py-4 transition-colors duration-150 ease-out hover:bg-gray-50 sm:px-6"
-                onClick={() => setSelectedSession(session)}
-              >
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      {session.is_online && <span title="Online">📹 </span>}
-                      {session.session_type === "room_only" && (
-                        <span className="mr-1.5 inline-block rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-teal-700">
-                          Room
-                        </span>
-                      )}
-                      {session.class_name}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {formatDate(session.session_date)} ·{" "}
-                      {formatTime(session.start_time)}
-                      {session.instructor_name && ` · ${session.instructor_name}`}
-                      {session.room_name && ` · ${session.room_name}`}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={
-                        session.is_cancelled
-                          ? "text-sm font-medium text-red-600"
-                          : "text-sm text-gray-600"
-                      }
-                    >
-                      {session.is_cancelled
-                        ? "Cancelled"
-                        : `${session.confirmed}/${session.capacity}`}
+          <div className="space-y-4">
+            {(() => {
+              const groups = new Map<string, SessionItem[]>();
+              for (const s of filtered) {
+                if (!groups.has(s.session_date)) groups.set(s.session_date, []);
+                groups.get(s.session_date)!.push(s);
+              }
+              return Array.from(groups.entries()).map(([date, items]) => (
+                <div key={date}>
+                  <h3 className="mb-2 px-1 text-sm font-semibold text-gray-700">
+                    {formatDate(date)}
+                    <span className="ml-2 text-xs font-normal text-gray-400">
+                      {items.length} session{items.length !== 1 ? "s" : ""}
                     </span>
-                    {session.waitlist > 0 && (
-                      <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800">
-                        +{session.waitlist} waitlist
-                      </span>
-                    )}
+                  </h3>
+                  <div className="card divide-y divide-gray-200 overflow-hidden p-0">
+                    {items.map((session) => {
+                      const isFull =
+                        !session.is_cancelled &&
+                        session.confirmed >= session.capacity;
+                      return (
+                        <button
+                          key={session.id}
+                          type="button"
+                          onClick={() => setSelectedSession(session)}
+                          className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors duration-150 ease-out hover:bg-gray-50 active:bg-gray-100 sm:px-5"
+                        >
+                          {/* Time column — prominent on the left */}
+                          <div className="w-16 shrink-0 text-sm font-semibold tabular-nums text-gray-900">
+                            {formatTime(session.start_time)}
+                          </div>
+                          {/* Class name + meta */}
+                          <div className="min-w-0 flex-1">
+                            <p className="flex flex-wrap items-center gap-1.5 truncate font-medium text-gray-900">
+                              {session.session_type === "room_only" && (
+                                <span className="inline-block rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-teal-700">
+                                  Room
+                                </span>
+                              )}
+                              {session.is_online && (
+                                <span title="Online" aria-hidden>
+                                  📹
+                                </span>
+                              )}
+                              <span className="truncate">{session.class_name}</span>
+                              {session.is_cancelled && (
+                                <span className="inline-block rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-red-700">
+                                  Cancelled
+                                </span>
+                              )}
+                            </p>
+                            <p className="mt-0.5 truncate text-xs text-gray-500">
+                              {session.instructor_name || "—"}
+                              {session.room_name && ` · ${session.room_name}`}
+                            </p>
+                          </div>
+                          {/* Capacity */}
+                          <div className="flex shrink-0 items-center gap-2">
+                            {!session.is_cancelled && (
+                              <span
+                                className={`rounded-md px-2 py-0.5 text-xs font-semibold tabular-nums ${
+                                  isFull
+                                    ? "bg-amber-100 text-amber-800"
+                                    : session.confirmed === 0
+                                      ? "bg-gray-100 text-gray-500"
+                                      : "bg-emerald-50 text-emerald-700"
+                                }`}
+                              >
+                                {isFull
+                                  ? "FULL"
+                                  : `${session.confirmed}/${session.capacity}`}
+                              </span>
+                            )}
+                            {session.waitlist > 0 && (
+                              <span className="rounded-md bg-yellow-100 px-2 py-0.5 text-xs font-medium tabular-nums text-yellow-800">
+                                +{session.waitlist}
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
-              </div>
-            ))}
+              ));
+            })()}
           </div>
         ) : (
           <div className="card py-12 text-center">

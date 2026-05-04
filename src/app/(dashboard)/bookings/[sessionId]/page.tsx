@@ -39,7 +39,9 @@ export default async function SessionBookingsPage({
 
   const { data: session } = await supabase
     .from("class_sessions")
-    .select("*, classes(name)")
+    .select(
+      "*, class_templates(name), rooms(name), instructors(profiles(full_name))",
+    )
     .eq("id", sessionId)
     .single();
 
@@ -64,7 +66,36 @@ export default async function SessionBookingsPage({
     .neq("status", "cancelled")
     .order("created_at", { ascending: true });
 
-  const className = (session as { classes?: { name?: string } }).classes?.name || "—";
+  type SessionMeta = {
+    title?: string | null;
+    session_type?: string;
+    is_cancelled?: boolean;
+    is_online?: boolean;
+    class_templates?: { name?: string } | { name?: string }[] | null;
+    rooms?: { name?: string } | { name?: string }[] | null;
+    instructors?:
+      | { profiles?: { full_name?: string } | { full_name?: string }[] }
+      | { profiles?: { full_name?: string } | { full_name?: string }[] }[]
+      | null;
+  };
+  const meta = session as SessionMeta;
+  const tmpl = Array.isArray(meta.class_templates)
+    ? meta.class_templates[0]
+    : meta.class_templates;
+  const roomRow = Array.isArray(meta.rooms) ? meta.rooms[0] : meta.rooms;
+  const instrRow = Array.isArray(meta.instructors)
+    ? meta.instructors[0]
+    : meta.instructors;
+  const instrProfile = instrRow?.profiles
+    ? Array.isArray(instrRow.profiles)
+      ? instrRow.profiles[0]
+      : instrRow.profiles
+    : null;
+  const isRoomOnly = meta.session_type === "room_only";
+  const className =
+    tmpl?.name || meta.title || (isRoomOnly ? "Room booking" : "Class");
+  const roomName = roomRow?.name ?? null;
+  const instructorName = instrProfile?.full_name ?? null;
 
   return (
     <div>
@@ -78,9 +109,25 @@ export default async function SessionBookingsPage({
         </Link>
       </div>
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-gray-900">{className}</h1>
-        <p className="text-sm text-gray-500">
+        <div className="flex flex-wrap items-center gap-2">
+          {isRoomOnly && (
+            <span className="inline-block rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-teal-700">
+              Room
+            </span>
+          )}
+          {meta.is_cancelled && (
+            <span className="inline-block rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-red-700">
+              Cancelled
+            </span>
+          )}
+          <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
+            {className}
+          </h1>
+        </div>
+        <p className="mt-1 text-sm text-gray-500">
           {formatDate(session.session_date)} · {formatTime(session.start_time)}
+          {instructorName && ` · ${instructorName}`}
+          {roomName && ` · ${roomName}`}
         </p>
       </div>
 
