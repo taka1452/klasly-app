@@ -1605,6 +1605,8 @@ type OwnerWeeklySummaryParams = {
   cancelledMembers: number;
   topClasses: Array<{ name: string; bookings: number }>;
   topInstructor: { name: string; bookings: number } | null;
+  /** Number of consecutive weeks with positive revenue growth (>=2 to display) */
+  growthStreakWeeks: number;
 };
 
 function formatCurrencyCents(cents: number, currency: string) {
@@ -1632,6 +1634,7 @@ export function ownerWeeklySummary(params: OwnerWeeklySummaryParams) {
     cancelledMembers,
     topClasses,
     topInstructor,
+    growthStreakWeeks,
   } = params;
 
   const deltaLabel =
@@ -1669,6 +1672,7 @@ export function ownerWeeklySummary(params: OwnerWeeklySummaryParams) {
       <p style="margin:0;font-size:13px;color:#6b7280;">Revenue this week</p>
       <p style="margin:6px 0 4px;font-size:28px;font-weight:700;color:${BRAND_COLOR};">${formatCurrencyCents(revenueCents, currency)}</p>
       ${deltaLabel ? `<p style="margin:0;">${deltaLabel} <span style="font-size:13px;color:#6b7280;">vs prior week</span></p>` : ""}
+      ${growthStreakWeeks >= 2 ? `<p style="margin:8px 0 0;font-size:14px;font-weight:600;color:#b45309;">📈 ${growthStreakWeeks} weeks of growth in a row</p>` : ""}
     </div>
 
     <div style="display:flex;gap:12px;margin:16px 0;">

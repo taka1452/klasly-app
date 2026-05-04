@@ -138,11 +138,60 @@ export async function GET(request: Request) {
       count: passItems.length,
     };
 
+    // Personal best + active streak: pull all-time completed earnings,
+    // bucket by month, compare against the selected month.
+    let isPersonalBest = false;
+    let streakMonths = 0;
+    try {
+      const { data: allCompleted } = await adminSupabase
+        .from("instructor_earnings")
+        .select("instructor_payout, created_at")
+        .eq("instructor_id", instructor.id)
+        .eq("status", "completed");
+      const monthSums = new Map<string, number>();
+      for (const row of (allCompleted ?? []) as Array<{
+        instructor_payout: number;
+        created_at: string;
+      }>) {
+        const d = new Date(row.created_at);
+        const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+        monthSums.set(key, (monthSums.get(key) ?? 0) + (row.instructor_payout ?? 0));
+      }
+      const selectedKey = `${year}-${String(month).padStart(2, "0")}`;
+      const selectedTotal = monthSums.get(selectedKey) ?? 0;
+      if (selectedTotal > 0) {
+        let max = 0;
+        for (const [k, v] of Array.from(monthSums.entries())) {
+          if (k === selectedKey) continue;
+          if (v > max) max = v;
+        }
+        if (selectedTotal > max) isPersonalBest = true;
+      }
+      // Walk backwards from selected month — count consecutive months
+      // with payout > 0.
+      let cursorY = year;
+      let cursorM = month;
+      while (true) {
+        const key = `${cursorY}-${String(cursorM).padStart(2, "0")}`;
+        if ((monthSums.get(key) ?? 0) <= 0) break;
+        streakMonths += 1;
+        cursorM -= 1;
+        if (cursorM === 0) {
+          cursorM = 12;
+          cursorY -= 1;
+        }
+        if (streakMonths > 24) break; // safety
+      }
+    } catch {
+      /* decorative — never block */
+    }
+
     return NextResponse.json({
       earnings: items,
       summary,
       passDistributions: passItems,
       passSummary,
+      motivation: { isPersonalBest, streakMonths },
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal error";

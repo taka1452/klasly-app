@@ -11,6 +11,7 @@ import { getOwnerSetupTasks } from "@/lib/setup-tasks";
 import SetupChecklistCard from "@/components/ui/setup-checklist-card";
 import SampleDataInvite from "@/components/ui/sample-data-invite";
 import ContextHelpLink from "@/components/help/context-help-link";
+import { TimeOfDayGreeting } from "@/components/ui/time-of-day-greeting";
 import type { SetupTask } from "@/components/ui/setup-task-list";
 import type { Metadata } from "next";
 
@@ -397,7 +398,7 @@ export default async function DashboardPage() {
             <ContextHelpLink href="/help/getting-started/studio-setup-overview" />
           </div>
           <p className="mt-1 text-sm text-gray-500">
-            Welcome back, {profile?.full_name || "there"}!
+            <TimeOfDayGreeting name={profile?.full_name} />
           </p>
         </div>
         {canManageClasses && (

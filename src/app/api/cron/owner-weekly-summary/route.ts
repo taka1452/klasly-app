@@ -60,6 +60,9 @@ export async function GET(request: Request) {
     const startThisIso = startThis.toISOString();
     const endThisIso = endThis.toISOString();
     const startPriorIso = startPrior.toISOString();
+    // Look back 12 additional weeks to compute growth streak
+    const streakWindowStart = new Date(startThis);
+    streakWindowStart.setUTCDate(streakWindowStart.getUTCDate() - 12 * 7);
 
     const { data: studios } = await adminDb
       .from("studios")
@@ -118,6 +121,39 @@ export async function GET(request: Request) {
         const revenueDeltaPct = priorCents > 0
           ? ((revenueCents - priorCents) / priorCents) * 100
           : null;
+
+        // Growth streak — count consecutive weeks ending now where revenue
+        // strictly grew vs. the week before. Pull a 13-week window once.
+        let growthStreakWeeks = 0;
+        try {
+          const { data: streakPays } = await adminDb
+            .from("payments")
+            .select("amount, paid_at")
+            .eq("studio_id", s.id)
+            .eq("status", "paid")
+            .gte("paid_at", streakWindowStart.toISOString())
+            .lt("paid_at", endThisIso);
+          const buckets: number[] = new Array(13).fill(0);
+          for (const p of (streakPays ?? []) as Array<{
+            amount: number;
+            paid_at: string;
+          }>) {
+            const t = new Date(p.paid_at).getTime();
+            const idx = Math.floor((t - streakWindowStart.getTime()) / (7 * 86_400_000));
+            if (idx >= 0 && idx < buckets.length) buckets[idx] += p.amount ?? 0;
+          }
+          // buckets[12] = current week, buckets[11] = prior, etc.
+          for (let i = buckets.length - 1; i >= 1; i--) {
+            if (buckets[i] > buckets[i - 1] && buckets[i - 1] > 0) {
+              growthStreakWeeks += 1;
+            } else {
+              break;
+            }
+          }
+          if (growthStreakWeeks > 0) growthStreakWeeks += 1; // include the current week itself
+        } catch {
+          /* streak is decorative — never block the summary */
+        }
 
         // New / cancelled members
         const [{ count: newMembers }, { count: cancelledMembers }] =
@@ -197,6 +233,7 @@ export async function GET(request: Request) {
           cancelledMembers: cancelledMembers ?? 0,
           topClasses,
           topInstructor,
+          growthStreakWeeks,
         });
 
         const ok = await sendEmail({

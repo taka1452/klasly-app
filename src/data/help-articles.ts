@@ -191,6 +191,14 @@ export const helpArticles: HelpArticle[] = [
         title: 'Instructor — monthly recap email',
         description: 'On the 1st of each month, instructors get an email with prior-month earnings and delta vs. the previous month, classes taught, unique students served, and average review rating. Hitting an all-time-high month also surfaces a "Personal best" badge.',
       },
+      {
+        title: 'Instructor — sold-out celebration push',
+        description: 'When a booking fills the last seat in one of your classes, you get an immediate "Sold out 🎉" push so the win lands in the moment.',
+      },
+      {
+        title: 'In-app motivational touches',
+        description: 'My Earnings counts your totals up smoothly when the month switches, shows a 🏆 badge when the selected month is your all-time best (with a one-time confetti burst), and shows a 🔥 streak badge when you have 3+ consecutive earning months. The Reviews page glows the newest review you haven\'t seen yet. The dashboard greeting changes with the time of day. Owners\' Monday email also calls out 📈 multi-week growth streaks.',
+      },
     ],
     tips: [
       'Notifications respect each user\'s push preferences in Settings — anything they\'ve disabled is skipped.',

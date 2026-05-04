@@ -87,6 +87,17 @@ export function pushStudioAnnouncement(params: {
 // Staff motivation / revenue push templates
 // =====================================================
 
+// Title rotation by weekday — same energy, different note each morning.
+const MORNING_TITLES = [
+  "Sunday calm ☕",        // 0
+  "Fresh week, fresh mat 🧘", // 1
+  "Tuesday momentum 🌱",   // 2
+  "Midweek flow 🌊",        // 3
+  "Almost there — Thursday 🌤️", // 4
+  "Friday energy ⚡",       // 5
+  "Weekend warriors ✨",    // 6
+];
+
 export function pushInstructorMorningBriefing(params: {
   classCount: number;
   studentCount: number;
@@ -110,10 +121,22 @@ export function pushInstructorMorningBriefing(params: {
   if (loyaltyHighlight) segments.push(loyaltyHighlight);
 
   return {
-    title: "Good morning ☀️",
+    title: MORNING_TITLES[new Date().getDay()] ?? "Good morning ☀️",
     body: segments.join(" · "),
     url: "/my-classes",
     tag: `briefing-${new Date().toISOString().slice(0, 10)}`,
+  };
+}
+
+export function pushInstructorSoldOut(params: {
+  className: string;
+  startTime: string;
+}): PushTemplate {
+  return {
+    title: "Sold out 🎉",
+    body: `${params.className} ${params.startTime} just filled — nice work.`,
+    url: "/my-classes",
+    tag: `soldout-${params.className}-${Date.now()}`,
   };
 }
 
@@ -177,12 +200,13 @@ export function pushManagerMorningTodo(params: {
   if (params.lowFillTomorrow > 0)
     items.push(`${params.lowFillTomorrow} class${params.lowFillTomorrow === 1 ? "" : "es"} need filling`);
 
-  const body = items.length === 0
-    ? "All clear — nothing urgent today."
+  const allClear = items.length === 0;
+  const body = allClear
+    ? "All clear — enjoy the morning."
     : items.join(" · ");
 
   return {
-    title: "Today's todo",
+    title: allClear ? "☀️ All clear" : "Today's todo",
     body,
     url: "/dashboard",
     tag: `manager-todo-${new Date().toISOString().slice(0, 10)}`,

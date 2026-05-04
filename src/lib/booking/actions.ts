@@ -10,6 +10,7 @@ import {
   pushBookingConfirmation,
   pushBookingCancelled,
   pushWaitlistPromoted,
+  pushInstructorSoldOut,
 } from "@/lib/push/templates";
 import { formatDate, formatTime } from "@/lib/utils";
 import { getRequiresCredits } from "@/lib/booking-utils";
@@ -393,6 +394,9 @@ export async function executeBookingAction({
           payload: pushBookingConfirmation({ className, sessionDate, startTime }),
         }).catch((err) => logger.warn("Push notification failed", { error: err instanceof Error ? err.message : String(err) }));
       }
+      if (status === "confirmed") {
+        notifySoldOutIfFull(adminSupabase, sessionId, session.capacity, sessionAny.classes?.instructor_id, member.studio_id, className, startTime);
+      }
     } else {
       // book — use atomic DB function to prevent capacity race condition
       const { data: atomicStatus, error } = await adminSupabase.rpc("atomic_book_session", {
@@ -451,6 +455,9 @@ export async function executeBookingAction({
           type: "booking_confirmation",
           payload: pushBookingConfirmation({ className, sessionDate, startTime }),
         }).catch((err) => logger.warn("Push notification failed", { error: err instanceof Error ? err.message : String(err) }));
+      }
+      if (finalStatus === "confirmed") {
+        notifySoldOutIfFull(adminSupabase, sessionId, session.capacity, sessionAny.classes?.instructor_id, member.studio_id, className, startTime);
       }
     }
   } else if (action === "cancel") {
@@ -612,4 +619,49 @@ export async function executeBookingAction({
   }
 
   return { success: true };
+}
+
+/**
+ * Fire-and-forget: if this booking just filled the session to capacity,
+ * push a "Sold out 🎉" notification to the instructor.
+ */
+function notifySoldOutIfFull(
+  adminSupabase: SupabaseClient,
+  sessionId: string,
+  capacity: number,
+  instructorId: string | undefined,
+  studioId: string,
+  className: string,
+  startTime: string
+) {
+  if (!instructorId || capacity <= 0) return;
+  void (async () => {
+    try {
+      const { count } = await adminSupabase
+        .from("bookings")
+        .select("id", { count: "exact", head: true })
+        .eq("session_id", sessionId)
+        .eq("status", "confirmed");
+      if ((count ?? 0) < capacity) return;
+
+      const { data: inst } = await adminSupabase
+        .from("instructors")
+        .select("profile_id")
+        .eq("id", instructorId)
+        .maybeSingle();
+      const profileId = (inst as { profile_id?: string } | null)?.profile_id;
+      if (!profileId) return;
+
+      await sendPushNotification({
+        profileId,
+        studioId,
+        type: "instructor_sold_out",
+        payload: pushInstructorSoldOut({ className, startTime }),
+      });
+    } catch (err) {
+      logger.warn("Sold-out push failed", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  })();
 }

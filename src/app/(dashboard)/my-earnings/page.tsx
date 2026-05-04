@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Toast from "@/components/ui/toast";
 import ContextHelpLink from "@/components/help/context-help-link";
+import { CountUp } from "@/components/ui/count-up";
 
 type EarningItem = {
   id: string;
@@ -28,6 +29,11 @@ type Summary = {
   totalStudioFee: number;
   totalPayout: number;
   classCount: number;
+};
+
+type Motivation = {
+  isPersonalBest: boolean;
+  streakMonths: number;
 };
 
 type PassDistItem = {
@@ -65,6 +71,8 @@ export default function MyEarningsPage() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [passDistributions, setPassDistributions] = useState<PassDistItem[]>([]);
   const [passSummary, setPassSummary] = useState<PassSummary | null>(null);
+  const [motivation, setMotivation] = useState<Motivation | null>(null);
+  const celebratedRef = useRef<string | null>(null);
   const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [onboardingLoading, setOnboardingLoading] = useState(false);
@@ -91,6 +99,7 @@ export default function MyEarningsPage() {
         setSummary(data.summary ?? null);
         setPassDistributions(data.passDistributions ?? []);
         setPassSummary(data.passSummary ?? null);
+        setMotivation(data.motivation ?? null);
       } else {
         setToastMessage("Failed to load earnings data");
       }
@@ -108,6 +117,31 @@ export default function MyEarningsPage() {
   useEffect(() => {
     fetchData().finally(() => setLoading(false));
   }, [fetchData]);
+
+  // Confetti on Personal Best — fire once per month per browser, after
+  // data lands so the totals are already on screen.
+  useEffect(() => {
+    if (!motivation?.isPersonalBest) return;
+    if (typeof window === "undefined") return;
+    const seenKey = `klasly:pb-celebrated:${selectedMonth}`;
+    if (celebratedRef.current === selectedMonth) return;
+    if (window.localStorage.getItem(seenKey)) return;
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+    if (reduced) return;
+    celebratedRef.current = selectedMonth;
+    window.localStorage.setItem(seenKey, "1");
+    void (async () => {
+      const { default: confetti } = await import("canvas-confetti");
+      confetti({
+        particleCount: 90,
+        spread: 70,
+        origin: { y: 0.3 },
+        colors: ["#0074c5", "#fbbf24", "#10b981", "#f472b6"],
+      });
+    })();
+  }, [motivation, selectedMonth]);
 
   useEffect(() => {
     const returnParam = searchParams.get("return");
@@ -243,25 +277,51 @@ export default function MyEarningsPage() {
           <div className="card">
             <p className="text-sm text-gray-500">Total Revenue</p>
             <p className="mt-1 text-2xl font-bold text-gray-900">
-              {formatCents(summary.totalGross + (passSummary?.totalPayout ?? 0))}
+              <CountUp
+                value={summary.totalGross + (passSummary?.totalPayout ?? 0)}
+                format={formatCents}
+              />
             </p>
           </div>
           <div className="card">
-            <p className="text-sm text-gray-500">Your Payout</p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-500">Your Payout</p>
+              {motivation?.isPersonalBest ? (
+                <span
+                  className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700"
+                  title="New all-time personal best month"
+                >
+                  🏆 Personal best
+                </span>
+              ) : motivation && motivation.streakMonths >= 3 ? (
+                <span
+                  className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-700"
+                  title={`${motivation.streakMonths} consecutive months earning`}
+                >
+                  🔥 {motivation.streakMonths} mo
+                </span>
+              ) : null}
+            </div>
             <p className="mt-1 text-2xl font-bold text-green-600">
-              {formatCents(summary.totalPayout + (passSummary?.totalPayout ?? 0))}
+              <CountUp
+                value={summary.totalPayout + (passSummary?.totalPayout ?? 0)}
+                format={formatCents}
+              />
             </p>
           </div>
           <div className="card">
             <p className="text-sm text-gray-500">Studio Fee</p>
             <p className="mt-1 text-2xl font-bold text-gray-900">
-              {formatCents(summary.totalStudioFee)}
+              <CountUp value={summary.totalStudioFee} format={formatCents} />
             </p>
           </div>
           <div className="card">
             <p className="text-sm text-gray-500">Classes</p>
             <p className="mt-1 text-2xl font-bold text-gray-900">
-              {summary.classCount + (passSummary?.totalClasses ?? 0)}
+              <CountUp
+                value={summary.classCount + (passSummary?.totalClasses ?? 0)}
+                format={(n) => Math.round(n).toString()}
+              />
             </p>
           </div>
         </div>

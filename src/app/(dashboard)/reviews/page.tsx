@@ -3,6 +3,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { formatDate } from "@/lib/utils";
 import { unwrapRelation } from "@/lib/supabase/relation";
+import { NewestReviewPulse } from "@/components/reviews/newest-review-pulse";
 
 export default async function ReviewsPage() {
   const serverSupabase = await createServerClient();
@@ -105,9 +106,8 @@ export default async function ReviewsPage() {
             const classRel = unwrapRelation<{ name: string }>(review.classes);
             const sessionRel = unwrapRelation<{ session_date: string }>(review.class_sessions);
 
-            return (
+            const card = (
               <div
-                key={review.id}
                 className="stats-stagger card"
                 style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
               >
@@ -135,6 +135,13 @@ export default async function ReviewsPage() {
                   <p className="mt-2 text-sm text-gray-700">{review.comment}</p>
                 )}
               </div>
+            );
+            return index === 0 ? (
+              <NewestReviewPulse key={review.id} reviewId={review.id}>
+                {card}
+              </NewestReviewPulse>
+            ) : (
+              <div key={review.id}>{card}</div>
             );
           })
         )}

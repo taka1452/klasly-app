@@ -1067,4 +1067,5 @@ export type PushNotificationType =
   | "instructor_review_received"
   | "instructor_low_fill_warning"
   | "instructor_birthday_alert"
+  | "instructor_sold_out"
   | "manager_morning_todo";
