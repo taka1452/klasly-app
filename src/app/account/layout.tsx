@@ -83,6 +83,7 @@ export default async function AccountLayout({
         <DashboardShell
           currentRole={profile.role}
           studioName={(studio as { name?: string })?.name || "My Studio"}
+          studioId={profile.studio_id}
           userName={userName}
           userEmail={userEmail}
           planAccess={planAccess}
@@ -110,6 +111,7 @@ export default async function AccountLayout({
       <FeatureProvider features={features}>
         <InstructorShell
           studioName={studioName}
+          studioId={profile.studio_id}
           userName={userName}
           userEmail={userEmail}
           onboardingCompleted={onboardingCompleted}

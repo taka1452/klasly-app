@@ -4,10 +4,12 @@ import { useState, useEffect } from "react";
 import InstructorSidebar from "./instructor-sidebar";
 import InstructorHeader from "./instructor-header";
 import TourProvider from "@/components/tour/TourProvider";
+import PushPrompt from "@/components/pwa/push-prompt";
 
 type InstructorShellProps = {
   children: React.ReactNode;
   studioName: string;
+  studioId?: string;
   userName: string;
   userEmail: string;
   onboardingCompleted?: boolean;
@@ -19,6 +21,7 @@ type InstructorShellProps = {
 export default function InstructorShell({
   children,
   studioName,
+  studioId,
   userName,
   userEmail,
   onboardingCompleted = true,
@@ -68,6 +71,7 @@ export default function InstructorShell({
         />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</main>
       </div>
+      <PushPrompt studioId={studioId} />
     </div>
     </TourProvider>
   );

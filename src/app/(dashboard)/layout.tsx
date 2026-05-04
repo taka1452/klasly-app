@@ -142,6 +142,7 @@ export default async function DashboardLayout({
     <DashboardShell
       currentRole={profile.role}
       studioName={(profile.studios as { name?: string })?.name || "My Studio"}
+      studioId={profile.studio_id}
       userName={profile.full_name || user.email || "User"}
       userEmail={user.email || ""}
       planAccess={planAccess}

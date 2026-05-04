@@ -82,6 +82,7 @@ export default async function MessagesLayout({
         <DashboardShell
           currentRole={profile.role}
           studioName={(studio as { name?: string })?.name || "My Studio"}
+          studioId={profile.studio_id}
           userName={profile.full_name || user.email || "User"}
           userEmail={user.email || ""}
           planAccess={planAccess}

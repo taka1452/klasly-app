@@ -82,6 +82,7 @@ export default async function InstructorLayout({
         <AnnouncementBanner />
         <InstructorShell
           studioName={studioName}
+          studioId={profile.studio_id}
           userName={userName}
           userEmail={userEmail}
           onboardingCompleted={onboardingCompleted}
@@ -113,6 +114,7 @@ export default async function InstructorLayout({
       <AnnouncementBanner />
       <InstructorShell
         studioName={studioName}
+        studioId={profile.studio_id}
         userName={userName}
         userEmail={userEmail}
         onboardingCompleted={onboardingCompleted}

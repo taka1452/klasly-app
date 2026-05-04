@@ -8,6 +8,7 @@ import { PlanAccessProvider } from "./plan-access-provider";
 import TourProvider from "@/components/tour/TourProvider";
 import TourLauncher from "@/components/tour/TourLauncher";
 import CommandPalette from "./command-palette";
+import PushPrompt from "@/components/pwa/push-prompt";
 import type { PlanAccess } from "@/lib/plan-guard";
 import type { SetupTask } from "./setup-task-list";
 import type { ManagerPermissions } from "@/lib/auth/check-manager-permission";
@@ -16,6 +17,7 @@ type DashboardShellProps = {
   children: React.ReactNode;
   currentRole: string;
   studioName: string;
+  studioId?: string;
   userName: string;
   userEmail: string;
   planAccess?: PlanAccess;
@@ -35,6 +37,7 @@ export default function DashboardShell({
   children,
   currentRole,
   studioName,
+  studioId,
   userName,
   userEmail,
   planAccess,
@@ -116,6 +119,7 @@ export default function DashboardShell({
         )}
       <TourLauncher />
       <CommandPalette role={currentRole} />
+      <PushPrompt studioId={studioId} />
     </div>
     </TourProvider>
   );
