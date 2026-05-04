@@ -138,6 +138,6 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     // 静的ファイル以外すべて（API ルートも含む）
-    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|sw\\.js|manifest\\.json|icons/).*)",
+    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|sw\\.js|manifest\\.json|manifest\\.webmanifest|icons/).*)",
   ],
 };

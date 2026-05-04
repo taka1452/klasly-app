@@ -16,6 +16,7 @@ type Props = {
   lifetimeClasses?: number | null;
   streakWeeks?: number;
   streakAtRisk?: boolean;
+  onMenuClick?: () => void;
 };
 
 export default function MemberHeader({
@@ -25,6 +26,7 @@ export default function MemberHeader({
   lifetimeClasses,
   streakWeeks = 0,
   streakAtRisk = false,
+  onMenuClick,
 }: Props) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -62,7 +64,7 @@ export default function MemberHeader({
       <Link
         href="/help"
         target="_blank"
-        className="flex h-11 w-11 items-center justify-center rounded-lg text-gray-500 transition-[transform,background-color,color] duration-150 ease-out hover:bg-gray-100 hover:text-gray-600 active:scale-[0.93]"
+        className="hidden h-11 w-11 items-center justify-center rounded-lg text-gray-500 transition-[transform,background-color,color] duration-150 ease-out hover:bg-gray-100 hover:text-gray-600 active:scale-[0.93] md:flex"
         title="Help"
       >
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -70,7 +72,7 @@ export default function MemberHeader({
           <circle cx="12" cy="12" r="10" />
         </svg>
       </Link>
-      <div className="relative" ref={menuRef}>
+      <div className="relative hidden md:block" ref={menuRef}>
         <button
           onClick={() => setMenuOpen(!menuOpen)}
           className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-gray-700 transition-[transform,background-color] duration-150 ease-out hover:bg-gray-100 active:scale-[0.97]"
@@ -126,6 +128,17 @@ export default function MemberHeader({
           </div>
         )}
       </div>
+      {onMenuClick && (
+        <button
+          onClick={onMenuClick}
+          className="flex h-11 w-11 items-center justify-center rounded-lg text-gray-700 transition-[transform,background-color] duration-150 ease-out hover:bg-gray-100 active:scale-[0.93] md:hidden"
+          aria-label="Open menu"
+        >
+          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5" />
+          </svg>
+        </button>
+      )}
       </div>
     </header>
   );

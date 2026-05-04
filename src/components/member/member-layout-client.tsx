@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import MemberHeader from "./member-header";
+import MemberDrawer from "./member-drawer";
 import TourProvider from "@/components/tour/TourProvider";
 import { useFeature } from "@/lib/features/feature-context";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
@@ -48,6 +50,7 @@ export default function MemberLayoutClient({
   const showVideos = isEnabled(FEATURE_KEYS.VIDEO_CONTENT);
   const showMyStats = isEnabled(FEATURE_KEYS.MEMBER_LEVELS);
   const pathname = usePathname();
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const linkClass = (href: string) =>
     `text-sm font-medium transition-colors duration-150 ${
@@ -72,11 +75,13 @@ export default function MemberLayoutClient({
           lifetimeClasses={lifetimeClasses}
           streakWeeks={streakWeeks}
           streakAtRisk={streakAtRisk}
+          onMenuClick={() => setDrawerOpen(true)}
         />
         {rank && pendingRankCelebration && (
           <RankUpModal rank={rank} pendingCelebration />
         )}
-        <nav className="border-b border-gray-200 bg-white">
+        {/* Desktop horizontal nav */}
+        <nav className="hidden border-b border-gray-200 bg-white md:block">
           <div className="mx-auto max-w-6xl px-4 py-2 md:py-3">
             <div className="flex items-center justify-between">
               <div className="flex gap-4 overflow-x-auto scrollbar-hide md:gap-6 -mx-4 px-4 md:mx-0 md:px-0">
@@ -171,7 +176,7 @@ export default function MemberLayoutClient({
         </nav>
         {/* Mobile credit bar */}
         {memberCredits !== null && (
-          <div className="border-b border-gray-100 bg-white px-4 py-1.5 text-center sm:hidden">
+          <div className="border-b border-gray-100 bg-white px-4 py-1.5 text-center md:hidden">
             <span className="text-xs text-gray-500">
               Credits:{" "}
               <span className={`text-sm font-bold ${memberCredits === 0 ? "text-amber-600" : "text-gray-900"}`}>
@@ -180,9 +185,19 @@ export default function MemberLayoutClient({
             </span>
           </div>
         )}
-        <main className="mx-auto max-w-6xl px-4 py-4 pb-20 md:pb-0 md:py-6">{children}</main>
+        <main className="mx-auto max-w-6xl px-4 py-4 pb-28 md:pb-0 md:py-6">{children}</main>
         <MemberBottomNav />
+        <MemberDrawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          showPasses={showPasses}
+          showAppointments={showAppointments}
+          showCommunity={showCommunity}
+          showVideos={showVideos}
+          showMyStats={showMyStats}
+        />
       </div>
     </TourProvider>
   );
 }
+

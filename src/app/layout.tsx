@@ -25,6 +25,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  themeColor: "#0074c5",
 };
 
 export const metadata: Metadata = {
@@ -34,6 +35,17 @@ export const metadata: Metadata = {
   },
   description:
     "Simple management tool for small yoga, fitness, and dance studios.",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Klasly",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
+  icons: {
+    apple: "/icons/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({
