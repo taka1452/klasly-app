@@ -80,11 +80,18 @@ export default function MessagesClient({
 
   // Compose new message state
   const [showCompose, setShowCompose] = useState(false);
+  const [composeMode, setComposeMode] = useState<"single" | "broadcast">(
+    "single",
+  );
   const [composeRecipient, setComposeRecipient] = useState("");
+  const [composeRecipientIds, setComposeRecipientIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [composeSubject, setComposeSubject] = useState("");
   const [composeBody, setComposeBody] = useState("");
   const [composeSending, setComposeSending] = useState(false);
   const [composeError, setComposeError] = useState<string | null>(null);
+  const [composeSuccess, setComposeSuccess] = useState<string | null>(null);
 
   const selectedConv = conversations.find((c) => c.memberId === selectedId);
 
@@ -172,11 +179,50 @@ export default function MessagesClient({
   }
 
   async function handleComposeSend() {
-    if (!composeRecipient || !composeBody.trim() || composeSending) return;
+    if (!composeBody.trim() || composeSending) return;
     setComposeSending(true);
     setComposeError(null);
+    setComposeSuccess(null);
 
     try {
+      if (composeMode === "broadcast") {
+        const ids = Array.from(composeRecipientIds);
+        if (ids.length === 0) {
+          setComposeError("Pick at least one recipient.");
+          setComposeSending(false);
+          return;
+        }
+        const res = await fetch("/api/messages/broadcast", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            recipient_ids: ids,
+            content: composeBody.trim(),
+            subject: composeSubject.trim() || undefined,
+          }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setComposeError(data.error || "Failed to send");
+          setComposeSending(false);
+          return;
+        }
+        const data = await res.json();
+        setComposeSuccess(`Sent to ${data.sent ?? ids.length} member${(data.sent ?? ids.length) !== 1 ? "s" : ""}.`);
+        // Reset body but keep modal open so the user sees the confirmation.
+        setComposeBody("");
+        setComposeRecipientIds(new Set());
+        setComposeSubject("");
+        startTransition(() => router.refresh());
+        return;
+      }
+
+      // Single recipient
+      if (!composeRecipient) {
+        setComposeError("Pick a recipient.");
+        setComposeSending(false);
+        return;
+      }
       const res = await fetch("/api/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -194,22 +240,21 @@ export default function MessagesClient({
         return;
       }
 
-      // Close modal and switch to that conversation
       setShowCompose(false);
+      const sentTo = composeRecipient;
       setComposeRecipient("");
       setComposeSubject("");
       setComposeBody("");
-      setSelectedId(composeRecipient);
+      setSelectedId(sentTo);
 
-      // Update conversation list
-      const recipient = conversations.find((c) => c.memberId === composeRecipient);
+      const recipient = conversations.find((c) => c.memberId === sentTo);
       if (recipient) {
         setConversations((prev) =>
           prev.map((c) =>
-            c.memberId === composeRecipient
+            c.memberId === sentTo
               ? { ...c, lastMessage: composeBody.trim(), lastMessageAt: new Date().toISOString() }
-              : c
-          )
+              : c,
+          ),
         );
       }
 
@@ -219,6 +264,21 @@ export default function MessagesClient({
     } finally {
       setComposeSending(false);
     }
+  }
+
+  function toggleBroadcastRecipient(id: string) {
+    setComposeRecipientIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+  function selectAllBroadcastRecipients() {
+    setComposeRecipientIds(new Set(conversations.map((c) => c.memberId)));
+  }
+  function clearAllBroadcastRecipients() {
+    setComposeRecipientIds(new Set());
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -232,7 +292,7 @@ export default function MessagesClient({
 
   return (
     <>
-    <div className="flex h-[calc(100vh-120px)] min-h-[500px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+    <div className="-mx-4 -my-4 flex h-[calc(100dvh-3.5rem)] overflow-hidden bg-white sm:-mx-6 md:mx-0 md:my-0 md:h-[calc(100vh-120px)] md:min-h-[500px] md:rounded-xl md:border md:border-gray-200 md:shadow-sm">
       {/* ===== 左カラム: 会話リスト ===== */}
       <div
         className={`flex w-full flex-col border-r border-gray-200 md:w-72 lg:w-80 ${
@@ -253,17 +313,40 @@ export default function MessagesClient({
               <ContextHelpLink href="/help/messaging/send-message-member" />
             </div>
             {role === "owner" && (
-              <button
-                type="button"
-                onClick={() => { setShowCompose(true); setComposeError(null); }}
-                className="flex items-center gap-1 rounded-lg bg-brand-500 px-2.5 py-1.5 text-xs font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:bg-brand-600 active:scale-[0.95]"
-                title="New Message"
-              >
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
-                New
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCompose(true);
+                    setComposeMode("broadcast");
+                    setComposeError(null);
+                    setComposeSuccess(null);
+                  }}
+                  className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 transition-[transform,background-color] duration-150 ease-out hover:bg-gray-50 active:scale-[0.95]"
+                  title="Broadcast to multiple members"
+                >
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 11l18-7-7 18-2-9-9-2z" />
+                  </svg>
+                  Broadcast
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCompose(true);
+                    setComposeMode("single");
+                    setComposeError(null);
+                    setComposeSuccess(null);
+                  }}
+                  className="flex items-center gap-1 rounded-lg bg-brand-500 px-2.5 py-1.5 text-xs font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:bg-brand-600 active:scale-[0.95]"
+                  title="New Message"
+                >
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  New
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -503,43 +586,149 @@ export default function MessagesClient({
             className="backdrop-in absolute inset-0 bg-black/40"
             onClick={() => setShowCompose(false)}
           />
-          <div className="dialog-in relative mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-            <button
-              type="button"
-              onClick={() => setShowCompose(false)}
-              className="absolute right-4 top-4 tap-target rounded text-gray-500 transition-[transform,background-color,color] duration-150 ease-out hover:bg-gray-100 hover:text-gray-600 active:scale-[0.95]"
-              aria-label="Close"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-
-            <h3 className="mb-4 text-base font-semibold text-gray-900">New Message</h3>
-
-            {composeError && (
-              <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{composeError}</p>
-            )}
-
-            <div className="space-y-3">
+          <div className="dialog-in relative mx-4 flex max-h-[85vh] w-full max-w-md flex-col rounded-xl bg-white shadow-xl">
+            <div className="flex items-start justify-between gap-3 border-b border-gray-100 px-6 py-4">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">To</label>
-                <select
-                  value={composeRecipient}
-                  onChange={(e) => setComposeRecipient(e.target.value)}
-                  className="input-field text-sm"
+                <h3 className="text-base font-semibold text-gray-900">
+                  {composeMode === "broadcast" ? "Broadcast message" : "New message"}
+                </h3>
+                {composeMode === "broadcast" && (
+                  <p className="mt-0.5 text-xs text-gray-500">
+                    Sends the same message to multiple members at once.
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCompose(false)}
+                className="tap-target shrink-0 rounded text-gray-500 transition-[transform,background-color,color] duration-150 ease-out hover:bg-gray-100 hover:text-gray-600 active:scale-[0.95]"
+                aria-label="Close"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="flex-1 space-y-3 overflow-y-auto px-6 py-4">
+              {/* Mode toggle */}
+              <div className="flex gap-1 rounded-lg bg-gray-100 p-1">
+                <button
+                  type="button"
+                  onClick={() => setComposeMode("single")}
+                  className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors duration-150 ${
+                    composeMode === "single"
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-600"
+                  }`}
                 >
-                  <option value="">Select a member...</option>
-                  {conversations.map((c) => (
-                    <option key={c.memberId} value={c.memberId}>
-                      {c.memberName}{c.memberEmail ? ` (${c.memberEmail})` : ""}
-                    </option>
-                  ))}
-                </select>
+                  Single
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setComposeMode("broadcast")}
+                  className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors duration-150 ${
+                    composeMode === "broadcast"
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-600"
+                  }`}
+                >
+                  Broadcast
+                </button>
               </div>
 
+              {composeError && (
+                <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{composeError}</p>
+              )}
+              {composeSuccess && (
+                <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                  ✓ {composeSuccess}
+                </p>
+              )}
+
+              {composeMode === "single" ? (
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-600">To</label>
+                  <select
+                    value={composeRecipient}
+                    onChange={(e) => setComposeRecipient(e.target.value)}
+                    className="input-field text-sm"
+                  >
+                    <option value="">Select a member...</option>
+                    {conversations.map((c) => (
+                      <option key={c.memberId} value={c.memberId}>
+                        {c.memberName}{c.memberEmail ? ` (${c.memberEmail})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div>
+                  <div className="mb-1 flex items-center justify-between">
+                    <label className="text-xs font-medium text-gray-600">
+                      Recipients{" "}
+                      <span className="text-gray-400">
+                        ({composeRecipientIds.size} selected)
+                      </span>
+                    </label>
+                    <div className="flex gap-1.5">
+                      <button
+                        type="button"
+                        onClick={selectAllBroadcastRecipients}
+                        className="text-xs font-medium text-brand-600 hover:text-brand-700"
+                      >
+                        Select all
+                      </button>
+                      {composeRecipientIds.size > 0 && (
+                        <button
+                          type="button"
+                          onClick={clearAllBroadcastRecipients}
+                          className="text-xs font-medium text-gray-500 hover:text-gray-700"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="max-h-44 overflow-y-auto rounded-lg border border-gray-200">
+                    {conversations.length === 0 ? (
+                      <p className="p-3 text-xs text-gray-400">No members available.</p>
+                    ) : (
+                      conversations.map((c) => {
+                        const checked = composeRecipientIds.has(c.memberId);
+                        return (
+                          <label
+                            key={c.memberId}
+                            className={`flex cursor-pointer items-center gap-2 px-3 py-2 text-sm transition-colors duration-150 ${
+                              checked ? "bg-brand-50" : "hover:bg-gray-50"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => toggleBroadcastRecipient(c.memberId)}
+                              className="rounded accent-brand-600"
+                            />
+                            <span className="min-w-0 flex-1 truncate">
+                              <span className="font-medium text-gray-900">
+                                {c.memberName}
+                              </span>
+                              {c.memberEmail && (
+                                <span className="ml-1 text-xs text-gray-400">
+                                  {c.memberEmail}
+                                </span>
+                              )}
+                            </span>
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Subject (optional)</label>
+                <label className="mb-1 block text-xs font-medium text-gray-600">Subject (optional)</label>
                 <input
                   type="text"
                   value={composeSubject}
@@ -550,32 +739,41 @@ export default function MessagesClient({
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Message</label>
+                <label className="mb-1 block text-xs font-medium text-gray-600">Message</label>
                 <textarea
                   value={composeBody}
                   onChange={(e) => setComposeBody(e.target.value)}
-                  rows={4}
+                  rows={5}
                   placeholder="Type your message..."
                   className="input-field resize-none text-sm"
                 />
               </div>
             </div>
 
-            <div className="mt-4 flex gap-3">
+            <div className="flex gap-3 border-t border-gray-100 px-6 py-3">
               <button
                 type="button"
                 onClick={handleComposeSend}
-                disabled={!composeRecipient || !composeBody.trim() || composeSending}
+                disabled={
+                  !composeBody.trim() ||
+                  composeSending ||
+                  (composeMode === "single" && !composeRecipient) ||
+                  (composeMode === "broadcast" && composeRecipientIds.size === 0)
+                }
                 className="btn-primary flex-1 transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100"
               >
-                {composeSending ? "Sending..." : "Send Message"}
+                {composeSending
+                  ? "Sending…"
+                  : composeMode === "broadcast"
+                    ? `Send to ${composeRecipientIds.size}`
+                    : "Send"}
               </button>
               <button
                 type="button"
                 onClick={() => setShowCompose(false)}
                 className="btn-secondary transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]"
               >
-                Cancel
+                Close
               </button>
             </div>
           </div>
