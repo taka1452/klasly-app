@@ -1,14 +1,12 @@
 import { redirect } from "next/navigation";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
-import Link from "next/link";
-import MemberHeader from "@/components/member/member-header";
 import DashboardShell from "@/components/ui/dashboard-shell";
+import MemberShell from "@/components/member/member-shell";
 import { getPlanAccess } from "@/lib/plan-guard";
 import { isAdmin } from "@/lib/admin/auth";
-import { getStudioFeatures, isFeatureEnabled } from "@/lib/features/check-feature";
+import { getStudioFeatures } from "@/lib/features/check-feature";
 import { FeatureProvider } from "@/lib/features/feature-context";
-import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 /**
  * /messages レイアウト
@@ -39,7 +37,9 @@ export default async function MessagesLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, full_name, studio_id")
+    .select(
+      "role, full_name, studio_id, onboarding_completed, onboarding_step, onboarding_started_at"
+    )
     .eq("id", user.id)
     .single();
 
@@ -114,89 +114,17 @@ export default async function MessagesLayout({
     }
   }
 
-  // メンバー用レイアウト — Passes / クレジット表示
-  const showPasses = await isFeatureEnabled(profile.studio_id, FEATURE_KEYS.STUDIO_PASS);
-
-  const { data: memberRec } = await supabase
-    .from("members")
-    .select("credits")
-    .eq("profile_id", user.id)
-    .eq("studio_id", profile.studio_id)
-    .maybeSingle();
-  const memberCredits = memberRec?.credits ?? null;
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <MemberHeader
-        userName={profile.full_name || user.email || "Member"}
-        userEmail={user.email || ""}
-      />
-      <nav className="border-b border-gray-200 bg-white">
-        <div className="mx-auto max-w-4xl px-4 py-2 md:py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex gap-4 overflow-x-auto scrollbar-hide md:gap-6 -mx-4 px-4 md:mx-0 md:px-0">
-              <Link
-                href="/schedule"
-                className="shrink-0 text-sm font-medium text-gray-600 hover:text-gray-900"
-              >
-                Schedule
-              </Link>
-              <Link
-                href="/my-bookings"
-                className="shrink-0 text-sm font-medium text-gray-600 hover:text-gray-900"
-              >
-                Bookings
-              </Link>
-              <Link
-                href="/purchase"
-                className="shrink-0 text-sm font-medium text-gray-600 hover:text-gray-900"
-              >
-                Purchase
-              </Link>
-              {showPasses && (
-                <Link
-                  href="/my-passes"
-                  className="shrink-0 text-sm font-medium text-gray-600 hover:text-gray-900"
-                >
-                  Passes
-                </Link>
-              )}
-              <Link
-                href="/my-payments"
-                className="shrink-0 text-sm font-medium text-gray-600 hover:text-gray-900"
-              >
-                Payments
-              </Link>
-              <Link
-                href="/messages"
-                className="shrink-0 text-sm font-semibold text-brand-700 hover:text-brand-900"
-              >
-                Messages
-              </Link>
-            </div>
-            {memberCredits !== null && (
-              <span className="ml-4 hidden shrink-0 text-sm text-gray-500 sm:inline">
-                Credits:{" "}
-                <span className={`font-semibold ${memberCredits === 0 ? "text-amber-600" : "text-gray-900"}`}>
-                  {memberCredits === -1 ? "Unlimited" : memberCredits}
-                </span>
-              </span>
-            )}
-          </div>
-        </div>
-      </nav>
-      {/* Mobile credit bar */}
-      {memberCredits !== null && (
-        <div className="border-b border-gray-100 bg-white px-4 py-1.5 text-center sm:hidden">
-          <span className="text-xs text-gray-500">
-            Credits:{" "}
-            <span className={`font-bold text-sm ${memberCredits === 0 ? "text-amber-600" : "text-gray-900"}`}>
-              {memberCredits === -1 ? "Unlimited" : memberCredits}
-            </span>
-          </span>
-        </div>
-      )}
-      <main className="mx-auto max-w-4xl px-4 py-4 md:py-6">{children}</main>
-    </div>
+    <MemberShell
+      userId={user.id}
+      userEmail={user.email || ""}
+      fullName={profile.full_name || user.email || "Member"}
+      studioId={profile.studio_id}
+      onboardingCompleted={profile.onboarding_completed ?? true}
+      onboardingStep={profile.onboarding_step ?? 0}
+      onboardingStartedAt={profile.onboarding_started_at ?? null}
+    >
+      {children}
+    </MemberShell>
   );
 }

@@ -1,10 +1,9 @@
 import { redirect } from "next/navigation";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
-import Link from "next/link";
 import DashboardShell from "@/components/ui/dashboard-shell";
 import InstructorShell from "@/components/ui/instructor-shell";
-import MemberHeader from "@/components/member/member-header";
+import MemberShell from "@/components/member/member-shell";
 import { getPlanAccess } from "@/lib/plan-guard";
 import { isAdmin } from "@/lib/admin/auth";
 import { getStudioFeatures } from "@/lib/features/check-feature";
@@ -39,7 +38,9 @@ export default async function AccountLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, full_name, studio_id, onboarding_completed")
+    .select(
+      "role, full_name, studio_id, onboarding_completed, onboarding_step, onboarding_started_at"
+    )
     .eq("id", user.id)
     .single();
 
@@ -122,53 +123,18 @@ export default async function AccountLayout({
     );
   }
 
-  // Member: simple header + nav
+  // Member: shared MemberShell (header + drawer + bottom nav)
   return (
-    <div className="min-h-screen bg-gray-50">
-      <MemberHeader userName={userName} userEmail={userEmail} />
-      <nav className="border-b border-gray-200 bg-white">
-        <div className="mx-auto max-w-4xl px-4 py-2 md:py-3">
-          <div className="flex gap-4 overflow-x-auto scrollbar-hide md:gap-6">
-            <Link
-              href="/schedule"
-              className="shrink-0 text-sm font-medium text-gray-600 hover:text-gray-900"
-            >
-              Schedule
-            </Link>
-            <Link
-              href="/my-bookings"
-              className="shrink-0 text-sm font-medium text-gray-600 hover:text-gray-900"
-            >
-              Bookings
-            </Link>
-            <Link
-              href="/purchase"
-              className="shrink-0 text-sm font-medium text-gray-600 hover:text-gray-900"
-            >
-              Purchase
-            </Link>
-            <Link
-              href="/my-payments"
-              className="shrink-0 text-sm font-medium text-gray-600 hover:text-gray-900"
-            >
-              Payments
-            </Link>
-            <Link
-              href="/messages"
-              className="shrink-0 text-sm font-medium text-gray-600 hover:text-gray-900"
-            >
-              Messages
-            </Link>
-            <Link
-              href="/account"
-              className="shrink-0 text-sm font-semibold text-brand-700 hover:text-brand-900"
-            >
-              Account
-            </Link>
-          </div>
-        </div>
-      </nav>
-      <main className="mx-auto max-w-4xl px-4 py-4 md:py-6">{children}</main>
-    </div>
+    <MemberShell
+      userId={user.id}
+      userEmail={userEmail}
+      fullName={userName}
+      studioId={profile.studio_id}
+      onboardingCompleted={profile.onboarding_completed ?? true}
+      onboardingStep={profile.onboarding_step ?? 0}
+      onboardingStartedAt={profile.onboarding_started_at ?? null}
+    >
+      {children}
+    </MemberShell>
   );
 }
