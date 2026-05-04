@@ -132,7 +132,7 @@ export async function GET(request: Request) {
 
       const className = isRoomOnly
         ? sessionAny.title || "Appointment"
-        : sessionAny.classes?.name ?? "Class";
+        : sessionAny.title ?? sessionAny.classes?.name ?? "Class";
       const startTime = session.start_time?.substring(0, 5) || "";
 
       for (const t of targets) {

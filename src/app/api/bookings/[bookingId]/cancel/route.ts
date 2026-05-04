@@ -137,7 +137,7 @@ export async function POST(
     // セッション情報取得（メール用）
     const { data: session } = await adminSupabase
       .from("class_sessions")
-      .select("session_date, start_time, capacity, classes(name)")
+      .select("session_date, start_time, capacity, title, classes(name)")
       .eq("id", booking.session_id)
       .single();
 
@@ -155,7 +155,7 @@ export async function POST(
       .eq("id", booking.studio_id)
       .single();
 
-    const className = (session as { classes?: { name?: string } } | null)?.classes?.name ?? "Class";
+    const className = (session as { title?: string; classes?: { name?: string } } | null)?.title ?? (session as { classes?: { name?: string } } | null)?.classes?.name ?? "Class";
     const emailPayload = {
       memberName: memberProfile?.full_name ?? "Member",
       className,

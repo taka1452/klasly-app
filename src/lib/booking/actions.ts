@@ -213,7 +213,7 @@ export async function executeBookingAction({
 
   const { data: session } = await adminSupabase
     .from("class_sessions")
-    .select("id, session_date, start_time, capacity, is_online, online_link, class_id, studio_id, classes(name, is_online, online_link, instructor_id)")
+    .select("id, session_date, start_time, capacity, is_online, online_link, class_id, studio_id, title, classes(name, is_online, online_link, instructor_id)")
     .eq("id", sessionId)
     .single();
 
@@ -228,11 +228,12 @@ export async function executeBookingAction({
 
   const sessionAny = session as {
     class_id?: string;
+    title?: string;
     classes?: { name?: string; is_online?: boolean; online_link?: string | null; instructor_id?: string };
     is_online?: boolean;
     online_link?: string | null;
   };
-  const className = sessionAny.classes?.name ?? "Class";
+  const className = sessionAny.title ?? sessionAny.classes?.name ?? "Class";
   const memberName = profile?.full_name ?? "Member";
   const memberEmail = profile?.email ?? "";
   const studioName = studio?.name ?? "Studio";

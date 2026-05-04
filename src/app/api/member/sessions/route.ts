@@ -96,6 +96,17 @@ export async function GET(request: NextRequest) {
       is_cancelled: boolean;
       is_online?: boolean;
       online_link?: string | null;
+      title?: string | null;
+      duration_minutes?: number | null;
+      instructor_id?: string | null;
+      price_cents?: number | null;
+      location?: string | null;
+      room_id?: string | null;
+      instructors?: {
+        id?: string;
+        profiles?: { full_name?: string };
+      } | null;
+      rooms?: { name?: string } | null;
       classes?: {
         name?: string;
         duration_minutes?: number;
@@ -118,6 +129,11 @@ export async function GET(request: NextRequest) {
       .select(
         `
         id, session_date, start_time, capacity, is_cancelled, is_online, online_link,
+        title, duration_minutes, instructor_id, price_cents, location, room_id,
+        instructors!class_sessions_instructor_id_fkey (
+          id, profiles (full_name)
+        ),
+        rooms!class_sessions_room_id_fkey (name),
         classes (
           name, duration_minutes, location, is_public, price_cents, room_id, is_online, online_link,
           rooms (name),
@@ -202,13 +218,13 @@ export async function GET(request: NextRequest) {
         start_time: s.start_time,
         capacity: s.capacity,
         is_cancelled: s.is_cancelled,
-        class_name: s.classes?.name ?? "Class",
-        duration_minutes: s.classes?.duration_minutes ?? 60,
-        instructor_id: s.classes?.instructors?.id ?? null,
-        instructor_name: s.classes?.instructors?.profiles?.full_name ?? "",
-        location: s.classes?.location ?? null,
-        price_cents: s.classes?.price_cents ?? null,
-        room_name: s.classes?.rooms?.name ?? null,
+        class_name: s.title ?? s.classes?.name ?? "Class",
+        duration_minutes: s.duration_minutes ?? s.classes?.duration_minutes ?? 60,
+        instructor_id: s.instructor_id ?? s.classes?.instructors?.id ?? null,
+        instructor_name: s.instructors?.profiles?.full_name ?? s.classes?.instructors?.profiles?.full_name ?? "",
+        location: s.location ?? s.classes?.location ?? null,
+        price_cents: s.price_cents ?? s.classes?.price_cents ?? null,
+        room_name: s.rooms?.name ?? s.classes?.rooms?.name ?? null,
         is_online: isOnline,
         online_link: hasConfirmed ? rawLink : null,
       };

@@ -20,6 +20,7 @@ const CSRF_EXEMPT_PREFIXES = [
   "/api/csrf",
   "/api/instructor-join/",
   "/api/auth/",
+  "/api/dev-login",
 ];
 
 /** CSRF 検証が不要な完全一致パス */

@@ -1122,7 +1122,7 @@ async function handleInstructorDirectPayout(
 
       const { data: classSession } = await adminSupabase
         .from("class_sessions")
-        .select("session_date, start_time, classes(name)")
+        .select("session_date, start_time, title, classes(name)")
         .eq("id", sessionId)
         .single();
 
@@ -1133,8 +1133,8 @@ async function handleInstructorDirectPayout(
         .single();
 
       if (instProfile?.email) {
-        const cls = classSession as { session_date?: string; start_time?: string; classes?: { name?: string } | null } | null;
-        const className = cls?.classes?.name ?? "Class";
+        const cls = classSession as { session_date?: string; start_time?: string; title?: string; classes?: { name?: string } | null } | null;
+        const className = cls?.title ?? cls?.classes?.name ?? "Class";
         const sessionDate = cls?.session_date ?? "";
         const studioName = studioData?.name ?? "Studio";
 

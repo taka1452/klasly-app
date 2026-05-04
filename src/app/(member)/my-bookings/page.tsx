@@ -142,6 +142,7 @@ export default async function MyBookingsPage() {
         start_time,
         capacity,
         is_cancelled,
+        title,
         classes (name)
       )
     `)
@@ -235,10 +236,12 @@ export default async function MyBookingsPage() {
                 start_time?: string;
                 capacity?: number;
                 is_cancelled?: boolean;
+                title?: string;
                 classes?: { name?: string };
               } | null | undefined;
               const classesRef = session?.classes;
               const className =
+                session?.title ||
                 (classesRef && !Array.isArray(classesRef)
                   ? (classesRef as { name?: string }).name
                   : undefined) || "Class";
@@ -319,10 +322,12 @@ export default async function MyBookingsPage() {
               const session = (Array.isArray(raw) ? raw[0] : raw) as {
                 session_date?: string;
                 start_time?: string;
+                title?: string;
                 classes?: { name?: string };
               } | null | undefined;
               const classesRef = session?.classes;
               const className =
+                session?.title ||
                 (classesRef && !Array.isArray(classesRef)
                   ? (classesRef as { name?: string }).name
                   : undefined) || "Class";
