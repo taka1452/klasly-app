@@ -3,11 +3,10 @@
 import { useEffect, useState } from "react";
 
 function pickGreeting(hour: number): string {
-  if (hour < 5) return "Working late";
+  if (hour < 5) return "Hello";
   if (hour < 12) return "Good morning";
-  if (hour < 17) return "Good afternoon";
-  if (hour < 21) return "Good evening";
-  return "Evening";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
 }
 
 /**

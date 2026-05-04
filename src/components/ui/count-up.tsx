@@ -51,5 +51,12 @@ export function CountUp({ value, duration = 600, format, className }: Props) {
     return () => cancelAnimationFrame(raf);
   }, [value, duration]);
 
-  return <span className={className}>{format(display)}</span>;
+  return (
+    <span
+      className={className}
+      style={{ fontVariantNumeric: "tabular-nums" }}
+    >
+      {format(display)}
+    </span>
+  );
 }

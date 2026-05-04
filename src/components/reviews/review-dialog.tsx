@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import StarRating from "./star-rating";
+import { ActionSuccessLabel } from "@/components/ui/action-button";
 
 type ReviewDialogProps = {
   sessionId: string;
@@ -19,6 +20,7 @@ export default function ReviewDialog({
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
@@ -41,7 +43,10 @@ export default function ReviewDialog({
         setLoading(false);
         return;
       }
-      onSubmitted();
+      // Show ✓ briefly so the moment lands before the dialog closes.
+      setLoading(false);
+      setSubmitted(true);
+      window.setTimeout(() => onSubmitted(), 700);
     } catch {
       setError("Network error. Please try again.");
       setLoading(false);
@@ -83,16 +88,23 @@ export default function ReviewDialog({
               type="button"
               onClick={onClose}
               className="btn-secondary flex-1 transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100"
-              disabled={loading}
+              disabled={loading || submitted}
             >
               Cancel
             </button>
             <button
               type="submit"
               className="btn-primary flex-1 transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100"
-              disabled={loading || rating === 0}
+              disabled={loading || submitted || rating === 0}
+              aria-busy={loading || undefined}
             >
-              {loading ? "Submitting..." : "Submit Review"}
+              {submitted ? (
+                <ActionSuccessLabel label="Submitted" />
+              ) : loading ? (
+                "Submitting..."
+              ) : (
+                "Submit Review"
+              )}
             </button>
           </div>
         </form>

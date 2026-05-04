@@ -108,6 +108,7 @@ export default async function ReviewsPage() {
 
             const card = (
               <div
+                key={`card-${review.id}`}
                 className="stats-stagger card"
                 style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
               >
@@ -136,13 +137,14 @@ export default async function ReviewsPage() {
                 )}
               </div>
             );
-            return index === 0 ? (
-              <NewestReviewPulse key={review.id} reviewId={review.id}>
-                {card}
-              </NewestReviewPulse>
-            ) : (
-              <div key={review.id}>{card}</div>
-            );
+            if (index === 0) {
+              return (
+                <NewestReviewPulse key={review.id} reviewId={review.id}>
+                  {card}
+                </NewestReviewPulse>
+              );
+            }
+            return card;
           })
         )}
       </div>
