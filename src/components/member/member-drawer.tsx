@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Calendar,
   Bookmark,
@@ -15,8 +15,12 @@ import {
   Video,
   MessageCircle,
   Settings,
+  HelpCircle,
+  UserCog,
+  LogOut,
   X,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 type DrawerItem = {
   label: string;
@@ -27,6 +31,8 @@ type DrawerItem = {
 type Props = {
   open: boolean;
   onClose: () => void;
+  userName: string;
+  userEmail: string;
   showPasses: boolean;
   showAppointments: boolean;
   showCommunity: boolean;
@@ -37,6 +43,8 @@ type Props = {
 export default function MemberDrawer({
   open,
   onClose,
+  userName,
+  userEmail,
   showPasses,
   showAppointments,
   showCommunity,
@@ -44,6 +52,15 @@ export default function MemberDrawer({
   showMyStats,
 }: Props) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function handleLogout() {
+    onClose();
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -117,12 +134,17 @@ export default function MemberDrawer({
         aria-modal="true"
         aria-label="Menu"
       >
-        <div className="flex h-14 items-center justify-between border-b border-gray-100 px-4">
-          <span className="text-base font-semibold text-gray-900">Menu</span>
+        <div className="flex items-start justify-between gap-3 border-b border-gray-100 px-4 py-3">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-base font-semibold text-gray-900">
+              {userName}
+            </p>
+            <p className="truncate text-xs text-gray-500">{userEmail}</p>
+          </div>
           <button
             onClick={onClose}
             style={{ transitionTimingFunction: "var(--ease-out-strong)" }}
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-500 transition-[transform,background-color] duration-150 hover:bg-gray-100 active:scale-[0.97] motion-reduce:active:scale-100"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-500 transition-[transform,background-color] duration-150 hover:bg-gray-100 active:scale-[0.97] motion-reduce:active:scale-100"
             aria-label="Close menu"
           >
             <X className="h-5 w-5" />
@@ -130,7 +152,7 @@ export default function MemberDrawer({
         </div>
         <div
           key={open ? "open" : "closed"}
-          className="flex-1 overflow-y-auto px-3 py-3 pb-[env(safe-area-inset-bottom)]"
+          className="flex-1 overflow-y-auto px-3 py-3"
         >
           <ul className="space-y-1">
             {primary.map((item, i) => {
@@ -204,6 +226,33 @@ export default function MemberDrawer({
               );
             })}
           </ul>
+        </div>
+        <div className="border-t border-gray-100 px-3 py-2 pb-[max(env(safe-area-inset-bottom),8px)]">
+          <Link
+            href="/account"
+            onClick={onClose}
+            className="flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-medium text-gray-700 transition-colors duration-150 hover:bg-gray-50"
+          >
+            <UserCog className="h-5 w-5 text-gray-400" />
+            Account settings
+          </Link>
+          <Link
+            href="/help"
+            target="_blank"
+            onClick={onClose}
+            className="flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-medium text-gray-700 transition-colors duration-150 hover:bg-gray-50"
+          >
+            <HelpCircle className="h-5 w-5 text-gray-400" />
+            Help
+          </Link>
+          <button
+            onClick={handleLogout}
+            style={{ transitionTimingFunction: "var(--ease-out-strong)" }}
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-medium text-red-600 transition-[transform,background-color] duration-150 hover:bg-red-50 active:scale-[0.985] motion-reduce:active:scale-100"
+          >
+            <LogOut className="h-5 w-5 text-red-500" />
+            Sign out
+          </button>
         </div>
       </aside>
     </>

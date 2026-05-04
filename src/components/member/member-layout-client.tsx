@@ -190,6 +190,8 @@ export default function MemberLayoutClient({
         <MemberDrawer
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
+          userName={userName}
+          userEmail={userEmail}
           showPasses={showPasses}
           showAppointments={showAppointments}
           showCommunity={showCommunity}
