@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -10,6 +10,9 @@ import type { CancellationPolicyTier } from "@/types/database";
 import HelpTip from "@/components/ui/help-tip";
 import { EVENT_COLOR_PRESETS } from "@/lib/events/color-presets";
 import EventColorPicker from "@/components/events/event-color-picker";
+import EventDuplicatePicker, {
+  type DuplicatedEventData,
+} from "@/components/events/event-duplicate-picker";
 
 type OptionDraft = {
   name: string;
@@ -68,6 +71,50 @@ export default function CreateEventPage() {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [studioId, setStudioId] = useState<string | null>(null);
+  const [duplicateNote, setDuplicateNote] = useState("");
+
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("studio_id")
+        .eq("id", user.id)
+        .single();
+      if (profile?.studio_id) setStudioId(profile.studio_id);
+    })();
+  }, []);
+
+  function handleDuplicateApply(data: DuplicatedEventData, sourceName: string) {
+    setName(data.name);
+    setDescription(data.description);
+    setLocationName(data.location_name);
+    setLocationAddress(data.location_address);
+    setImageUrl(data.image_url);
+    setIsPublic(data.is_public);
+    if (data.color) setColor(data.color);
+    setGalleryImages(data.gallery_images);
+    setPackingList(data.packing_list.map((p) => ({
+      item: p.item ?? "",
+      category: p.category ?? "",
+    })));
+    setAccessInfo(data.access_info);
+    setLocationLat(data.location_lat);
+    setLocationLng(data.location_lng);
+    setWaitlistEnabled(data.waitlist_enabled);
+    if (data.options.length > 0) setOptions(data.options);
+    setScheduleItems(data.schedule_items);
+    setPaymentType(data.payment_type);
+    setPolicyTiers(data.cancellation_policy);
+    setPolicyText(data.cancellation_policy_text);
+    setAppFields(data.application_fields);
+    setStep(0);
+    setDuplicateNote(`Copied settings from "${sourceName}". Set the new dates below to publish.`);
+    setTimeout(() => setDuplicateNote(""), 6000);
+  }
 
   // Step 1: Basic Info
   const [name, setName] = useState("");
@@ -327,6 +374,23 @@ export default function CreateEventPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Create Event</h1>
       </div>
+
+      {/* Duplicate from past event */}
+      {studioId && (
+        <EventDuplicatePicker studioId={studioId} onApply={handleDuplicateApply} />
+      )}
+
+      {duplicateNote && (
+        <div
+          role="status"
+          className="toast-enter-top mb-4 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800"
+        >
+          <svg className="h-4 w-4 shrink-0 text-emerald-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          {duplicateNote}
+        </div>
+      )}
 
       {/* Step indicator */}
       <div className="mb-8 flex items-center gap-1">
