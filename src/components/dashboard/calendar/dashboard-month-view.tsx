@@ -14,6 +14,12 @@ type Props = {
   confirmedCounts: Record<string, number>;
   onDayClick: (date: Date) => void;
   isMobile: boolean;
+  /**
+   * When the user has narrowed the calendar by class or instructor,
+   * mobile cells render compact time chips instead of dots so the user
+   * can answer "when is this class this month?" at a glance.
+   */
+  hasActiveFilter?: boolean;
 };
 
 const DAY_HEADERS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -24,6 +30,7 @@ export default function DashboardMonthView({
   confirmedCounts,
   onDayClick,
   isMobile,
+  hasActiveFilter = false,
 }: Props) {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -64,13 +71,16 @@ export default function DashboardMonthView({
             const daySessions = sessionsByDate.get(dateStr) || [];
             const isCurrentMonth = date.getMonth() === month;
             const today = isToday(date);
-            const maxVisible = isMobile ? 0 : 3;
+            // Mobile: show times as chips when the user has filtered by class
+            // or instructor (so they can answer "when is this class?"); show
+            // dots otherwise. Desktop: always show two pills.
+            const maxVisible = isMobile ? (hasActiveFilter ? 4 : 0) : 2;
             const remaining = daySessions.length - maxVisible;
 
             return (
               <div
                 key={di}
-                className={`relative min-h-[80px] cursor-pointer border-b border-r border-gray-200 p-1.5 transition-colors hover:bg-gray-50 last:border-r-0 md:min-h-[128px] ${
+                className={`relative min-h-[80px] cursor-pointer border-b border-r border-gray-200 p-1.5 transition-colors hover:bg-gray-50 last:border-r-0 md:min-h-[160px] ${
                   !isCurrentMonth ? "bg-gray-50/50" : ""
                 }`}
                 onClick={() => onDayClick(date)}
@@ -88,8 +98,8 @@ export default function DashboardMonthView({
                   >
                     {date.getDate()}
                   </span>
-                  {/* Mobile: dot indicators */}
-                  {isMobile && daySessions.length > 0 && (
+                  {/* Mobile (no filter): dot indicators */}
+                  {isMobile && !hasActiveFilter && daySessions.length > 0 && (
                     <span className="flex gap-0.5">
                       {daySessions.slice(0, 3).map((s, i) => {
                         let dotColor = "bg-brand-400";
@@ -112,6 +122,36 @@ export default function DashboardMonthView({
                     </span>
                   )}
                 </div>
+
+                {/* Mobile (filter on): compact time chips so the user can see
+                    when the selected class/instructor is on this day. */}
+                {isMobile && hasActiveFilter && daySessions.length > 0 && (
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {daySessions.slice(0, 4).map((s) => {
+                      const isCancelled = s.is_cancelled;
+                      const conf = confirmedCounts[s.id] ?? 0;
+                      const full = !isCancelled && conf >= s.capacity;
+                      const chipBg = isCancelled
+                        ? "bg-gray-100 text-gray-400 line-through"
+                        : full
+                          ? "bg-amber-100 text-amber-800"
+                          : "bg-brand-100 text-brand-800";
+                      return (
+                        <span
+                          key={s.id}
+                          className={`rounded px-1 text-[10px] font-medium tabular-nums ${chipBg}`}
+                        >
+                          {formatTimeShort(s.start_time)}
+                        </span>
+                      );
+                    })}
+                    {daySessions.length > 4 && (
+                      <span className="text-[10px] text-gray-400">
+                        +{daySessions.length - 4}
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 {/* Desktop: event pills */}
                 {!isMobile && (
@@ -143,31 +183,40 @@ export default function DashboardMonthView({
                       return (
                         <div
                           key={session.id}
-                          className={`flex items-center gap-1 truncate rounded px-1.5 py-1 text-[13px] leading-snug ${bg}`}
+                          className={`rounded px-2 py-1.5 text-[13px] leading-snug ${bg}`}
                           title={
                             isRoomBooking || session.is_cancelled
                               ? undefined
                               : `${confirmed}/${session.capacity} booked`
                           }
                         >
-                          <span className="shrink-0 font-medium">
-                            {formatTimeShort(session.start_time)}
-                          </span>
-                          <span className="truncate">{session.class_name}</span>
-                          {!isRoomBooking && !session.is_cancelled && (
-                            <span
-                              className={`ml-auto shrink-0 rounded-sm px-1 text-[10px] font-semibold tabular-nums ${
-                                isFull
-                                  ? "bg-amber-200/70 text-amber-900"
-                                  : isAlmostFull
-                                    ? "bg-orange-200/70 text-orange-900"
-                                    : "bg-white/60 text-gray-600"
-                              }`}
-                            >
-                              {isFull
-                                ? "FULL"
-                                : `${confirmed}/${session.capacity}`}
+                          <div className="flex items-center justify-between gap-1.5">
+                            <span className="shrink-0 text-[11px] font-semibold tabular-nums opacity-80">
+                              {formatTimeShort(session.start_time)}
                             </span>
+                            {!isRoomBooking && !session.is_cancelled && (
+                              <span
+                                className={`shrink-0 rounded-sm px-1 text-[10px] font-semibold tabular-nums ${
+                                  isFull
+                                    ? "bg-amber-200/70 text-amber-900"
+                                    : isAlmostFull
+                                      ? "bg-orange-200/70 text-orange-900"
+                                      : "bg-white/60 text-gray-600"
+                                }`}
+                              >
+                                {isFull
+                                  ? "FULL"
+                                  : `${confirmed}/${session.capacity}`}
+                              </span>
+                            )}
+                          </div>
+                          <div className="truncate font-medium">
+                            {session.class_name}
+                          </div>
+                          {session.instructor_name && (
+                            <div className="truncate text-[11px] opacity-70">
+                              {session.instructor_name}
+                            </div>
                           )}
                         </div>
                       );

@@ -46,6 +46,9 @@ export default function DashboardCalendar({ onSlotClick }: DashboardCalendarProp
   const [isMobile, setIsMobile] = useState(false);
   const [showCancelled, setShowCancelled] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState<string>("all");
+  const [selectedClassId, setSelectedClassId] = useState<string>("all");
+  const [selectedInstructorId, setSelectedInstructorId] =
+    useState<string>("all");
 
   // Detect mobile on mount
   useEffect(() => {
@@ -138,8 +141,30 @@ export default function DashboardCalendar({ onSlotClick }: DashboardCalendarProp
     return opts;
   })();
 
-  // If the previously selected room disappears (user navigates to a week
-  // where it has no sessions), reset to "all" so nothing looks empty.
+  // Class & instructor options derived from sessions in view.
+  const classOptions = (() => {
+    const map = new Map<string, string>();
+    for (const s of sessions) {
+      if (s.event_type === "room_booking") continue;
+      if (s.class_id && s.class_name) map.set(s.class_id, s.class_name);
+    }
+    return Array.from(map.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  })();
+
+  const instructorOptions = (() => {
+    const map = new Map<string, string>();
+    for (const s of sessions) {
+      if (s.instructor_id && s.instructor_name)
+        map.set(s.instructor_id, s.instructor_name);
+    }
+    return Array.from(map.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  })();
+
+  // If the previously selected room/class/instructor disappears, reset to "all".
   useEffect(() => {
     if (
       selectedRoomId !== "all" &&
@@ -149,13 +174,42 @@ export default function DashboardCalendar({ onSlotClick }: DashboardCalendarProp
     }
   }, [roomOptions, selectedRoomId]);
 
+  useEffect(() => {
+    if (
+      selectedClassId !== "all" &&
+      !classOptions.some((c) => c.id === selectedClassId)
+    ) {
+      setSelectedClassId("all");
+    }
+  }, [classOptions, selectedClassId]);
+
+  useEffect(() => {
+    if (
+      selectedInstructorId !== "all" &&
+      !instructorOptions.some((i) => i.id === selectedInstructorId)
+    ) {
+      setSelectedInstructorId("all");
+    }
+  }, [instructorOptions, selectedInstructorId]);
+
   const filteredSessions = sessions
     .filter((s) => (showCancelled ? true : !s.is_cancelled))
     .filter((s) => {
       if (selectedRoomId === "all") return true;
       if (selectedRoomId === "__none__") return !s.room_id;
       return s.room_id === selectedRoomId;
+    })
+    .filter((s) => {
+      if (selectedClassId === "all") return true;
+      return s.class_id === selectedClassId;
+    })
+    .filter((s) => {
+      if (selectedInstructorId === "all") return true;
+      return s.instructor_id === selectedInstructorId;
     });
+
+  const hasActiveFilter =
+    selectedClassId !== "all" || selectedInstructorId !== "all";
 
   return (
     <div>
@@ -171,9 +225,45 @@ export default function DashboardCalendar({ onSlotClick }: DashboardCalendarProp
             onViewChange={handleViewChange}
           />
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          {roomOptions.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          {classOptions.length > 0 && (
             <label className="flex items-center gap-2 text-sm text-gray-600">
+              <span className="hidden sm:inline">Class</span>
+              <select
+                value={selectedClassId}
+                onChange={(e) => setSelectedClassId(e.target.value)}
+                className="max-w-[40vw] truncate rounded-md border border-gray-300 bg-white py-1 pl-2 pr-7 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                aria-label="Filter by class"
+              >
+                <option value="all">All classes</option>
+                {classOptions.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {instructorOptions.length > 0 && (
+            <label className="flex items-center gap-2 text-sm text-gray-600">
+              <span className="hidden sm:inline">Instructor</span>
+              <select
+                value={selectedInstructorId}
+                onChange={(e) => setSelectedInstructorId(e.target.value)}
+                className="max-w-[40vw] truncate rounded-md border border-gray-300 bg-white py-1 pl-2 pr-7 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                aria-label="Filter by instructor"
+              >
+                <option value="all">All instructors</option>
+                {instructorOptions.map((i) => (
+                  <option key={i.id} value={i.id}>
+                    {i.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {roomOptions.length > 0 && (
+            <label className="hidden items-center gap-2 text-sm text-gray-600 sm:flex">
               <span>Room</span>
               <select
                 value={selectedRoomId}
@@ -258,6 +348,7 @@ export default function DashboardCalendar({ onSlotClick }: DashboardCalendarProp
               confirmedCounts={confirmedCounts}
               onDayClick={handleMonthDayClick}
               isMobile={isMobile}
+              hasActiveFilter={hasActiveFilter}
             />
           )}
           {view === "list" && (
