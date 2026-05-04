@@ -70,7 +70,7 @@ export default function DashboardMonthView({
             return (
               <div
                 key={di}
-                className={`relative min-h-[80px] cursor-pointer border-b border-r border-gray-200 p-1 transition-colors hover:bg-gray-50 last:border-r-0 md:min-h-[100px] ${
+                className={`relative min-h-[80px] cursor-pointer border-b border-r border-gray-200 p-1.5 transition-colors hover:bg-gray-50 last:border-r-0 md:min-h-[128px] ${
                   !isCurrentMonth ? "bg-gray-50/50" : ""
                 }`}
                 onClick={() => onDayClick(date)}
@@ -143,7 +143,7 @@ export default function DashboardMonthView({
                       return (
                         <div
                           key={session.id}
-                          className={`flex items-center gap-1 truncate rounded px-1 py-0.5 text-[11px] leading-tight ${bg}`}
+                          className={`flex items-center gap-1 truncate rounded px-1.5 py-1 text-[13px] leading-snug ${bg}`}
                           title={
                             isRoomBooking || session.is_cancelled
                               ? undefined
@@ -156,7 +156,7 @@ export default function DashboardMonthView({
                           <span className="truncate">{session.class_name}</span>
                           {!isRoomBooking && !session.is_cancelled && (
                             <span
-                              className={`ml-auto shrink-0 rounded-sm px-1 text-[9px] font-semibold tabular-nums ${
+                              className={`ml-auto shrink-0 rounded-sm px-1 text-[10px] font-semibold tabular-nums ${
                                 isFull
                                   ? "bg-amber-200/70 text-amber-900"
                                   : isAlmostFull
@@ -173,7 +173,7 @@ export default function DashboardMonthView({
                       );
                     })}
                     {remaining > 0 && (
-                      <div className="px-1 text-[10px] font-medium text-gray-500">
+                      <div className="px-1 text-[11px] font-medium text-gray-500">
                         +{remaining} more
                       </div>
                     )}

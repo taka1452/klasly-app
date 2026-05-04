@@ -25,9 +25,14 @@ export default function DashboardCalendar({ onSlotClick }: DashboardCalendarProp
   const [view, setView] = useState<CalendarView>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem(CALENDAR_VIEW_KEY);
-      if (saved === "week" || saved === "day" || saved === "month" || saved === "list") return saved;
-      // Default to day on mobile, month on desktop
-      if (window.innerWidth < 768) return "day";
+      const isMobile = window.innerWidth < 768;
+      if (saved === "week" || saved === "day" || saved === "month" || saved === "list") {
+        // Week view squeezes too hard on phones — coerce to list.
+        if (isMobile && saved === "week") return "list";
+        return saved;
+      }
+      // Default to list on mobile (most readable), month on desktop.
+      if (isMobile) return "list";
     }
     return "month";
   });

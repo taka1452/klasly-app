@@ -29,7 +29,10 @@ export default function CalendarHeader({
   onViewChange,
 }: Props) {
   const label = formatHeaderLabel(view, currentDate);
-  const filteredOptions = viewOptions;
+  // Week view squeezes too hard on phones — hide it on mobile.
+  const filteredOptions = isMobile
+    ? viewOptions.filter((o) => o.value !== "week")
+    : viewOptions;
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 pb-4">
