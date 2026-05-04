@@ -20,6 +20,7 @@ export default function ScheduleToolbarActions({
 }: Props) {
   return (
     <div className="flex shrink-0 items-center gap-2">
+      {/* Desktop: full action set inline */}
       <div className="hidden flex-wrap items-center gap-2 sm:flex">
         <ExportCsvButton
           url="/api/export/classes"
@@ -40,17 +41,20 @@ export default function ScheduleToolbarActions({
         <Link href="/classes" className="btn-secondary">
           Classes
         </Link>
+        <button
+          type="button"
+          onClick={onAddClick}
+          className="btn-primary whitespace-nowrap"
+        >
+          + Add
+        </button>
       </div>
-      <button
-        type="button"
-        onClick={onAddClick}
-        className="btn-primary whitespace-nowrap"
-      >
-        + Add
-      </button>
+      {/* Mobile: everything (including + Add) tucked into ⋯ — owners
+          rarely schedule from a phone, so don't take header real estate. */}
       <OverflowMenu
         className="sm:hidden"
         items={[
+          { label: "+ Add session", onClick: onAddClick },
           { label: "Manage classes", href: "/classes" },
           { label: "Import schedule", href: "/calendar/import" },
           { label: "Print schedule", href: "/calendar/print" },
