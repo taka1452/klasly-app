@@ -33,7 +33,7 @@ export default function DashboardEventCard({
   const router = useRouter();
 
   const top = timeToPosition(session.start_time, gridStartHour);
-  const height = Math.max(durationToHeight(session.duration_minutes), 24);
+  const height = Math.max(durationToHeight(session.duration_minutes), 28);
 
   // Overlap positioning
   const widthPercent = totalCols > 1 ? 100 / totalCols : 100;
@@ -76,7 +76,7 @@ export default function DashboardEventCard({
     textColor = "text-brand-900";
   }
 
-  const isCompact = height < 40;
+  const isCompact = height < 48;
   const capacityBadgeLabel = isFull
     ? "FULL"
     : isAlmostFull
@@ -95,7 +95,7 @@ export default function DashboardEventCard({
   return (
     <div
       data-event-card
-      className={`absolute cursor-pointer rounded-md px-1.5 py-0.5 text-xs leading-tight transition-shadow hover:shadow-md ${bgColor} ${textColor}`}
+      className={`absolute cursor-pointer rounded-md px-2 py-1 text-[13px] leading-snug transition-shadow hover:shadow-md ${bgColor} ${textColor}`}
       style={{
         top: `${top}px`,
         height: `${height}px`,
@@ -109,7 +109,7 @@ export default function DashboardEventCard({
       {isCompact ? (
         <span className="flex items-center gap-1 truncate font-medium">
           {isRoomBooking && (
-            <span className="mr-1 inline-block rounded bg-teal-200 px-1 text-[9px] font-semibold uppercase text-teal-700">
+            <span className="mr-1 inline-block rounded bg-teal-200 px-1 text-[10px] font-semibold uppercase text-teal-700">
               Room
             </span>
           )}
@@ -126,7 +126,7 @@ export default function DashboardEventCard({
           )}
           {!isRoomBooking && !session.is_cancelled && (
             <span
-              className={`ml-auto shrink-0 rounded-sm px-1 text-[9px] font-semibold tabular-nums ${
+              className={`ml-auto shrink-0 rounded-sm px-1 text-[10px] font-semibold tabular-nums ${
                 isFull
                   ? "bg-amber-200/70 text-amber-900"
                   : isAlmostFull
@@ -143,12 +143,12 @@ export default function DashboardEventCard({
         <>
           <div className="truncate font-medium">
             {isRoomBooking && (
-              <span className="mr-1 inline-block rounded bg-teal-200 px-1 text-[9px] font-semibold uppercase text-teal-700">
+              <span className="mr-1 inline-block rounded bg-teal-200 px-1 text-[10px] font-semibold uppercase text-teal-700">
                 Room
               </span>
             )}
             {!isRoomBooking && !session.is_public && (
-              <span className="mr-1 inline-block rounded bg-violet-200 px-1 text-[9px] font-semibold uppercase text-violet-700">
+              <span className="mr-1 inline-block rounded bg-violet-200 px-1 text-[10px] font-semibold uppercase text-violet-700">
                 Private
               </span>
             )}
@@ -170,7 +170,7 @@ export default function DashboardEventCard({
           {height >= 55 && !isRoomBooking && (
             <div className="flex items-center gap-1 truncate opacity-80">
               <span
-                className={`shrink-0 rounded-sm px-1 text-[9px] font-semibold tabular-nums ${
+                className={`shrink-0 rounded-sm px-1 text-[10px] font-semibold tabular-nums ${
                   isFull
                     ? "bg-amber-200/70 text-amber-900"
                     : isAlmostFull
@@ -182,7 +182,7 @@ export default function DashboardEventCard({
                 {capacityBadgeLabel}
               </span>
               {session.room_name && (
-                <span className="ml-1 inline-block rounded bg-teal-100 px-1 text-[9px] font-medium text-teal-700">
+                <span className="ml-1 inline-block rounded bg-teal-100 px-1 text-[10px] font-medium text-teal-700">
                   {session.room_name}
                 </span>
               )}
@@ -190,7 +190,7 @@ export default function DashboardEventCard({
           )}
           {height >= 55 && isRoomBooking && session.room_name && (
             <div className="truncate opacity-60">
-              <span className="inline-block rounded bg-teal-100 px-1 text-[9px] font-medium text-teal-700">
+              <span className="inline-block rounded bg-teal-100 px-1 text-[10px] font-medium text-teal-700">
                 {session.room_name}
               </span>
             </div>

@@ -93,7 +93,10 @@ export default function DashboardWeekView({
       {/* Sticky header */}
       <div
         className="sticky top-0 z-20 grid border-b border-gray-200 bg-white"
-        style={{ gridTemplateColumns: "60px repeat(7, 1fr)" }}
+        style={{
+          gridTemplateColumns: "60px repeat(7, minmax(120px, 1fr))",
+          minWidth: "calc(60px + 7 * 120px)",
+        }}
       >
         <div className="border-r border-gray-200" />
         {weekDates.map((date, i) => {
@@ -124,8 +127,9 @@ export default function DashboardWeekView({
       <div
         className="relative grid"
         style={{
-          gridTemplateColumns: "60px repeat(7, 1fr)",
+          gridTemplateColumns: "60px repeat(7, minmax(120px, 1fr))",
           height: `${totalHours * HOUR_HEIGHT}px`,
+          minWidth: "calc(60px + 7 * 120px)",
         }}
       >
         {/* Time gutter */}
