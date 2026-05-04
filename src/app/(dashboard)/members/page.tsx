@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import MemberSearch from "@/components/members/member-search";
 import MembersListClient from "@/components/members/members-list-client";
-import ExportCsvButton from "@/components/ui/export-csv-button";
+import MembersToolbarActions from "@/components/members/members-toolbar-actions";
 import FlowHintPanel from "@/components/ui/flow-hint-panel";
 import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
 import ContextHelpLink from "@/components/help/context-help-link";
@@ -82,27 +82,21 @@ export default async function MembersPage({
 
   return (
     <div>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-3">
+      <div className="flex items-center justify-between gap-3 sm:flex-row sm:items-center">
+        <div className="flex min-w-0 flex-wrap items-center gap-3">
           <p className="text-sm text-gray-500">
             {filteredMembers.length} member{filteredMembers.length !== 1 ? "s" : ""}
           </p>
           <ContextHelpLink href="/help/members/add-member" />
-          <FlowHintPanel flowType="members" />
-          <FlowHintPanel flowType="member-invite" buttonLabel="Where to send invite?" />
+          {/* Hint chips fight for space on phones; show on tablet+ */}
+          <div className="hidden sm:flex sm:flex-wrap sm:items-center sm:gap-3">
+            <FlowHintPanel flowType="members" />
+            <FlowHintPanel flowType="member-invite" buttonLabel="Where to send invite?" />
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <ExportCsvButton
-            url="/api/export/members"
-            filename={`members-${new Date().toISOString().slice(0, 10)}.csv`}
-          />
-          <Link href="/members/import" className="btn-secondary">
-            Import
-          </Link>
-          <Link href="/members/new" className="btn-primary">
-            + Add
-          </Link>
-        </div>
+        <MembersToolbarActions
+          exportFilename={`members-${new Date().toISOString().slice(0, 10)}.csv`}
+        />
       </div>
 
       {/* 検索・フィルター */}
