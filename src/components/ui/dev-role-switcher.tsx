@@ -87,6 +87,28 @@ export default function TestAccountSwitcher() {
     setOriginalProfileId(readCookie(ORIGINAL_COOKIE));
   }, [fetchAccounts]);
 
+  // While impersonating, push the entire viewport down so the fixed banner
+  // doesn't overlap the sidebar/header. Larger offset on mobile because
+  // the banner stacks vertically.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const insideTest = currentIsTest && !!originalProfileId;
+    if (!insideTest) {
+      document.body.style.removeProperty("padding-top");
+      return;
+    }
+    const apply = () => {
+      const isMobile = window.matchMedia("(max-width: 639px)").matches;
+      document.body.style.paddingTop = isMobile ? "56px" : "40px";
+    };
+    apply();
+    window.addEventListener("resize", apply);
+    return () => {
+      window.removeEventListener("resize", apply);
+      document.body.style.removeProperty("padding-top");
+    };
+  }, [currentIsTest, originalProfileId]);
+
   const [switchError, setSwitchError] = useState<string | null>(null);
 
   async function switchTo(target: Account) {
@@ -168,21 +190,26 @@ export default function TestAccountSwitcher() {
 
   return (
     <>
-      {/* Persistent banner while impersonating a test account */}
+      {/* Persistent banner while impersonating a test account.
+          Body padding-top (set in useEffect) pushes the rest of the
+          page down so the fixed banner doesn't overlap the sidebar.
+          Mobile: stacks vertically with a "Return" button. */}
       {insideTestSession && (
-        <div className="fixed inset-x-0 top-0 z-[60] flex flex-wrap items-center justify-center gap-3 bg-amber-500 px-4 py-2 text-xs font-medium text-white shadow">
-          <span>
+        <div className="fixed inset-x-0 top-0 z-[60] flex flex-col items-center justify-center gap-1.5 bg-amber-500 px-3 py-2 text-xs font-medium text-white shadow sm:flex-row sm:gap-3 sm:py-1.5">
+          <span className="text-center leading-snug">
             Viewing as{" "}
             <strong>
               {accounts.find((a) => a.isCurrent)?.name ?? "test account"}
             </strong>
-            {" "}&middot; changes made here affect your real studio.
+            <span className="hidden sm:inline">
+              {" "}&middot; changes made here affect your real studio.
+            </span>
           </span>
           <button
             type="button"
             onClick={switchBack}
             disabled={switching !== null}
-            className="rounded-full bg-white/20 px-2.5 py-0.5 text-white underline-offset-2 hover:bg-white/30 hover:underline disabled:opacity-50"
+            className="shrink-0 rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-amber-700 shadow-sm hover:bg-amber-50 disabled:opacity-50"
           >
             Return to your account
           </button>
