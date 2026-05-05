@@ -22,6 +22,8 @@ type ManagerInfo = {
   canManageContractsTiers: boolean;
   canShowTutorial: boolean;
   canExportData: boolean;
+  canManageBilling: boolean;
+  canIssueRefunds: boolean;
   createdAt: string;
 };
 
@@ -211,6 +213,44 @@ const PERMISSIONS: PermissionDef[] = [
     calloutLabel: "Preference",
     calloutText:
       "Tutorial is a UX preference rather than a capability — it just controls whether Klasly's onboarding hints show up for this user. You can safely turn it off for users who already know the app; they will still see the Help Center.",
+  },
+  {
+    key: "canManageBilling",
+    label: "Klasly Billing",
+    short: "Manage the studio's Klasly subscription, plan, promo codes",
+    long: "Access the Klasly subscription / billing portal: change plan, update card, redeem promo codes, pause / cancel / resume the Klasly plan. This is about paying Klasly itself — it does NOT include Stripe Connect (where your studio's revenue lands), which stays owner-only.",
+    allows: [
+      "Settings → Billing: open the Klasly billing portal",
+      "Change between monthly / yearly plan, apply promo codes",
+      "Pause, cancel, or resume the Klasly subscription",
+    ],
+    doesNotInclude: [
+      "Stripe Connect onboarding / payout destination (owner only)",
+      "Refunding member payments (needs Issue Refunds)",
+      "Deleting the studio account (owner only)",
+    ],
+    calloutLabel: "Financial",
+    calloutText:
+      "This permission lets the manager change what the studio pays Klasly each month. Keep it tightly scoped — typically only an office manager or accountant would need this.",
+  },
+  {
+    key: "canIssueRefunds",
+    label: "Issue Refunds",
+    short: "Refund event / booking payments via Stripe",
+    long: "Required to actually return money to a member. Day-to-day cancellation (mark as cancelled, restore credits) is still controlled by Manage Bookings; this permission gates the additional Stripe refund step inside event and booking cancellation flows.",
+    allows: [
+      "Cancel an event booking with a Stripe refund issued",
+      "Refund a class booking when the cancellation policy allows",
+      "Apply partial refunds based on the cancellation tier",
+    ],
+    doesNotInclude: [
+      "Cancelling a booking without a refund (needs Manage Bookings)",
+      "Changing the studio's Stripe Connect / payout settings (owner only)",
+      "Editing prices on classes or tiers (needs Class Pricing / Contracts)",
+    ],
+    calloutLabel: "Financial",
+    calloutText:
+      "Refunds move money out of the studio's Stripe Connect account back to the customer. This is irreversible — only grant to managers you trust with the studio's finances.",
   },
   {
     key: "canExportData",

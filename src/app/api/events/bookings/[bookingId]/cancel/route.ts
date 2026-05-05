@@ -53,11 +53,13 @@ export async function POST(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // マネージャーの場合、can_manage_bookings 権限を確認
+    // マネージャーの場合、can_manage_bookings + can_issue_refunds 両方が必要。
+    // 当エンドポイントは Stripe 返金を行うため、純粋な予約キャンセルより強い権限を要求する。
+    let canIssueRefunds = profile.role === "owner";
     if (profile.role === "manager") {
       const { data: mgr } = await supabase
         .from("managers")
-        .select("can_manage_bookings")
+        .select("can_manage_bookings, can_issue_refunds")
         .eq("profile_id", user.id)
         .eq("studio_id", profile.studio_id)
         .single();
@@ -67,6 +69,7 @@ export async function POST(
           { status: 403 }
         );
       }
+      canIssueRefunds = !!mgr.can_issue_refunds;
     }
 
     // Get booking
@@ -107,6 +110,18 @@ export async function POST(
     const body = await request.json();
     const { refund_amount_cents } = body;
     const refundAmount = Math.max(0, Math.floor(refund_amount_cents ?? 0));
+
+    // A non-owner without can_issue_refunds may cancel without a refund,
+    // but cannot push money back to the customer.
+    if (refundAmount > 0 && !canIssueRefunds) {
+      return NextResponse.json(
+        {
+          error:
+            "You don't have permission to issue refunds. Cancel without a refund or ask the owner.",
+        },
+        { status: 403 }
+      );
+    }
 
     // Get Stripe account for this studio
     const { data: studio } = await supabase

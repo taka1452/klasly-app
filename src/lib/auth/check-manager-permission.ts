@@ -15,10 +15,12 @@ export type ManagerPermissions = {
   can_manage_contracts_tiers: boolean;
   can_show_tutorial: boolean;
   can_export_data: boolean;
+  can_manage_billing: boolean;
+  can_issue_refunds: boolean;
 };
 
 const MANAGER_PERMISSION_COLUMNS =
-  "can_manage_members, can_manage_classes, can_manage_instructors, can_manage_bookings, can_manage_rooms, can_view_payments, can_send_messages, can_teach, can_manage_settings, can_manage_class_pricing, can_manage_contracts_tiers, can_show_tutorial, can_export_data";
+  "can_manage_members, can_manage_classes, can_manage_instructors, can_manage_bookings, can_manage_rooms, can_view_payments, can_send_messages, can_teach, can_manage_settings, can_manage_class_pricing, can_manage_contracts_tiers, can_show_tutorial, can_export_data, can_manage_billing, can_issue_refunds";
 
 type PermissionCheckResult = {
   allowed: boolean;

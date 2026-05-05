@@ -48,7 +48,20 @@ export async function POST(request: Request) {
       .eq("id", user.id)
       .single();
 
-    if (profile?.role !== "owner" || !profile?.studio_id) {
+    if (!profile?.studio_id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    let billingAllowed = profile.role === "owner";
+    if (!billingAllowed && profile.role === "manager") {
+      const { data: mgr } = await adminSupabase
+        .from("managers")
+        .select("can_manage_billing")
+        .eq("profile_id", user.id)
+        .eq("studio_id", profile.studio_id)
+        .single();
+      billingAllowed = !!mgr?.can_manage_billing;
+    }
+    if (!billingAllowed) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

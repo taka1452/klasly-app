@@ -59,6 +59,8 @@ export async function GET() {
         canManageContractsTiers: m.can_manage_contracts_tiers ?? false,
         canShowTutorial: m.can_show_tutorial ?? true,
         canExportData: m.can_export_data ?? false,
+        canManageBilling: m.can_manage_billing ?? false,
+        canIssueRefunds: m.can_issue_refunds ?? false,
         createdAt: m.created_at,
       };
     });
@@ -125,6 +127,8 @@ export async function POST(request: Request) {
             can_manage_contracts_tiers: permissions?.canManageContractsTiers ?? false,
             can_show_tutorial: permissions?.canShowTutorial ?? true,
             can_export_data: permissions?.canExportData ?? false,
+            can_manage_billing: permissions?.canManageBilling ?? false,
+            can_issue_refunds: permissions?.canIssueRefunds ?? false,
           },
           { onConflict: "studio_id,profile_id" }
         )
@@ -179,6 +183,8 @@ export async function POST(request: Request) {
         can_manage_contracts_tiers: permissions?.canManageContractsTiers ?? false,
         can_show_tutorial: permissions?.canShowTutorial ?? true,
         can_export_data: permissions?.canExportData ?? false,
+        can_manage_billing: permissions?.canManageBilling ?? false,
+        can_issue_refunds: permissions?.canIssueRefunds ?? false,
       });
     }
 
@@ -213,6 +219,8 @@ export async function PATCH(request: Request) {
     if (permissions.canManageContractsTiers !== undefined) updateData.can_manage_contracts_tiers = permissions.canManageContractsTiers;
     if (permissions.canShowTutorial !== undefined) updateData.can_show_tutorial = permissions.canShowTutorial;
     if (permissions.canExportData !== undefined) updateData.can_export_data = permissions.canExportData;
+    if (permissions.canManageBilling !== undefined) updateData.can_manage_billing = permissions.canManageBilling;
+    if (permissions.canIssueRefunds !== undefined) updateData.can_issue_refunds = permissions.canIssueRefunds;
 
     const { data, error } = await ctx.supabase
       .from("managers")
