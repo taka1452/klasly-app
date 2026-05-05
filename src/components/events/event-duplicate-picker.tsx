@@ -259,7 +259,8 @@ export default function EventDuplicatePicker({ studioId, onApply }: Props) {
               type="button"
               onClick={handleApply}
               disabled={!selectedId || applying}
-              className="btn-primary whitespace-nowrap text-sm disabled:opacity-50"
+              style={{ transitionTimingFunction: "var(--ease-out-strong)" }}
+              className="btn-primary whitespace-nowrap text-sm transition-[transform,background-color] duration-150 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100 motion-reduce:active:scale-100"
             >
               {applying ? "Loading…" : "Reuse settings"}
             </button>

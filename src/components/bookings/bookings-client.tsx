@@ -150,7 +150,7 @@ export default function BookingsClient({ sessions, year, month }: Props) {
               }
               return Array.from(groups.entries()).map(([date, items]) => (
                 <div key={date}>
-                  <h3 className="mb-2 px-1 text-sm font-semibold text-gray-700">
+                  <h3 className="sticky top-0 z-10 mb-2 -mx-px bg-gray-50/95 px-1 py-1.5 text-sm font-semibold text-gray-700 backdrop-blur supports-[backdrop-filter]:bg-gray-50/80">
                     {formatDate(date)}
                     <span className="ml-2 text-xs font-normal text-gray-400">
                       {items.length} session{items.length !== 1 ? "s" : ""}
@@ -166,7 +166,8 @@ export default function BookingsClient({ sessions, year, month }: Props) {
                           key={session.id}
                           type="button"
                           onClick={() => setSelectedSession(session)}
-                          className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors duration-150 ease-out hover:bg-gray-50 active:bg-gray-100 sm:px-5"
+                          style={{ transitionTimingFunction: "var(--ease-out-strong)" }}
+                          className="flex w-full items-center gap-3 px-4 py-3 text-left transition-[transform,background-color] duration-150 hover:bg-gray-50 active:scale-[0.99] active:bg-gray-100 motion-reduce:active:scale-100 sm:px-5"
                         >
                           {/* Time column — prominent on the left */}
                           <div className="w-16 shrink-0 text-sm font-semibold tabular-nums text-gray-900">

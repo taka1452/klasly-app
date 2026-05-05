@@ -184,7 +184,7 @@ export default function DashboardMonthView({
                       return (
                         <div
                           key={session.id}
-                          className={`rounded px-2 py-1.5 text-[13px] leading-snug ${bg}`}
+                          className={`rounded px-2 py-1.5 text-[13px] leading-snug transition-shadow duration-150 hover:shadow-sm ${bg}`}
                           title={
                             isRoomBooking || session.is_cancelled
                               ? undefined

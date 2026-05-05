@@ -365,7 +365,8 @@ export default function MessagesClient({
                 key={conv.memberId}
                 type="button"
                 onClick={() => setSelectedId(conv.memberId)}
-                className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors duration-150 ease-out hover:bg-gray-50 ${
+                style={{ transitionTimingFunction: "var(--ease-out-strong)" }}
+                className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-[transform,background-color] duration-150 hover:bg-gray-50 active:scale-[0.99] active:bg-gray-100 motion-reduce:active:scale-100 ${
                   selectedId === conv.memberId ? "bg-blue-50" : ""
                 }`}
               >
@@ -477,12 +478,15 @@ export default function MessagesClient({
                   No messages yet. Start the conversation!
                 </div>
               )}
-              {messages.map((msg) => {
+              {messages.map((msg, idx) => {
                 const isMe = msg.sender_id === myId;
+                // Fade in only the most recent message so older history
+                // doesn't replay every time the thread re-renders.
+                const isNewest = idx === messages.length - 1;
                 return (
                   <div
                     key={msg.id}
-                    className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+                    className={`flex ${isNewest ? "stagger-item" : ""} ${isMe ? "justify-end" : "justify-start"}`}
                   >
                     <div
                       className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${
@@ -616,7 +620,8 @@ export default function MessagesClient({
                 <button
                   type="button"
                   onClick={() => setComposeMode("single")}
-                  className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors duration-150 ${
+                  style={{ transitionTimingFunction: "var(--ease-out-strong)" }}
+                  className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-[color,background-color,transform,box-shadow] duration-150 active:scale-[0.97] motion-reduce:active:scale-100 ${
                     composeMode === "single"
                       ? "bg-white text-gray-900 shadow-sm"
                       : "text-gray-600"
@@ -627,7 +632,8 @@ export default function MessagesClient({
                 <button
                   type="button"
                   onClick={() => setComposeMode("broadcast")}
-                  className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors duration-150 ${
+                  style={{ transitionTimingFunction: "var(--ease-out-strong)" }}
+                  className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-[color,background-color,transform,box-shadow] duration-150 active:scale-[0.97] motion-reduce:active:scale-100 ${
                     composeMode === "broadcast"
                       ? "bg-white text-gray-900 shadow-sm"
                       : "text-gray-600"
@@ -641,7 +647,7 @@ export default function MessagesClient({
                 <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{composeError}</p>
               )}
               {composeSuccess && (
-                <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                <p className="toast-enter-top rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
                   ✓ {composeSuccess}
                 </p>
               )}
