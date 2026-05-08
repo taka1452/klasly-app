@@ -62,6 +62,16 @@ export default async function MemberDetailPage({
     notFound();
   }
 
+  // Check if this member is also an instructor
+  const { data: instructorRecord } = member.profile_id
+    ? await supabase
+        .from("instructors")
+        .select("id")
+        .eq("studio_id", member.studio_id)
+        .eq("profile_id", member.profile_id)
+        .maybeSingle()
+    : { data: null };
+
   // Check if this is a test account
   let testAccountInfo: { email: string; password: string } | null = null;
   if (serviceRoleKey && member.profile_id) {
@@ -95,6 +105,14 @@ export default async function MemberDetailPage({
               <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
                 {member.profiles?.full_name || "Unknown"}
               </h1>
+              {instructorRecord && (
+                <Link
+                  href={`/instructors/${instructorRecord.id}`}
+                  className="inline-flex rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-medium text-violet-700 transition-colors hover:bg-violet-200"
+                >
+                  Instructor
+                </Link>
+              )}
               {member.is_minor && (
                 <span className="inline-flex rounded-full bg-brand-100 px-2.5 py-0.5 text-xs font-medium text-brand-700">
                   Minor

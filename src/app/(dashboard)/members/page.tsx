@@ -69,6 +69,15 @@ export default async function MembersPage({
 
   const { data: members } = await query;
 
+  // Fetch instructor profile_ids so we can badge members who are also instructors
+  const { data: instructorRows } = await supabase
+    .from("instructors")
+    .select("profile_id")
+    .eq("studio_id", profile.studio_id);
+  const instructorProfileIds = new Set(
+    (instructorRows ?? []).map((i: { profile_id: string }) => i.profile_id)
+  );
+
   // 検索フィルター（クライアントサイド）
   let filteredMembers = members || [];
   if (params.q) {
@@ -126,7 +135,7 @@ export default async function MembersPage({
             />
           )
         ) : (
-          <MembersListClient members={filteredMembers} />
+          <MembersListClient members={filteredMembers} instructorProfileIds={Array.from(instructorProfileIds)} />
         )}
       </div>
     </div>

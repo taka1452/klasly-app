@@ -36,7 +36,7 @@ export default async function SupportPage() {
               Support is temporarily unavailable
             </h3>
             <p className="mt-1 text-sm text-amber-700">
-              Please try again in a few minutes. If the issue persists, contact us at support@klasly.com.
+              Please try again in a few minutes. If the issue persists, contact us at support@klasly.app.
             </p>
           </div>
         </div>

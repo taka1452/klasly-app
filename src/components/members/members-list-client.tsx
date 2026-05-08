@@ -6,6 +6,7 @@ import MemberProfileCard from "./member-profile-card";
 
 type Member = {
   id: string;
+  profile_id?: string;
   profiles?: { full_name?: string; email?: string } | null;
   plan_type: string;
   credits: number;
@@ -17,10 +18,12 @@ type Member = {
 
 type Props = {
   members: Member[];
+  instructorProfileIds?: string[];
 };
 
-export default function MembersListClient({ members }: Props) {
+export default function MembersListClient({ members, instructorProfileIds = [] }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const instructorSet = new Set(instructorProfileIds);
 
   return (
     <>
@@ -37,6 +40,11 @@ export default function MembersListClient({ members }: Props) {
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-gray-900">
                   {member.profiles?.full_name || "—"}
+                  {member.profile_id && instructorSet.has(member.profile_id) && (
+                    <span className="ml-1.5 inline-flex rounded-full bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-700">
+                      Instructor
+                    </span>
+                  )}
                   {member.is_minor && (
                     <span className="ml-1.5 inline-flex rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-700">
                       Minor
@@ -118,6 +126,11 @@ export default function MembersListClient({ members }: Props) {
                   <div>
                     <p className="text-sm font-medium text-gray-900">
                       {member.profiles?.full_name || "—"}
+                      {member.profile_id && instructorSet.has(member.profile_id) && (
+                        <span className="ml-1.5 inline-flex rounded-full bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-700">
+                          Instructor
+                        </span>
+                      )}
                       {member.is_minor && (
                         <span className="ml-1.5 inline-flex rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-700">
                           Minor
