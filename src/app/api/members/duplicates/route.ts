@@ -27,13 +27,15 @@ export async function GET() {
     profiles: { full_name: string; email: string; phone: string | null } | null;
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const rows: Row[] = ((members ?? []) as any[]).map((m) => ({
-    id: m.id,
-    profile_id: m.profile_id,
-    status: m.status,
-    profiles: Array.isArray(m.profiles) ? m.profiles[0] ?? null : m.profiles ?? null,
-  }));
+  const rows: Row[] = ((members ?? []) as unknown as Record<string, unknown>[]).map((m) => {
+    const p = Array.isArray(m.profiles) ? m.profiles[0] ?? null : m.profiles ?? null;
+    return {
+      id: m.id as string,
+      profile_id: m.profile_id as string,
+      status: m.status as string,
+      profiles: p as Row["profiles"],
+    };
+  });
 
   // Group by email (exact match, case-insensitive)
   const byEmail: Record<string, Row[]> = {};
