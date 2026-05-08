@@ -524,7 +524,11 @@ export default function Sidebar({
         </div>
         <div className="border-b border-gray-200 px-6 py-3">
           <p className="truncate text-sm font-medium text-gray-900">{studioName}</p>
-          <p className="text-xs text-gray-400 capitalize">{currentRole}</p>
+          <span className={`mt-0.5 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize ${
+            currentRole === "owner"
+              ? "bg-brand-100 text-brand-700"
+              : "bg-gray-100 text-gray-600"
+          }`}>{currentRole}</span>
         </div>
         <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
           <NavList items={navItems} pathname={pathname} onMobileClose={onMobileClose} unreadMessageCount={unreadCount} />
@@ -569,7 +573,11 @@ export default function Sidebar({
         <p className="truncate text-sm font-medium text-gray-900">
           {studioName}
         </p>
-        <p className="text-xs text-gray-400 capitalize">{currentRole}</p>
+        <span className={`mt-0.5 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize ${
+          currentRole === "owner"
+            ? "bg-brand-100 text-brand-700"
+            : "bg-gray-100 text-gray-600"
+        }`}>{currentRole}</span>
       </div>
 
       {/* ナビゲーション */}

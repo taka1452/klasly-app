@@ -27,6 +27,7 @@ type Props = {
   studioName?: string;
   studioCurrency?: string;
   isCollectiveMode?: boolean;
+  allPermissions?: Record<string, boolean> | null;
 };
 
 const WEEKS_OPTIONS = [4, 6, 8, 12, 26, 52];
@@ -46,6 +47,7 @@ export default function SettingsContent({
   studioName = "",
   studioCurrency = "usd",
   isCollectiveMode = false,
+  allPermissions = null,
 }: Props) {
   const isOwner = role === "owner";
   const router = useRouter();
@@ -203,6 +205,44 @@ export default function SettingsContent({
 
   return (
     <div className="mt-8 space-y-10">
+      {/* ── Your Permissions (manager only) ── */}
+      {!isOwner && allPermissions && (
+        <section>
+          <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
+            Your Permissions
+          </h2>
+          <div className="card">
+            <p className="text-sm text-gray-600">
+              Your studio owner has granted you the following permissions.
+              Contact them if you need access to additional features.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {Object.entries(allPermissions).map(([label, enabled]) => (
+                <span
+                  key={label}
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
+                    enabled
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "bg-gray-100 text-gray-400 line-through"
+                  }`}
+                >
+                  {enabled ? (
+                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                    </svg>
+                  ) : (
+                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                  )}
+                  {label}
+                </span>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ── Payments & Pricing ── */}
       {(isOwner || canManageBilling || canManageClassPricing) && (
         <section>
@@ -493,44 +533,48 @@ export default function SettingsContent({
             </div>
           )}
 
-          {/* Waiver — owner + manager */}
-          <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900">Waiver</h3>
-            <p className="mt-2 text-sm text-gray-600">
-              Set up your liability waiver and track signing status.
-            </p>
-            <Link
-              href="/settings/waiver"
-              className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
-            >
-              Waiver Settings →
-            </Link>
-          </div>
-
-          {/* Website Widget — owner + manager */}
-          <div className="card">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Website Widget
-                </h3>
-                <p className="mt-2 text-sm text-gray-600">
-                  Embed your class schedule on your website so visitors can
-                  browse and book classes directly.
-                </p>
-              </div>
-              <FlowHintPanel
-                flowType="widget-embed"
-                buttonLabel="How to embed"
-              />
+          {/* Waiver — owner or manager with settings permission */}
+          {(isOwner || canManageSettings) && (
+            <div className="card">
+              <h3 className="text-lg font-semibold text-gray-900">Waiver</h3>
+              <p className="mt-2 text-sm text-gray-600">
+                Set up your liability waiver and track signing status.
+              </p>
+              <Link
+                href="/settings/waiver"
+                className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+              >
+                Waiver Settings →
+              </Link>
             </div>
-            <Link
-              href="/settings/widget"
-              className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
-            >
-              Widget Settings →
-            </Link>
-          </div>
+          )}
+
+          {/* Website Widget — owner or manager with settings permission */}
+          {(isOwner || canManageSettings) && (
+            <div className="card">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Website Widget
+                  </h3>
+                  <p className="mt-2 text-sm text-gray-600">
+                    Embed your class schedule on your website so visitors can
+                    browse and book classes directly.
+                  </p>
+                </div>
+                <FlowHintPanel
+                  flowType="widget-embed"
+                  buttonLabel="How to embed"
+                />
+              </div>
+              <Link
+                href="/settings/widget"
+                className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+              >
+                Widget Settings →
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 

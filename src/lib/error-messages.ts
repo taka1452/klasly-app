@@ -94,8 +94,21 @@ export function getErrorInfo(errorCode: string): ErrorInfo {
   if (lowerError.includes("payment") && lowerError.includes("fail")) {
     return ERROR_MAP["payment_failed"];
   }
-  if (lowerError.includes("unauthorized") || lowerError.includes("403")) {
+  if (lowerError.includes("forbidden") || lowerError.includes("unauthorized") || lowerError.includes("403")) {
     return ERROR_MAP["auth_unauthorized"];
+  }
+  if (lowerError.includes("already a member")) {
+    return {
+      title: "Already a member",
+      description: "This person already has a member profile in your studio.",
+    };
+  }
+  if (lowerError.includes("member limit")) {
+    return {
+      title: "Member limit reached",
+      description: errorCode,
+      action: { label: "Upgrade plan", href: "/settings/billing" },
+    };
   }
   if (lowerError.includes("duplicate") && lowerError.includes("email")) {
     return ERROR_MAP["duplicate_email"];

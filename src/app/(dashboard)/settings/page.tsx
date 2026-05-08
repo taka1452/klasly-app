@@ -74,10 +74,11 @@ export default async function SettingsPage() {
   let canManageSettings = false;
   let canManageBilling = false;
   let canManageClassPricing = false;
+  let allPermissions: Record<string, boolean> | null = null;
   if (profile.role === "manager") {
     const { data: mgr } = await supabase
       .from("managers")
-      .select("can_teach, can_manage_settings, can_manage_billing, can_manage_class_pricing")
+      .select("can_teach, can_manage_settings, can_manage_billing, can_manage_class_pricing, can_manage_members, can_manage_classes, can_manage_instructors, can_manage_bookings, can_manage_rooms, can_view_payments, can_send_messages, can_manage_contracts_tiers, can_show_tutorial, can_issue_refunds, can_export_data")
       .eq("profile_id", user.id)
       .eq("studio_id", profile.studio_id)
       .maybeSingle();
@@ -85,6 +86,24 @@ export default async function SettingsPage() {
     canManageSettings = mgr?.can_manage_settings ?? false;
     canManageBilling = mgr?.can_manage_billing ?? false;
     canManageClassPricing = mgr?.can_manage_class_pricing ?? false;
+    if (mgr) {
+      allPermissions = {
+        Members: mgr.can_manage_members ?? false,
+        Classes: mgr.can_manage_classes ?? false,
+        Instructors: mgr.can_manage_instructors ?? false,
+        Bookings: mgr.can_manage_bookings ?? false,
+        Rooms: mgr.can_manage_rooms ?? false,
+        Payments: mgr.can_view_payments ?? false,
+        Messages: mgr.can_send_messages ?? false,
+        Settings: mgr.can_manage_settings ?? false,
+        Teach: mgr.can_teach ?? false,
+        "Class Pricing": mgr.can_manage_class_pricing ?? false,
+        "Contracts & Tiers": mgr.can_manage_contracts_tiers ?? false,
+        "Klasly Billing": mgr.can_manage_billing ?? false,
+        "Issue Refunds": mgr.can_issue_refunds ?? false,
+        "Export Data": mgr.can_export_data ?? false,
+      };
+    }
   }
 
   return (
@@ -112,6 +131,7 @@ export default async function SettingsPage() {
         studioName={studioName}
         studioCurrency={studioCurrency}
         isCollectiveMode={isCollectiveMode}
+        allPermissions={allPermissions}
       />
     </div>
   );
