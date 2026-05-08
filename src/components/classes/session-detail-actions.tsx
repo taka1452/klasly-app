@@ -62,7 +62,7 @@ export default function SessionDetailActions({ session, isCancelled }: Props) {
   return (
     <>
       {cancelSuccess && (
-        <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-2 text-sm font-medium text-green-700">
+        <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-2 text-sm font-medium text-green-700 toast-enter-top">
           Session cancelled successfully
         </div>
       )}
@@ -75,7 +75,7 @@ export default function SessionDetailActions({ session, isCancelled }: Props) {
         </button>
         <button
           onClick={() => setShowCancel(true)}
-          className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition whitespace-nowrap"
+          className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition whitespace-nowrap active:scale-[0.97]"
         >
           Cancel session
         </button>
@@ -93,8 +93,8 @@ export default function SessionDetailActions({ session, isCancelled }: Props) {
       )}
 
       {showCancel && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 modal-backdrop-enter">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl modal-dialog-enter">
             <h3 className="text-lg font-semibold text-gray-900">Cancel session</h3>
             <p className="mt-1 text-sm text-gray-500">
               This will cancel the session and refund any credits/passes to confirmed members.
@@ -136,7 +136,7 @@ export default function SessionDetailActions({ session, isCancelled }: Props) {
               <button
                 onClick={handleCancel}
                 disabled={cancelling}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 transition"
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 transition active:scale-[0.97]"
               >
                 {cancelling ? "Cancelling..." : "Cancel session"}
               </button>

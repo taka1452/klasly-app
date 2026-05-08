@@ -169,11 +169,11 @@ export default function BookingButton({
             {error && <p className="text-xs text-red-600 text-right">{error}</p>}
             {isHybrid && (
               <div className="flex items-center gap-3 text-sm">
-                <label className="flex items-center gap-1.5 cursor-pointer">
+                <label className="flex items-center gap-1.5 cursor-pointer rounded-md px-2 py-1 -mx-2 transition-colors duration-150 hover:bg-gray-100">
                   <input type="radio" name={`attendance-${sessionId}`} checked={attendanceMethod === "in_person"} onChange={() => setAttendanceMethod("in_person")} className="accent-brand-600" />
                   In-person
                 </label>
-                <label className="flex items-center gap-1.5 cursor-pointer">
+                <label className="flex items-center gap-1.5 cursor-pointer rounded-md px-2 py-1 -mx-2 transition-colors duration-150 hover:bg-gray-100">
                   <input type="radio" name={`attendance-${sessionId}`} checked={attendanceMethod === "online"} onChange={() => setAttendanceMethod("online")} className="accent-brand-600" />
                   Online
                 </label>
@@ -210,11 +210,11 @@ export default function BookingButton({
           {error && <p className="text-xs text-red-600 text-right">{error}</p>}
           {isHybrid && (
             <div className="flex items-center gap-3 text-sm">
-              <label className="flex items-center gap-1.5 cursor-pointer">
+              <label className="flex items-center gap-1.5 cursor-pointer rounded-md px-2 py-1 -mx-2 transition-colors duration-150 hover:bg-gray-100">
                 <input type="radio" name={`attendance-${sessionId}`} checked={attendanceMethod === "in_person"} onChange={() => setAttendanceMethod("in_person")} className="accent-brand-600" />
                 In-person
               </label>
-              <label className="flex items-center gap-1.5 cursor-pointer">
+              <label className="flex items-center gap-1.5 cursor-pointer rounded-md px-2 py-1 -mx-2 transition-colors duration-150 hover:bg-gray-100">
                 <input type="radio" name={`attendance-${sessionId}`} checked={attendanceMethod === "online"} onChange={() => setAttendanceMethod("online")} className="accent-brand-600" />
                 Online
               </label>
@@ -296,11 +296,11 @@ export default function BookingButton({
         {error && <p className="text-xs text-red-600 text-right">{error}</p>}
         {isHybrid && (
           <div className="flex items-center gap-3 text-sm">
-            <label className="flex items-center gap-1.5 cursor-pointer">
+            <label className="flex items-center gap-1.5 cursor-pointer rounded-md px-2 py-1 -mx-2 transition-colors duration-150 hover:bg-gray-100">
               <input type="radio" name={`attendance-${sessionId}`} checked={attendanceMethod === "in_person"} onChange={() => setAttendanceMethod("in_person")} className="accent-brand-600" />
               In-person
             </label>
-            <label className="flex items-center gap-1.5 cursor-pointer">
+            <label className="flex items-center gap-1.5 cursor-pointer rounded-md px-2 py-1 -mx-2 transition-colors duration-150 hover:bg-gray-100">
               <input type="radio" name={`attendance-${sessionId}`} checked={attendanceMethod === "online"} onChange={() => setAttendanceMethod("online")} className="accent-brand-600" />
               Online
             </label>
@@ -385,7 +385,7 @@ export default function BookingButton({
       {error && <p className="text-xs text-red-600 text-right">{error}</p>}
       {isHybrid && (
         <div className="flex items-center gap-3 text-sm">
-          <label className="flex items-center gap-1.5 cursor-pointer">
+          <label className="flex items-center gap-1.5 cursor-pointer rounded-md px-2 py-1 -mx-2 transition-colors duration-150 hover:bg-gray-100">
             <input
               type="radio"
               name={`attendance-${sessionId}`}
@@ -395,7 +395,7 @@ export default function BookingButton({
             />
             In-person
           </label>
-          <label className="flex items-center gap-1.5 cursor-pointer">
+          <label className="flex items-center gap-1.5 cursor-pointer rounded-md px-2 py-1 -mx-2 transition-colors duration-150 hover:bg-gray-100">
             <input
               type="radio"
               name={`attendance-${sessionId}`}

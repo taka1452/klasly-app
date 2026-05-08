@@ -48,9 +48,9 @@ export default function DuplicateMembersModal({ onClose }: Props) {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 pt-[10vh]" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 modal-backdrop-enter pt-[10vh]" onClick={onClose}>
       <div
-        className="w-full max-w-2xl rounded-xl bg-white shadow-2xl"
+        className="w-full max-w-2xl rounded-xl bg-white shadow-2xl modal-dialog-enter"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
