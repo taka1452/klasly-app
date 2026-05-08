@@ -102,6 +102,9 @@ export const helpArticles: HelpArticle[] = [
         description: 'Can view the schedule, book classes, manage their payments and subscriptions, and sign waivers. Members see a simplified interface.',
       },
     ],
+    tips: [
+      'A person can hold more than one role. For example, an instructor who also takes classes appears on both the Instructors and Members lists. Cross-role badges make this visible: members who are also instructors show a violet "Instructor" badge, and instructors who are also members show a sky-blue "Member" badge. Click the badge to jump to their other profile.',
+    ],
     relatedArticles: ['invite-instructor', 'assign-manager-role'],
   },
 
@@ -706,7 +709,7 @@ export const helpArticles: HelpArticle[] = [
     summary: 'Add a new member to your studio manually.',
     category: 'members',
     audience: ['owner', 'manager'],
-    keywords: ['member', 'add', 'new', 'create', 'register', 'sign up', 'phone', 'birthdate', 'gender'],
+    keywords: ['member', 'add', 'new', 'create', 'register', 'sign up', 'phone', 'birthdate', 'gender', 'instructor', 'existing user'],
     steps: [
       {
         title: 'Go to Members',
@@ -724,6 +727,7 @@ export const helpArticles: HelpArticle[] = [
     tips: [
       'Phone, date of birth, and gender are required at create time so studios have the demographics they need for waivers, marketing, and emergency contact. Existing members imported before this change keep their original (possibly empty) values.',
       'To add many members at once, use CSV Import instead — required fields are optional in the importer so legacy data still flows through.',
+      'If the email already belongs to someone in your studio (e.g., an instructor), the form links them as a member instead of showing an error — no duplicate account is created. This is the easiest way to let an instructor also take classes.',
       'Members can also sign up themselves through your booking page or widget.',
       'Use the "Check Duplicates" button on the Members page to find members that share the same email, phone number, or name — helpful after importing from another system.',
     ],
@@ -760,7 +764,7 @@ export const helpArticles: HelpArticle[] = [
       'The new required-at-create fields (Phone, Date of Birth, Gender) are optional in the importer so legacy data still flows through.',
       'Dates accept ISO (1992-04-15), US (4/15/1992), EU (15/4/1992), and human-readable ("Apr 15, 1992") formats. Gender accepts female / male / prefer_not_to_say (or single-letter F / M).',
       'Click Download template on the upload step to get a sample CSV with all supported columns and three sample rows including a minor with a separate guardian email.',
-      'Duplicate emails are skipped automatically.',
+      'If a row\'s email matches someone already in your studio (e.g., an instructor), a member record is created for that person — they won\'t be skipped or cause an error. This makes it easy to give existing instructors or staff a member role too.',
     ],
     relatedArticles: ['add-member', 'export-data'],
   },
