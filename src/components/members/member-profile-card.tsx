@@ -28,6 +28,7 @@ type MemberProfileData = {
     last_class: { date: string; time: string } | null;
     next_billing: { date: string; amount: number } | null;
     months: number;
+    instructor_id: string | null;
   };
 };
 
@@ -154,6 +155,15 @@ export default function MemberProfileCard({
               <div>
                 <p className="text-xl font-bold text-gray-900">
                   {data.member.full_name}
+                  {data.member.instructor_id && (
+                    <Link
+                      href={`/instructors/${data.member.instructor_id}`}
+                      onClick={(e) => { e.stopPropagation(); onClose(); }}
+                      className="ml-2 inline-flex rounded-full bg-violet-100 px-2 py-0.5 align-middle text-xs font-medium text-violet-700 transition-colors duration-150 hover:bg-violet-200"
+                    >
+                      Instructor
+                    </Link>
+                  )}
                 </p>
                 <p className="text-sm text-gray-500">
                   {getPlanLabel(data.member.plan_type)} ·{" "}

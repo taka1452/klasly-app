@@ -56,6 +56,15 @@ export default async function InstructorsPage() {
 
   const instructorIds = (instructors || []).map((i) => i.id);
 
+  // Fetch member profile_ids to badge instructors who are also members
+  const { data: memberRows } = await supabase
+    .from("members")
+    .select("profile_id")
+    .eq("studio_id", profile.studio_id);
+  const memberProfileIds = Array.from(
+    new Set((memberRows ?? []).map((m: { profile_id: string }) => m.profile_id))
+  );
+
   // Query both legacy classes and class_templates tables
   const [{ data: classesData }, { data: templatesData }] =
     instructorIds.length > 0
@@ -120,6 +129,7 @@ export default async function InstructorsPage() {
           <InstructorsListClient
             instructors={instructors || []}
             classCountByInstructor={classCountByInstructor}
+            memberProfileIds={memberProfileIds}
           />
         )}
       </div>

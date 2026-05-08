@@ -75,6 +75,67 @@ export async function POST(request: Request) {
       );
     }
 
+    // Check if auth user already exists (e.g. they're already an instructor)
+    const { data: existingProfile } = await adminSupabase
+      .from("profiles")
+      .select("id")
+      .eq("studio_id", targetStudioId)
+      .eq("email", email)
+      .maybeSingle();
+
+    if (existingProfile) {
+      const { data: existingMember } = await adminSupabase
+        .from("members")
+        .select("id")
+        .eq("studio_id", targetStudioId)
+        .eq("profile_id", existingProfile.id)
+        .maybeSingle();
+
+      if (existingMember) {
+        return NextResponse.json(
+          { error: "This person is already a member of your studio." },
+          { status: 409 }
+        );
+      }
+
+      // Update profile fields that may be missing
+      await adminSupabase
+        .from("profiles")
+        .update({
+          full_name: fullName,
+          phone: phone || null,
+        })
+        .eq("id", existingProfile.id);
+
+      const { error: memberError } = await adminSupabase
+        .from("members")
+        .insert({
+          studio_id: targetStudioId,
+          profile_id: existingProfile.id,
+          plan_type: planType || "drop_in",
+          credits: credits ?? 0,
+          status: "active",
+          is_minor: isMinor || false,
+          date_of_birth: dateOfBirth || null,
+          guardian_email: isMinor ? (guardianEmail || null) : null,
+          gender,
+          address: typeof address === "string" && address.trim() !== "" ? address.trim() : null,
+          referred_by:
+            typeof referredBy === "string" && referredBy.trim() !== "" ? referredBy.trim() : null,
+        })
+        .select("id")
+        .single();
+
+      if (memberError) {
+        return NextResponse.json(
+          { error: memberError.message },
+          { status: 400 }
+        );
+      }
+
+      return NextResponse.json({ success: true });
+    }
+
     // 1. Auth ユーザーを作成（パスワードなし・マジックリンクで初回ログイン）
     const { data: authUser, error: authError } =
       await adminSupabase.auth.admin.createUser({
@@ -104,9 +165,6 @@ export async function POST(request: Request) {
       (linkData as { properties?: { action_link?: string } })?.properties
         ?.action_link ?? (linkData as { action_link?: string })?.action_link ?? null;
 
-    // Without a magic link the welcome email can't onboard the member, so
-    // fail loudly instead of silently sending a broken email. Roll back the
-    // half-created auth user so the admin can retry cleanly.
     if (linkError || !magicLinkUrl) {
       console.error(
         "Failed to generate magic link for member:",

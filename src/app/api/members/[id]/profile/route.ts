@@ -70,6 +70,16 @@ export async function GET(
     const rawProfile = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles;
     const p = rawProfile as { id?: string; full_name?: string; email?: string; phone?: string } | null;
 
+    // Check if this member is also an instructor
+    const { data: instructorRecord } = member.profile_id
+      ? await supabase
+          .from("instructors")
+          .select("id")
+          .eq("studio_id", member.studio_id)
+          .eq("profile_id", member.profile_id)
+          .maybeSingle()
+      : { data: null };
+
     // Classes count: bookings + drop_ins with attended
     const { count: bookedCount } = await supabase
       .from("bookings")
@@ -169,6 +179,7 @@ export async function GET(
             }
           : null,
         months,
+        instructor_id: instructorRecord?.id ?? null,
       },
     });
   } catch {

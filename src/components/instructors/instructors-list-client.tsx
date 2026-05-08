@@ -5,6 +5,7 @@ import InstructorProfileCard from "./instructor-profile-card";
 
 type Instructor = {
   id: string;
+  profile_id?: string;
   profiles?: { full_name?: string; email?: string; phone?: string } | null;
   specialties: string[] | null;
 };
@@ -12,13 +13,16 @@ type Instructor = {
 type Props = {
   instructors: Instructor[];
   classCountByInstructor: Record<string, number>;
+  memberProfileIds?: string[];
 };
 
 export default function InstructorsListClient({
   instructors,
   classCountByInstructor,
+  memberProfileIds = [],
 }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const memberSet = new Set(memberProfileIds);
 
   return (
     <>
@@ -42,6 +46,11 @@ export default function InstructorsListClient({
             >
               <h3 className="font-medium text-gray-900">
                 {raw?.full_name || "—"}
+                {instructor.profile_id && memberSet.has(instructor.profile_id) && (
+                  <span className="ml-1.5 inline-flex rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-700">
+                    Member
+                  </span>
+                )}
               </h3>
               <p className="mt-1 text-sm text-gray-500">
                 {raw?.email || "—"}
