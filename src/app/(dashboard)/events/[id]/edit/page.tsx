@@ -100,10 +100,11 @@ export default function EditEventPage() {
   ]);
 
   // Step 4: Schedule
+  const [scheduleOverview, setScheduleOverview] = useState("");
   const [scheduleItems, setScheduleItems] = useState<ScheduleItemDraft[]>([]);
 
   // Step 5: Payment
-  const [paymentType, setPaymentType] = useState<"full" | "installment">("full");
+  const [paymentType, setPaymentType] = useState<"full" | "installment" | "both">("full");
 
   // Step 6: Cancellation
   const [policyTiers, setPolicyTiers] = useState<CancellationPolicyTier[]>([]);
@@ -158,6 +159,7 @@ export default function EditEventPage() {
       setLocationLat(event.location_lat ? String(event.location_lat) : "");
       setLocationLng(event.location_lng ? String(event.location_lng) : "");
       setWaitlistEnabled(event.waitlist_enabled ?? false);
+      setScheduleOverview(event.schedule_overview || "");
 
       // Load application fields
       if (Array.isArray(event.application_fields) && event.application_fields.length > 0) {
@@ -181,6 +183,13 @@ export default function EditEventPage() {
         .order("sort_order");
 
       if (opts && opts.length > 0) {
+        const fmtDTLocal = (v: string | null): string => {
+          if (!v) return "";
+          const d = new Date(v);
+          if (isNaN(d.getTime())) return "";
+          const pad = (n: number) => String(n).padStart(2, "0");
+          return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        };
         setOptions(
           opts.map((o) => ({
             id: o.id,
@@ -189,7 +198,7 @@ export default function EditEventPage() {
             priceDollars: (o.price_cents / 100).toString(),
             capacity: o.capacity.toString(),
             earlyBirdDollars: o.early_bird_price_cents ? (o.early_bird_price_cents / 100).toString() : "",
-            earlyBirdDeadline: o.early_bird_deadline || "",
+            earlyBirdDeadline: fmtDTLocal(o.early_bird_deadline),
           })),
         );
       }
@@ -338,7 +347,7 @@ export default function EditEventPage() {
         is_public: isPublic,
         status,
         payment_type: paymentType,
-        installment_count: paymentType === "installment" ? 3 : 1,
+        installment_count: paymentType === "full" ? 1 : 3,
         cancellation_policy: policyTiers,
         cancellation_policy_text: policyText.trim() || null,
         application_fields: appFields.filter((f) => f.label.trim()).map((f) => ({
@@ -360,6 +369,7 @@ export default function EditEventPage() {
         location_lat: locationLat ? parseFloat(locationLat) : null,
         location_lng: locationLng ? parseFloat(locationLng) : null,
         waitlist_enabled: waitlistEnabled,
+        schedule_overview: scheduleOverview.trim() || null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id);
@@ -400,7 +410,7 @@ export default function EditEventPage() {
         capacity: parseInt(o.capacity || "10", 10),
         sort_order: idx,
         early_bird_price_cents: o.earlyBirdDollars ? Math.round(parseFloat(o.earlyBirdDollars) * 100) : null,
-        early_bird_deadline: o.earlyBirdDeadline || null,
+        early_bird_deadline: o.earlyBirdDeadline ? new Date(o.earlyBirdDeadline).toISOString() : null,
       };
       if (o.id) {
         await supabase.from("event_options").update(optionData).eq("id", o.id);
@@ -759,6 +769,17 @@ export default function EditEventPage() {
                 <span className="ml-1 font-medium">({daysCount} days)</span>
               )}
             </p>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Schedule Overview</label>
+              <textarea
+                value={scheduleOverview}
+                onChange={(e) => setScheduleOverview(e.target.value)}
+                rows={3}
+                placeholder="e.g. Each day begins with morning yoga, followed by workshops and free time in the afternoon…"
+                className="input-field mt-1"
+              />
+              <p className="mt-1 text-xs text-gray-400">A general description shown above the daily timetable.</p>
+            </div>
             {scheduleItems.length === 0 ? (
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center">
                 <p className="text-sm text-gray-500">No schedule yet. Add activities to create a daily timetable.</p>
@@ -825,20 +846,27 @@ export default function EditEventPage() {
                 <label className="flex items-start gap-3 rounded-lg border border-gray-200 p-4 cursor-pointer hover:bg-gray-50">
                   <input type="radio" checked={paymentType === "full"} onChange={() => setPaymentType("full")} className="mt-0.5 text-brand-600" />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Full payment</p>
+                    <p className="text-sm font-medium text-gray-900">Full payment only</p>
                     <p className="text-xs text-gray-500">Members pay the full amount at booking.</p>
                   </div>
                 </label>
                 <label className="flex items-start gap-3 rounded-lg border border-gray-200 p-4 cursor-pointer hover:bg-gray-50">
                   <input type="radio" checked={paymentType === "installment"} onChange={() => setPaymentType("installment")} className="mt-0.5 text-brand-600" />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">3 installments</p>
-                    <p className="text-xs text-gray-500">Members pay 1/3 at booking, 1/3 after 30 days, 1/3 after 60 days.</p>
+                    <p className="text-sm font-medium text-gray-900">Installments only</p>
+                    <p className="text-xs text-gray-500">Members pay in 3 installments (1/3 at booking, 1/3 after 30 days, 1/3 after 60 days).</p>
+                  </div>
+                </label>
+                <label className="flex items-start gap-3 rounded-lg border border-gray-200 p-4 cursor-pointer hover:bg-gray-50">
+                  <input type="radio" checked={paymentType === "both"} onChange={() => setPaymentType("both")} className="mt-0.5 text-brand-600" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Both options</p>
+                    <p className="text-xs text-gray-500">Members choose between full payment or installments at checkout.</p>
                   </div>
                 </label>
               </div>
             </div>
-            {paymentType === "installment" && maxPrice > 0 && (
+            {(paymentType === "installment" || paymentType === "both") && maxPrice > 0 && (
               <div className="rounded-lg bg-blue-50 p-4">
                 <p className="text-sm font-medium text-blue-800">Payment Preview</p>
                 <p className="mt-1 text-xs text-blue-700">

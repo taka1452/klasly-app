@@ -72,15 +72,19 @@ export default async function SettingsPage() {
   // マネージャーの権限を確認
   let canTeach = false;
   let canManageSettings = false;
+  let canManageBilling = false;
+  let canManageClassPricing = false;
   if (profile.role === "manager") {
     const { data: mgr } = await supabase
       .from("managers")
-      .select("can_teach, can_manage_settings")
+      .select("can_teach, can_manage_settings, can_manage_billing, can_manage_class_pricing")
       .eq("profile_id", user.id)
       .eq("studio_id", profile.studio_id)
       .maybeSingle();
     canTeach = mgr?.can_teach ?? false;
     canManageSettings = mgr?.can_manage_settings ?? false;
+    canManageBilling = mgr?.can_manage_billing ?? false;
+    canManageClassPricing = mgr?.can_manage_class_pricing ?? false;
   }
 
   return (
@@ -103,6 +107,8 @@ export default async function SettingsPage() {
         role={profile.role as "owner" | "manager"}
         canTeach={canTeach}
         canManageSettings={canManageSettings}
+        canManageBilling={canManageBilling}
+        canManageClassPricing={canManageClassPricing}
         studioName={studioName}
         studioCurrency={studioCurrency}
         isCollectiveMode={isCollectiveMode}

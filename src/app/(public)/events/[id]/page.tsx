@@ -94,7 +94,7 @@ export default async function EventPage({ params }: Props) {
   const { data: event } = await supabase
     .from("events")
     .select(
-      "id, studio_id, name, description, start_date, end_date, location_name, location_address, image_url, is_public, status, payment_type, installment_count, cancellation_policy_text, gallery_images, packing_list, access_info, location_lat, location_lng, waitlist_enabled",
+      "id, studio_id, name, description, start_date, end_date, location_name, location_address, image_url, is_public, status, payment_type, installment_count, cancellation_policy_text, gallery_images, packing_list, access_info, location_lat, location_lng, waitlist_enabled, schedule_overview",
     )
     .eq("id", id)
     .eq("status", "published")
@@ -224,10 +224,15 @@ export default async function EventPage({ params }: Props) {
       )}
 
       {/* Daily Schedule / Timetable */}
-      {scheduleItems && scheduleItems.length > 0 && (
+      {(event.schedule_overview || (scheduleItems && scheduleItems.length > 0)) && (
         <div className="mt-10">
           <h2 className="mb-4 text-xl font-semibold text-gray-900">Schedule</h2>
-          <EventScheduleTimeline items={scheduleItems} startDate={event.start_date} />
+          {event.schedule_overview && (
+            <p className="mb-4 text-sm text-gray-600 whitespace-pre-line">{event.schedule_overview}</p>
+          )}
+          {scheduleItems && scheduleItems.length > 0 && (
+            <EventScheduleTimeline items={scheduleItems} startDate={event.start_date} />
+          )}
         </div>
       )}
 
@@ -287,7 +292,7 @@ export default async function EventPage({ params }: Props) {
                           {formatCurrency(regularPrice)}
                         </p>
                       )}
-                      {event.payment_type === "installment" && (
+                      {(event.payment_type === "installment" || event.payment_type === "both") && (
                         <p className="mt-0.5 text-xs text-gray-500">
                           or {event.installment_count} x{" "}
                           {formatCurrency(Math.round(displayPrice / (event.installment_count || 3)))}

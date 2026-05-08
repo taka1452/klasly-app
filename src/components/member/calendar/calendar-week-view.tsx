@@ -3,8 +3,10 @@
 import { useEffect, useState, useRef } from "react";
 import CalendarEventCard from "./calendar-event-card";
 import BookingButton from "@/components/bookings/booking-button";
+import Link from "next/link";
 import {
   type SessionData,
+  type CalendarEvent,
   getWeekDates,
   getTimeRange,
   isToday,
@@ -31,6 +33,7 @@ type Props = {
   classPrice?: number;
   passInfo?: { hasPass: boolean; hasCapacity: boolean; classesUsed: number; maxClasses: number | null };
   studioTimezone?: string | null;
+  events?: CalendarEvent[];
   onBookingComplete: () => void;
 };
 
@@ -47,6 +50,7 @@ export default function CalendarWeekView({
   classPrice,
   passInfo,
   studioTimezone,
+  events = [],
   onBookingComplete,
 }: Props) {
   const weekDates = getWeekDates(currentDate);
@@ -113,7 +117,10 @@ export default function CalendarWeekView({
           day: "numeric",
         });
 
-        if (daySessions.length === 0) return null;
+        const dayEvents = events.filter(
+          (e) => e.start_date <= dateStr && e.end_date >= dateStr
+        );
+        if (daySessions.length === 0 && dayEvents.length === 0) return null;
 
         return (
           <div key={dateStr}>
@@ -121,6 +128,21 @@ export default function CalendarWeekView({
               {dayLabel}
               {today && <span className="ml-2 text-xs font-normal text-brand-500">Today</span>}
             </div>
+            {dayEvents.length > 0 && (
+              <div className="space-y-1 mb-2">
+                {dayEvents.map((ev) => (
+                  <Link
+                    key={ev.id}
+                    href={`/events/${ev.id}`}
+                    className="flex items-center gap-2 rounded-lg border border-purple-200 bg-purple-50 p-3 text-sm font-medium text-purple-700 hover:bg-purple-100 transition"
+                  >
+                    <span className="text-base">📅</span>
+                    <span className="truncate">{ev.name}</span>
+                    {ev.location_name && <span className="ml-auto text-xs text-purple-500 truncate">{ev.location_name}</span>}
+                  </Link>
+                ))}
+              </div>
+            )}
             <div className="space-y-2">
               {daySessions.map((session) => {
                 const bk = bookings[session.id] || null;
@@ -223,6 +245,37 @@ export default function CalendarWeekView({
           );
         })}
       </div>
+
+      {/* All-day event banners */}
+      {events.length > 0 && (
+        <div
+          className="grid border-b border-gray-200 bg-purple-50/40"
+          style={{ gridTemplateColumns: "60px repeat(7, 1fr)" }}
+        >
+          <div className="border-r border-gray-200 flex items-center justify-center">
+            <span className="text-[10px] text-gray-400">Events</span>
+          </div>
+          {weekDates.map((date, i) => {
+            const dateStr = formatYMD(date);
+            const dayEvents = events.filter(
+              (e) => e.start_date <= dateStr && e.end_date >= dateStr
+            );
+            return (
+              <div key={i} className="border-r border-gray-200 px-0.5 py-1 space-y-0.5">
+                {dayEvents.map((ev) => (
+                  <Link
+                    key={ev.id}
+                    href={`/events/${ev.id}`}
+                    className="block truncate rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-medium text-purple-700 hover:bg-purple-200 transition"
+                  >
+                    {ev.name}
+                  </Link>
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Time grid */}
       <div

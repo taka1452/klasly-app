@@ -2,7 +2,9 @@
 
 import { useEffect, useState, useRef } from "react";
 import DashboardEventCard, { type DashboardSessionData } from "./dashboard-event-card";
+import Link from "next/link";
 import {
+  type CalendarEvent,
   getWeekDates,
   getTimeRange,
   isToday,
@@ -16,6 +18,7 @@ type Props = {
   currentDate: Date;
   sessions: DashboardSessionData[];
   confirmedCounts: Record<string, number>;
+  events?: (CalendarEvent & { status: string })[];
   onSlotClick?: (date: string, startTime: string) => void;
 };
 
@@ -23,6 +26,7 @@ export default function DashboardWeekView({
   currentDate,
   sessions,
   confirmedCounts,
+  events = [],
   onSlotClick,
 }: Props) {
   const weekDates = getWeekDates(currentDate);
@@ -122,6 +126,35 @@ export default function DashboardWeekView({
           );
         })}
       </div>
+
+      {/* All-day event banners */}
+      {events.length > 0 && (
+        <div
+          className="grid border-b border-gray-200 bg-purple-50/40"
+          style={{ gridTemplateColumns: "60px repeat(7, minmax(120px, 1fr))", minWidth: "calc(60px + 7 * 120px)" }}
+        >
+          <div className="border-r border-gray-200 flex items-center justify-center">
+            <span className="text-[10px] text-gray-400">Events</span>
+          </div>
+          {weekDates.map((date, i) => {
+            const dateStr = formatYMD(date);
+            const dayEvents = events.filter((e) => e.start_date <= dateStr && e.end_date >= dateStr);
+            return (
+              <div key={i} className="border-r border-gray-200 px-0.5 py-1 space-y-0.5">
+                {dayEvents.map((ev) => (
+                  <Link
+                    key={ev.id}
+                    href={`/events/${ev.id}/manage`}
+                    className="block truncate rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-medium text-purple-700 hover:bg-purple-200 transition"
+                  >
+                    {ev.name}
+                  </Link>
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Time grid */}
       <div

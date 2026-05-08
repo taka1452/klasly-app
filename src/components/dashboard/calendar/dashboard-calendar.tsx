@@ -9,6 +9,7 @@ import DashboardListView from "./dashboard-list-view";
 import { type DashboardSessionData } from "./dashboard-event-card";
 import {
   type CalendarView,
+  type CalendarEvent,
   getDateRange,
   addDays,
   addWeeks,
@@ -41,6 +42,7 @@ export default function DashboardCalendar({ onSlotClick }: DashboardCalendarProp
   const [confirmedCounts, setConfirmedCounts] = useState<
     Record<string, number>
   >({});
+  const [events, setEvents] = useState<(CalendarEvent & { status: string })[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -76,6 +78,7 @@ export default function DashboardCalendar({ onSlotClick }: DashboardCalendarProp
         const data = await res.json();
         setSessions(data.sessions ?? []);
         setConfirmedCounts(data.confirmedCounts ?? {});
+        setEvents(data.events ?? []);
       } catch {
         setFetchError(true);
       } finally {
@@ -330,6 +333,7 @@ export default function DashboardCalendar({ onSlotClick }: DashboardCalendarProp
               currentDate={currentDate}
               sessions={filteredSessions}
               confirmedCounts={confirmedCounts}
+              events={events}
               onSlotClick={onSlotClick}
             />
           )}
@@ -338,6 +342,7 @@ export default function DashboardCalendar({ onSlotClick }: DashboardCalendarProp
               currentDate={currentDate}
               sessions={filteredSessions}
               confirmedCounts={confirmedCounts}
+              events={events}
               onSlotClick={onSlotClick}
             />
           )}
@@ -346,6 +351,7 @@ export default function DashboardCalendar({ onSlotClick }: DashboardCalendarProp
               currentDate={currentDate}
               sessions={filteredSessions}
               confirmedCounts={confirmedCounts}
+              events={events}
               onDayClick={handleMonthDayClick}
               isMobile={isMobile}
               hasActiveFilter={hasActiveFilter}
@@ -356,6 +362,7 @@ export default function DashboardCalendar({ onSlotClick }: DashboardCalendarProp
               currentDate={currentDate}
               sessions={filteredSessions}
               confirmedCounts={confirmedCounts}
+              events={events}
             />
           )}
 

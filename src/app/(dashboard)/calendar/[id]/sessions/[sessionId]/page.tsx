@@ -10,6 +10,7 @@ import MakeRecurringButton from "@/components/classes/make-recurring-button";
 import { isFeatureEnabled } from "@/lib/features/check-feature";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 import HelpTip from "@/components/ui/help-tip";
+import SessionDetailActions from "@/components/classes/session-detail-actions";
 
 export default async function SessionDetailPage({
   params,
@@ -36,7 +37,7 @@ export default async function SessionDetailPage({
 
   const { data: session } = await supabase
     .from("class_sessions")
-    .select("id, session_date, start_time, capacity, class_id, studio_id, is_public, is_online, online_link, recurrence_group_id, is_cancelled")
+    .select("id, session_date, start_time, end_time, capacity, class_id, studio_id, is_public, is_online, online_link, recurrence_group_id, is_cancelled, title, instructor_id")
     .eq("id", sessionId)
     .single();
 
@@ -98,12 +99,26 @@ export default async function SessionDetailPage({
               {effectiveIsOnline && " · Online"}
             </p>
           </div>
-          <Link
-            href={`/classes/${classId}`}
-            className="btn-secondary text-sm whitespace-nowrap"
-          >
-            Edit class
-          </Link>
+          <div className="flex items-center gap-2">
+            <SessionDetailActions
+              session={{
+                id: session.id,
+                session_date: session.session_date,
+                start_time: session.start_time,
+                end_time: session.end_time,
+                title: session.title,
+                instructor_id: session.instructor_id,
+                recurrence_group_id: session.recurrence_group_id,
+              }}
+              isCancelled={session.is_cancelled}
+            />
+            <Link
+              href={`/classes/${classId}`}
+              className="btn-secondary text-sm whitespace-nowrap"
+            >
+              Edit class
+            </Link>
+          </div>
         </div>
         {effectiveIsOnline && (session.online_link || classData?.online_link) && (
           <a

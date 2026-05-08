@@ -34,7 +34,20 @@ export default async function BillingPage() {
     .eq("id", user.id)
     .single();
 
-  if (!profile?.studio_id || profile.role !== "owner") redirect("/");
+  if (!profile?.studio_id) redirect("/");
+
+  // Allow owner or manager with can_manage_billing
+  let billingAllowed = profile.role === "owner";
+  if (!billingAllowed && profile.role === "manager") {
+    const { data: mgr } = await supabase
+      .from("managers")
+      .select("can_manage_billing")
+      .eq("profile_id", user.id)
+      .eq("studio_id", profile.studio_id)
+      .maybeSingle();
+    billingAllowed = !!mgr?.can_manage_billing;
+  }
+  if (!billingAllowed) redirect("/");
 
   const { data: studio } = await supabase
     .from("studios")

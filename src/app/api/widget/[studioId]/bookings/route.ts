@@ -57,7 +57,7 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { action, sessionId, memberId } = body;
+    const { action, sessionId, memberId, attendanceMethod } = body;
 
     const adminSupabase = createAdminClient();
 
@@ -81,6 +81,7 @@ export async function POST(
       action,
       sessionId,
       memberId,
+      attendanceMethod: attendanceMethod || undefined,
     });
 
     if (!result.success) {

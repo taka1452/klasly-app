@@ -2,7 +2,9 @@
 
 import { useEffect, useState, useRef } from "react";
 import DashboardEventCard, { type DashboardSessionData } from "./dashboard-event-card";
+import Link from "next/link";
 import {
+  type CalendarEvent,
   getTimeRange,
   isToday,
   formatYMD,
@@ -14,6 +16,7 @@ type Props = {
   currentDate: Date;
   sessions: DashboardSessionData[];
   confirmedCounts: Record<string, number>;
+  events?: (CalendarEvent & { status: string })[];
   onSlotClick?: (date: string, startTime: string) => void;
 };
 
@@ -21,6 +24,7 @@ export default function DashboardDayView({
   currentDate,
   sessions,
   confirmedCounts,
+  events = [],
   onSlotClick,
 }: Props) {
   const { startHour, endHour } = getTimeRange(sessions);
@@ -63,6 +67,28 @@ export default function DashboardDayView({
       className="overflow-auto rounded-lg border border-gray-200 bg-white"
       style={{ maxHeight: "calc(100vh - 220px)" }}
     >
+      {/* All-day event banners */}
+      {(() => {
+        const dateStr = formatYMD(currentDate);
+        const dayEvents = events.filter((e) => e.start_date <= dateStr && e.end_date >= dateStr);
+        if (dayEvents.length === 0) return null;
+        return (
+          <div className="border-b border-gray-200 bg-purple-50/40 px-3 py-2 space-y-1">
+            {dayEvents.map((ev) => (
+              <Link
+                key={ev.id}
+                href={`/events/${ev.id}/manage`}
+                className="flex items-center gap-2 rounded bg-purple-100 px-2 py-1 text-xs font-medium text-purple-700 hover:bg-purple-200 transition"
+              >
+                <span>📅</span>
+                <span className="truncate">{ev.name}</span>
+                {ev.status !== "published" && <span className="ml-auto rounded bg-purple-200 px-1.5 py-0.5 text-[10px]">{ev.status}</span>}
+              </Link>
+            ))}
+          </div>
+        );
+      })()}
+
       <div
         className="relative grid"
         style={{

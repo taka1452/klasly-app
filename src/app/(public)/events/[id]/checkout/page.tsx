@@ -30,7 +30,7 @@ type EventData = {
   start_date: string;
   end_date: string;
   location_name: string | null;
-  payment_type: "full" | "installment";
+  payment_type: "full" | "installment" | "both";
   installment_count: number;
   cancellation_policy_text: string | null;
   application_fields: AppFieldDef[] | null;
@@ -208,7 +208,9 @@ export default function EventCheckoutPage() {
           guest_email: guestEmail,
           guest_phone: guestPhone || null,
           payment_choice:
-            event.payment_type === "installment" ? paymentChoice : "full",
+            event.payment_type === "installment" || event.payment_type === "both"
+              ? paymentChoice
+              : "full",
           group_size: groupSize,
           group_members: groupSize > 1 ? groupMembers : [],
           ...(hasAppFields ? { application_responses: appResponses } : {}),
@@ -380,7 +382,7 @@ export default function EventCheckoutPage() {
                         ${(opt.price_cents / 100).toLocaleString()}
                       </p>
                     )}
-                    {event.payment_type === "installment" && (
+                    {(event.payment_type === "installment" || event.payment_type === "both") && (
                       <p className="text-xs text-gray-500">
                         or {installmentCount} x ${Math.floor(effectivePrice / 100 / installmentCount).toLocaleString()}
                       </p>
@@ -692,8 +694,8 @@ export default function EventCheckoutPage() {
             </div>
           )}
 
-          {/* Payment choice for installment events (non-waitlist only) */}
-          {!isWaitlist && event.payment_type === "installment" && (
+          {/* Payment choice for installment / both events (non-waitlist only) */}
+          {!isWaitlist && (event.payment_type === "installment" || event.payment_type === "both") && (
             <div className="space-y-3">
               <h3 className="text-sm font-medium text-gray-700">Payment Method</h3>
               <label
@@ -799,7 +801,7 @@ export default function EventCheckoutPage() {
                 ? "Processing..."
                 : isWaitlist
                   ? "Join Waitlist"
-                  : paymentChoice === "installment" && event.payment_type === "installment"
+                  : paymentChoice === "installment" && (event.payment_type === "installment" || event.payment_type === "both")
                     ? `Pay $${(firstInstallment / 100).toFixed(2)} today`
                     : `Pay ${totalDisplay}`}
             </button>

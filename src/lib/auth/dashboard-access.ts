@@ -50,7 +50,7 @@ export async function getDashboardContext(): Promise<DashboardContext | null> {
     const { data: manager } = await supabase
       .from("managers")
       .select(
-        "can_manage_members, can_manage_classes, can_manage_instructors, can_manage_bookings, can_manage_rooms, can_view_payments, can_send_messages, can_teach, can_manage_settings, can_manage_class_pricing, can_manage_contracts_tiers, can_show_tutorial, can_export_data"
+        "can_manage_members, can_manage_classes, can_manage_instructors, can_manage_bookings, can_manage_rooms, can_view_payments, can_send_messages, can_teach, can_manage_settings, can_manage_class_pricing, can_manage_contracts_tiers, can_show_tutorial, can_export_data, can_manage_billing, can_issue_refunds"
       )
       .eq("profile_id", user.id)
       .eq("studio_id", profile.studio_id)

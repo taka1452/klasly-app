@@ -27,6 +27,8 @@ type Props = {
   classPrice?: number;
   /** Active pass information */
   passInfo?: PassInfo;
+  /** For hybrid classes, require the member to choose attendance method */
+  classType?: "in_person" | "online" | "hybrid";
   /** Called after a successful booking action (instead of router.refresh) */
   onSuccess?: () => void;
   "data-tour"?: string;
@@ -44,6 +46,7 @@ export default function BookingButton({
   payPerClass = false,
   classPrice,
   passInfo,
+  classType,
   onSuccess,
   "data-tour": dataTour,
 }: Props) {
@@ -51,6 +54,8 @@ export default function BookingButton({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const isHybrid = classType === "hybrid";
+  const [attendanceMethod, setAttendanceMethod] = useState<"in_person" | "online">("in_person");
 
   const isFull = confirmedCount >= capacity;
   const showWaitlist = isFull;
@@ -128,7 +133,13 @@ export default function BookingButton({
       const res = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, sessionId, memberId, usePass }),
+        body: JSON.stringify({
+          action,
+          sessionId,
+          memberId,
+          usePass,
+          ...(isHybrid && (action === "book" || action === "rebook") ? { attendanceMethod } : {}),
+        }),
       });
       const data = await res.json();
 
@@ -259,6 +270,18 @@ export default function BookingButton({
     return (
       <div className="flex w-full flex-col items-end gap-1 sm:w-auto" {...tourProps}>
         {error && <p className="text-xs text-red-600 text-right">{error}</p>}
+        {isHybrid && (
+          <div className="flex items-center gap-3 text-sm">
+            <label className="flex items-center gap-1.5 cursor-pointer">
+              <input type="radio" name={`attendance-${sessionId}`} checked={attendanceMethod === "in_person"} onChange={() => setAttendanceMethod("in_person")} className="accent-brand-600" />
+              In-person
+            </label>
+            <label className="flex items-center gap-1.5 cursor-pointer">
+              <input type="radio" name={`attendance-${sessionId}`} checked={attendanceMethod === "online"} onChange={() => setAttendanceMethod("online")} className="accent-brand-600" />
+              Online
+            </label>
+          </div>
+        )}
         <button
           type="button"
           onClick={() => handleBook("book", true)}
@@ -336,6 +359,30 @@ export default function BookingButton({
   return (
     <div className="flex w-full flex-col items-end gap-1 sm:w-auto" {...tourProps}>
       {error && <p className="text-xs text-red-600 text-right">{error}</p>}
+      {isHybrid && (
+        <div className="flex items-center gap-3 text-sm">
+          <label className="flex items-center gap-1.5 cursor-pointer">
+            <input
+              type="radio"
+              name={`attendance-${sessionId}`}
+              checked={attendanceMethod === "in_person"}
+              onChange={() => setAttendanceMethod("in_person")}
+              className="accent-brand-600"
+            />
+            In-person
+          </label>
+          <label className="flex items-center gap-1.5 cursor-pointer">
+            <input
+              type="radio"
+              name={`attendance-${sessionId}`}
+              checked={attendanceMethod === "online"}
+              onChange={() => setAttendanceMethod("online")}
+              className="accent-brand-600"
+            />
+            Online
+          </label>
+        </div>
+      )}
       <button
         type="button"
         onClick={() => handleBook("book")}

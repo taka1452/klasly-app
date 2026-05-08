@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { type DashboardSessionData } from "./dashboard-event-card";
 import {
+  type CalendarEvent,
   getMonthGridDates,
   isToday,
   formatYMD,
@@ -12,13 +14,9 @@ type Props = {
   currentDate: Date;
   sessions: DashboardSessionData[];
   confirmedCounts: Record<string, number>;
+  events?: (CalendarEvent & { status: string })[];
   onDayClick: (date: Date) => void;
   isMobile: boolean;
-  /**
-   * When the user has narrowed the calendar by class or instructor,
-   * mobile cells render compact time chips instead of dots so the user
-   * can answer "when is this class this month?" at a glance.
-   */
   hasActiveFilter?: boolean;
 };
 
@@ -28,6 +26,7 @@ export default function DashboardMonthView({
   currentDate,
   sessions,
   confirmedCounts,
+  events = [],
   onDayClick,
   isMobile,
   hasActiveFilter = false,
@@ -69,12 +68,16 @@ export default function DashboardMonthView({
           {week.map((date, di) => {
             const dateStr = formatYMD(date);
             const daySessions = sessionsByDate.get(dateStr) || [];
+            const dayEvents = events.filter(
+              (e) => e.start_date <= dateStr && e.end_date >= dateStr,
+            );
             const isCurrentMonth = date.getMonth() === month;
             const today = isToday(date);
             // Mobile: show times as chips when the user has filtered by class
             // or instructor (so they can answer "when is this class?"); show
             // dots otherwise. Desktop: always show two pills.
-            const maxVisible = isMobile ? (hasActiveFilter ? 4 : 0) : 2;
+            const eventSlots = dayEvents.length;
+            const maxVisible = isMobile ? (hasActiveFilter ? 4 : 0) : Math.max(0, 2 - eventSlots);
             const remaining = daySessions.length - maxVisible;
 
             return (
@@ -99,8 +102,11 @@ export default function DashboardMonthView({
                     {date.getDate()}
                   </span>
                   {/* Mobile (no filter): dot indicators */}
-                  {isMobile && !hasActiveFilter && daySessions.length > 0 && (
+                  {isMobile && !hasActiveFilter && (daySessions.length > 0 || dayEvents.length > 0) && (
                     <span className="flex gap-0.5">
+                      {dayEvents.slice(0, 1).map((e) => (
+                        <span key={e.id} className="h-1.5 w-1.5 rounded-full bg-purple-400" />
+                      ))}
                       {daySessions.slice(0, 3).map((s, i) => {
                         let dotColor = "bg-brand-400";
                         if (s.event_type === "room_booking") dotColor = "bg-teal-400";
@@ -157,6 +163,16 @@ export default function DashboardMonthView({
                 {/* Desktop: event pills */}
                 {!isMobile && (
                   <div className="mt-1 space-y-0.5">
+                    {dayEvents.map((ev) => (
+                      <Link
+                        key={ev.id}
+                        href={`/events/${ev.id}/manage`}
+                        className="block truncate rounded bg-purple-100 px-1.5 py-1 text-[11px] font-medium text-purple-700 hover:bg-purple-200 transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {ev.name}
+                      </Link>
+                    ))}
                     {daySessions.slice(0, maxVisible).map((session) => {
                       const isRoomBooking = session.event_type === "room_booking";
                       const confirmed = confirmedCounts[session.id] ?? 0;

@@ -19,6 +19,16 @@ export type SessionData = {
   room_name: string | null;
   is_online: boolean;
   online_link: string | null;
+  class_type?: "in_person" | "online" | "hybrid";
+};
+
+export type CalendarEvent = {
+  id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  location_name: string | null;
+  image_url: string | null;
 };
 
 export type CalendarView = "day" | "week" | "month" | "list";

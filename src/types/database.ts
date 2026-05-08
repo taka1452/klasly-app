@@ -727,7 +727,7 @@ export type ApplicationField = {
 };
 
 export type EventStatus = "draft" | "published" | "sold_out" | "completed" | "cancelled";
-export type EventPaymentType = "full" | "installment";
+export type EventPaymentType = "full" | "installment" | "both";
 export type EventBookingStatus = "pending_payment" | "confirmed" | "completed" | "cancelled";
 export type EventPaymentStatus = "unpaid" | "partial" | "fully_paid" | "refunded";
 export type InstallmentStatus = "pending" | "paid" | "failed" | "refunded" | "cancelled";

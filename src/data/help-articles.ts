@@ -371,7 +371,7 @@ export const helpArticles: HelpArticle[] = [
       },
       {
         title: 'Choose the class type',
-        description: 'Select "Online" for fully virtual, or "Hybrid" if the class is sometimes in-person and sometimes online.',
+        description: 'Select "Online" for fully virtual, or "Hybrid" if the class can be attended in-person or online.',
       },
       {
         title: 'Enter the link',
@@ -383,7 +383,7 @@ export const helpArticles: HelpArticle[] = [
       },
     ],
     tips: [
-      'For Hybrid classes, you can toggle individual sessions between in-person and online.',
+      'For Hybrid classes, members choose "In-person" or "Online" when booking. Their choice is saved with the booking so you can see the attendance breakdown.',
       'The link is hidden until the member books — this prevents unauthorized access.',
       'Online classes don\'t require a room booking.',
     ],
@@ -725,6 +725,7 @@ export const helpArticles: HelpArticle[] = [
       'Phone, date of birth, and gender are required at create time so studios have the demographics they need for waivers, marketing, and emergency contact. Existing members imported before this change keep their original (possibly empty) values.',
       'To add many members at once, use CSV Import instead — required fields are optional in the importer so legacy data still flows through.',
       'Members can also sign up themselves through your booking page or widget.',
+      'Use the "Check Duplicates" button on the Members page to find members that share the same email, phone number, or name — helpful after importing from another system.',
     ],
     relatedArticles: ['import-members-csv', 'manage-member-credits', 'member-minor-waiver'],
   },
@@ -747,7 +748,7 @@ export const helpArticles: HelpArticle[] = [
       },
       {
         title: 'Review',
-        description: 'Set defaults (plan type / credits / status) for rows where the column is blank, and decide whether to send a welcome email — the toggle defaults to OFF so you can stage your roster without flooding inboxes.',
+        description: 'Set defaults (plan type / credits / status) for rows where the column is blank. Decide whether to send a welcome email (defaults OFF) and whether to mark all imported members as "Waiver Signed" — useful when migrating from a system where waivers were already collected.',
       },
       {
         title: 'Done',
@@ -755,7 +756,7 @@ export const helpArticles: HelpArticle[] = [
       },
     ],
     tips: [
-      'Recommended migration workflow: (1) import existing members with welcome emails OFF, (2) finish setting up waivers / passes / schedule, (3) when ready to launch, send invitations from the Members page or re-import a batch with the toggle ON.',
+      'Recommended migration workflow: (1) import existing members with welcome emails OFF and waiver-signed ON, (2) finish setting up waivers / passes / schedule, (3) when ready to launch, send invitations from the Members page or re-import a batch with the toggle ON.',
       'The new required-at-create fields (Phone, Date of Birth, Gender) are optional in the importer so legacy data still flows through.',
       'Dates accept ISO (1992-04-15), US (4/15/1992), EU (15/4/1992), and human-readable ("Apr 15, 1992") formats. Gender accepts female / male / prefer_not_to_say (or single-letter F / M).',
       'Click Download template on the upload step to get a sample CSV with all supported columns and three sample rows including a minor with a separate guardian email.',
@@ -1129,7 +1130,7 @@ export const helpArticles: HelpArticle[] = [
   {
     id: 'assign-manager-role',
     title: 'Assign manager permissions',
-    summary: 'Invite a manager and grant fine-grained access via 13 permission toggles.',
+    summary: 'Invite a manager and grant fine-grained access via 15 permission toggles.',
     category: 'collective-mode',
     audience: ['owner'],
     keywords: ['manager', 'role', 'permission', 'promote', 'access', 'staff', 'class pricing', 'tutorial', 'export'],
@@ -1140,7 +1141,7 @@ export const helpArticles: HelpArticle[] = [
       },
       {
         title: 'Set permissions',
-        description: 'Each manager has 13 permission toggles: Members, Classes, Instructors, Bookings, Rooms, Payments, Messages, Teach, Settings, Class Pricing, Instructor Contracts & Membership Tiers, Tutorial, and Export Your Data.',
+        description: 'Each manager has 15 permission toggles: Members, Classes, Instructors, Bookings, Rooms, Payments, Messages, Teach, Settings, Class Pricing, Instructor Contracts & Membership Tiers, Tutorial, Export Your Data, Billing, and Issue Refunds.',
       },
       {
         title: 'Use the permission guide',
@@ -1148,7 +1149,7 @@ export const helpArticles: HelpArticle[] = [
       },
     ],
     tips: [
-      'Managers cannot change Stripe Connect settings, Klasly billing, or delete the studio — those stay owner-only by design.',
+      'Managers with the Billing permission can access the Klasly subscription, payment method, and promotion codes. Stripe Connect settings and studio deletion remain owner-only.',
       'Settings includes the Test Accounts switcher — it\'s called out with a blue badge so you can see it before toggling.',
       'Class Pricing is separate from Classes so you can allow schedule edits without price changes.',
       'Tutorial is a UX preference, not a capability — controls whether onboarding tooltips and the dashboard checklist appear for that user.',
@@ -1374,8 +1375,12 @@ export const helpArticles: HelpArticle[] = [
         description: 'Create room options (e.g., "Private Room - $1,200", "Shared Room - $800", "Commuter - $400"). Set capacity for each option.',
       },
       {
+        title: 'Add a schedule overview (optional)',
+        description: 'In the Schedule step, add free-form text describing the event\'s daily agenda (e.g., "Day 1: Arrival & welcome circle. Day 2: Morning yoga, afternoon hike."). This appears above the detailed activity timeline on the public event page.',
+      },
+      {
         title: 'Configure payments',
-        description: 'Choose whether to require a deposit. Enable installments to let attendees pay in 3 parts.',
+        description: 'Choose "Full payment only", "Installments only" (3 equal payments), or "Both options" so each attendee picks their preferred method at checkout.',
       },
       {
         title: 'Set cancellation policy',
@@ -1391,6 +1396,7 @@ export const helpArticles: HelpArticle[] = [
       },
     ],
     tips: [
+      'Published events appear as purple banners on the main schedule calendar — both the member-facing schedule and the dashboard calendar.',
       'You can create private events (not visible publicly) for corporate retreats or invite-only events.',
       'Guests can apply without a Klasly account — great for one-time retreat attendees.',
       'Installments are collected automatically. You\'ll be notified if a payment fails.',
@@ -2108,7 +2114,7 @@ export const helpArticles: HelpArticle[] = [
       },
       {
         title: 'Choose payment method',
-        description: 'Pay in full or select installments (3 payments). Some events include an application form.',
+        description: 'If the host enabled both options, choose between paying in full or splitting into installments. Some events include an application form.',
       },
       {
         title: 'Complete checkout',

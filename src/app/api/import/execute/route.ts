@@ -168,6 +168,7 @@ export async function POST(request: Request) {
       defaultCredits = 0,
       defaultStatus = "active",
       sendWelcomeEmail = false,
+      markWaiverSigned = false,
     } = body as {
       csvData?: string;
       nameMode?: "combined" | "separate";
@@ -179,6 +180,7 @@ export async function POST(request: Request) {
       defaultCredits?: number;
       defaultStatus?: string;
       sendWelcomeEmail?: boolean;
+      markWaiverSigned?: boolean;
     };
 
     if (!csvData || typeof csvData !== "string") {
@@ -348,6 +350,9 @@ export async function POST(request: Request) {
         referred_by: referredBy,
         is_minor: isMinor,
         guardian_email: isMinor ? guardianEmail : null,
+        ...(markWaiverSigned
+          ? { waiver_signed: true, waiver_signed_at: new Date().toISOString() }
+          : {}),
       });
 
       if (memberError) {

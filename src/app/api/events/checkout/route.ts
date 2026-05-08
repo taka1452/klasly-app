@@ -211,7 +211,8 @@ export async function POST(request: Request) {
 
     // 6. Create booking record
     const effectivePaymentType =
-      event.payment_type === "installment" && payment_choice === "installment"
+      (event.payment_type === "installment" || event.payment_type === "both") &&
+      payment_choice === "installment"
         ? "installment"
         : "full";
 

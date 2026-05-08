@@ -30,6 +30,8 @@ type BookingParams = {
   memberId: string;
   /** When true, the member explicitly chose to use their pass for this booking */
   usePass?: boolean;
+  /** For hybrid classes: 'in_person' or 'online' */
+  attendanceMethod?: "in_person" | "online";
 };
 
 type BookingResult = {
@@ -173,6 +175,7 @@ export async function executeBookingAction({
   sessionId,
   memberId,
   usePass = false,
+  attendanceMethod,
 }: BookingParams): Promise<BookingResult> {
   // Validate action
   if (!["book", "rebook", "cancel", "leave_waitlist"].includes(action)) {
@@ -346,7 +349,7 @@ export async function executeBookingAction({
 
       const { error } = await adminSupabase
         .from("bookings")
-        .update({ status, booked_via_pass: bookingViaPass })
+        .update({ status, booked_via_pass: bookingViaPass, attendance_method: attendanceMethod ?? null })
         .eq("id", existing.id);
 
       if (error) {
@@ -406,6 +409,7 @@ export async function executeBookingAction({
         p_studio_id: member.studio_id,
         p_capacity: session.capacity,
         p_booked_via_pass: bookingViaPass,
+        p_attendance_method: attendanceMethod ?? null,
       });
 
       if (error) {

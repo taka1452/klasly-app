@@ -1,6 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
+import { isFeatureEnabled } from "@/lib/features/check-feature";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -241,9 +243,23 @@ export async function GET(request: NextRequest) {
       return a.start_time.localeCompare(b.start_time);
     });
 
+    // Fetch events that overlap the date range
+    const retreatEnabled = await isFeatureEnabled(studioId, FEATURE_KEYS.RETREAT_BOOKING);
+    let events: { id: string; name: string; start_date: string; end_date: string; location_name: string | null; image_url: string | null; status: string }[] = [];
+    if (retreatEnabled) {
+      const { data: eventRows } = await supabase
+        .from("events")
+        .select("id, name, start_date, end_date, location_name, image_url, status")
+        .eq("studio_id", studioId)
+        .lte("start_date", end)
+        .gte("end_date", start);
+      events = eventRows ?? [];
+    }
+
     return NextResponse.json({
       sessions: formattedSessions,
       confirmedCounts: confirmedMap,
+      events,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal error";

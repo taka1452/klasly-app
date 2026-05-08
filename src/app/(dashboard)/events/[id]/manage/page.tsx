@@ -208,9 +208,11 @@ export default async function EventManagePage({
             Payment
           </p>
           <p className="mt-1 text-lg font-semibold text-gray-900">
-            {event.payment_type === "installment"
-              ? `${event.installment_count} Installments`
-              : "Full Payment"}
+            {event.payment_type === "both"
+              ? `Full or ${event.installment_count} Installments`
+              : event.payment_type === "installment"
+                ? `${event.installment_count} Installments`
+                : "Full Payment"}
           </p>
         </div>
         <div className="card">

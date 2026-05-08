@@ -170,6 +170,7 @@ export default function ImportMembersPage() {
   const [defaultCredits, setDefaultCredits] = useState(0);
   const [defaultStatus, setDefaultStatus] = useState<string>("active");
   const [sendWelcomeEmail, setSendWelcomeEmail] = useState(false);
+  const [markWaiverSigned, setMarkWaiverSigned] = useState(false);
 
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
@@ -356,6 +357,7 @@ export default function ImportMembersPage() {
           defaultCredits: resolvedCredits,
           defaultStatus: resolvedStatus,
           sendWelcomeEmail,
+          markWaiverSigned,
         }),
       });
 
@@ -1021,6 +1023,23 @@ export default function ImportMembersPage() {
             </span>
           </label>
 
+          <label className="flex items-start gap-2">
+            <input
+              type="checkbox"
+              checked={markWaiverSigned}
+              onChange={(e) => setMarkWaiverSigned(e.target.checked)}
+              className="mt-1 h-4 w-4 accent-gray-900"
+            />
+            <span className="text-sm text-gray-700">
+              Mark all imported members as waiver signed
+              <span className="mt-0.5 block text-xs text-gray-500">
+                Use this if members already signed a liability waiver on your
+                previous platform. They won&apos;t be prompted to sign again on
+                first login.
+              </span>
+            </span>
+          </label>
+
           <div className="rounded-lg bg-gray-50 p-4">
             <p className="font-medium text-gray-900">
               {totalRows} members will be imported
@@ -1031,6 +1050,11 @@ export default function ImportMembersPage() {
             <p className="text-sm text-gray-500">
               Welcome email: {sendWelcomeEmail ? "Yes" : "No"}
             </p>
+            {markWaiverSigned && (
+              <p className="text-sm text-gray-500">
+                Waiver: Pre-signed
+              </p>
+            )}
           </div>
 
           <p className="text-sm text-amber-700">

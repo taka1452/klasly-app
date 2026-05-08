@@ -92,13 +92,13 @@ export async function GET(
 
     // Fetch templates for sessions that have template_id
     const templateIds = Array.from(new Set(sessions.map((s) => s.template_id).filter(Boolean))) as string[];
-    type TemplateRow = { id: string; name?: string; description?: string; duration_minutes?: number; location?: string; is_online?: boolean; image_url?: string | null };
+    type TemplateRow = { id: string; name?: string; description?: string; duration_minutes?: number; location?: string; is_online?: boolean; image_url?: string | null; class_type?: string };
     let templatesMap: Record<string, TemplateRow> = {};
 
     if (templateIds.length > 0) {
       const { data: templates } = await supabase
         .from("class_templates")
-        .select("id, name, description, duration_minutes, location, is_online, image_url")
+        .select("id, name, description, duration_minutes, location, is_online, image_url, class_type")
         .in("id", templateIds);
 
       if (templates) {
@@ -172,6 +172,7 @@ export async function GET(
         location: s.location || tmpl?.location || null,
         isOnline: onlineEnabled ? (s.is_online ?? tmpl?.is_online ?? false) : false,
         imageUrl: tmpl?.image_url ?? null,
+        classType: tmpl?.class_type ?? "in_person",
       };
     });
 

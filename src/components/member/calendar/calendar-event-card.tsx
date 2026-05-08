@@ -316,6 +316,11 @@ export default function CalendarEventCard({
                 )}
               </p>
             )}
+            {session.class_type === "hybrid" && (
+              <p className="inline-flex items-center gap-1 text-xs font-medium text-purple-600">
+                🔀 Hybrid — choose in-person or online when booking
+              </p>
+            )}
             {showOnline ? (
               session.online_link ? (
                 <a
@@ -358,6 +363,7 @@ export default function CalendarEventCard({
               payPerClass={payPerClass}
               classPrice={session.price_cents ?? classPrice}
               passInfo={passInfo}
+              classType={session.class_type}
               onSuccess={() => {
                 onBookingComplete();
                 setShowPopover(false);

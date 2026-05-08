@@ -1,8 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { type DashboardSessionData } from "./dashboard-event-card";
 import {
+  type CalendarEvent,
   formatTimeShort,
   parseLocalDate,
   getDayNameShort,
@@ -12,12 +14,14 @@ type Props = {
   currentDate: Date;
   sessions: DashboardSessionData[];
   confirmedCounts: Record<string, number>;
+  events?: (CalendarEvent & { status: string })[];
 };
 
 export default function DashboardListView({
   currentDate,
   sessions,
   confirmedCounts,
+  events = [],
 }: Props) {
   const router = useRouter();
 
@@ -35,7 +39,7 @@ export default function DashboardListView({
     grouped.get(s.session_date)!.push(s);
   }
 
-  if (sorted.length === 0) {
+  if (sorted.length === 0 && events.length === 0) {
     return null;
   }
 
@@ -54,6 +58,22 @@ export default function DashboardListView({
             <h3 className="mb-2 text-sm font-semibold text-gray-700">
               {dayLabel}
             </h3>
+            {events
+              .filter((e) => e.start_date <= dateStr && e.end_date >= dateStr)
+              .map((ev) => (
+                <Link
+                  key={ev.id}
+                  href={`/events/${ev.id}/manage`}
+                  className="mb-1 flex items-center gap-2 rounded-lg border border-purple-200 bg-purple-50 px-4 py-3 text-sm font-medium text-purple-700 hover:bg-purple-100 transition"
+                >
+                  <span className="truncate">{ev.name}</span>
+                  {ev.status !== "published" && (
+                    <span className="ml-auto shrink-0 rounded bg-purple-200 px-1.5 py-0.5 text-[10px]">
+                      {ev.status}
+                    </span>
+                  )}
+                </Link>
+              ))}
             <div className="space-y-1">
               {daySessions.map((session) => {
                 const confirmed = confirmedCounts[session.id] || 0;

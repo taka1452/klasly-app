@@ -8,6 +8,7 @@ import CalendarMonthView from "./calendar-month-view";
 import CalendarListView from "./calendar-list-view";
 import {
   type SessionData,
+  type CalendarEvent,
   type CalendarView,
   getDateRange,
   addDays,
@@ -66,6 +67,7 @@ export default function ScheduleCalendar({
   // sessions to render the studio TZ abbreviation and a "your time:" hint
   // when the viewer's local zone differs.
   const [studioTimezone, setStudioTimezone] = useState<string | null>(null);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -106,6 +108,7 @@ export default function ScheduleCalendar({
         setStudioTimezone(
           typeof data.studioTimezone === "string" ? data.studioTimezone : null
         );
+        setEvents(data.events ?? []);
       } catch {
         setFetchError(true);
       } finally {
@@ -168,6 +171,7 @@ export default function ScheduleCalendar({
     classPrice,
     passInfo,
     studioTimezone,
+    events,
     onBookingComplete: handleBookingComplete,
   };
 
@@ -232,6 +236,7 @@ export default function ScheduleCalendar({
               currentDate={currentDate}
               sessions={sessions}
               bookings={bookings}
+              events={events}
               onDayClick={handleMonthDayClick}
               isMobile={isMobile}
             />
@@ -239,7 +244,7 @@ export default function ScheduleCalendar({
           {view === "list" && <CalendarListView {...sharedProps} />}
 
           {/* Empty state */}
-          {!loading && sessions.length === 0 && (
+          {!loading && sessions.length === 0 && events.length === 0 && (
             <div className="mt-4 rounded-lg border border-gray-200 bg-white p-8 text-center">
               <p className="text-sm text-gray-500">
                 No classes scheduled for this period.

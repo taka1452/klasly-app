@@ -44,7 +44,7 @@ export type DuplicatedEventData = {
     description: string;
   }>;
   // Payment
-  payment_type: "full" | "installment";
+  payment_type: "full" | "installment" | "both";
   // Cancellation
   cancellation_policy: Array<{
     days_before: number;
@@ -174,7 +174,7 @@ export default function EventDuplicatePicker({ studioId, onApply }: Props) {
           title: s.title ?? "",
           description: s.description ?? "",
         })),
-        payment_type: e.payment_type === "installment" ? "installment" : "full",
+        payment_type: e.payment_type === "installment" ? "installment" : e.payment_type === "both" ? "both" : "full",
         cancellation_policy: Array.isArray(e.cancellation_policy)
           ? e.cancellation_policy
           : [],

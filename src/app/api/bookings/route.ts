@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     );
 
     const body = await request.json();
-    const { action, sessionId, memberId, usePass } = body;
+    const { action, sessionId, memberId, usePass, attendanceMethod } = body;
 
     const result = await executeBookingAction({
       adminSupabase,
@@ -37,6 +37,7 @@ export async function POST(request: Request) {
       sessionId,
       memberId,
       usePass: usePass === true,
+      attendanceMethod: attendanceMethod || undefined,
     });
 
     if (!result.success) {

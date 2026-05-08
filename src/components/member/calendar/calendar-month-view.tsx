@@ -3,6 +3,7 @@
 import CalendarMonthEvent from "./calendar-month-event";
 import {
   type SessionData,
+  type CalendarEvent,
   type CalendarView,
   getMonthGridDates,
   isToday,
@@ -14,6 +15,7 @@ type Props = {
   currentDate: Date;
   sessions: SessionData[];
   bookings: Record<string, { id: string; status: string }>;
+  events?: CalendarEvent[];
   onDayClick: (date: Date) => void;
   isMobile: boolean;
 };
@@ -24,6 +26,7 @@ export default function CalendarMonthView({
   currentDate,
   sessions,
   bookings,
+  events = [],
   onDayClick,
   isMobile,
 }: Props) {
@@ -91,8 +94,14 @@ export default function CalendarMonthView({
                     {date.getDate()}
                   </span>
                   {/* Mobile: show dot count */}
-                  {isMobile && daySessions.length > 0 && (
+                  {isMobile && (daySessions.length > 0 || events.some((e) => e.start_date <= dateStr && e.end_date >= dateStr)) && (
                     <span className="flex gap-0.5">
+                      {events
+                        .filter((e) => e.start_date <= dateStr && e.end_date >= dateStr)
+                        .slice(0, 1)
+                        .map((e) => (
+                          <span key={e.id} className="h-1.5 w-1.5 rounded-full bg-purple-400" />
+                        ))}
                       {daySessions.slice(0, 3).map((s, i) => {
                         const b = bookings[s.id];
                         let dotColor = "bg-brand-400";
@@ -115,24 +124,40 @@ export default function CalendarMonthView({
                 </div>
 
                 {/* Desktop: event pills */}
-                {!isMobile && (
-                  <div className="mt-1 space-y-0.5">
-                    {daySessions.slice(0, maxVisible).map((session) => (
-                      <CalendarMonthEvent
-                        key={session.id}
-                        eventName={session.class_name}
-                        startTime={session.start_time}
-                        bookingStatus={bookings[session.id]?.status || null}
-                        isOnline={session.is_online}
-                      />
-                    ))}
-                    {remaining > 0 && (
-                      <div className="px-1 text-[10px] font-medium text-gray-500">
-                        +{remaining} more
-                      </div>
-                    )}
-                  </div>
-                )}
+                {!isMobile && (() => {
+                  const dayEvents = events.filter(
+                    (e) => e.start_date <= dateStr && e.end_date >= dateStr
+                  );
+                  const eventSlots = dayEvents.length;
+                  const adjustedMax = Math.max(0, maxVisible - eventSlots);
+                  const sessionRemaining = daySessions.length - adjustedMax;
+                  return (
+                    <div className="mt-1 space-y-0.5">
+                      {dayEvents.map((ev) => (
+                        <div
+                          key={ev.id}
+                          className="truncate rounded bg-purple-100 px-1 py-px text-[10px] font-medium text-purple-700"
+                        >
+                          📅 {ev.name}
+                        </div>
+                      ))}
+                      {daySessions.slice(0, adjustedMax).map((session) => (
+                        <CalendarMonthEvent
+                          key={session.id}
+                          eventName={session.class_name}
+                          startTime={session.start_time}
+                          bookingStatus={bookings[session.id]?.status || null}
+                          isOnline={session.is_online}
+                        />
+                      ))}
+                      {sessionRemaining > 0 && (
+                        <div className="px-1 text-[10px] font-medium text-gray-500">
+                          +{sessionRemaining} more
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             );
           })}

@@ -22,6 +22,8 @@ type Props = {
   role?: "owner" | "manager";
   canTeach?: boolean;
   canManageSettings?: boolean;
+  canManageBilling?: boolean;
+  canManageClassPricing?: boolean;
   studioName?: string;
   studioCurrency?: string;
   isCollectiveMode?: boolean;
@@ -39,6 +41,8 @@ export default function SettingsContent({
   role = "owner",
   canTeach = false,
   canManageSettings = false,
+  canManageBilling = false,
+  canManageClassPricing = false,
   studioName = "",
   studioCurrency = "usd",
   isCollectiveMode = false,
@@ -200,107 +204,125 @@ export default function SettingsContent({
   return (
     <div className="mt-8 space-y-10">
       {/* ── Payments & Pricing ── */}
-      <section>
-        <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
-          Payments &amp; Pricing
-        </h2>
-        <div className="space-y-6">
-          {/* Stripe Connect — owner only */}
-          {isOwner && (
-            <div className="card">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Stripe Connect
-                  </h3>
-                  <p className="mt-2 text-sm text-gray-600">
-                    Connect your Stripe account to receive payments from members
-                    (drop-in, packs, monthly).
-                  </p>
+      {(isOwner || canManageBilling || canManageClassPricing) && (
+        <section>
+          <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
+            Payments &amp; Pricing
+          </h2>
+          <div className="space-y-6">
+            {/* Stripe Connect — owner only */}
+            {isOwner && (
+              <div className="card">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Stripe Connect
+                    </h3>
+                    <p className="mt-2 text-sm text-gray-600">
+                      Connect your Stripe account to receive payments from members
+                      (drop-in, packs, monthly).
+                    </p>
+                  </div>
+                  <FlowHintPanel
+                    flowType="stripe-connect"
+                    buttonLabel="Why Stripe Connect?"
+                  />
                 </div>
-                <FlowHintPanel
-                  flowType="stripe-connect"
-                  buttonLabel="Why Stripe Connect?"
-                />
+                <Link
+                  href="/settings/connect"
+                  className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+                >
+                  Stripe Connect →
+                </Link>
               </div>
-              <Link
-                href="/settings/connect"
-                className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
-              >
-                Stripe Connect →
-              </Link>
-            </div>
-          )}
+            )}
 
-          {/* Studio Currency — owner only */}
-          {isOwner && (
-            <div className="card">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Studio Currency
-              </h3>
-              <p className="mt-2 text-sm text-gray-600">
-                Set the currency for all member-facing pricing (classes, passes, events).
-                This must match your Stripe account&apos;s currency.
-              </p>
-              <select
-                value={currency}
-                onChange={(e) => handleCurrencyChange(e.target.value)}
-                disabled={currencyLoading}
-                className="input-field mt-3 max-w-xs"
-              >
-                {SUPPORTED_CURRENCIES.map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+            {/* Studio Currency — owner only */}
+            {isOwner && (
+              <div className="card">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Studio Currency
+                </h3>
+                <p className="mt-2 text-sm text-gray-600">
+                  Set the currency for all member-facing pricing (classes, passes, events).
+                  This must match your Stripe account&apos;s currency.
+                </p>
+                <select
+                  value={currency}
+                  onChange={(e) => handleCurrencyChange(e.target.value)}
+                  disabled={currencyLoading}
+                  className="input-field mt-3 max-w-xs"
+                >
+                  {SUPPORTED_CURRENCIES.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
-          {/* Class Pricing — owner only */}
-          {isOwner && (
-            <div className="card">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Class Pricing
-              </h3>
-              <p className="mt-2 text-sm text-gray-600">
-                Set prices for drop-in, class packs, and monthly membership.
-              </p>
-              <Link
-                href="/settings/pricing"
-                className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
-              >
-                Class Pricing →
-              </Link>
-            </div>
-          )}
+            {/* Klasly Billing — owner or can_manage_billing */}
+            {(isOwner || canManageBilling) && (
+              <div className="card">
+                <h3 className="text-lg font-semibold text-gray-900">Billing</h3>
+                <p className="mt-2 text-sm text-gray-600">
+                  Manage your Klasly subscription, payment method, and promotion codes.
+                </p>
+                <Link
+                  href="/settings/billing"
+                  className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+                >
+                  Billing →
+                </Link>
+              </div>
+            )}
 
-          {/* Payout Settings — owner only */}
-          {isOwner && (
-            <div className="card">
-              <h3 className="text-lg font-semibold text-gray-900">Payout</h3>
-              <p className="mt-2 text-sm text-gray-600">
-                Configure payment distribution to instructors. Choose between
-                studio payout or instructor direct payout.
-              </p>
-              <Link
-                href="/settings/payout"
-                className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
-              >
-                Payout Settings →
-              </Link>
-            </div>
-          )}
+            {/* Class Pricing — owner or can_manage_class_pricing / can_manage_billing */}
+            {(isOwner || canManageClassPricing || canManageBilling) && (
+              <div className="card">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Class Pricing
+                </h3>
+                <p className="mt-2 text-sm text-gray-600">
+                  Set prices for drop-in, class packs, and monthly membership.
+                </p>
+                <Link
+                  href="/settings/pricing"
+                  className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+                >
+                  Class Pricing →
+                </Link>
+              </div>
+            )}
 
-          {/* Booking Credit Requirement — owner only */}
-          {isOwner && (
-            <BookingSettingsCard
-              bookingRequiresCredits={bookingRequiresCredits}
-              stripeConnectComplete={stripeConnectComplete}
-            />
-          )}
-        </div>
-      </section>
+            {/* Payout Settings — owner only */}
+            {isOwner && (
+              <div className="card">
+                <h3 className="text-lg font-semibold text-gray-900">Payout</h3>
+                <p className="mt-2 text-sm text-gray-600">
+                  Configure payment distribution to instructors. Choose between
+                  studio payout or instructor direct payout.
+                </p>
+                <Link
+                  href="/settings/payout"
+                  className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+                >
+                  Payout Settings →
+                </Link>
+              </div>
+            )}
+
+            {/* Booking Credit Requirement — owner only */}
+            {isOwner && (
+              <BookingSettingsCard
+                bookingRequiresCredits={bookingRequiresCredits}
+                stripeConnectComplete={stripeConnectComplete}
+              />
+            )}
+          </div>
+        </section>
+      )}
 
       {/* ── Scheduling — owner or manager with settings permission ── */}
       {(isOwner || canManageSettings) && (

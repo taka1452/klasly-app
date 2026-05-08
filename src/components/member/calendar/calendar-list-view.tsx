@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   type SessionData,
+  type CalendarEvent,
   formatTimeShort,
   parseLocalDate,
 } from "./calendar-utils";
@@ -27,6 +29,7 @@ type Props = {
     maxClasses: number | null;
   };
   studioTimezone?: string | null;
+  events?: CalendarEvent[];
   onBookingComplete: () => void;
 };
 
@@ -43,6 +46,7 @@ export default function CalendarListView({
   classPrice,
   passInfo,
   studioTimezone,
+  events = [],
   onBookingComplete,
 }: Props) {
   const [instructorModalId, setInstructorModalId] = useState<string | null>(null);
@@ -80,6 +84,19 @@ export default function CalendarListView({
             <h3 className="mb-2 text-sm font-semibold text-gray-700">
               {dayLabel}
             </h3>
+            {events
+              .filter((e) => e.start_date <= dateStr && e.end_date >= dateStr)
+              .map((ev) => (
+                <Link
+                  key={ev.id}
+                  href={`/events/${ev.id}`}
+                  className="mb-2 flex items-center gap-2 rounded-lg border border-purple-200 bg-purple-50 px-4 py-3 text-sm font-medium text-purple-700 hover:bg-purple-100 transition"
+                >
+                  <span className="text-base">📅</span>
+                  <span className="truncate">{ev.name}</span>
+                  {ev.location_name && <span className="ml-auto text-xs text-purple-500">{ev.location_name}</span>}
+                </Link>
+              ))}
             <div className="space-y-2">
               {daySessions.map((session) => {
                 const booking = bookings[session.id];

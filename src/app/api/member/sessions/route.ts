@@ -116,6 +116,7 @@ export async function GET(request: NextRequest) {
         room_id?: string | null;
         is_online?: boolean;
         online_link?: string | null;
+        class_type?: string;
         rooms?: { name?: string } | null;
         instructors?: {
           id?: string;
@@ -135,7 +136,7 @@ export async function GET(request: NextRequest) {
         ),
         rooms!class_sessions_room_id_fkey (name),
         classes (
-          name, duration_minutes, location, is_public, price_cents, room_id, is_online, online_link,
+          name, duration_minutes, location, is_public, price_cents, room_id, is_online, online_link, class_type,
           rooms (name),
           instructors (
             id, profiles (full_name)
@@ -227,6 +228,7 @@ export async function GET(request: NextRequest) {
         room_name: s.rooms?.name ?? s.classes?.rooms?.name ?? null,
         is_online: isOnline,
         online_link: hasConfirmed ? rawLink : null,
+        class_type: (s.classes?.class_type as "in_person" | "online" | "hybrid") ?? "in_person",
       };
     });
 
@@ -263,6 +265,21 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Fetch published events that overlap the requested date range
+    const retreatEnabled = await isFeatureEnabled(studioId, FEATURE_KEYS.RETREAT_BOOKING);
+    let events: { id: string; name: string; start_date: string; end_date: string; location_name: string | null; image_url: string | null }[] = [];
+    if (retreatEnabled) {
+      const { data: eventRows } = await supabase
+        .from("events")
+        .select("id, name, start_date, end_date, location_name, image_url")
+        .eq("studio_id", studioId)
+        .eq("status", "published")
+        .eq("is_public", true)
+        .lte("start_date", end)
+        .gte("end_date", start);
+      events = eventRows ?? [];
+    }
+
     return NextResponse.json({
       sessions: formattedSessions,
       bookings: bookingsMap,
@@ -271,6 +288,7 @@ export async function GET(request: NextRequest) {
       memberCredits,
       studioTimezone,
       recurringAutoBooked: recurringResult.created,
+      events,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal error";

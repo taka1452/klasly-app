@@ -102,9 +102,7 @@ export async function getManagerPermissions(
 
   const { data: manager } = await supabase
     .from("managers")
-    .select(
-      "can_manage_members, can_manage_classes, can_manage_instructors, can_manage_bookings, can_manage_rooms, can_view_payments, can_send_messages, can_teach, can_manage_settings"
-    )
+    .select(MANAGER_PERMISSION_COLUMNS)
     .eq("profile_id", userId)
     .eq("studio_id", studioId)
     .single();
