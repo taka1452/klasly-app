@@ -284,7 +284,78 @@ export async function POST(request: Request) {
         .maybeSingle();
 
       if (existingProfile) {
-        skipped.push({ row: rowNum, email: emailTrimmed, reason: "Email already exists" });
+        // Profile exists (e.g. already an instructor). Check if a member
+        // record also exists — if not, create one so the person appears on
+        // both the Instructors and Members pages.
+        const { data: existingMember } = await adminSupabase
+          .from("members")
+          .select("id")
+          .eq("studio_id", studioId)
+          .eq("profile_id", existingProfile.id)
+          .maybeSingle();
+
+        if (existingMember) {
+          skipped.push({ row: rowNum, email: emailTrimmed, reason: "Already a member" });
+          continue;
+        }
+
+        // Create member record linked to the existing profile
+        const epPlanType = normalizePlanType(
+          resolveValue(row, mapping.plan_type, columns) || defaultPlanType
+        ) as PlanType;
+        const epCredits =
+          mapping.credits && columns.includes(mapping.credits)
+            ? parseCredits(resolveValue(row, mapping.credits, columns))
+            : (defaultCredits ?? 0);
+        const epStatus = normalizeStatus(
+          resolveValue(row, mapping.status, columns) || defaultStatus
+        ) as MemberStatus;
+        const epNotes = resolveValue(row, mapping.notes, columns) || null;
+        const epDobRaw = resolveValue(row, mapping.date_of_birth, columns);
+        const epDateOfBirth = normaliseDate(epDobRaw);
+        const epGenderRaw = resolveValue(row, mapping.gender, columns);
+        const epGender = normaliseGender(epGenderRaw);
+        const epAddress = resolveValue(row, mapping.address, columns) || null;
+        const epReferredBy = resolveValue(row, mapping.referred_by, columns) || null;
+        const epPhone = resolveValue(row, mapping.phone, columns) || null;
+        const epIsMinorRaw = resolveValue(row, mapping.is_minor, columns);
+        const epGuardianEmail = resolveValue(row, mapping.guardian_email, columns) || null;
+        const epIsMinor =
+          /^(1|true|yes|y)$/i.test(epIsMinorRaw.trim()) || Boolean(epGuardianEmail);
+        const epCreditsValue = epPlanType === "monthly" ? -1 : epCredits;
+
+        // Update phone on existing profile if provided and missing
+        if (epPhone) {
+          await adminSupabase
+            .from("profiles")
+            .update({ phone: epPhone })
+            .eq("id", existingProfile.id)
+            .is("phone", null);
+        }
+
+        const { error: linkError } = await adminSupabase.from("members").insert({
+          studio_id: studioId,
+          profile_id: existingProfile.id,
+          plan_type: epPlanType,
+          credits: epCreditsValue,
+          status: epStatus,
+          notes: epNotes,
+          date_of_birth: epDateOfBirth,
+          gender: epGender,
+          address: epAddress,
+          referred_by: epReferredBy,
+          is_minor: epIsMinor,
+          guardian_email: epIsMinor ? epGuardianEmail : null,
+          ...(markWaiverSigned
+            ? { waiver_signed: true, waiver_signed_at: new Date().toISOString() }
+            : {}),
+        });
+
+        if (linkError) {
+          errors.push({ row: rowNum, email: emailTrimmed, reason: linkError.message });
+        } else {
+          imported++;
+        }
         continue;
       }
 
