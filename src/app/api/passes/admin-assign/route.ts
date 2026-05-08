@@ -11,7 +11,10 @@ import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 export async function POST(request: Request) {
   try {
     const ctx = await getDashboardContext();
-    if (!ctx || ctx.role !== "owner") {
+    if (!ctx) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    if (ctx.role === "manager" && !ctx.permissions?.can_view_payments) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

@@ -34,7 +34,17 @@ export async function PATCH(request: Request) {
       .eq("id", user.id)
       .single();
 
-    if (!profile?.studio_id || profile.role !== "owner") {
+    if (profile?.role === "manager") {
+      const { data: mgr } = await adminSupabase
+        .from("managers")
+        .select("can_manage_settings")
+        .eq("profile_id", user.id)
+        .eq("studio_id", profile.studio_id)
+        .single();
+      if (!mgr?.can_manage_settings) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    } else if (!profile?.studio_id || profile.role !== "owner") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
