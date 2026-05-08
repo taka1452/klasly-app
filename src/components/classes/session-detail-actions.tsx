@@ -24,6 +24,7 @@ export default function SessionDetailActions({ session, isCancelled }: Props) {
   const [cancelReason, setCancelReason] = useState("");
   const [notifyMembers, setNotifyMembers] = useState(true);
   const [cancelling, setCancelling] = useState(false);
+  const [cancelSuccess, setCancelSuccess] = useState(false);
 
   async function handleCancel() {
     setCancelling(true);
@@ -38,8 +39,10 @@ export default function SessionDetailActions({ session, isCancelled }: Props) {
         body: hasBody ? JSON.stringify(payload) : undefined,
       });
       if (res.ok) {
-        router.refresh();
         setShowCancel(false);
+        setCancelSuccess(true);
+        setTimeout(() => setCancelSuccess(false), 3000);
+        router.refresh();
       }
     } catch {
       // ignore
@@ -58,6 +61,11 @@ export default function SessionDetailActions({ session, isCancelled }: Props) {
 
   return (
     <>
+      {cancelSuccess && (
+        <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-2 text-sm font-medium text-green-700">
+          Session cancelled successfully
+        </div>
+      )}
       <div className="flex items-center gap-2">
         <button
           onClick={() => setShowEdit(true)}

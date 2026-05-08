@@ -383,7 +383,7 @@ export const helpArticles: HelpArticle[] = [
       },
     ],
     tips: [
-      'For Hybrid classes, members choose "In-person" or "Online" when booking. Their choice is saved with the booking so you can see the attendance breakdown.',
+      'For Hybrid classes, members choose "In-person" or "Online" when booking. Their choice appears as a badge on the My Bookings page and is included in the booking data.',
       'The link is hidden until the member books — this prevents unauthorized access.',
       'Online classes don\'t require a room booking.',
     ],

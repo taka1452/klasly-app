@@ -140,8 +140,10 @@ export default function WidgetEventCard({
   if (event.has_schedule) {
     infoChips.push({ icon: <IconList className="h-3 w-3" />, label: `${event.schedule_count} activities` });
   }
-  if (event.payment_type === "installment" || event.payment_type === "both") {
+  if (event.payment_type === "installment") {
     infoChips.push({ icon: <IconCreditCard className="h-3 w-3" />, label: `${event.installment_count} installments` });
+  } else if (event.payment_type === "both") {
+    infoChips.push({ icon: <IconCreditCard className="h-3 w-3" />, label: "Full or installments" });
   }
 
   // CTA button

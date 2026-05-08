@@ -137,6 +137,7 @@ export default async function MyBookingsPage() {
       session_id,
       member_id,
       booked_via_pass,
+      attendance_method,
       class_sessions (
         session_date,
         start_time,
@@ -285,6 +286,15 @@ export default async function MyBookingsPage() {
                           {(booking as { booked_via_pass?: boolean }).booked_via_pass && (
                             <span className="inline-flex rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-700">
                               Pass
+                            </span>
+                          )}
+                          {(booking as { attendance_method?: string }).attendance_method && (
+                            <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                              (booking as { attendance_method?: string }).attendance_method === "online"
+                                ? "bg-purple-100 text-purple-700"
+                                : "bg-blue-100 text-blue-700"
+                            }`}>
+                              {(booking as { attendance_method?: string }).attendance_method === "online" ? "Online" : "In-person"}
                             </span>
                           )}
                         </>

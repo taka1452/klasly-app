@@ -385,6 +385,9 @@ export default function EventCheckoutPage() {
                     {(event.payment_type === "installment" || event.payment_type === "both") && (
                       <p className="text-xs text-gray-500">
                         or {installmentCount} x ${Math.floor(effectivePrice / 100 / installmentCount).toLocaleString()}
+                        {event.payment_type === "both" && (
+                          <span className="ml-1 text-gray-400">· choose below</span>
+                        )}
                       </p>
                     )}
                   </div>

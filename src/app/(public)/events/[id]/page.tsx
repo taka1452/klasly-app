@@ -296,6 +296,9 @@ export default async function EventPage({ params }: Props) {
                         <p className="mt-0.5 text-xs text-gray-500">
                           or {event.installment_count} x{" "}
                           {formatCurrency(Math.round(displayPrice / (event.installment_count || 3)))}
+                          {event.payment_type === "both" && (
+                            <span className="ml-1 text-gray-400">· choose at checkout</span>
+                          )}
                         </p>
                       )}
                     </div>

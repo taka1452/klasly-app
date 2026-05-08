@@ -159,22 +159,21 @@ export async function GET(request: NextRequest) {
     const sessionIds = typedSessions.map((s) => s.id);
 
     // Fetch member bookings
-    let bookingsMap: Record<string, { id: string; status: string }> = {};
+    type BookingEntry = { id: string; status: string; attendance_method?: string | null };
+    let bookingsMap: Record<string, BookingEntry> = {};
     if (sessionIds.length > 0 && memberId) {
       const { data: bookings } = await supabase
         .from("bookings")
-        .select("session_id, status, id")
+        .select("session_id, status, id, attendance_method")
         .eq("member_id", memberId)
         .in("session_id", sessionIds);
 
       if (bookings) {
-        // Prioritize non-cancelled bookings: if a session has both cancelled and active bookings,
-        // the active one should be shown (e.g. cancel then rebook scenario)
-        bookingsMap = (bookings as { session_id: string; id: string; status: string }[]).reduce(
-          (acc: Record<string, { id: string; status: string }>, b) => {
+        bookingsMap = (bookings as (BookingEntry & { session_id: string })[]).reduce(
+          (acc: Record<string, BookingEntry>, b) => {
             const existing = acc[b.session_id];
             if (!existing || existing.status === "cancelled") {
-              acc[b.session_id] = { id: b.id, status: b.status };
+              acc[b.session_id] = { id: b.id, status: b.status, attendance_method: b.attendance_method };
             }
             return acc;
           },
