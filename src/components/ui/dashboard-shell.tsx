@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import Sidebar from "./sidebar";
 import Header from "./header";
 import SetupTaskList from "./setup-task-list";
@@ -53,6 +54,7 @@ export default function DashboardShell({
   setupGuideHref = null,
 }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     const handleResize = () => {
@@ -90,13 +92,13 @@ export default function DashboardShell({
         managerPermissions={managerPermissions}
       />
 
-      <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <Header
           userName={userName}
           userEmail={userEmail}
           onSidebarToggle={() => setSidebarOpen((o) => !o)}
         />
-        <main className="min-h-0 flex-1 overflow-y-auto p-4 pb-32 md:p-6 md:pb-32">
+        <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-4 pb-32 md:p-6 md:pb-32">
           {banner && <div className="mb-6">{banner}</div>}
           {planAccess ? (
             <PlanAccessProvider planAccess={planAccess}>
@@ -107,9 +109,12 @@ export default function DashboardShell({
           )}
         </main>
       </div>
+      {/* Dashboard page already shows an inline SetupChecklistCard,
+          so hide the floating panel there to avoid overlap. */}
       {currentRole === "owner" &&
         setupTasks.length > 0 &&
-        !setupTasks.every((t) => t.done) && (
+        !setupTasks.every((t) => t.done) &&
+        pathname !== "/dashboard" && (
           <SetupTaskList
             tasks={setupTasks}
             title="Setup checklist"

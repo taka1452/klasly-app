@@ -20,21 +20,16 @@ export async function GET() {
   const supabase = ctx.supabase;
 
   const { data: rows } = await supabase
-    .from("classes")
-    .select("name, day_of_week, start_time, duration_minutes, capacity, description, location, instructors(profiles(email))")
+    .from("class_templates")
+    .select("name, duration_minutes, capacity, description, location, class_type, instructors(profiles(email))")
     .eq("studio_id", ctx.studioId)
     .eq("is_active", true)
-    .order("day_of_week", { ascending: true })
-    .order("start_time", { ascending: true });
+    .order("name", { ascending: true });
 
-  const headers = ["Name", "Day of Week", "Start Time", "Duration (minutes)", "Capacity", "Description", "Location", "Instructor Email"];
+  const headers = ["Name", "Type", "Duration (minutes)", "Capacity", "Description", "Location", "Instructor Email"];
   const lines: string[] = [headers.map(escapeCsvCell).join(",")];
 
   for (const cls of rows ?? []) {
-    const day = DAYS[cls.day_of_week as number] ?? String(cls.day_of_week);
-    // Format start_time: "09:00:00" → "09:00"
-    const startTime = typeof cls.start_time === "string" ? cls.start_time.slice(0, 5) : "";
-
     const instrData = (cls as { instructors?: { profiles?: { email?: string | null } | Array<{ email?: string | null }> } | null }).instructors;
     const instrProfiles = instrData
       ? Array.isArray(instrData)
@@ -50,8 +45,7 @@ export async function GET() {
     lines.push(
       [
         cls.name ?? "",
-        day,
-        startTime,
+        cls.class_type ?? "",
         cls.duration_minutes ?? "",
         cls.capacity ?? "",
         cls.description ?? "",

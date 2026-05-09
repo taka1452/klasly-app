@@ -209,7 +209,7 @@ export default async function DashboardPage() {
   // Today's classes list (for display with booking counts)
   const { data: todayClassesList } = await supabase
     .from("class_sessions")
-    .select("id, class_id, session_date, start_time, capacity, classes(name)")
+    .select("id, template_id, session_date, start_time, capacity, class_templates(name)")
     .eq("studio_id", profile.studio_id)
     .eq("session_date", today)
     .eq("is_cancelled", false)
@@ -462,7 +462,7 @@ export default async function DashboardPage() {
         )}
 
         {(canManageMembers || canManageBookings) && (
-          <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-3 md:gap-5">
+          <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-3 md:gap-5 lg:basis-1/2">
             {canManageMembers && (
               <div
                 className="stats-stagger card flex flex-col justify-between"
@@ -626,7 +626,7 @@ export default async function DashboardPage() {
             <div className="divide-y divide-gray-200">
               {todayClassesList.map((session) => {
                 const className =
-                  (session as { classes?: { name?: string } }).classes?.name ||
+                  (session as { class_templates?: { name?: string } }).class_templates?.name ||
                   "—";
                 const confirmed =
                   confirmedBySession[session.id] || 0;
@@ -634,7 +634,7 @@ export default async function DashboardPage() {
                   (attendedBySession[session.id] || 0) +
                   (dropInBySession[session.id] || 0);
                 const classIdForLink =
-                  (session as { class_id?: string }).class_id ?? "";
+                  (session as { template_id?: string }).template_id ?? "";
                 return (
                   <div
                     key={session.id}

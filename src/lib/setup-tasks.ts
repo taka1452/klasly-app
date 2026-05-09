@@ -25,7 +25,7 @@ export async function getOwnerSetupTasks(
     { data: widgetSettings },
     { count: waiverCount },
   ] = await Promise.all([
-    supabase.from("classes").select("id", { count: "exact", head: true }).eq("studio_id", studioId),
+    supabase.from("class_templates").select("id", { count: "exact", head: true }).eq("studio_id", studioId),
     supabase.from("instructors").select("id", { count: "exact", head: true }).eq("studio_id", studioId),
     supabase.from("members").select("id", { count: "exact", head: true }).eq("studio_id", studioId),
     supabase

@@ -61,7 +61,7 @@ export default async function AdminStudioDetailPage({
     supabase.from("members").select("id", { count: "exact", head: true }).eq("studio_id", studioId).eq("status", "paused"),
     supabase.from("members").select("id", { count: "exact", head: true }).eq("studio_id", studioId).eq("status", "cancelled"),
     supabase.from("instructors").select("id", { count: "exact", head: true }).eq("studio_id", studioId),
-    supabase.from("classes").select("id", { count: "exact", head: true }).eq("studio_id", studioId).eq("is_active", true),
+    supabase.from("class_templates").select("id", { count: "exact", head: true }).eq("studio_id", studioId).eq("is_active", true),
     supabase.from("members").select("id", { count: "exact", head: true }).eq("studio_id", studioId),
     supabase.from("members").select("id", { count: "exact", head: true }).eq("studio_id", studioId).eq("waiver_signed", true),
   ]);

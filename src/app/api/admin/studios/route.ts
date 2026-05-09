@@ -96,7 +96,7 @@ export async function GET(request: Request) {
     // 追加カウント: instructors, classes, 30日ブッキング
     const [{ data: instructorRows }, { data: classRows }, { data: bookingRows }] = await Promise.all([
       supabase.from("instructors").select("studio_id").in("studio_id", studioIds),
-      supabase.from("classes").select("studio_id").in("studio_id", studioIds).eq("is_active", true),
+      supabase.from("class_templates").select("studio_id").in("studio_id", studioIds).eq("is_active", true),
       supabase.from("bookings").select("studio_id").in("studio_id", studioIds).gte("created_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
     ]);
 

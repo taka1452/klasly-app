@@ -144,7 +144,7 @@ export default async function AdminDashboardPage() {
   if (oldStudios && oldStudios.length > 0) {
     const oldIds = oldStudios.map((s) => s.id);
     const { data: studiosWithClasses } = await supabase
-      .from("classes")
+      .from("class_templates")
       .select("studio_id")
       .in("studio_id", oldIds);
     const hasClassSet = new Set((studiosWithClasses || []).map((c) => c.studio_id));
