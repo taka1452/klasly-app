@@ -533,18 +533,6 @@ export default function Sidebar({
         <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
           <NavList items={navItems} pathname={pathname} onMobileClose={onMobileClose} unreadMessageCount={unreadCount} />
         </nav>
-        {showAdminLink && (
-          <div className="border-t border-gray-200 px-6 py-3">
-            <Link
-              href="/admin"
-              onClick={onMobileClose}
-              className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-700"
-            >
-              <span aria-hidden>🔒</span>
-              System Admin
-            </Link>
-          </div>
-        )}
         <div className="border-t border-gray-200 px-6 py-4 space-y-2">
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
             <Link href="/privacy" onClick={onMobileClose} className="text-gray-500 hover:text-gray-700">
@@ -553,6 +541,11 @@ export default function Sidebar({
             <Link href="/terms" onClick={onMobileClose} className="text-gray-500 hover:text-gray-700">
               Terms
             </Link>
+            {showAdminLink && (
+              <Link href="/admin" onClick={onMobileClose} className="text-gray-400 hover:text-gray-600">
+                Admin
+              </Link>
+            )}
           </div>
         </div>
       </aside>
@@ -585,27 +578,6 @@ export default function Sidebar({
         <NavList items={navItems} pathname={pathname} unreadMessageCount={unreadCount} />
       </nav>
 
-      {showAdminLink && (
-        <div className="border-t border-gray-200 px-6 py-3">
-          <Link
-            href="/admin"
-            className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-700"
-          >
-            <svg
-              aria-hidden
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.75}
-              className="h-3.5 w-3.5"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-            </svg>
-            System Admin
-          </Link>
-        </div>
-      )}
       {/* フッター */}
       <div className="border-t border-gray-200 px-6 py-4 space-y-2">
         <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
@@ -615,6 +587,11 @@ export default function Sidebar({
           <Link href="/terms" className="text-gray-500 hover:text-gray-700">
             Terms
           </Link>
+          {showAdminLink && (
+            <Link href="/admin" className="text-gray-400 hover:text-gray-600">
+              Admin
+            </Link>
+          )}
         </div>
       </div>
     </aside>
