@@ -134,6 +134,16 @@ export default async function AdminStudioDetailPage({
     }
   }
 
+  const stripeOk = !!studio.stripe_connect_onboarding_complete;
+  const hasMembers = (membersActive ?? 0) > 0;
+  const hasClasses = (classesActive ?? 0) > 0;
+  const hasBookings = (bookings30d ?? 0) > 0;
+  const planOk = studio.plan_status === "active";
+  const isTrial = studio.plan_status === "trialing";
+  const trialDaysLeft = isTrial && studio.trial_ends_at
+    ? Math.ceil((new Date(studio.trial_ends_at as string).getTime() - Date.now()) / (24 * 60 * 60 * 1000))
+    : null;
+
   return (
     <div className="space-y-6">
       <div>
@@ -141,6 +151,33 @@ export default async function AdminStudioDetailPage({
           ← Back to Studios
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-white">{studio.name}</h1>
+      </div>
+
+      {/* Health Summary Bar */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        {[
+          {
+            label: "Plan",
+            value: planOk ? "Active" : isTrial ? `Trial${trialDaysLeft !== null ? ` (${trialDaysLeft}d)` : ""}` : String(studio.plan_status ?? "—"),
+            ok: planOk || (isTrial && (trialDaysLeft === null || trialDaysLeft > 3)),
+            warn: isTrial && trialDaysLeft !== null && trialDaysLeft <= 3,
+          },
+          { label: "Stripe", value: stripeOk ? "Connected" : "Not set", ok: stripeOk },
+          { label: "Members", value: String(membersActive ?? 0), ok: hasMembers },
+          { label: "Classes", value: String(classesActive ?? 0), ok: hasClasses },
+          { label: "30d Bookings", value: String(bookings30d ?? 0), ok: hasBookings },
+          { label: "Attendance", value: String((attended30d ?? 0) + (dropIn30d ?? 0)), ok: ((attended30d ?? 0) + (dropIn30d ?? 0)) > 0 },
+        ].map((item) => (
+          <div key={item.label} className="rounded-lg border border-slate-700 bg-slate-800 px-4 py-3">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">{item.label}</p>
+            <div className="mt-1 flex items-center gap-2">
+              <span className={`h-2 w-2 rounded-full ${item.warn ? "bg-amber-400" : item.ok ? "bg-emerald-400" : "bg-slate-500"}`} />
+              <span className={`text-lg font-semibold tabular-nums ${item.warn ? "text-amber-300" : item.ok ? "text-white" : "text-slate-400"}`}>
+                {item.value}
+              </span>
+            </div>
+          </div>
+        ))}
       </div>
 
       <AdminStudioDetail

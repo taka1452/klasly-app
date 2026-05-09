@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import Link from "next/link";
 import { useAdminLocale } from "@/lib/admin/locale-context";
 
@@ -15,6 +15,12 @@ type StudioRow = {
   owner_name: string | null;
   owner_email: string | null;
   members_count: number;
+  instructors_count: number;
+  classes_count: number;
+  bookings_30d: number;
+  stripe_connect_onboarding_complete?: boolean;
+  currency?: string;
+  payout_model?: string;
   is_demo?: boolean;
 };
 
@@ -44,6 +50,7 @@ export default function AdminStudiosList({ statusCounts }: { statusCounts: Statu
   const [page, setPage] = useState(1);
   const [data, setData] = useState<{ studios: StudioRow[]; total: number }>({ studios: [], total: 0 });
   const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -122,33 +129,43 @@ export default function AdminStudiosList({ statusCounts }: { statusCounts: Statu
         ) : data.studios.length === 0 ? (
           <div className="p-8 text-center text-slate-400">{t("studios.noStudiosFound")}</div>
         ) : (
-          <table className="w-full min-w-[800px]">
+          <table className="w-full min-w-[900px]">
             <thead>
               <tr className="border-b border-slate-600 text-left text-xs text-slate-400">
+                <th className="w-8 p-3"></th>
                 <th className="p-3 font-medium">{t("studios.studioName")}</th>
-                <th className="p-3 font-medium">{t("studios.ownerEmail")}</th>
                 <th className="p-3 font-medium">{t("studios.planStatus")}</th>
-                <th className="p-3 font-medium">{t("studios.period")}</th>
-                <th className="p-3 font-medium">{t("studios.members")}</th>
+                <th className="p-3 font-medium">Stripe</th>
+                <th className="p-3 font-medium text-right">{t("studios.members")}</th>
+                <th className="p-3 font-medium text-right">Inst.</th>
+                <th className="p-3 font-medium text-right">Classes</th>
+                <th className="p-3 font-medium text-right">30d Book</th>
                 <th className="p-3 font-medium">{t("studios.created")}</th>
-                <th className="p-3 font-medium">{t("studios.trialEnds")}</th>
               </tr>
             </thead>
             <tbody>
               {data.studios.map((s) => {
                 const days = s.plan_status === "trialing" ? trialDaysLeft(s.trial_ends_at) : null;
+                const isExpanded = expandedId === s.id;
                 return (
+                  <Fragment key={s.id}>
                   <tr
-                    key={s.id}
-                    className={`border-b border-slate-700 transition-colors duration-150 ease-out ${
+                    onClick={() => setExpandedId(isExpanded ? null : s.id)}
+                    className={`cursor-pointer border-b border-slate-700 transition-colors duration-150 ease-out ${
+                      isExpanded ? "bg-slate-700/70" :
                       s.is_demo
                         ? "bg-amber-900/10 hover:bg-amber-900/20"
                         : "hover:bg-slate-700/50"
                     }`}
                   >
+                    <td className="p-3 text-slate-500">
+                      <svg className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                      </svg>
+                    </td>
                     <td className="p-3">
                       <div className="flex items-center gap-2">
-                        <Link href={`/admin/studios/${s.id}`} className="font-medium text-white transition-colors duration-150 hover:text-brand-400">
+                        <Link href={`/admin/studios/${s.id}`} onClick={(e) => e.stopPropagation()} className="font-medium text-white transition-colors duration-150 hover:text-brand-400">
                           {s.name}
                         </Link>
                         {s.is_demo && (
@@ -161,28 +178,102 @@ export default function AdminStudiosList({ statusCounts }: { statusCounts: Statu
                         <p className="text-xs text-slate-500">{s.owner_name}</p>
                       )}
                     </td>
-                    <td className="p-3 text-slate-300">{s.owner_email ?? "—"}</td>
                     <td className="p-3">
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[s.plan_status] ?? "bg-slate-600 text-slate-300"}`}>
                         {STATUS_LABELS[s.plan_status] ?? s.plan_status}
                       </span>
-                    </td>
-                    <td className="p-3 text-slate-300">
-                      {s.plan_status === "trialing" ? "—" : s.subscription_period ?? "—"}
-                    </td>
-                    <td className="p-3 text-slate-300">{s.members_count}</td>
-                    <td className="p-3 text-slate-300">{formatDate(s.created_at)}</td>
-                    <td className="p-3">
-                      {s.plan_status === "trialing" && s.trial_ends_at ? (
-                        <span className={days !== null && days <= 3 ? "text-red-400" : "text-slate-300"}>
-                          {formatDate(s.trial_ends_at)}
-                          {days !== null && ` (${days}d)`}
-                        </span>
-                      ) : (
-                        "—"
+                      {days !== null && days <= 3 && (
+                        <span className="ml-1 text-xs text-red-400">{days}d</span>
                       )}
                     </td>
+                    <td className="p-3">
+                      {s.stripe_connect_onboarding_complete ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-green-500/20 px-2 py-0.5 text-xs font-medium text-green-300">
+                          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                          Connected
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-slate-600/50 px-2 py-0.5 text-xs text-slate-400">
+                          Not set
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-3 text-right tabular-nums text-slate-300">{s.members_count}</td>
+                    <td className="p-3 text-right tabular-nums text-slate-300">{s.instructors_count}</td>
+                    <td className="p-3 text-right tabular-nums text-slate-300">{s.classes_count}</td>
+                    <td className="p-3 text-right tabular-nums">
+                      <span className={s.bookings_30d > 0 ? "text-white" : "text-slate-500"}>
+                        {s.bookings_30d}
+                      </span>
+                    </td>
+                    <td className="p-3 text-slate-300">{formatDate(s.created_at)}</td>
                   </tr>
+                  {isExpanded && (
+                    <tr className="border-b border-slate-700 bg-slate-800/80">
+                      <td colSpan={9} className="px-6 py-4">
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                          <div>
+                            <p className="text-xs font-medium text-slate-500">{t("studios.ownerEmail")}</p>
+                            <p className="mt-0.5 text-sm text-white">{s.owner_email ?? "—"}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-medium text-slate-500">{t("studios.period")}</p>
+                            <p className="mt-0.5 text-sm text-white">
+                              {s.plan_status === "trialing" ? "Trial" : s.subscription_period ?? "—"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-medium text-slate-500">{t("studios.trialEnds")}</p>
+                            <p className="mt-0.5 text-sm text-white">
+                              {s.plan_status === "trialing" && s.trial_ends_at ? (
+                                <span className={days !== null && days <= 3 ? "text-red-400" : ""}>
+                                  {formatDate(s.trial_ends_at)}
+                                  {days !== null && ` (${days}d left)`}
+                                </span>
+                              ) : "—"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-medium text-slate-500">Currency</p>
+                            <p className="mt-0.5 text-sm uppercase text-white">{s.currency ?? "usd"}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-medium text-slate-500">Payout Model</p>
+                            <p className="mt-0.5 text-sm text-white">
+                              {s.payout_model === "instructor_direct" ? (
+                                <span className="rounded bg-amber-500/20 px-1.5 py-0.5 text-xs text-amber-300">Collective</span>
+                              ) : (
+                                <span className="text-slate-300">Studio</span>
+                              )}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-medium text-slate-500">Activity (30d)</p>
+                            <p className="mt-0.5 text-sm text-white">
+                              {s.bookings_30d} bookings
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-medium text-slate-500">Resources</p>
+                            <p className="mt-0.5 text-sm text-white">
+                              {s.members_count} members · {s.instructors_count} instructors · {s.classes_count} classes
+                            </p>
+                          </div>
+                          <div className="flex items-end">
+                            <Link
+                              href={`/admin/studios/${s.id}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 rounded-lg border border-brand-500/50 px-3 py-1.5 text-xs font-medium text-brand-400 transition-colors duration-150 hover:bg-brand-500/20"
+                            >
+                              Full Detail
+                              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+                            </Link>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 );
               })}
             </tbody>

@@ -23,7 +23,7 @@ export async function GET(request: Request) {
 
     let query = supabase
       .from("studios")
-      .select("id, name, email, plan_status, subscription_period, trial_ends_at, created_at, is_demo", { count: "exact" });
+      .select("id, name, email, plan_status, subscription_period, trial_ends_at, created_at, is_demo, stripe_connect_onboarding_complete, currency, payout_model", { count: "exact" });
 
     if (!showDemo) {
       query = query.eq("is_demo", false);
@@ -93,11 +93,36 @@ export async function GET(request: Request) {
       {} as Record<string, number>
     );
 
+    // 追加カウント: instructors, classes, 30日ブッキング
+    const [{ data: instructorRows }, { data: classRows }, { data: bookingRows }] = await Promise.all([
+      supabase.from("instructors").select("studio_id").in("studio_id", studioIds),
+      supabase.from("classes").select("studio_id").in("studio_id", studioIds).eq("is_active", true),
+      supabase.from("bookings").select("studio_id").in("studio_id", studioIds).gte("created_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
+    ]);
+
+    const instructorsByStudio = (instructorRows || []).reduce((acc, r) => {
+      acc[r.studio_id] = (acc[r.studio_id] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const classesByStudio = (classRows || []).reduce((acc, r) => {
+      acc[r.studio_id] = (acc[r.studio_id] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const bookingsByStudio = (bookingRows || []).reduce((acc, r) => {
+      acc[r.studio_id] = (acc[r.studio_id] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
     let result = (studios || []).map((s) => ({
       ...s,
       owner_name: ownerByStudio[s.id]?.full_name ?? null,
       owner_email: ownerByStudio[s.id]?.email ?? null,
       members_count: countByStudio[s.id] ?? 0,
+      instructors_count: instructorsByStudio[s.id] ?? 0,
+      classes_count: classesByStudio[s.id] ?? 0,
+      bookings_30d: bookingsByStudio[s.id] ?? 0,
     }));
 
     if (sort === "members") {
