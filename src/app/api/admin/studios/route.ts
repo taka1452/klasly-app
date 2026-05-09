@@ -93,11 +93,13 @@ export async function GET(request: Request) {
       {} as Record<string, number>
     );
 
-    // 追加カウント: instructors, classes, 30日ブッキング
-    const [{ data: instructorRows }, { data: classRows }, { data: bookingRows }] = await Promise.all([
+    // 追加カウント: instructors, classes, 30日ブッキング, 30日売上
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const [{ data: instructorRows }, { data: classRows }, { data: bookingRows }, { data: paymentRows }] = await Promise.all([
       supabase.from("instructors").select("studio_id").in("studio_id", studioIds),
       supabase.from("class_templates").select("studio_id").in("studio_id", studioIds).eq("is_active", true),
-      supabase.from("bookings").select("studio_id").in("studio_id", studioIds).gte("created_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
+      supabase.from("bookings").select("studio_id").in("studio_id", studioIds).gte("created_at", thirtyDaysAgo),
+      supabase.from("payments").select("studio_id, amount").in("studio_id", studioIds).eq("status", "paid").gte("created_at", thirtyDaysAgo),
     ]);
 
     const instructorsByStudio = (instructorRows || []).reduce((acc, r) => {
@@ -115,6 +117,19 @@ export async function GET(request: Request) {
       return acc;
     }, {} as Record<string, number>);
 
+    const revenueByStudio = (paymentRows || []).reduce((acc, r) => {
+      acc[r.studio_id] = (acc[r.studio_id] || 0) + (r.amount ?? 0);
+      return acc;
+    }, {} as Record<string, number>);
+
+    // プラットフォーム手数料率を取得
+    const { data: feeRow } = await supabase
+      .from("platform_settings")
+      .select("value")
+      .eq("key", "platform_fee_percent")
+      .single();
+    const platformFeePercent = parseFloat(feeRow?.value ?? "0.5");
+
     let result = (studios || []).map((s) => ({
       ...s,
       owner_name: ownerByStudio[s.id]?.full_name ?? null,
@@ -123,6 +138,7 @@ export async function GET(request: Request) {
       instructors_count: instructorsByStudio[s.id] ?? 0,
       classes_count: classesByStudio[s.id] ?? 0,
       bookings_30d: bookingsByStudio[s.id] ?? 0,
+      revenue_30d: revenueByStudio[s.id] ?? 0,
     }));
 
     if (sort === "members") {
@@ -134,6 +150,7 @@ export async function GET(request: Request) {
       total: totalCount ?? 0,
       page,
       limit,
+      platformFeePercent,
     });
   } catch (e) {
     if (e && typeof e === "object" && "digest" in e) {

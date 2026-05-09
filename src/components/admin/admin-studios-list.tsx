@@ -18,6 +18,7 @@ type StudioRow = {
   instructors_count: number;
   classes_count: number;
   bookings_30d: number;
+  revenue_30d: number;
   stripe_connect_onboarding_complete?: boolean;
   currency?: string;
   payout_model?: string;
@@ -48,7 +49,7 @@ export default function AdminStudiosList({ statusCounts }: { statusCounts: Statu
   const [status, setStatus] = useState("all");
   const [sort, setSort] = useState("newest");
   const [page, setPage] = useState(1);
-  const [data, setData] = useState<{ studios: StudioRow[]; total: number }>({ studios: [], total: 0 });
+  const [data, setData] = useState<{ studios: StudioRow[]; total: number; platformFeePercent: number }>({ studios: [], total: 0, platformFeePercent: 0.5 });
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -64,19 +65,26 @@ export default function AdminStudiosList({ statusCounts }: { statusCounts: Statu
     fetch(`/api/admin/studios?${params}`)
       .then((r) => r.json())
       .then((d) => {
-        setData({ studios: d.studios ?? [], total: d.total ?? 0 });
+        setData({ studios: d.studios ?? [], total: d.total ?? 0, platformFeePercent: d.platformFeePercent ?? 0.5 });
       })
-      .catch(() => setData({ studios: [], total: 0 }))
+      .catch(() => setData({ studios: [], total: 0, platformFeePercent: 0.5 }))
       .finally(() => setLoading(false));
   }, [search, status, sort, page]);
 
   const totalPages = Math.ceil(data.total / 20) || 1;
   const formatDate = (d: string) => formatDateLocale(d);
+  const formatCurrency = (cents: number) => `$${(cents / 100).toFixed(0)}`;
+  const formatCurrencyFull = (cents: number) => `$${(cents / 100).toFixed(2)}`;
   const trialDaysLeft = (end: string | null) => {
     if (!end) return null;
     const days = Math.ceil((new Date(end).getTime() - Date.now()) / (24 * 60 * 60 * 1000));
     return days;
   };
+
+  // Summary: all studios total
+  const totalMembers = data.studios.reduce((s, st) => s + st.members_count, 0);
+  const totalRevenue30d = data.studios.reduce((s, st) => s + st.revenue_30d, 0);
+  const totalFee30d = Math.round(totalRevenue30d * data.platformFeePercent / 100);
 
   return (
     <div className="space-y-4">
@@ -123,13 +131,35 @@ export default function AdminStudiosList({ statusCounts }: { statusCounts: Statu
         </select>
       </div>
 
+      {/* Revenue Summary Bar */}
+      {!loading && data.studios.length > 0 && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="rounded-lg border border-slate-700 bg-slate-800 px-4 py-3">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">Total Members</p>
+            <p className="mt-1 text-xl font-bold tabular-nums text-white">{totalMembers}</p>
+          </div>
+          <div className="rounded-lg border border-slate-700 bg-slate-800 px-4 py-3">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">30d Revenue (all)</p>
+            <p className="mt-1 text-xl font-bold tabular-nums text-white">{formatCurrencyFull(totalRevenue30d)}</p>
+          </div>
+          <div className="rounded-lg border border-emerald-700/50 bg-emerald-900/20 px-4 py-3">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-emerald-400">30d Platform Fee ({data.platformFeePercent}%)</p>
+            <p className="mt-1 text-xl font-bold tabular-nums text-emerald-300">{formatCurrencyFull(totalFee30d)}</p>
+          </div>
+          <div className="rounded-lg border border-slate-700 bg-slate-800 px-4 py-3">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">Proj. Annual Fee</p>
+            <p className="mt-1 text-xl font-bold tabular-nums text-white">{formatCurrencyFull(totalFee30d * 12)}</p>
+          </div>
+        </div>
+      )}
+
       <div className="overflow-x-auto rounded-lg border border-slate-700 bg-slate-800">
         {loading ? (
           <div className="p-8 text-center text-slate-400">{t("studios.loading")}</div>
         ) : data.studios.length === 0 ? (
           <div className="p-8 text-center text-slate-400">{t("studios.noStudiosFound")}</div>
         ) : (
-          <table className="w-full min-w-[900px]">
+          <table className="w-full min-w-[1100px]">
             <thead>
               <tr className="border-b border-slate-600 text-left text-xs text-slate-400">
                 <th className="w-8 p-3"></th>
@@ -140,6 +170,8 @@ export default function AdminStudiosList({ statusCounts }: { statusCounts: Statu
                 <th className="p-3 font-medium text-right">Inst.</th>
                 <th className="p-3 font-medium text-right">Classes</th>
                 <th className="p-3 font-medium text-right">30d Book</th>
+                <th className="p-3 font-medium text-right">30d Rev</th>
+                <th className="p-3 font-medium text-right">Fee</th>
                 <th className="p-3 font-medium">{t("studios.created")}</th>
               </tr>
             </thead>
@@ -206,11 +238,21 @@ export default function AdminStudiosList({ statusCounts }: { statusCounts: Statu
                         {s.bookings_30d}
                       </span>
                     </td>
+                    <td className="p-3 text-right tabular-nums">
+                      <span className={s.revenue_30d > 0 ? "text-white" : "text-slate-500"}>
+                        {s.revenue_30d > 0 ? formatCurrency(s.revenue_30d) : "—"}
+                      </span>
+                    </td>
+                    <td className="p-3 text-right tabular-nums">
+                      <span className={s.revenue_30d > 0 ? "text-emerald-400" : "text-slate-500"}>
+                        {s.revenue_30d > 0 ? formatCurrencyFull(Math.round(s.revenue_30d * data.platformFeePercent / 100)) : "—"}
+                      </span>
+                    </td>
                     <td className="p-3 text-slate-300">{formatDate(s.created_at)}</td>
                   </tr>
                   {isExpanded && (
                     <tr className="border-b border-slate-700 bg-slate-800/80">
-                      <td colSpan={9} className="px-6 py-4">
+                      <td colSpan={11} className="px-6 py-4">
                         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                           <div>
                             <p className="text-xs font-medium text-slate-500">{t("studios.ownerEmail")}</p>
@@ -248,9 +290,21 @@ export default function AdminStudiosList({ statusCounts }: { statusCounts: Statu
                             </p>
                           </div>
                           <div>
-                            <p className="text-xs font-medium text-slate-500">Activity (30d)</p>
+                            <p className="text-xs font-medium text-slate-500">30d Revenue</p>
                             <p className="mt-0.5 text-sm text-white">
-                              {s.bookings_30d} bookings
+                              {s.revenue_30d > 0 ? formatCurrencyFull(s.revenue_30d) : "—"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-medium text-slate-500">30d Fee ({data.platformFeePercent}%)</p>
+                            <p className="mt-0.5 text-sm text-emerald-400">
+                              {s.revenue_30d > 0 ? formatCurrencyFull(Math.round(s.revenue_30d * data.platformFeePercent / 100)) : "—"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-medium text-slate-500">Proj. Annual Fee</p>
+                            <p className="mt-0.5 text-sm text-white">
+                              {s.revenue_30d > 0 ? formatCurrencyFull(Math.round(s.revenue_30d * data.platformFeePercent / 100) * 12) : "—"}
                             </p>
                           </div>
                           <div>

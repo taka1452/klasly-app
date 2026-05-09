@@ -73,12 +73,36 @@ export default async function AdminStudioDetailPage({
     supabase.from("drop_in_attendances").select("id", { count: "exact", head: true }).eq("studio_id", studioId).gte("attended_at", thirtyDaysAgo),
   ]);
 
-  const { data: payments } = await supabase
-    .from("payments")
-    .select("id, amount, type, status, paid_at, created_at, stripe_payment_intent_id")
-    .eq("studio_id", studioId)
-    .order("created_at", { ascending: false })
-    .limit(10);
+  const [{ data: payments }, { data: revenueRows }, { data: feeRow }] = await Promise.all([
+    supabase
+      .from("payments")
+      .select("id, amount, type, status, paid_at, created_at, stripe_payment_intent_id")
+      .eq("studio_id", studioId)
+      .order("created_at", { ascending: false })
+      .limit(10),
+    supabase
+      .from("payments")
+      .select("amount, type")
+      .eq("studio_id", studioId)
+      .eq("status", "paid")
+      .gte("created_at", thirtyDaysAgo),
+    supabase
+      .from("platform_settings")
+      .select("value")
+      .eq("key", "platform_fee_percent")
+      .single(),
+  ]);
+
+  const revenue30d = (revenueRows ?? []).reduce((s, r) => s + (r.amount ?? 0), 0);
+  const platformFeePercent = parseFloat(feeRow?.value ?? "0.5");
+  const platformFee30d = Math.round(revenue30d * platformFeePercent / 100);
+
+  // 支払い種別ごとの内訳
+  const revenueByType = (revenueRows ?? []).reduce((acc, r) => {
+    const t = r.type ?? "other";
+    acc[t] = (acc[t] || 0) + (r.amount ?? 0);
+    return acc;
+  }, {} as Record<string, number>);
 
   const studioWithOwner = {
     ...studio,
@@ -154,7 +178,7 @@ export default async function AdminStudioDetailPage({
       </div>
 
       {/* Health Summary Bar */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">
         {[
           {
             label: "Plan",
@@ -167,18 +191,49 @@ export default async function AdminStudioDetailPage({
           { label: "Classes", value: String(classesActive ?? 0), ok: hasClasses },
           { label: "30d Bookings", value: String(bookings30d ?? 0), ok: hasBookings },
           { label: "Attendance", value: String((attended30d ?? 0) + (dropIn30d ?? 0)), ok: ((attended30d ?? 0) + (dropIn30d ?? 0)) > 0 },
+          { label: "30d Revenue", value: revenue30d > 0 ? `$${(revenue30d / 100).toFixed(0)}` : "—", ok: revenue30d > 0 },
+          { label: `Fee (${platformFeePercent}%)`, value: platformFee30d > 0 ? `$${(platformFee30d / 100).toFixed(2)}` : "—", ok: platformFee30d > 0, highlight: true },
         ].map((item) => (
-          <div key={item.label} className="rounded-lg border border-slate-700 bg-slate-800 px-4 py-3">
-            <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">{item.label}</p>
+          <div key={item.label} className={`rounded-lg border px-4 py-3 ${"highlight" in item && item.highlight ? "border-emerald-700/50 bg-emerald-900/20" : "border-slate-700 bg-slate-800"}`}>
+            <p className={`text-[11px] font-medium uppercase tracking-wider ${"highlight" in item && item.highlight ? "text-emerald-400" : "text-slate-500"}`}>{item.label}</p>
             <div className="mt-1 flex items-center gap-2">
               <span className={`h-2 w-2 rounded-full ${item.warn ? "bg-amber-400" : item.ok ? "bg-emerald-400" : "bg-slate-500"}`} />
-              <span className={`text-lg font-semibold tabular-nums ${item.warn ? "text-amber-300" : item.ok ? "text-white" : "text-slate-400"}`}>
+              <span className={`text-lg font-semibold tabular-nums ${item.warn ? "text-amber-300" : "highlight" in item && item.highlight ? "text-emerald-300" : item.ok ? "text-white" : "text-slate-400"}`}>
                 {item.value}
               </span>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Revenue Breakdown (30d) */}
+      {revenue30d > 0 && (
+        <div className="rounded-lg border border-slate-700 bg-slate-800 p-6">
+          <h3 className="text-sm font-medium text-slate-400">30-Day Revenue Breakdown</h3>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {Object.entries(revenueByType).sort((a, b) => b[1] - a[1]).map(([type, amount]) => (
+              <div key={type} className="flex items-center justify-between rounded-lg bg-slate-700/40 px-4 py-2.5">
+                <span className="text-sm capitalize text-slate-300">{type.replace(/_/g, " ")}</span>
+                <span className="text-sm font-semibold tabular-nums text-white">${(amount / 100).toFixed(2)}</span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-slate-700 pt-4 text-sm">
+            <div>
+              <span className="text-slate-500">Total:</span>{" "}
+              <span className="font-semibold text-white">${(revenue30d / 100).toFixed(2)}</span>
+            </div>
+            <div>
+              <span className="text-slate-500">Platform Fee ({platformFeePercent}%):</span>{" "}
+              <span className="font-semibold text-emerald-400">${(platformFee30d / 100).toFixed(2)}</span>
+            </div>
+            <div>
+              <span className="text-slate-500">Proj. Annual Fee:</span>{" "}
+              <span className="font-semibold text-white">${((platformFee30d * 12) / 100).toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <AdminStudioDetail
         studio={studioWithOwner}
