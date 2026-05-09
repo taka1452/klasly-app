@@ -93,11 +93,11 @@ export default function SetupTaskList({
 
   return (
     <div
-      className="fixed bottom-6 right-6 z-[9990] w-[340px] rounded-xl border border-gray-200 bg-white shadow-lg"
+      className="fixed bottom-6 right-6 z-[9990] flex w-[340px] max-h-[calc(100dvh-3rem)] flex-col rounded-xl border border-gray-200 bg-white shadow-lg"
       aria-label={title}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between gap-2 px-5 pt-4 pb-3">
+      {/* Header — always visible */}
+      <div className="flex shrink-0 items-center justify-between gap-2 px-5 pt-4 pb-3">
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-semibold text-gray-900">
             {allDone ? "You're all set!" : title}
@@ -111,7 +111,7 @@ export default function SetupTaskList({
         <button
           type="button"
           onClick={handleClose}
-          className="shrink-0 tap-target rounded text-gray-500 hover:bg-gray-100 hover:text-gray-600"
+          className="shrink-0 tap-target rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-600"
           aria-label="Close checklist"
         >
           <X className="h-4 w-4" />
@@ -120,7 +120,7 @@ export default function SetupTaskList({
 
       {/* Progress bar */}
       {!allDone && (
-        <div className="mx-5 mb-3">
+        <div className="mx-5 mb-3 shrink-0">
           <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
             <div
               className="h-full rounded-full bg-brand-500 transition-all duration-500 ease-out"
@@ -152,9 +152,9 @@ export default function SetupTaskList({
           </Link>
         </div>
       ) : (
-        /* Task list */
+        /* Task list — scrollable when panel exceeds viewport */
         <>
-        <ul className="px-5 pb-1 space-y-1">
+        <ul className="min-h-0 overflow-y-auto px-5 pb-1 space-y-1">
           {tasks.map((task) => (
             <li key={task.id} className="flex items-start gap-3 py-2">
               {/* Checkmark */}
@@ -206,7 +206,7 @@ export default function SetupTaskList({
           ))}
         </ul>
         {guideHref && (
-          <div className="border-t border-gray-100 px-5 py-3">
+          <div className="shrink-0 border-t border-gray-100 px-5 py-3">
             <Link
               href={guideHref}
               className="flex items-center justify-center gap-1 text-xs font-medium text-brand-600 hover:text-brand-700"
