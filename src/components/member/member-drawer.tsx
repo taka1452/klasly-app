@@ -51,6 +51,9 @@ export default function MemberDrawer({
   showVideos,
   showMyStats,
 }: Props) {
+  const demoEmail = process.env.NEXT_PUBLIC_DEMO_DISPLAY_EMAIL;
+  const displayName = (demoEmail && userName.includes("@")) ? "Member" : userName;
+  const displayEmail = demoEmail || userEmail;
   const pathname = usePathname();
   const router = useRouter();
 
@@ -137,9 +140,9 @@ export default function MemberDrawer({
         <div className="flex items-start justify-between gap-3 border-b border-gray-100 px-4 py-3">
           <div className="min-w-0 flex-1">
             <p className="truncate text-base font-semibold text-gray-900">
-              {userName}
+              {displayName}
             </p>
-            <p className="truncate text-xs text-gray-500">{process.env.NEXT_PUBLIC_DEMO_DISPLAY_EMAIL || userEmail}</p>
+            <p className="truncate text-xs text-gray-500">{displayEmail}</p>
           </div>
           <button
             onClick={onClose}
