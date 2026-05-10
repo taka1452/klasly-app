@@ -539,11 +539,7 @@ export default function Sidebar({
             <Link href="/terms" onClick={onMobileClose} className="text-gray-500 hover:text-gray-700">
               Terms
             </Link>
-            {showAdminLink && (
-              <Link href="/admin" onClick={onMobileClose} className="text-gray-400 hover:text-gray-600">
-                Admin
-              </Link>
-            )}
+
           </div>
         </div>
       </aside>
@@ -585,11 +581,7 @@ export default function Sidebar({
           <Link href="/terms" className="text-gray-500 hover:text-gray-700">
             Terms
           </Link>
-          {showAdminLink && (
-            <Link href="/admin" className="text-gray-400 hover:text-gray-600">
-              Admin
-            </Link>
-          )}
+
         </div>
       </div>
     </aside>
