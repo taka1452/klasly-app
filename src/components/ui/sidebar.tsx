@@ -14,6 +14,7 @@ type SidebarProps = {
   onMobileClose?: () => void;
   isAlsoInstructor?: boolean;
   managerPermissions?: ManagerPermissions | null;
+  showAdminLink?: boolean;
 };
 
 type NavItem = {
@@ -425,6 +426,7 @@ export default function Sidebar({
   onMobileClose,
   isAlsoInstructor = false,
   managerPermissions = null,
+  showAdminLink = false,
 }: SidebarProps) {
   const pathname = usePathname();
   const { isEnabled } = useFeature();
