@@ -16,6 +16,9 @@ export default function InstructorHeader({
   userEmail,
   onSidebarToggle,
 }: InstructorHeaderProps) {
+  const demoEmail = process.env.NEXT_PUBLIC_DEMO_DISPLAY_EMAIL;
+  const displayName = (demoEmail && userName.includes("@")) ? "Instructor" : userName;
+  const displayEmail = demoEmail || userEmail;
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -83,7 +86,7 @@ export default function InstructorHeader({
             {initials}
           </div>
           <span className="hidden text-sm font-medium text-gray-700 sm:block">
-            {userName}
+            {displayName}
           </span>
           <svg
             className="h-4 w-4 text-gray-400"
@@ -99,8 +102,8 @@ export default function InstructorHeader({
         {menuOpen && (
           <div className="absolute right-0 mt-2 w-56 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
             <div className="border-b border-gray-100 px-4 py-3">
-              <p className="text-sm font-medium text-gray-900">{userName}</p>
-              <p className="text-xs text-gray-500">{process.env.NEXT_PUBLIC_DEMO_DISPLAY_EMAIL || userEmail}</p>
+              <p className="text-sm font-medium text-gray-900">{displayName}</p>
+              <p className="text-xs text-gray-500">{displayEmail}</p>
             </div>
             <a
               href="/account"

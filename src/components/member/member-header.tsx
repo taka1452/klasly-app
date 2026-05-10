@@ -28,6 +28,9 @@ export default function MemberHeader({
   streakAtRisk = false,
   onMenuClick,
 }: Props) {
+  const demoEmail = process.env.NEXT_PUBLIC_DEMO_DISPLAY_EMAIL;
+  const displayName = (demoEmail && userName.includes("@")) ? "Member" : userName;
+  const displayEmail = demoEmail || userEmail;
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -84,7 +87,7 @@ export default function MemberHeader({
               size="sm"
             />
           )}
-          <span className="hidden sm:inline">{userName}</span>
+          <span className="hidden sm:inline">{displayName}</span>
           <svg
             className="h-4 w-4 text-gray-400"
             fill="none"
@@ -102,8 +105,8 @@ export default function MemberHeader({
         {menuOpen && (
           <div className="popover-in absolute right-0 mt-2 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg" style={{ ["--popover-origin" as string]: "top right" }}>
             <div className="border-b border-gray-100 px-3 py-2">
-              <p className="text-sm font-medium text-gray-900">{userName}</p>
-              <p className="text-xs text-gray-500">{process.env.NEXT_PUBLIC_DEMO_DISPLAY_EMAIL || userEmail}</p>
+              <p className="text-sm font-medium text-gray-900">{displayName}</p>
+              <p className="text-xs text-gray-500">{displayEmail}</p>
               {rank && (
                 <p className="mt-1 text-xs text-gray-700">
                   <span className="font-semibold">{RANK_LABEL[rank]}</span>
