@@ -88,7 +88,7 @@ export default function AdminHeader({
             className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-slate-300 transition-[transform,background-color,color] duration-150 ease-out hover:bg-slate-700 hover:text-white active:scale-[0.97]"
           >
             <span className="hidden truncate max-w-[160px] sm:inline text-sm">
-              {userEmail}
+              {process.env.NEXT_PUBLIC_DEMO_DISPLAY_EMAIL || userEmail}
             </span>
             <svg
               className="h-4 w-4 text-slate-400"
@@ -104,7 +104,7 @@ export default function AdminHeader({
           {menuOpen && (
             <div className="popover-in absolute right-0 mt-2 w-56 rounded-lg border border-slate-600 bg-slate-800 py-1 shadow-lg" style={{ ["--popover-origin" as string]: "top right" }}>
               <div className="border-b border-slate-600 px-4 py-3">
-                <p className="truncate text-sm text-slate-300">{userEmail}</p>
+                <p className="truncate text-sm text-slate-300">{process.env.NEXT_PUBLIC_DEMO_DISPLAY_EMAIL || userEmail}</p>
               </div>
               <button
                 type="button"

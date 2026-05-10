@@ -139,7 +139,7 @@ export default function MemberDrawer({
             <p className="truncate text-base font-semibold text-gray-900">
               {userName}
             </p>
-            <p className="truncate text-xs text-gray-500">{userEmail}</p>
+            <p className="truncate text-xs text-gray-500">{process.env.NEXT_PUBLIC_DEMO_DISPLAY_EMAIL || userEmail}</p>
           </div>
           <button
             onClick={onClose}

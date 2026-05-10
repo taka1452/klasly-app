@@ -100,7 +100,7 @@ export default function InstructorHeader({
           <div className="absolute right-0 mt-2 w-56 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
             <div className="border-b border-gray-100 px-4 py-3">
               <p className="text-sm font-medium text-gray-900">{userName}</p>
-              <p className="text-xs text-gray-500">{userEmail}</p>
+              <p className="text-xs text-gray-500">{process.env.NEXT_PUBLIC_DEMO_DISPLAY_EMAIL || userEmail}</p>
             </div>
             <a
               href="/account"

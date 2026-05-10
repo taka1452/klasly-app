@@ -12,7 +12,6 @@ type SidebarProps = {
   studioName: string;
   isMobileOpen?: boolean;
   onMobileClose?: () => void;
-  showAdminLink?: boolean;
   isAlsoInstructor?: boolean;
   managerPermissions?: ManagerPermissions | null;
 };
@@ -424,7 +423,6 @@ export default function Sidebar({
   studioName,
   isMobileOpen = false,
   onMobileClose,
-  showAdminLink = false,
   isAlsoInstructor = false,
   managerPermissions = null,
 }: SidebarProps) {

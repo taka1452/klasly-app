@@ -103,7 +103,7 @@ export default function MemberHeader({
           <div className="popover-in absolute right-0 mt-2 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg" style={{ ["--popover-origin" as string]: "top right" }}>
             <div className="border-b border-gray-100 px-3 py-2">
               <p className="text-sm font-medium text-gray-900">{userName}</p>
-              <p className="text-xs text-gray-500">{userEmail}</p>
+              <p className="text-xs text-gray-500">{process.env.NEXT_PUBLIC_DEMO_DISPLAY_EMAIL || userEmail}</p>
               {rank && (
                 <p className="mt-1 text-xs text-gray-700">
                   <span className="font-semibold">{RANK_LABEL[rank]}</span>
