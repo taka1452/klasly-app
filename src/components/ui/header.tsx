@@ -48,9 +48,10 @@ type HeaderProps = {
   userName: string;
   userEmail: string;
   onSidebarToggle?: () => void;
+  showAdminLink?: boolean;
 };
 
-export default function Header({ userName, userEmail, onSidebarToggle }: HeaderProps) {
+export default function Header({ userName, userEmail, onSidebarToggle, showAdminLink = false }: HeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -174,7 +175,7 @@ export default function Header({ userName, userEmail, onSidebarToggle }: HeaderP
           <div role="menu" className="absolute right-0 mt-2 w-56 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
             <div className="border-b border-gray-100 px-4 py-3">
               <p className="text-sm font-medium text-gray-900">{userName}</p>
-              <p className="text-xs text-gray-500">{userEmail}</p>
+              <p className="text-xs text-gray-500">{process.env.NEXT_PUBLIC_DEMO_DISPLAY_EMAIL || userEmail}</p>
             </div>
             <Link
               href="/account"
@@ -197,6 +198,19 @@ export default function Header({ userName, userEmail, onSidebarToggle }: HeaderP
               </svg>
               Account settings
             </Link>
+            {showAdminLink && (
+              <Link
+                href="/admin"
+                role="menuitem"
+                onClick={() => setMenuOpen(false)}
+                className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-gray-400 hover:bg-gray-50 hover:text-gray-600"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                </svg>
+                Admin
+              </Link>
+            )}
             <button
               role="menuitem"
               onClick={handleLogout}

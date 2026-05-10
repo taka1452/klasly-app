@@ -85,7 +85,6 @@ export default function DashboardShell({
         studioName={studioName}
         isMobileOpen={sidebarOpen}
         onMobileClose={() => setSidebarOpen(false)}
-        showAdminLink={showAdminLink}
         isAlsoInstructor={isAlsoInstructor}
         managerPermissions={managerPermissions}
       />
@@ -95,6 +94,7 @@ export default function DashboardShell({
           userName={userName}
           userEmail={userEmail}
           onSidebarToggle={() => setSidebarOpen((o) => !o)}
+          showAdminLink={showAdminLink}
         />
         <main className="min-h-0 flex-1 overflow-y-auto p-4 pb-32 md:p-6 md:pb-32">
           {banner && <div className="mb-6">{banner}</div>}
