@@ -98,7 +98,7 @@ export default function Header({ userName, userEmail, onSidebarToggle, showAdmin
     .slice(0, 2);
 
   return (
-    <header className="flex h-16 items-center justify-between gap-4 border-b border-gray-200 bg-white px-4 sm:px-6">
+    <header className="relative z-10 flex h-16 items-center justify-between gap-4 border-b border-gray-200 bg-white px-4 sm:px-6">
       {/* モバイル: ハンバーガー + ページタイトル */}
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <button
