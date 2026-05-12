@@ -1405,6 +1405,7 @@ export const helpArticles: HelpArticle[] = [
     ],
     tips: [
       'Published events appear as purple banners on the main schedule calendar — both the member-facing schedule and the dashboard calendar.',
+      'Use "View Public Page" to preview exactly what attendees see — including booking buttons and pricing.',
       'You can create private events (not visible publicly) for corporate retreats or invite-only events.',
       'Guests can apply without a Klasly account — great for one-time retreat attendees.',
       'Installments are collected automatically. You\'ll be notified if a payment fails.',
@@ -1592,6 +1593,34 @@ export const helpArticles: HelpArticle[] = [
       'Print signed copy on the envelope detail page opens a clean letter-style view — Cmd-P → Save as PDF gives you a real PDF.',
     ],
     relatedArticles: ['setup-waiver-template'],
+  },
+
+  {
+    id: 'form-field-types',
+    title: 'Form field types and options',
+    summary: 'All available question types for custom forms — including multiple choice and rating scales.',
+    category: 'settings',
+    audience: ['owner', 'manager'],
+    keywords: ['form', 'field', 'question', 'type', 'multiple choice', 'rating', 'scale', 'dropdown', 'checkbox', 'radio', 'options'],
+    steps: [
+      {
+        title: 'Available field types',
+        description: 'Short text, Paragraph, Email, Phone, Date, Dropdown, Single choice, Multiple choice, Rating scale, Signature, and Acknowledgement.',
+      },
+      {
+        title: 'Adding options for choice fields',
+        description: 'For Dropdown, Single choice, and Multiple choice: enter one option per line in the options textarea. Commas and spaces within option text are fully supported.',
+      },
+      {
+        title: 'Rating scale',
+        description: 'Set min/max values (e.g. 1–5) and optional labels (e.g. "Not at all" / "Nearly every day"). Respondents click a number button to answer.',
+      },
+    ],
+    tips: [
+      'Rating scales work great for wellness intake forms — e.g. PHQ-9 style questionnaires.',
+      'Use "Acknowledgement" for terms or waivers the respondent must check to agree.',
+    ],
+    relatedArticles: ['multi-signature-contracts'],
   },
 
   {

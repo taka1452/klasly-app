@@ -16,6 +16,7 @@ export type FormFieldType =
   | "select"
   | "radio"
   | "checkbox"
+  | "rating"
   | "signature"
   | "acknowledgement";
 
@@ -30,6 +31,11 @@ export type FormField = {
   sensitive?: boolean; // medical etc. — hidden by default in submissions list
   // For acknowledgement fields: the text the user must agree to.
   acknowledgement_text?: string;
+  // For rating fields
+  rating_min?: number;
+  rating_max?: number;
+  rating_min_label?: string;
+  rating_max_label?: string;
 };
 
 export type CustomForm = {

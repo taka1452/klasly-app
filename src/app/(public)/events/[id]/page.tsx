@@ -13,6 +13,7 @@ import type { Metadata } from "next";
 
 type Props = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -52,8 +53,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function EventPage({ params }: Props) {
+export default async function EventPage({ params, searchParams }: Props) {
   const { id } = await params;
+  const sp = await searchParams;
+  const isPreview = sp.preview === "true";
 
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!serviceRoleKey) notFound();
@@ -69,7 +72,8 @@ export default async function EventPage({ params }: Props) {
   );
 
   // Dashboard mode: logged-in user whose studio owns this event
-  if (user) {
+  // Skip redirect when ?preview=true so "View Public Page" works for owners
+  if (user && !isPreview) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("studio_id")
@@ -165,6 +169,12 @@ export default async function EventPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
+      {isPreview && (
+        <div className="mb-6 flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm text-blue-700">
+          <span>You are previewing this page as a visitor would see it.</span>
+          <a href={`/events/${id}/manage`} className="font-medium underline">Back to manage →</a>
+        </div>
+      )}
       {/* Hero Image (LCP candidate: priority load) */}
       {event.image_url && (
         <div className="relative mb-8 h-64 overflow-hidden rounded-2xl sm:h-80 md:h-96">

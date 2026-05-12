@@ -256,6 +256,55 @@ function FieldRenderer({
     );
   }
 
+  if (field.type === "rating") {
+    const min = field.rating_min ?? 1;
+    const max = field.rating_max ?? 5;
+    const steps = Array.from({ length: max - min + 1 }, (_, i) => min + i);
+    const selected = value != null ? Number(value) : null;
+    return (
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-700">
+          {field.label}
+          {req}
+        </label>
+        {(field.rating_min_label || field.rating_max_label) && (
+          <div className="mb-2 flex justify-between text-xs text-gray-500">
+            <span>{field.rating_min_label || min}</span>
+            <span>{field.rating_max_label || max}</span>
+          </div>
+        )}
+        <div className="flex gap-1">
+          {steps.map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => onChange(String(n))}
+              className={`flex h-10 w-10 items-center justify-center rounded-lg border text-sm font-medium transition ${
+                selected === n
+                  ? "border-blue-600 bg-blue-600 text-white"
+                  : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+              }`}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+        {field.help_text && <p className="mt-1 text-xs text-gray-500">{field.help_text}</p>}
+        {field.required && (
+          <input
+            type="text"
+            value={selected != null ? String(selected) : ""}
+            required
+            className="sr-only"
+            tabIndex={-1}
+            aria-hidden="true"
+            onChange={() => {}}
+          />
+        )}
+      </div>
+    );
+  }
+
   if (field.type === "acknowledgement") {
     return (
       <label className="flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">

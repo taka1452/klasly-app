@@ -172,7 +172,7 @@ export default async function EventManagePage({
         <div className="flex gap-3">
           {event.is_public && event.status === "published" && (
             <Link
-              href={`/events/${id}`}
+              href={`/events/${id}?preview=true`}
               target="_blank"
               className="btn-secondary"
             >

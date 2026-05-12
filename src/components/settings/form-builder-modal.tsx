@@ -18,6 +18,7 @@ const FIELD_TYPE_OPTIONS: { value: FormFieldType; label: string }[] = [
   { value: "select", label: "Dropdown" },
   { value: "radio", label: "Single choice" },
   { value: "checkbox", label: "Multiple choice" },
+  { value: "rating", label: "Rating scale" },
   { value: "signature", label: "Signature" },
   { value: "acknowledgement", label: "Acknowledgement" },
 ];
@@ -270,21 +271,73 @@ export default function FormBuilderModal({ form, onClose, onSaved }: Props) {
                     {(f.type === "select" || f.type === "radio" || f.type === "checkbox") && (
                       <div className="mt-2">
                         <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                          Options (comma separated)
+                          Options (one per line)
                         </label>
-                        <input
-                          type="text"
-                          value={(f.options || []).join(", ")}
+                        <textarea
+                          value={(f.options || []).join("\n")}
                           onChange={(e) =>
                             updateField(i, {
                               options: e.target.value
-                                .split(",")
+                                .split("\n")
                                 .map((s) => s.trim())
                                 .filter(Boolean),
                             })
                           }
+                          rows={Math.max(3, (f.options || []).length + 1)}
+                          placeholder={"Option 1\nOption 2\nOption 3"}
                           className="input-field w-full text-sm"
                         />
+                      </div>
+                    )}
+
+                    {f.type === "rating" && (
+                      <div className="mt-2 grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                            Min value
+                          </label>
+                          <input
+                            type="number"
+                            value={f.rating_min ?? 1}
+                            onChange={(e) => updateField(i, { rating_min: parseInt(e.target.value) || 1 })}
+                            className="input-field w-full text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                            Max value
+                          </label>
+                          <input
+                            type="number"
+                            value={f.rating_max ?? 5}
+                            onChange={(e) => updateField(i, { rating_max: parseInt(e.target.value) || 5 })}
+                            className="input-field w-full text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                            Min label (optional)
+                          </label>
+                          <input
+                            type="text"
+                            value={f.rating_min_label || ""}
+                            onChange={(e) => updateField(i, { rating_min_label: e.target.value })}
+                            placeholder="e.g. Not at all"
+                            className="input-field w-full text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                            Max label (optional)
+                          </label>
+                          <input
+                            type="text"
+                            value={f.rating_max_label || ""}
+                            onChange={(e) => updateField(i, { rating_max_label: e.target.value })}
+                            placeholder="e.g. Nearly every day"
+                            className="input-field w-full text-sm"
+                          />
+                        </div>
                       </div>
                     )}
 
