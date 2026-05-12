@@ -531,6 +531,75 @@ export function paymentFailed(params: {
   };
 }
 
+export function memberPaymentSuccessOwnerNotice(params: {
+  ownerName: string;
+  memberName: string;
+  memberEmail: string;
+  amount: number;
+  description: string;
+  studioName: string;
+}) {
+  const { ownerName, memberName, memberEmail, amount, description, studioName } = params;
+  const amountStr = `$${(amount / 100).toFixed(2)}`;
+  const dateStr = new Date().toLocaleDateString("en-US");
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">Payment Received</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${ownerName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      A payment has been successfully processed for your studio.
+    </p>
+    <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-weight:600;font-size:24px;color:${BRAND_COLOR};">${amountStr}</p>
+      <p style="margin:8px 0 0;font-size:14px;font-weight:600;">${memberName}</p>
+      <p style="margin:4px 0 0;font-size:14px;color:#6b7280;">${memberEmail}</p>
+      <p style="margin:8px 0 0;font-size:14px;">${description}</p>
+      <p style="margin:4px 0 0;font-size:14px;color:#6b7280;">${studioName} · ${dateStr}</p>
+    </div>
+    <p style="margin:0;font-size:14px;">
+      <a href="https://app.klasly.app/dashboard/payments" style="color:${BRAND_COLOR};font-weight:600;">View payments →</a>
+    </p>
+  `;
+  return {
+    subject: `Payment Received: ${amountStr} from ${memberName} - ${studioName}`,
+    html: baseHtml(content),
+  };
+}
+
+export function memberPaymentFailedOwnerNotice(params: {
+  ownerName: string;
+  memberName: string;
+  memberEmail: string;
+  amount: number;
+  description: string;
+  studioName: string;
+}) {
+  const { ownerName, memberName, memberEmail, amount, description, studioName } = params;
+  const amountStr = `$${(amount / 100).toFixed(2)}`;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#991b1b;">Member Payment Failed</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${ownerName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      A payment attempt has failed for one of your members.
+    </p>
+    <div style="background:#fef2f2;border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-weight:600;font-size:24px;color:#991b1b;">${amountStr}</p>
+      <p style="margin:8px 0 0;font-size:14px;font-weight:600;">${memberName}</p>
+      <p style="margin:4px 0 0;font-size:14px;color:#6b7280;">${memberEmail}</p>
+      <p style="margin:8px 0 0;font-size:14px;">${description}</p>
+    </div>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      Stripe will automatically retry the payment. If the issue persists, you may want to reach out to the member to update their payment method.
+    </p>
+    <p style="margin:0;font-size:14px;">
+      <a href="https://app.klasly.app/dashboard/payments" style="color:${BRAND_COLOR};font-weight:600;">View payments →</a>
+    </p>
+  `;
+  return {
+    subject: `Payment Failed: ${memberName} - ${studioName}`,
+    html: baseHtml(content),
+  };
+}
+
 export function waiverInvite(params: {
   memberName: string;
   studioName: string;

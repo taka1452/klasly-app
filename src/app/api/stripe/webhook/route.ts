@@ -3,7 +3,7 @@ import { stripe } from "@/lib/stripe/server";
 import Stripe from "stripe";
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email/send";
-import { paymentReceipt, paymentFailed, instructorPaymentNotification, eventBookingConfirmation, eventBookingConfirmedFull, eventBookingConfirmedInstallment, ownerNewBookingNotification } from "@/lib/email/templates";
+import { paymentReceipt, paymentFailed, instructorPaymentNotification, eventBookingConfirmation, eventBookingConfirmedFull, eventBookingConfirmedInstallment, ownerNewBookingNotification, memberPaymentSuccessOwnerNotice, memberPaymentFailedOwnerNotice } from "@/lib/email/templates";
 import { insertWebhookLog } from "@/lib/admin/logs";
 
 /** session.subscription は string | Subscription (expand時) のため、必ずID文字列を返す */
@@ -369,6 +369,114 @@ export async function POST(request: Request) {
 
         if (!subscriptionId) break;
 
+        // ── パスサブスクリプションの支払い成功 ──
+        const { data: passSubPaid } = await adminSupabase
+          .from("pass_subscriptions")
+          .select("id, member_id, studio_id, studio_passes(name)")
+          .eq("stripe_subscription_id", subscriptionId)
+          .maybeSingle();
+
+        if (passSubPaid) {
+          await adminSupabase
+            .from("pass_subscriptions")
+            .update({ status: "active" })
+            .eq("id", passSubPaid.id);
+
+          await adminSupabase.from("payments").insert({
+            studio_id: passSubPaid.studio_id,
+            member_id: passSubPaid.member_id,
+            amount: invoice.amount_paid,
+            currency: invoice.currency ?? "usd",
+            type: "monthly",
+            status: "paid",
+            stripe_invoice_id: invoice.id,
+            payment_type: "pass_subscription",
+            paid_at: new Date().toISOString(),
+          });
+
+          const { data: passStudio } = await adminSupabase.from("studios").select("name").eq("id", passSubPaid.studio_id).single();
+          const passStudioName = passStudio?.name ?? "Studio";
+          const passName = (passSubPaid.studio_passes as { name?: string } | null)?.name ?? "Pass subscription";
+
+          const { data: passMemberProf } = await adminSupabase
+            .from("members")
+            .select("profiles(full_name, email)")
+            .eq("id", passSubPaid.member_id)
+            .single();
+          const pmp = (passMemberProf as { profiles?: { full_name?: string; email?: string } })?.profiles;
+          const pmpf = Array.isArray(pmp) ? pmp[0] : pmp;
+
+          if (pmpf?.email) {
+            const receipt = paymentReceipt({ memberName: pmpf.full_name ?? "Member", amount: invoice.amount_paid, description: passName, studioName: passStudioName });
+            await sendEmail({ to: pmpf.email, subject: receipt.subject, html: receipt.html, studioId: passSubPaid.studio_id, templateName: "payment_receipt" });
+          }
+
+          const { data: passOwnerPaid } = await adminSupabase.from("profiles").select("full_name, email").eq("studio_id", passSubPaid.studio_id).eq("role", "owner").limit(1).single();
+          if (passOwnerPaid?.email) {
+            const notice = memberPaymentSuccessOwnerNotice({
+              ownerName: passOwnerPaid.full_name ?? "Studio Owner",
+              memberName: pmpf?.full_name ?? "Member",
+              memberEmail: pmpf?.email ?? "",
+              amount: invoice.amount_paid,
+              description: passName,
+              studioName: passStudioName,
+            });
+            await sendEmail({ to: passOwnerPaid.email, subject: notice.subject, html: notice.html, studioId: passSubPaid.studio_id, templateName: "member_payment_success_owner_notice" });
+          }
+          break;
+        }
+
+        // ── インストラクターメンバーシップの支払い成功 ──
+        const { data: instrMemPaid } = await adminSupabase
+          .from("instructor_memberships")
+          .select("id, instructor_id, studio_id, instructor_membership_tiers(name)")
+          .eq("stripe_subscription_id", subscriptionId)
+          .maybeSingle();
+
+        if (instrMemPaid) {
+          await adminSupabase.from("payments").insert({
+            studio_id: instrMemPaid.studio_id,
+            amount: invoice.amount_paid,
+            currency: invoice.currency ?? "usd",
+            type: "monthly",
+            status: "paid",
+            stripe_invoice_id: invoice.id,
+            payment_type: "instructor_membership",
+            paid_at: new Date().toISOString(),
+          });
+
+          const { data: instrStudio } = await adminSupabase.from("studios").select("name").eq("id", instrMemPaid.studio_id).single();
+          const instrStudioName = instrStudio?.name ?? "Studio";
+          const tierName = (instrMemPaid.instructor_membership_tiers as { name?: string } | null)?.name ?? "Instructor membership";
+
+          const { data: instrProfile } = await adminSupabase
+            .from("instructors")
+            .select("profiles(full_name, email)")
+            .eq("id", instrMemPaid.instructor_id)
+            .single();
+          const ip = (instrProfile as { profiles?: { full_name?: string; email?: string } })?.profiles;
+          const ipf = Array.isArray(ip) ? ip[0] : ip;
+
+          if (ipf?.email) {
+            const receipt = paymentReceipt({ memberName: ipf.full_name ?? "Instructor", amount: invoice.amount_paid, description: tierName, studioName: instrStudioName });
+            await sendEmail({ to: ipf.email, subject: receipt.subject, html: receipt.html, studioId: instrMemPaid.studio_id, templateName: "payment_receipt" });
+          }
+
+          const { data: instrOwnerPaid } = await adminSupabase.from("profiles").select("full_name, email").eq("studio_id", instrMemPaid.studio_id).eq("role", "owner").limit(1).single();
+          if (instrOwnerPaid?.email) {
+            const notice = memberPaymentSuccessOwnerNotice({
+              ownerName: instrOwnerPaid.full_name ?? "Studio Owner",
+              memberName: ipf?.full_name ?? "Instructor",
+              memberEmail: ipf?.email ?? "",
+              amount: invoice.amount_paid,
+              description: tierName,
+              studioName: instrStudioName,
+            });
+            await sendEmail({ to: instrOwnerPaid.email, subject: notice.subject, html: notice.html, studioId: instrMemPaid.studio_id, templateName: "member_payment_success_owner_notice" });
+          }
+          break;
+        }
+
         const { data: studio } = await adminSupabase
           .from("studios")
           .select("id")
@@ -578,19 +686,49 @@ export async function POST(request: Request) {
             .single();
           const p = (prof as { profiles?: { full_name?: string; email?: string } })?.profiles;
           const pf = Array.isArray(p) ? p[0] : p;
-          if (pf?.email) {
+          const memberName = pf?.full_name ?? "Member";
+          const memberEmail = pf?.email ?? "";
+          const studioName = studioData?.name ?? "Studio";
+
+          if (memberEmail) {
             const { subject, html } = paymentReceipt({
-              memberName: pf.full_name ?? "Member",
+              memberName,
               amount: invoice.amount_paid,
               description: "Monthly membership",
-              studioName: studioData?.name ?? "Studio",
+              studioName,
             });
             await sendEmail({
-              to: pf.email,
+              to: memberEmail,
               subject,
               html,
               studioId: member.studio_id,
               templateName: "payment_receipt",
+            });
+          }
+
+          // Notify studio owner of member payment
+          const { data: ownerForMemberPaid } = await adminSupabase
+            .from("profiles")
+            .select("full_name, email")
+            .eq("studio_id", member.studio_id)
+            .eq("role", "owner")
+            .limit(1)
+            .single();
+          if (ownerForMemberPaid?.email) {
+            const notice = memberPaymentSuccessOwnerNotice({
+              ownerName: ownerForMemberPaid.full_name ?? "Studio Owner",
+              memberName,
+              memberEmail,
+              amount: invoice.amount_paid,
+              description: "Monthly membership",
+              studioName,
+            });
+            await sendEmail({
+              to: ownerForMemberPaid.email,
+              subject: notice.subject,
+              html: notice.html,
+              studioId: member.studio_id,
+              templateName: "member_payment_success_owner_notice",
             });
           }
         }
@@ -617,6 +755,109 @@ export async function POST(request: Request) {
             .from("pass_subscriptions")
             .update({ status: "past_due" })
             .eq("id", passSubFailed.id);
+
+          // Send email notifications for pass subscription failure
+          const { data: passSubDetail } = await adminSupabase
+            .from("pass_subscriptions")
+            .select("member_id, studio_id, studio_passes(name)")
+            .eq("id", passSubFailed.id)
+            .single();
+          if (passSubDetail) {
+            const { data: passStudioData } = await adminSupabase
+              .from("studios")
+              .select("name")
+              .eq("id", passSubDetail.studio_id)
+              .single();
+            const passStudioName = passStudioData?.name ?? "Studio";
+            const passName = (passSubDetail.studio_passes as { name?: string } | null)?.name ?? "Pass subscription";
+
+            const { data: passMemberProf } = await adminSupabase
+              .from("members")
+              .select("profiles(full_name, email)")
+              .eq("id", passSubDetail.member_id)
+              .single();
+            const pm = (passMemberProf as { profiles?: { full_name?: string; email?: string } })?.profiles;
+            const pmf = Array.isArray(pm) ? pm[0] : pm;
+
+            if (pmf?.email) {
+              const email = paymentFailed({
+                memberName: pmf.full_name ?? "Member",
+                amount: invoice.amount_due,
+                studioName: passStudioName,
+              });
+              await sendEmail({ to: pmf.email, subject: email.subject, html: email.html, studioId: passSubDetail.studio_id, templateName: "payment_failed" });
+            }
+
+            // Notify studio owner
+            const { data: passOwner } = await adminSupabase
+              .from("profiles")
+              .select("full_name, email")
+              .eq("studio_id", passSubDetail.studio_id)
+              .eq("role", "owner")
+              .limit(1)
+              .single();
+            if (passOwner?.email) {
+              const notice = memberPaymentFailedOwnerNotice({
+                ownerName: passOwner.full_name ?? "Studio Owner",
+                memberName: pmf?.full_name ?? "Member",
+                memberEmail: pmf?.email ?? "",
+                amount: invoice.amount_due,
+                description: passName,
+                studioName: passStudioName,
+              });
+              await sendEmail({ to: passOwner.email, subject: notice.subject, html: notice.html, studioId: passSubDetail.studio_id, templateName: "member_payment_failed_owner_notice" });
+            }
+          }
+          break;
+        }
+
+        // ── インストラクターメンバーシップの支払い失敗 ──
+        const { data: instrMemFailed } = await adminSupabase
+          .from("instructor_memberships")
+          .select("id, instructor_id, studio_id, instructor_membership_tiers(name)")
+          .eq("stripe_subscription_id", subscriptionId)
+          .maybeSingle();
+
+        if (instrMemFailed) {
+          await adminSupabase.from("payments").insert({
+            studio_id: instrMemFailed.studio_id,
+            amount: invoice.amount_due,
+            currency: invoice.currency ?? "usd",
+            type: "monthly",
+            status: "failed",
+            stripe_invoice_id: invoice.id,
+            payment_type: "instructor_membership",
+          });
+
+          const { data: instrFailedStudio } = await adminSupabase.from("studios").select("name").eq("id", instrMemFailed.studio_id).single();
+          const instrFailedStudioName = instrFailedStudio?.name ?? "Studio";
+          const instrFailedTierName = (instrMemFailed.instructor_membership_tiers as { name?: string } | null)?.name ?? "Instructor membership";
+
+          const { data: instrFailedProfile } = await adminSupabase
+            .from("instructors")
+            .select("profiles(full_name, email)")
+            .eq("id", instrMemFailed.instructor_id)
+            .single();
+          const ifp = (instrFailedProfile as { profiles?: { full_name?: string; email?: string } })?.profiles;
+          const ifpf = Array.isArray(ifp) ? ifp[0] : ifp;
+
+          if (ifpf?.email) {
+            const email = paymentFailed({ memberName: ifpf.full_name ?? "Instructor", amount: invoice.amount_due, studioName: instrFailedStudioName });
+            await sendEmail({ to: ifpf.email, subject: email.subject, html: email.html, studioId: instrMemFailed.studio_id, templateName: "payment_failed" });
+          }
+
+          const { data: instrFailedOwner } = await adminSupabase.from("profiles").select("full_name, email").eq("studio_id", instrMemFailed.studio_id).eq("role", "owner").limit(1).single();
+          if (instrFailedOwner?.email) {
+            const notice = memberPaymentFailedOwnerNotice({
+              ownerName: instrFailedOwner.full_name ?? "Studio Owner",
+              memberName: ifpf?.full_name ?? "Instructor",
+              memberEmail: ifpf?.email ?? "",
+              amount: invoice.amount_due,
+              description: instrFailedTierName,
+              studioName: instrFailedStudioName,
+            });
+            await sendEmail({ to: instrFailedOwner.email, subject: notice.subject, html: notice.html, studioId: instrMemFailed.studio_id, templateName: "member_payment_failed_owner_notice" });
+          }
           break;
         }
 
@@ -710,18 +951,48 @@ export async function POST(request: Request) {
             .single();
           const p = (prof as { profiles?: { full_name?: string; email?: string } })?.profiles;
           const pf = Array.isArray(p) ? p[0] : p;
-          if (pf?.email) {
+          const failedMemberName = pf?.full_name ?? "Member";
+          const failedMemberEmail = pf?.email ?? "";
+          const failedStudioName = studioData?.name ?? "Studio";
+
+          if (failedMemberEmail) {
             const { subject, html } = paymentFailed({
-              memberName: pf.full_name ?? "Member",
+              memberName: failedMemberName,
               amount: invoice.amount_due,
-              studioName: studioData?.name ?? "Studio",
+              studioName: failedStudioName,
             });
             await sendEmail({
-              to: pf.email,
+              to: failedMemberEmail,
               subject,
               html,
               studioId: member.studio_id,
               templateName: "payment_failed",
+            });
+          }
+
+          // Notify studio owner of member payment failure
+          const { data: ownerForMemberFailed } = await adminSupabase
+            .from("profiles")
+            .select("full_name, email")
+            .eq("studio_id", member.studio_id)
+            .eq("role", "owner")
+            .limit(1)
+            .single();
+          if (ownerForMemberFailed?.email) {
+            const notice = memberPaymentFailedOwnerNotice({
+              ownerName: ownerForMemberFailed.full_name ?? "Studio Owner",
+              memberName: failedMemberName,
+              memberEmail: failedMemberEmail,
+              amount: invoice.amount_due,
+              description: "Monthly membership",
+              studioName: failedStudioName,
+            });
+            await sendEmail({
+              to: ownerForMemberFailed.email,
+              subject: notice.subject,
+              html: notice.html,
+              studioId: member.studio_id,
+              templateName: "member_payment_failed_owner_notice",
             });
           }
         }

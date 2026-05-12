@@ -126,7 +126,11 @@ export const helpArticles: HelpArticle[] = [
       },
       {
         title: 'What happens if payment fails',
-        description: 'Your plan status changes to "Past Due". You\'ll see an alert on the dashboard and billing page prompting you to update your payment method.',
+        description: 'Your plan status changes to "Past Due". You\'ll see an alert on the dashboard and billing page prompting you to update your payment method. Both the payer and the studio owner receive an automatic email notification.',
+      },
+      {
+        title: 'Payment email notifications',
+        description: 'Klasly automatically sends email notifications for payment events. When a payment succeeds, the payer receives a receipt and the studio owner is notified. When a payment fails, both the payer and the studio owner receive an alert. This applies to studio subscriptions, member memberships, pass subscriptions, and instructor memberships.',
       },
     ],
     tips: [
