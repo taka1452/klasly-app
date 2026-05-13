@@ -29,6 +29,13 @@ const CSRF_EXEMPT_EXACT = [
   "/api/waiver/sign-inline",
   "/api/waiver/guardian-sign",
   "/api/push/subscribe",
+  "/api/contracts/sign",
+];
+
+/** CSRF 検証が不要なパス（パターン match） */
+const CSRF_EXEMPT_PATTERNS = [
+  /^\/api\/contracts\/sign\/[^/]+$/,       // /api/contracts/sign/[token]
+  /^\/api\/forms\/[^/]+\/submit$/,          // /api/forms/[id]/submit
 ];
 
 /**
@@ -48,6 +55,10 @@ function requiresCsrf(request: NextRequest): boolean {
 
   for (const exact of CSRF_EXEMPT_EXACT) {
     if (pathname === exact) return false;
+  }
+
+  for (const pattern of CSRF_EXEMPT_PATTERNS) {
+    if (pattern.test(pathname)) return false;
   }
 
   return true;
