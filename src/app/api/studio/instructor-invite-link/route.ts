@@ -39,7 +39,17 @@ export async function GET() {
       .eq("id", user.id)
       .single();
 
-    if (profile?.role !== "owner" || !profile?.studio_id) {
+    if (profile?.role === "manager") {
+      const { data: mgr } = await adminSupabase
+        .from("managers")
+        .select("can_manage_instructors")
+        .eq("profile_id", user.id)
+        .eq("studio_id", profile.studio_id)
+        .single();
+      if (!mgr?.can_manage_instructors) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    } else if (!profile?.studio_id || profile.role !== "owner") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -101,7 +111,17 @@ export async function POST(request: Request) {
       .eq("id", user.id)
       .single();
 
-    if (profile?.role !== "owner" || !profile?.studio_id) {
+    if (profile?.role === "manager") {
+      const { data: mgr } = await adminSupabase
+        .from("managers")
+        .select("can_manage_instructors")
+        .eq("profile_id", user.id)
+        .eq("studio_id", profile.studio_id)
+        .single();
+      if (!mgr?.can_manage_instructors) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    } else if (!profile?.studio_id || profile.role !== "owner") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -192,7 +212,17 @@ export async function DELETE(request: Request) {
       .eq("id", user.id)
       .single();
 
-    if (profile?.role !== "owner" || !profile?.studio_id) {
+    if (profile?.role === "manager") {
+      const { data: mgr } = await adminSupabase
+        .from("managers")
+        .select("can_manage_instructors")
+        .eq("profile_id", user.id)
+        .eq("studio_id", profile.studio_id)
+        .single();
+      if (!mgr?.can_manage_instructors) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    } else if (!profile?.studio_id || profile.role !== "owner") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
