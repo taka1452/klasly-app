@@ -38,18 +38,31 @@ export async function GET(
       );
     }
 
-    const [{ data: form }, { data: studio }] = await Promise.all([
-      ctx.supabase
-        .from("custom_forms")
-        .select("id, name, intro_text, fields")
-        .eq("id", envelope.form_id)
-        .single(),
-      ctx.supabase
-        .from("studios")
-        .select("name")
-        .eq("id", envelope.studio_id)
-        .single(),
-    ]);
+    // Collect signer emails so we can fetch their form submissions.
+    const signerEmails = (envelope.contract_envelope_signers ?? []).map(
+      (s: { email: string }) => s.email
+    );
+
+    const [{ data: form }, { data: studio }, { data: submissions }] =
+      await Promise.all([
+        ctx.supabase
+          .from("custom_forms")
+          .select("id, name, intro_text, fields")
+          .eq("id", envelope.form_id)
+          .single(),
+        ctx.supabase
+          .from("studios")
+          .select("name")
+          .eq("id", envelope.studio_id)
+          .single(),
+        ctx.supabase
+          .from("custom_form_submissions")
+          .select(
+            "id, submitter_name, submitter_email, responses, signature_data, signed_at"
+          )
+          .eq("form_id", envelope.form_id)
+          .in("submitter_email", signerEmails),
+      ]);
 
     return NextResponse.json({
       envelope: {
@@ -70,6 +83,7 @@ export async function GET(
         (a: { sign_order: number }, b: { sign_order: number }) =>
           a.sign_order - b.sign_order
       ),
+      submissions: submissions ?? [],
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal error";

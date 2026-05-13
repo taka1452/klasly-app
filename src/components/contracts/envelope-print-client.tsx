@@ -30,6 +30,14 @@ type Signer = {
   signature_data: string | null;
   ip_address: string | null;
 };
+type Submission = {
+  id: string;
+  submitter_name: string | null;
+  submitter_email: string | null;
+  responses: Record<string, unknown>;
+  signature_data: string | null;
+  signed_at: string | null;
+};
 type LoadedData = {
   envelope: {
     id: string;
@@ -41,7 +49,73 @@ type LoadedData = {
   studio: { name: string };
   form: { name?: string; intro_text?: string | null; fields: Field[] };
   signers: Signer[];
+  submissions: Submission[];
 };
+
+/**
+ * Render a single form-field value in a print-friendly way.
+ * Handles every field type stored in custom_forms.fields[].type.
+ */
+function FormattedValue({
+  value,
+  type,
+  options,
+}: {
+  value: unknown;
+  type: string;
+  options?: string[];
+}) {
+  if (value === undefined || value === null || value === "") {
+    return <span className="italic text-gray-400">—</span>;
+  }
+
+  // Checkbox / multi-select: value is an array of selected option labels.
+  if (
+    (type === "checkbox" || type === "multi_select") &&
+    Array.isArray(value)
+  ) {
+    if (value.length === 0)
+      return <span className="italic text-gray-400">—</span>;
+    return (
+      <ul className="ml-4 list-disc">
+        {value.map((v, i) => (
+          <li key={i}>{String(v)}</li>
+        ))}
+      </ul>
+    );
+  }
+
+  // Rating: numeric value, optionally show "N / max".
+  if (type === "rating") {
+    const num = Number(value);
+    const max = options?.length ? options.length : 5;
+    return <span>{num} / {max}</span>;
+  }
+
+  // Acknowledgement: boolean-like — signer checked "I agree".
+  if (type === "acknowledgement") {
+    return (
+      <span>{value === true || value === "true" ? "Acknowledged" : "Not acknowledged"}</span>
+    );
+  }
+
+  // Signature fields are already shown in the signatures section, but
+  // if the form also stored one as a response, show a note.
+  if (type === "signature") {
+    return <span className="italic text-gray-500">(see signature below)</span>;
+  }
+
+  // Date: format nicely if it's a valid date string.
+  if (type === "date" && typeof value === "string") {
+    const d = new Date(value);
+    if (!isNaN(d.getTime())) {
+      return <span>{d.toLocaleDateString()}</span>;
+    }
+  }
+
+  // Default: text, textarea, email, tel, select, radio — render as string.
+  return <span className="whitespace-pre-line">{String(value)}</span>;
+}
 
 export default function EnvelopePrintClient({
   envelopeId,
@@ -130,20 +204,41 @@ export default function EnvelopePrintClient({
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-600">
             Responses
           </h2>
-          <dl className="space-y-3 text-[13px]">
-            {data.form.fields.map((f) => (
-              <div key={f.id}>
-                <dt className="font-medium text-gray-700">{f.label}</dt>
-                <dd className="mt-0.5 text-gray-900">
-                  {/* Print combines all signer responses for the same field
-                      with a divider between them — useful for contracts
-                      where each signer fills their own copy of the same
-                      questionnaire. */}
-                  <em className="text-gray-400">(submitted by signers below)</em>
-                </dd>
+          {data.signers.map((signer) => {
+            const sub = data.submissions.find(
+              (s) => s.submitter_email === signer.email
+            );
+            return (
+              <div key={signer.id} className="mb-6 break-inside-avoid">
+                <h3 className="mb-2 text-xs font-semibold text-gray-500">
+                  {signer.name}
+                  {signer.role_label ? ` (${signer.role_label})` : ""}
+                </h3>
+                {sub ? (
+                  <dl className="space-y-2 text-[13px]">
+                    {data.form.fields.map((f) => (
+                      <div key={f.id}>
+                        <dt className="font-medium text-gray-700">
+                          {f.label}
+                        </dt>
+                        <dd className="mt-0.5 text-gray-900">
+                          <FormattedValue
+                            value={sub.responses[f.id]}
+                            type={f.type}
+                            options={f.options}
+                          />
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                ) : (
+                  <p className="text-[13px] italic text-gray-400">
+                    No form responses recorded
+                  </p>
+                )}
               </div>
-            ))}
-          </dl>
+            );
+          })}
         </section>
       )}
 
