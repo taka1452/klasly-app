@@ -924,10 +924,10 @@ export const helpArticles: HelpArticle[] = [
   {
     id: 'studio-pass-setup',
     title: 'Set up a Studio Pass',
-    summary: 'Create a monthly pass that gives members access to all classes across all instructors.',
+    summary: 'Create a monthly, class pack, or drop-in pass that gives members access to classes across instructors.',
     category: 'payments',
     audience: ['owner'],
-    keywords: ['pass', 'studio pass', 'unlimited', 'all access', 'monthly', 'distribution', 'instructor split'],
+    keywords: ['pass', 'studio pass', 'unlimited', 'all access', 'monthly', 'class pack', 'drop-in', 'distribution', 'instructor split'],
     featureFlag: 'extension.studio_pass',
     prerequisites: ['Feature: Studio Pass must be enabled in Settings → Features.', 'Collective Mode must be active.'],
     steps: [
@@ -936,8 +936,16 @@ export const helpArticles: HelpArticle[] = [
         description: 'Click "+ Create Pass".',
       },
       {
+        title: 'Choose pass type',
+        description: 'Monthly (recurring auto-renewal), Class Pack (one-time purchase, fixed number of classes), or Drop-in (one-time, single session). Monthly creates a Stripe subscription; the others are one-time payments.',
+      },
+      {
         title: 'Set pass details',
-        description: 'Name, monthly price, and optional class limit (unlimited or X per month). Choose an expiry period (30–365 days from purchase) or pick "Custom date" to set a fixed end date — ideal for class series that all expire on the last session date.',
+        description: 'Name, price, and optional class limit (unlimited or X per month). Choose an expiry period (30–365 days from purchase) or pick "Custom date" to set a fixed end date — ideal for class series that all expire on the last session date.',
+      },
+      {
+        title: 'Restrict to specific classes (optional)',
+        description: 'Select which class templates the pass covers. Leave empty to allow all classes. Useful for passes tied to a specific discipline or instructor.',
       },
       {
         title: 'Configure distribution',
@@ -949,6 +957,7 @@ export const helpArticles: HelpArticle[] = [
       'Stripe fees, Klasly fees, and Studio Fee are deducted before distribution.',
       'Distributions are calculated on the 1st of each month based on previous month\'s usage.',
       'Use "Custom date" expiry for class series — set the last day of the series so all subscriptions expire together regardless of when each member signed up.',
+      'Class restrictions are enforced at booking time — a restricted pass won\'t be offered for classes it doesn\'t cover.',
     ],
     relatedArticles: ['collective-overview', 'create-products'],
   },
@@ -1591,6 +1600,7 @@ export const helpArticles: HelpArticle[] = [
       'External signers (lawyers, witnesses) don\'t need a Klasly login — the signing page is a public URL secured by a one-time token.',
       'Signers can decline ("I can\'t sign this"); the studio gets notified and the envelope is voided.',
       'Resend rotates the token, so the old link becomes invalid. Void cancels the envelope entirely.',
+      'All form field types (including rating scales and signature fields) are fully supported on the public signing page.',
       'Print signed copy on the envelope detail page opens a clean letter-style view — Cmd-P → Save as PDF gives you a real PDF.',
     ],
     relatedArticles: ['setup-waiver-template'],
