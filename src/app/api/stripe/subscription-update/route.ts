@@ -78,7 +78,14 @@ export async function POST(request: Request) {
       .eq("id", profile.studio_id)
       .single();
 
-    if (!studio?.stripe_subscription_id) {
+    if (!studio) {
+      return NextResponse.json(
+        { error: "Studio not found" },
+        { status: 404 }
+      );
+    }
+
+    if (!studio.stripe_subscription_id) {
       return NextResponse.json(
         { error: "No active subscription" },
         { status: 400 }

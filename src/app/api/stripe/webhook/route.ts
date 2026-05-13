@@ -16,6 +16,7 @@ export const runtime = "nodejs";
 export async function POST(request: Request) {
   const body = await request.text();
   let adminSupabase: SupabaseClient | null = null;
+  let eventId: string | null = null;
 
   try {
     const sig = request.headers.get("stripe-signature");
@@ -31,6 +32,7 @@ export async function POST(request: Request) {
     let event: Stripe.Event;
     try {
       event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+      eventId = event.id;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Invalid signature";
       return NextResponse.json({ error: message }, { status: 400 });
@@ -270,7 +272,7 @@ export async function POST(request: Request) {
           const periodEnd = subscription.items.data[0]?.current_period_end;
           const passStatus = subscription.status === "active" || subscription.status === "trialing"
             ? "active"
-            : subscription.status === "past_due"
+            : subscription.status === "past_due" || subscription.status === "incomplete" || subscription.status === "unpaid"
               ? "past_due"
               : "cancelled";
 
@@ -1143,12 +1145,14 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ received: true });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Internal error";
+    const message = err instanceof Error
+      ? `${err.message}\n${err.stack ?? ""}`
+      : "Internal error";
     if (adminSupabase) {
       try {
         await insertWebhookLog(adminSupabase, {
           event_type: "webhook_error",
-          event_id: null,
+          event_id: eventId,
           studio_id: null,
           status: "failure",
           error_message: message,
@@ -1157,9 +1161,8 @@ export async function POST(request: Request) {
         // Logging failure should not prevent response
       }
     }
-    // Return 200 to prevent Stripe from retrying non-retryable errors.
-    // The error has been logged above for debugging.
-    return NextResponse.json({ error: message, received: true }, { status: 200 });
+    // Return 500 so Stripe retries the webhook delivery.
+    return NextResponse.json({ error: message, received: false }, { status: 500 });
   }
 }
 

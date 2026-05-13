@@ -334,7 +334,7 @@ export async function POST(request: Request) {
 
       const firstAmount = scheduleRows[0].amount_cents;
       const firstAppFee =
-        applicationFee > 0
+        applicationFee > 0 && totalAmountCents > 0
           ? Math.round(
               applicationFee * (firstAmount / totalAmountCents),
             )
