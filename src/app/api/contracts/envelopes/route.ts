@@ -164,7 +164,15 @@ export async function POST(request: Request) {
       .single();
 
     // Email signer 1.
-    const firstSigner = insertedSigners.find((s) => s.sign_order === 1)!;
+    const firstSigner = insertedSigners.find((s) => s.sign_order === 1);
+    if (!firstSigner) {
+      // Should never happen, but guard against data inconsistency.
+      await ctx.supabase.from("contract_envelopes").delete().eq("id", envelope.id);
+      return NextResponse.json(
+        { error: "Failed to locate first signer after insert" },
+        { status: 500 }
+      );
+    }
     const appUrl = getAppUrl();
     const signLink = `${appUrl}/contracts/sign/${firstSigner.sign_token}`;
     const tpl = contractSignRequest({
@@ -176,19 +184,26 @@ export async function POST(request: Request) {
       totalSigners: insertedSigners.length,
       signOrder: 1,
     });
-    await sendEmail({
-      to: firstSigner.email,
-      subject: tpl.subject,
-      html: tpl.html,
-      studioId: ctx.studioId,
-      templateName: "contract_sign_request",
-    });
+    let emailSent = true;
+    try {
+      await sendEmail({
+        to: firstSigner.email,
+        subject: tpl.subject,
+        html: tpl.html,
+        studioId: ctx.studioId,
+        templateName: "contract_sign_request",
+      });
+    } catch (err) {
+      console.error("[contracts/envelopes] Failed to send signing email:", err);
+      emailSent = false;
+    }
 
     return NextResponse.json(
       {
         envelope_id: envelope.id,
         title: envelope.title,
         signer_count: insertedSigners.length,
+        emailSent,
       },
       { status: 201 }
     );

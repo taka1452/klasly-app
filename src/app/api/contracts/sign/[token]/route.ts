@@ -400,10 +400,16 @@ export async function DELETE(
           .eq("id", envelope.created_by)
           .single();
         if (creator?.email) {
+          const escHtml = (s: string) =>
+            s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+          const safeName = escHtml(signer.name);
+          const safeTitle = escHtml(envelope.title);
+          const safeCreator = escHtml(creator.full_name ?? "there");
+          const safeReason = reason ? escHtml(reason) : null;
           await sendEmail({
             to: creator.email,
             subject: `Contract declined — ${envelope.title}`,
-            html: `<p>Hi ${creator.full_name ?? "there"},</p><p><strong>${signer.name}</strong> declined to sign <strong>${envelope.title}</strong>${reason ? `: "${reason}"` : "."}</p><p>The envelope has been marked voided. You can send a fresh contract whenever you're ready.</p>`,
+            html: `<p>Hi ${safeCreator},</p><p><strong>${safeName}</strong> declined to sign <strong>${safeTitle}</strong>${safeReason ? `: &ldquo;${safeReason}&rdquo;` : "."}</p><p>The envelope has been marked voided. You can send a fresh contract whenever you're ready.</p>`,
             studioId: envelope.studio_id,
             templateName: "contract_declined",
           });

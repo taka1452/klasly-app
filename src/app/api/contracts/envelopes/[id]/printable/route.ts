@@ -31,6 +31,12 @@ export async function GET(
     if (!envelope || envelope.studio_id !== ctx.studioId) {
       return NextResponse.json({ error: "Envelope not found" }, { status: 404 });
     }
+    if (envelope.status !== "completed") {
+      return NextResponse.json(
+        { error: "Only completed contracts can be printed" },
+        { status: 400 }
+      );
+    }
 
     const [{ data: form }, { data: studio }] = await Promise.all([
       ctx.supabase
