@@ -44,7 +44,7 @@ type BookingResult = {
  * Check if a member has an active pass with remaining capacity.
  * Returns the pass subscription + pass details if available, or null.
  */
-async function getActivePass(adminSupabase: SupabaseClient, memberId: string) {
+async function getActivePass(adminSupabase: SupabaseClient, memberId: string, classTemplateId?: string) {
   const today = new Date().toISOString().slice(0, 10);
 
   const { data: passSubs } = await adminSupabase
@@ -56,10 +56,33 @@ async function getActivePass(adminSupabase: SupabaseClient, memberId: string) {
 
   if (!passSubs || passSubs.length === 0) return null;
 
-  // Find first pass with remaining capacity
+  // Build a set of pass IDs that have class template restrictions
+  // so we can skip passes that don't cover the requested class.
+  let restrictedPassIds: Set<string> | null = null;
+  let allowedPassIds: Set<string> | null = null;
+  if (classTemplateId) {
+    const passIds = passSubs.map((s) => s.studio_pass_id).filter(Boolean);
+    const { data: restrictions } = await adminSupabase
+      .from("pass_class_templates")
+      .select("pass_id, template_id")
+      .in("pass_id", passIds);
+    if (restrictions && restrictions.length > 0) {
+      restrictedPassIds = new Set(restrictions.map((r) => r.pass_id));
+      allowedPassIds = new Set(
+        restrictions.filter((r) => r.template_id === classTemplateId).map((r) => r.pass_id)
+      );
+    }
+  }
+
+  // Find first pass with remaining capacity that covers this class
   for (const sub of passSubs) {
     const pass = unwrapRelation<{ id: string; max_classes_per_month: number | null }>(sub.studio_passes);
     if (!pass) continue;
+
+    // If this pass has class restrictions and doesn't include the requested class, skip it
+    if (restrictedPassIds?.has(pass.id) && !allowedPassIds?.has(pass.id)) {
+      continue;
+    }
 
     const maxClasses = pass.max_classes_per_month;
     const used = sub.classes_used_this_period ?? 0;
@@ -76,7 +99,7 @@ async function getActivePass(adminSupabase: SupabaseClient, memberId: string) {
     }
   }
 
-  // All passes are at capacity
+  // All passes are at capacity (or none cover this class)
   const firstSub = passSubs[0];
   const firstPass = unwrapRelation<{ id: string; max_classes_per_month: number | null }>(firstSub.studio_passes);
   return {
@@ -290,7 +313,7 @@ export async function executeBookingAction({
         return { success: false, error: "Studio passes are not enabled", status: 403 };
       }
 
-      passInfo = await getActivePass(adminSupabase, memberId);
+      passInfo = await getActivePass(adminSupabase, memberId, session.class_id ?? undefined);
       if (passInfo && passInfo.hasCapacity) {
         bookingViaPass = true;
       } else if (passInfo && !passInfo.hasCapacity) {

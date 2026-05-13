@@ -388,6 +388,62 @@ function FieldRow({
     );
   }
 
+  if (field.type === "rating") {
+    const min = 1;
+    const max = (field as FormField & { max_value?: number }).max_value || 5;
+    const minLabel = (field as FormField & { min_label?: string }).min_label || "";
+    const maxLabel = (field as FormField & { max_label?: string }).max_label || "";
+    const current = typeof value === "string" ? parseInt(value, 10) : 0;
+    return (
+      <div>
+        {labelEl}
+        {field.help_text && (
+          <p className="mt-1 text-xs text-gray-500">{field.help_text}</p>
+        )}
+        <div className="mt-2 flex items-center gap-1">
+          {minLabel && <span className="mr-2 text-xs text-gray-500">{minLabel}</span>}
+          {Array.from({ length: max - min + 1 }, (_, i) => i + min).map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => onChange(String(n))}
+              className={`flex h-9 w-9 items-center justify-center rounded-lg border text-sm font-medium transition-colors ${
+                current === n
+                  ? "border-gray-900 bg-gray-900 text-white"
+                  : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
+              }`}
+            >
+              {n}
+            </button>
+          ))}
+          {maxLabel && <span className="ml-2 text-xs text-gray-500">{maxLabel}</span>}
+        </div>
+      </div>
+    );
+  }
+
+  if (field.type === "signature") {
+    return (
+      <div>
+        {labelEl}
+        {field.help_text && (
+          <p className="mt-1 text-xs text-gray-500">{field.help_text}</p>
+        )}
+        <input
+          type="text"
+          value={typeof value === "string" ? value : ""}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Type your full name"
+          className="input-field mt-1 w-full font-serif text-lg italic"
+          required={field.required}
+        />
+        <p className="mt-1 text-[11px] text-gray-400">
+          By typing your name you agree this is your electronic signature.
+        </p>
+      </div>
+    );
+  }
+
   // Default: text-style input. `date` uses a native date picker; the rest
   // use type=email/tel/text per FormFieldType.
   const inputType =

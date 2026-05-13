@@ -59,7 +59,7 @@ export async function POST(request: Request) {
     // Get pass details
     const { data: pass } = await adminSupabase
       .from("studio_passes")
-      .select("id, studio_id, stripe_price_id, is_active, expires_on")
+      .select("id, studio_id, stripe_price_id, is_active, expires_on, pass_type, price_cents")
       .eq("id", passId)
       .single();
 
@@ -133,32 +133,38 @@ export async function POST(request: Request) {
       .single();
     const feePercent = parseFloat(feeRow?.value ?? "0");
 
-    // Use Stripe Checkout Session for subscription (provides card input UI)
+    // Use Stripe Checkout Session (subscription for monthly, payment for one-time packs)
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.klasly.app";
+    const isRecurring = (pass as { pass_type?: string }).pass_type === "monthly" || !(pass as { pass_type?: string }).pass_type;
+    const sharedMetadata = {
+      studio_id: studio.id,
+      member_id: memberId,
+      studio_pass_id: passId,
+      type: "studio_pass",
+      ...(pass.expires_on ? { expires_on: pass.expires_on } : {}),
+    };
+
     const checkoutSession = await stripe.checkout.sessions.create(
       {
         customer: customerId,
-        mode: "subscription",
+        mode: isRecurring ? "subscription" : "payment",
         line_items: [{ price: pass.stripe_price_id, quantity: 1 }],
-        subscription_data: {
-          application_fee_percent: feePercent > 0 ? feePercent : undefined,
-          metadata: {
-            studio_id: studio.id,
-            member_id: memberId,
-            studio_pass_id: passId,
-            type: "studio_pass",
-            ...(pass.expires_on ? { expires_on: pass.expires_on } : {}),
-          },
-        },
+        ...(isRecurring
+          ? {
+              subscription_data: {
+                application_fee_percent: feePercent > 0 ? feePercent : undefined,
+                metadata: sharedMetadata,
+              },
+            }
+          : {
+              payment_intent_data: {
+                application_fee_amount: feePercent > 0 ? Math.round(((pass as { price_cents?: number }).price_cents ?? 0) * feePercent / 100) : undefined,
+                metadata: sharedMetadata,
+              },
+            }),
         success_url: `${baseUrl}/my-passes?subscribed=true`,
         cancel_url: `${baseUrl}/my-passes`,
-        metadata: {
-          studio_id: studio.id,
-          member_id: memberId,
-          studio_pass_id: passId,
-          type: "studio_pass",
-          ...(pass.expires_on ? { expires_on: pass.expires_on } : {}),
-        },
+        metadata: sharedMetadata,
       },
       connectOptions
     );

@@ -91,12 +91,13 @@ export async function POST(request: Request) {
       connectOptions
     );
 
+    const isRecurring = (pass_type ?? "monthly") === "monthly";
     const price = await stripe.prices.create(
       {
         product: product.id,
         unit_amount: price_cents,
         currency: (studio.currency ?? "usd").toLowerCase(),
-        recurring: { interval: "month" },
+        ...(isRecurring ? { recurring: { interval: "month" } } : {}),
       },
       connectOptions
     );
