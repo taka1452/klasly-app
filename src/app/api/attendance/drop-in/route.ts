@@ -82,6 +82,7 @@ export async function POST(request: Request) {
     const credits = member.credits ?? 0;
     const isUnlimited = credits === -1;
     const shouldDeductCredit = !isUnlimited && credits >= 1;
+    let creditDeducted = false;
 
     if (shouldDeductCredit) {
       // Atomic credit deduction
@@ -94,6 +95,7 @@ export async function POST(request: Request) {
           { status: 400 }
         );
       }
+      creditDeducted = true;
     }
 
     const { data: dropIn, error } = await adminSupabase
@@ -108,6 +110,12 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
+      // Refund the deducted credit since the insert failed
+      if (creditDeducted) {
+        await adminSupabase.rpc("increment_member_credits", {
+          p_member_id: member_id,
+        });
+      }
       return NextResponse.json(
         { error: error.message },
         { status: 500 }
@@ -167,12 +175,19 @@ export async function DELETE(request: Request) {
     }
 
     if (dropIn.credit_deducted) {
-      // Atomic credit increment
-      await adminSupabase.rpc("increment_member_credits", {
+      // Atomic credit increment — must succeed before we delete the record
+      const { error: creditErr } = await adminSupabase.rpc("increment_member_credits", {
         p_member_id: dropIn.member_id,
       });
+      if (creditErr) {
+        return NextResponse.json(
+          { error: "Failed to refund credit" },
+          { status: 500 }
+        );
+      }
     }
 
+    // Only delete AFTER successful credit refund
     const { error } = await adminSupabase
       .from("drop_in_attendances")
       .delete()

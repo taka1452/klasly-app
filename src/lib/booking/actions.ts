@@ -558,8 +558,47 @@ export async function executeBookingAction({
 
         if (!waitlistMember) continue;
 
-        // クレジット必須モードで credits === 0 のメンバーはスキップ
-        if (requiresCredits && waitlistMember.credits === 0) continue;
+        // Check if promoted member has an active pass
+        const passFeatureEnabled = await isFeatureEnabled(member.studio_id, FEATURE_KEYS.STUDIO_PASS);
+        let promotedViaPass = false;
+        let promotedPassInfo: Awaited<ReturnType<typeof getActivePass>> = null;
+
+        if (passFeatureEnabled) {
+          promotedPassInfo = await getActivePass(adminSupabase, waitlistItem.member_id, session.class_id ?? undefined);
+        }
+
+        if (promotedPassInfo && promotedPassInfo.hasCapacity) {
+          // Member has a pass with capacity — use it
+          const instructorId = sessionAny.classes?.instructor_id;
+          if (instructorId) {
+            const passResult = await recordPassUsage(
+              adminSupabase,
+              promotedPassInfo.subscriptionId,
+              sessionId,
+              instructorId,
+              promotedPassInfo.classesUsed,
+              promotedPassInfo.maxClasses
+            );
+            if (passResult.success) {
+              promotedViaPass = true;
+            }
+            // If pass usage fails (e.g. race condition), fall through to credit deduction
+          }
+        }
+
+        if (!promotedViaPass) {
+          // No pass available — fall back to credit deduction
+          // クレジット必須モードで credits === 0 のメンバーはスキップ
+          if (requiresCredits && waitlistMember.credits === 0) continue;
+
+          // Atomically deduct credit before promoting
+          if (requiresCredits && waitlistMember.credits > 0) {
+            const { data: creditResult } = await adminSupabase.rpc("decrement_member_credits", {
+              p_member_id: waitlistItem.member_id,
+            });
+            if (creditResult === -99) continue; // insufficient credits, skip
+          }
+        }
 
         const { data: promoted } = await adminSupabase
           .from("profiles")
@@ -573,17 +612,9 @@ export async function executeBookingAction({
           waitlistMemberProfileId = waitlistMember.profile_id;
         }
 
-        // Atomically deduct credit before promoting
-        if (requiresCredits && waitlistMember.credits > 0) {
-          const { data: creditResult } = await adminSupabase.rpc("decrement_member_credits", {
-            p_member_id: waitlistItem.member_id,
-          });
-          if (creditResult === -99) continue; // insufficient credits, skip
-        }
-
         await adminSupabase
           .from("bookings")
-          .update({ status: "confirmed" })
+          .update({ status: "confirmed", booked_via_pass: promotedViaPass })
           .eq("session_id", sessionId)
           .eq("member_id", waitlistItem.member_id);
 
