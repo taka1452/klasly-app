@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
-async function getOwnerContext() {
+async function getAuthorizedContext() {
   const serverSupabase = await createServerClient();
   const {
     data: { user },
@@ -21,15 +21,31 @@ async function getOwnerContext() {
     .eq("id", user.id)
     .single();
 
-  if (!profile?.studio_id || profile.role !== "owner") return null;
+  if (!profile?.studio_id) return null;
 
-  return { supabase, studioId: profile.studio_id };
+  if (profile.role === "owner") {
+    return { supabase, studioId: profile.studio_id };
+  }
+
+  if (profile.role === "manager") {
+    const { data: mgr } = await supabase
+      .from("managers")
+      .select("can_manage_contracts_tiers, can_manage_settings")
+      .eq("profile_id", user.id)
+      .eq("studio_id", profile.studio_id)
+      .single();
+    if (mgr?.can_manage_contracts_tiers || mgr?.can_manage_settings) {
+      return { supabase, studioId: profile.studio_id };
+    }
+  }
+
+  return null;
 }
 
 // GET: list all tiers
 export async function GET() {
   try {
-    const ctx = await getOwnerContext();
+    const ctx = await getAuthorizedContext();
     if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { data, error } = await ctx.supabase
@@ -48,7 +64,7 @@ export async function GET() {
 // POST: create tier
 export async function POST(request: Request) {
   try {
-    const ctx = await getOwnerContext();
+    const ctx = await getAuthorizedContext();
     if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await request.json();
@@ -83,7 +99,7 @@ export async function POST(request: Request) {
 // PATCH: update tier
 export async function PATCH(request: Request) {
   try {
-    const ctx = await getOwnerContext();
+    const ctx = await getAuthorizedContext();
     if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await request.json();
