@@ -77,13 +77,26 @@ export async function PATCH(request: Request) {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role")
+      .select("studio_id, role")
       .eq("id", user.id)
       .single();
 
     const allowedPatchRoles = ["instructor", "owner", "manager"];
     if (!profile?.role || !allowedPatchRoles.includes(profile.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Managers need can_manage_instructors to edit instructor profiles
+    if (profile.role === "manager") {
+      const { data: mgr } = await supabase
+        .from("managers")
+        .select("can_manage_instructors")
+        .eq("profile_id", user.id)
+        .eq("studio_id", profile.studio_id)
+        .single();
+      if (!mgr?.can_manage_instructors) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
     }
 
     const body = await request.json();
