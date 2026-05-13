@@ -37,11 +37,11 @@ export async function PATCH(request: Request) {
     if (profile?.role === "manager") {
       const { data: mgr } = await adminSupabase
         .from("managers")
-        .select("can_manage_settings")
+        .select("can_manage_settings, can_view_payments")
         .eq("profile_id", user.id)
         .eq("studio_id", profile.studio_id)
         .single();
-      if (!mgr?.can_manage_settings) {
+      if (!mgr?.can_manage_settings && !mgr?.can_view_payments) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
     } else if (!profile?.studio_id || profile.role !== "owner") {
