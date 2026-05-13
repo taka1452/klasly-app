@@ -134,8 +134,19 @@ export async function PUT(request: Request) {
       .select("studio_id, role")
       .eq("id", user.id)
       .single();
-    // 配分金額の編集はオーナーのみ
-    if (!profile?.studio_id || profile.role !== "owner") {
+    // 配分金額の編集はオーナーまたは設定権限を持つマネージャー
+    if (!profile?.studio_id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (profile.role === "manager") {
+      const { data: mgr } = await adminSupabase
+        .from("managers")
+        .select("can_manage_settings")
+        .eq("profile_id", user.id)
+        .eq("studio_id", profile.studio_id)
+        .single();
+      if (!mgr?.can_manage_settings) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    } else if (profile.role !== "owner") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

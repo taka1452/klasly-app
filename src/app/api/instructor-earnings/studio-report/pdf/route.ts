@@ -36,7 +36,18 @@ export async function GET(request: Request) {
       .eq("id", user.id)
       .single();
 
-    if (profile?.role !== "owner" || !profile?.studio_id) {
+    if (!profile?.studio_id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (profile.role === "manager") {
+      const { data: mgr } = await adminSupabase
+        .from("managers")
+        .select("can_manage_instructors, can_view_payments")
+        .eq("profile_id", user.id)
+        .eq("studio_id", profile.studio_id)
+        .single();
+      if (!mgr?.can_manage_instructors && !mgr?.can_view_payments) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    } else if (profile.role !== "owner") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
