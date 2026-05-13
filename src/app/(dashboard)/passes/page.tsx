@@ -128,7 +128,7 @@ export default async function PassesPage() {
           </p>
         </div>
         <div className="flex gap-3">
-          {ctx.role === "owner" && (
+          {(ctx.role === "owner" || ctx.permissions?.can_manage_settings) && (
             <>
               <Link
                 href="/passes/distributions"

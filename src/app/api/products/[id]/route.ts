@@ -5,15 +5,17 @@ import { NextResponse } from "next/server";
 type ProfileRow = { studio_id: string | null; role: string };
 
 /** Used only for internal type assertion to avoid SupabaseClient deep instantiation errors */
+type EqChain = {
+  eq: (column: string, value: string) => EqChain;
+  single: () => Promise<{ data: unknown }>;
+};
 type SupabaseLike = {
   from: (table: string) => {
-    select: (...columns: string[]) => {
-      eq: (column: string, value: string) => { single: () => Promise<{ data: unknown }> };
-    };
+    select: (...columns: string[]) => EqChain;
   };
 };
 
-async function getOwnerStudioId(
+async function getAuthorizedStudioId(
   adminSupabase: unknown,
   userId: string
 ): Promise<string | null> {
@@ -24,8 +26,18 @@ async function getOwnerStudioId(
     .eq("id", userId)
     .single();
   const profile = data as ProfileRow | null;
-  if (profile?.role !== "owner" || !profile?.studio_id) return null;
-  return profile.studio_id;
+  if (!profile?.studio_id) return null;
+  if (profile.role === "owner") return profile.studio_id;
+  if (profile.role === "manager") {
+    const { data: mgrData } = await db
+      .from("managers")
+      .select("can_manage_settings")
+      .eq("profile_id", userId)
+      .single();
+    const mgr = mgrData as { can_manage_settings?: boolean } | null;
+    if (mgr?.can_manage_settings) return profile.studio_id;
+  }
+  return null;
 }
 
 export async function GET(
@@ -56,7 +68,7 @@ export async function GET(
       serviceRoleKey
     );
 
-    const studioId = await getOwnerStudioId(adminSupabase, user.id);
+    const studioId = await getAuthorizedStudioId(adminSupabase, user.id);
     if (!studioId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -110,7 +122,7 @@ export async function PUT(
       serviceRoleKey
     );
 
-    const studioId = await getOwnerStudioId(adminSupabase, user.id);
+    const studioId = await getAuthorizedStudioId(adminSupabase, user.id);
     if (!studioId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -240,7 +252,7 @@ export async function DELETE(
       serviceRoleKey
     );
 
-    const studioId = await getOwnerStudioId(adminSupabase, user.id);
+    const studioId = await getAuthorizedStudioId(adminSupabase, user.id);
     if (!studioId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
