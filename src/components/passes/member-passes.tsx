@@ -9,6 +9,7 @@ type Pass = {
   description: string | null;
   price_cents: number;
   max_classes_per_month: number | null;
+  expires_on: string | null;
 };
 
 type Subscription = {
@@ -187,6 +188,8 @@ export default function MemberPasses({ memberId, passes, subscriptions }: Props)
                         <span className="text-amber-600">Cancels at period end</span>
                       ) : isCancelled ? (
                         <span className="text-gray-400">Expired</span>
+                      ) : pass.expires_on ? (
+                        <span>Expires {formatPeriodDate(pass.expires_on)}</span>
                       ) : (
                         <span>Renews {formatPeriodDate(sub.current_period_end)}</span>
                       )}

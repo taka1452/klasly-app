@@ -104,7 +104,7 @@ export default async function MemberPassesPage() {
   // Fetch active passes
   const { data: passes } = await supabase
     .from("studio_passes")
-    .select("id, name, description, price_cents, max_classes_per_month")
+    .select("id, name, description, price_cents, max_classes_per_month, expires_on")
     .eq("studio_id", member.studio_id)
     .eq("is_active", true)
     .order("created_at", { ascending: true });

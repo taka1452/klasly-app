@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     // パスがこのスタジオに属しているか確認
     const { data: pass } = await ctx.supabase
       .from("studio_passes")
-      .select("id, name, is_active")
+      .select("id, name, is_active, expires_on")
       .eq("id", passId)
       .eq("studio_id", ctx.studioId)
       .single();
@@ -75,7 +75,9 @@ export async function POST(request: Request) {
 
     // 手動割り当て（Stripe サブスクリプションなし）
     const now = new Date();
-    const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
+    const periodEnd = pass.expires_on
+      ? new Date(pass.expires_on + "T00:00:00")
+      : new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
 
     const { data: subscription, error: insertError } = await ctx.supabase
       .from("pass_subscriptions")

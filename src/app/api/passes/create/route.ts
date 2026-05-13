@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, description, price_cents, max_classes_per_month, pass_type, expires_after_days, class_template_ids } = body;
+    const { name, description, price_cents, max_classes_per_month, pass_type, expires_after_days, expires_on, class_template_ids } = body;
 
     if (!name || typeof price_cents !== "number" || price_cents <= 0) {
       return NextResponse.json(
@@ -113,6 +113,7 @@ export async function POST(request: Request) {
         stripe_price_id: price.id,
         pass_type: pass_type ?? "monthly",
         expires_after_days: expires_after_days ?? null,
+        expires_on: expires_on ?? null,
       })
       .select()
       .single();

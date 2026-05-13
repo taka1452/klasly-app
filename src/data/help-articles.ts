@@ -937,7 +937,7 @@ export const helpArticles: HelpArticle[] = [
       },
       {
         title: 'Set pass details',
-        description: 'Name, monthly price, and optional class limit (unlimited or X per month).',
+        description: 'Name, monthly price, and optional class limit (unlimited or X per month). Choose an expiry period (30–365 days from purchase) or pick "Custom date" to set a fixed end date — ideal for class series that all expire on the last session date.',
       },
       {
         title: 'Configure distribution',
@@ -948,6 +948,7 @@ export const helpArticles: HelpArticle[] = [
       'Start with semi-auto to review distribution amounts before they\'re sent to instructors.',
       'Stripe fees, Klasly fees, and Studio Fee are deducted before distribution.',
       'Distributions are calculated on the 1st of each month based on previous month\'s usage.',
+      'Use "Custom date" expiry for class series — set the last day of the series so all subscriptions expire together regardless of when each member signed up.',
     ],
     relatedArticles: ['collective-overview', 'create-products'],
   },

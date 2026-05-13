@@ -273,10 +273,21 @@ export async function POST(request: Request) {
             : subscription.status === "past_due"
               ? "past_due"
               : "cancelled";
+
+          // Check if the pass has a fixed expires_on — if so, don't overwrite current_period_end
+          const { data: passSubFull } = await adminSupabase
+            .from("pass_subscriptions")
+            .select("studio_pass_id, studio_passes(expires_on)")
+            .eq("id", passSubUpdate.id)
+            .single();
+          const fixedExpiresOn = (passSubFull?.studio_passes as { expires_on?: string } | null)?.expires_on;
+
           const updateData: Record<string, unknown> = {
             status: passStatus,
             current_period_start: periodStart ? new Date(periodStart * 1000).toISOString().slice(0, 10) : null,
-            current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString().slice(0, 10) : null,
+            current_period_end: fixedExpiresOn
+              ? fixedExpiresOn
+              : periodEnd ? new Date(periodEnd * 1000).toISOString().slice(0, 10) : null,
           };
           // Reset classes_used_this_period on new billing period
           if (periodStart) {
@@ -1193,6 +1204,9 @@ async function handlePassSubscriptionCheckout(
     }
   }
 
+  // If the pass has a fixed expiration date, use it instead of Stripe's period end
+  const expiresOn = session.metadata?.expires_on;
+
   await adminSupabase.from("pass_subscriptions").insert({
     studio_pass_id: studioPassId,
     member_id: memberId,
@@ -1201,9 +1215,11 @@ async function handlePassSubscriptionCheckout(
     current_period_start: periodStart
       ? new Date(periodStart * 1000).toISOString().slice(0, 10)
       : null,
-    current_period_end: periodEnd
-      ? new Date(periodEnd * 1000).toISOString().slice(0, 10)
-      : null,
+    current_period_end: expiresOn
+      ? expiresOn
+      : periodEnd
+        ? new Date(periodEnd * 1000).toISOString().slice(0, 10)
+        : null,
   });
 }
 

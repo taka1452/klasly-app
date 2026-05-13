@@ -17,7 +17,7 @@ export default async function PassesPage() {
 
   const { data: passes } = await ctx.supabase
     .from("studio_passes")
-    .select("id, name, description, price_cents, max_classes_per_month, auto_distribute, is_active, created_at")
+    .select("id, name, description, price_cents, max_classes_per_month, auto_distribute, is_active, created_at, expires_on")
     .eq("studio_id", ctx.studioId)
     .order("created_at", { ascending: false });
 
@@ -239,6 +239,12 @@ export default async function PassesPage() {
                   <span className="font-medium">Active subscribers:</span>{" "}
                   {subCounts[pass.id] ?? 0}
                 </div>
+                {pass.expires_on && (
+                  <div>
+                    <span className="font-medium">Expires:</span>{" "}
+                    {new Date(pass.expires_on + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  </div>
+                )}
                 <PassAutoDistributeToggle
                   passId={pass.id}
                   initialValue={pass.auto_distribute}

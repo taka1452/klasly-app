@@ -59,7 +59,7 @@ export async function POST(request: Request) {
     // Get pass details
     const { data: pass } = await adminSupabase
       .from("studio_passes")
-      .select("id, studio_id, stripe_price_id, is_active")
+      .select("id, studio_id, stripe_price_id, is_active, expires_on")
       .eq("id", passId)
       .single();
 
@@ -147,6 +147,7 @@ export async function POST(request: Request) {
             member_id: memberId,
             studio_pass_id: passId,
             type: "studio_pass",
+            ...(pass.expires_on ? { expires_on: pass.expires_on } : {}),
           },
         },
         success_url: `${baseUrl}/my-passes?subscribed=true`,
@@ -156,6 +157,7 @@ export async function POST(request: Request) {
           member_id: memberId,
           studio_pass_id: passId,
           type: "studio_pass",
+          ...(pass.expires_on ? { expires_on: pass.expires_on } : {}),
         },
       },
       connectOptions

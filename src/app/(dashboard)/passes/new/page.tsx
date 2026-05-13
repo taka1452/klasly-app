@@ -23,6 +23,7 @@ const EXPIRY_OPTIONS = [
   { value: "90", label: "90 days" },
   { value: "180", label: "6 months" },
   { value: "365", label: "1 year" },
+  { value: "custom", label: "Custom date" },
 ];
 
 export default function NewPassPage() {
@@ -35,6 +36,7 @@ export default function NewPassPage() {
   const [maxClasses, setMaxClasses] = useState("");
   const [passType, setPassType] = useState<PassType>("monthly");
   const [expiresAfterDays, setExpiresAfterDays] = useState("");
+  const [expiresOn, setExpiresOn] = useState("");
   const [selectedTemplates, setSelectedTemplates] = useState<string[]>([]);
   const [templates, setTemplates] = useState<ClassTemplate[]>([]);
   const [loading, setLoading] = useState(false);
@@ -76,6 +78,10 @@ export default function NewPassPage() {
         return;
       }
     }
+    if (expiresAfterDays === "custom" && !expiresOn) {
+      setError("Please select an expiration date.");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -88,7 +94,8 @@ export default function NewPassPage() {
           price_cents: Math.round(priceNum * 100),
           max_classes_per_month: passType === "monthly" && !unlimited ? parseInt(maxClasses, 10) : null,
           pass_type: passType,
-          expires_after_days: expiresAfterDays ? parseInt(expiresAfterDays, 10) : null,
+          expires_after_days: expiresAfterDays && expiresAfterDays !== "custom" ? parseInt(expiresAfterDays, 10) : null,
+          expires_on: expiresAfterDays === "custom" ? expiresOn : null,
           class_template_ids: selectedTemplates.length > 0 ? selectedTemplates : null,
         }),
       });
@@ -255,7 +262,10 @@ export default function NewPassPage() {
           </label>
           <select
             value={expiresAfterDays}
-            onChange={(e) => setExpiresAfterDays(e.target.value)}
+            onChange={(e) => {
+              setExpiresAfterDays(e.target.value);
+              if (e.target.value !== "custom") setExpiresOn("");
+            }}
             className="input-field mt-1"
           >
             {EXPIRY_OPTIONS.map((opt) => (
@@ -264,6 +274,20 @@ export default function NewPassPage() {
               </option>
             ))}
           </select>
+          {expiresAfterDays === "custom" && (
+            <div className="mt-2">
+              <label className="block text-xs text-gray-500">
+                All subscriptions to this pass expire on this date
+              </label>
+              <input
+                type="date"
+                value={expiresOn}
+                onChange={(e) => setExpiresOn(e.target.value)}
+                min={new Date().toISOString().slice(0, 10)}
+                className="input-field mt-1"
+              />
+            </div>
+          )}
         </div>
 
         {/* Class selection */}
