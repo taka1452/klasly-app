@@ -1165,7 +1165,8 @@ export async function POST(request: Request) {
 
 /**
  * パスサブスクリプションの checkout.session.completed を処理。
- * Checkout Sessionからサブスクリプション情報を取得し、pass_subscriptionsを作成。
+ * Checkout Sessionからpass_subscriptionsを作成。
+ * monthly → subscription mode、class_pack/drop_in → payment mode を両方対応。
  */
 async function handlePassSubscriptionCheckout(
   session: Stripe.Checkout.Session,
@@ -1174,52 +1175,72 @@ async function handlePassSubscriptionCheckout(
   const memberId = session.metadata?.member_id;
   const studioPassId = session.metadata?.studio_pass_id;
   const subscriptionId = getSubscriptionId(session.subscription as string | Stripe.Subscription | null);
+  const paymentIntentId = typeof session.payment_intent === "string"
+    ? session.payment_intent
+    : (session.payment_intent as Stripe.PaymentIntent | null)?.id ?? null;
 
-  if (!memberId || !studioPassId || !subscriptionId) return;
+  // Need at least one Stripe identifier for idempotency
+  const stripeId = subscriptionId || paymentIntentId;
+  if (!memberId || !studioPassId || !stripeId) return;
 
   // Check if record already exists (idempotency)
   const { data: existing } = await adminSupabase
     .from("pass_subscriptions")
     .select("id")
-    .eq("stripe_subscription_id", subscriptionId)
+    .eq("stripe_subscription_id", stripeId)
     .maybeSingle();
 
   if (existing) return;
 
-  // Get subscription details for period dates
   const connectedAccountId = (session as Stripe.Checkout.Session & { account?: string }).account;
-  let periodStart: number | undefined;
-  let periodEnd: number | undefined;
+  const expiresOn = session.metadata?.expires_on;
+  let periodStartDate: string | null = null;
+  let periodEndDate: string | null = null;
 
-  if (connectedAccountId) {
+  if (subscriptionId && connectedAccountId) {
+    // Subscription mode — get period dates from Stripe subscription
     try {
       const sub = await stripe.subscriptions.retrieve(
         subscriptionId,
         { stripeAccount: connectedAccountId }
       );
-      periodStart = sub.items.data[0]?.current_period_start;
-      periodEnd = sub.items.data[0]?.current_period_end;
+      const periodStart = sub.items.data[0]?.current_period_start;
+      const periodEnd = sub.items.data[0]?.current_period_end;
+      if (periodStart) periodStartDate = new Date(periodStart * 1000).toISOString().slice(0, 10);
+      if (periodEnd) periodEndDate = new Date(periodEnd * 1000).toISOString().slice(0, 10);
     } catch {
       // Fall through — dates will be null
     }
+  } else {
+    // One-time payment (class_pack / drop_in) — period starts today
+    periodStartDate = new Date().toISOString().slice(0, 10);
+    // For one-time passes, look up expires_after_days from the pass record
+    if (!expiresOn) {
+      const { data: passRecord } = await adminSupabase
+        .from("studio_passes")
+        .select("expires_after_days")
+        .eq("id", studioPassId)
+        .single();
+      if (passRecord?.expires_after_days) {
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + passRecord.expires_after_days);
+        periodEndDate = endDate.toISOString().slice(0, 10);
+      }
+    }
   }
 
-  // If the pass has a fixed expiration date, use it instead of Stripe's period end
-  const expiresOn = session.metadata?.expires_on;
+  // Fixed expiration date from metadata always takes precedence
+  if (expiresOn) {
+    periodEndDate = expiresOn;
+  }
 
   await adminSupabase.from("pass_subscriptions").insert({
     studio_pass_id: studioPassId,
     member_id: memberId,
-    stripe_subscription_id: subscriptionId,
+    stripe_subscription_id: stripeId,
     status: "active",
-    current_period_start: periodStart
-      ? new Date(periodStart * 1000).toISOString().slice(0, 10)
-      : null,
-    current_period_end: expiresOn
-      ? expiresOn
-      : periodEnd
-        ? new Date(periodEnd * 1000).toISOString().slice(0, 10)
-        : null,
+    current_period_start: periodStartDate,
+    current_period_end: periodEndDate,
   });
 }
 
