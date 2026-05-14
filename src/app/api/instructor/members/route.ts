@@ -29,13 +29,55 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // インストラクターが所属するスタジオの全メンバーを返す
+    // Find the instructor record for this user. Without it, we cannot scope
+    // PII to "members the instructor has actually taught".
+    const { data: instructor } = await supabase
+      .from("instructors")
+      .select("id")
+      .eq("profile_id", user.id)
+      .eq("studio_id", profile.studio_id)
+      .maybeSingle();
+
+    if (!instructor) {
+      return NextResponse.json({ members: [] });
+    }
+
+    // Sessions taught by this instructor (in this studio).
+    const { data: instructorSessions } = await supabase
+      .from("class_sessions")
+      .select("id")
+      .eq("instructor_id", instructor.id)
+      .eq("studio_id", profile.studio_id);
+
+    const sessionIds = (instructorSessions ?? []).map((s) => s.id);
+    if (sessionIds.length === 0) {
+      return NextResponse.json({ members: [] });
+    }
+
+    // Members who have a booking against any of those sessions.
+    const { data: bookings } = await supabase
+      .from("bookings")
+      .select("member_id")
+      .in("session_id", sessionIds);
+
+    const memberIds = Array.from(
+      new Set(
+        (bookings ?? [])
+          .map((b) => (b as { member_id?: string }).member_id)
+          .filter((id): id is string => !!id)
+      )
+    );
+
+    if (memberIds.length === 0) {
+      return NextResponse.json({ members: [] });
+    }
+
     const { data: members } = await supabase
       .from("members")
       .select("id, profiles(full_name, email)")
+      .in("id", memberIds)
       .eq("studio_id", profile.studio_id)
-      .eq("status", "active")
-      .order("created_at", { ascending: false });
+      .eq("status", "active");
 
     const result = (members || []).map((m) => {
       const prof = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;

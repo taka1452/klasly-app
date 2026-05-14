@@ -356,12 +356,23 @@ export async function executeBookingAction({
   // Verify member ownership
   const { data: member } = await adminSupabase
     .from("members")
-    .select("id, profile_id, credits, studio_id, waiver_signed, is_minor, date_of_birth")
+    .select("id, profile_id, credits, studio_id, waiver_signed, is_minor, date_of_birth, status")
     .eq("id", memberId)
     .single();
 
   if (!member || member.profile_id !== userId) {
     return { success: false, error: "Forbidden", status: 403 };
+  }
+
+  // Block bookings for paused/cancelled memberships. Cancels/leave_waitlist
+  // are always allowed so members can clean up even if their status changed.
+  const memberStatus = (member as { status?: string }).status;
+  if ((action === "book" || action === "rebook") && memberStatus && memberStatus !== "active") {
+    return {
+      success: false,
+      error: "Your membership is paused. Contact the studio to reactivate.",
+      status: 403,
+    };
   }
 
   // Server-side waiver enforcement (UI redirects too, but defence in depth

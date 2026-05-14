@@ -23,7 +23,7 @@ async function getOwnerContext() {
 
   if (!profile?.studio_id || profile.role !== "owner") return null;
 
-  return { supabase, studioId: profile.studio_id };
+  return { supabase, studioId: profile.studio_id, userId: user.id };
 }
 
 // GET: スタジオのマネージャー一覧
@@ -204,6 +204,25 @@ export async function PATCH(request: Request) {
     const { id, ...permissions } = body;
 
     if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 });
+
+    // Defence in depth: even an owner shouldn't accidentally edit their
+    // own manager row (they shouldn't have one), and a future change to
+    // permission context shouldn't allow managers to self-edit.
+    const { data: targetMgr } = await ctx.supabase
+      .from("managers")
+      .select("profile_id")
+      .eq("id", id)
+      .eq("studio_id", ctx.studioId)
+      .single();
+    if (!targetMgr) {
+      return NextResponse.json({ error: "Manager not found" }, { status: 404 });
+    }
+    if (targetMgr.profile_id === ctx.userId) {
+      return NextResponse.json(
+        { error: "You can't edit your own permissions." },
+        { status: 403 }
+      );
+    }
 
     const updateData: Record<string, boolean> = {};
     if (permissions.canManageMembers !== undefined) updateData.can_manage_members = permissions.canManageMembers;
