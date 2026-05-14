@@ -188,6 +188,146 @@ async function revertPassUsage(
 }
 
 /**
+ * Promote the first eligible waitlisted member of a session to "confirmed".
+ *
+ * Tries pass usage first (if feature enabled and member has an active pass
+ * covering this class). Falls back to credit deduction. Skips members who
+ * can't pay (0 credits in credit-required studios).
+ *
+ * Used by both executeBookingAction (cancel path) and the dedicated
+ * /api/bookings/[id]/cancel endpoint so the promotion behavior stays
+ * consistent across both flows.
+ */
+export async function promoteWaitlistedMember({
+  adminSupabase,
+  sessionId,
+  studioId,
+  classTemplateId,
+  instructorId,
+  requiresCredits,
+  emailPayload,
+  className,
+}: {
+  adminSupabase: SupabaseClient;
+  sessionId: string;
+  studioId: string;
+  classTemplateId?: string;
+  instructorId?: string;
+  requiresCredits: boolean;
+  emailPayload: { sessionDate: string; startTime: string; studioName: string };
+  className: string;
+}): Promise<void> {
+  // Re-check capacity (race-safe: another booking could have filled the seat)
+  const { data: sessionRow } = await adminSupabase
+    .from("class_sessions")
+    .select("capacity")
+    .eq("id", sessionId)
+    .single();
+  if (!sessionRow) return;
+
+  const { count: confirmedCount } = await adminSupabase
+    .from("bookings")
+    .select("id", { count: "exact", head: true })
+    .eq("session_id", sessionId)
+    .eq("status", "confirmed");
+  if ((confirmedCount ?? 0) >= sessionRow.capacity) return;
+
+  // Walk the waitlist in FIFO order
+  const { data: waitlistQueue } = await adminSupabase
+    .from("bookings")
+    .select("id, member_id")
+    .eq("session_id", sessionId)
+    .eq("status", "waitlist")
+    .order("created_at", { ascending: true });
+
+  if (!waitlistQueue || waitlistQueue.length === 0) return;
+
+  const passFeatureEnabled = await isFeatureEnabled(studioId, FEATURE_KEYS.STUDIO_PASS);
+
+  for (const waitlistItem of waitlistQueue) {
+    const { data: waitlistMember } = await adminSupabase
+      .from("members")
+      .select("id, credits, profile_id")
+      .eq("id", waitlistItem.member_id)
+      .single();
+    if (!waitlistMember) continue;
+
+    let promotedViaPass = false;
+
+    // Try pass first
+    if (passFeatureEnabled) {
+      const passInfo = await getActivePass(adminSupabase, waitlistItem.member_id, classTemplateId);
+      if (passInfo && passInfo.hasCapacity && instructorId) {
+        const passResult = await recordPassUsage(
+          adminSupabase,
+          passInfo.subscriptionId,
+          sessionId,
+          instructorId,
+          passInfo.classesUsed,
+          passInfo.maxClasses
+        );
+        if (passResult.success) {
+          promotedViaPass = true;
+        }
+      }
+    }
+
+    if (!promotedViaPass) {
+      // Skip members who can't pay
+      if (requiresCredits && waitlistMember.credits === 0) continue;
+      // Atomic credit deduction
+      if (requiresCredits && waitlistMember.credits > 0) {
+        const { data: creditResult } = await adminSupabase.rpc("decrement_member_credits", {
+          p_member_id: waitlistItem.member_id,
+        });
+        if (creditResult === -99) continue;
+      }
+    }
+
+    // Promote by booking ID for precision
+    await adminSupabase
+      .from("bookings")
+      .update({ status: "confirmed", booked_via_pass: promotedViaPass })
+      .eq("id", waitlistItem.id);
+
+    // Notify the promoted member
+    const { data: promotedProfile } = await adminSupabase
+      .from("profiles")
+      .select("full_name, email")
+      .eq("id", waitlistMember.profile_id)
+      .single();
+
+    if (promotedProfile?.email) {
+      const { subject, html } = waitlistPromoted({
+        ...emailPayload,
+        memberName: promotedProfile.full_name ?? "Member",
+        className,
+      });
+      await sendEmail({ to: promotedProfile.email, subject, html });
+    }
+    if (waitlistMember.profile_id) {
+      sendPushNotification({
+        profileId: waitlistMember.profile_id,
+        studioId,
+        type: "waitlist_promotion",
+        payload: pushWaitlistPromoted({
+          className,
+          sessionDate: emailPayload.sessionDate,
+          startTime: emailPayload.startTime,
+        }),
+      }).catch((err) =>
+        logger.warn("Push notification failed", {
+          error: err instanceof Error ? err.message : String(err),
+        })
+      );
+    }
+
+    // Done — one promotion per cancellation
+    return;
+  }
+}
+
+/**
  * 予約アクション共通ロジック。
  * /api/bookings と /api/widget/[studioId]/bookings の両方から呼ばれる。
  */
@@ -216,12 +356,51 @@ export async function executeBookingAction({
   // Verify member ownership
   const { data: member } = await adminSupabase
     .from("members")
-    .select("id, profile_id, credits, studio_id")
+    .select("id, profile_id, credits, studio_id, waiver_signed, is_minor, date_of_birth")
     .eq("id", memberId)
     .single();
 
   if (!member || member.profile_id !== userId) {
     return { success: false, error: "Forbidden", status: 403 };
+  }
+
+  // Server-side waiver enforcement (UI redirects too, but defence in depth
+  // against direct API/widget calls). Only blocks bookings — cancels are
+  // always allowed regardless of waiver state.
+  if (action === "book" || action === "rebook") {
+    // If the studio has a waiver template configured, the member must have
+    // signed it. We check this by looking at members.waiver_signed.
+    const { data: waiverTemplate } = await adminSupabase
+      .from("waiver_templates")
+      .select("id")
+      .eq("studio_id", member.studio_id)
+      .maybeSingle();
+
+    if (waiverTemplate && !(member as { waiver_signed?: boolean }).waiver_signed) {
+      return {
+        success: false,
+        error: "Please sign the waiver before booking.",
+        status: 403,
+      };
+    }
+
+    // Re-signing required when a member flagged as minor has aged out of
+    // minor status. The original guardian signature is no longer valid
+    // because they are now legally an adult.
+    const dob = (member as { date_of_birth?: string | null }).date_of_birth;
+    const isMinor = (member as { is_minor?: boolean }).is_minor;
+    if (waiverTemplate && isMinor && dob) {
+      const birth = new Date(dob);
+      const ageMs = Date.now() - birth.getTime();
+      const ageYears = ageMs / (365.25 * 24 * 60 * 60 * 1000);
+      if (ageYears >= 18) {
+        return {
+          success: false,
+          error: "You've aged out of minor status. Please re-sign the waiver as an adult before booking.",
+          status: 403,
+        };
+      }
+    }
   }
 
   // Fetch profile, studio, session info
@@ -284,10 +463,6 @@ export async function executeBookingAction({
     booking_requires_credits: (studio as { booking_requires_credits?: boolean | null })?.booking_requires_credits ?? null,
     stripe_connect_onboarding_complete: (studio as { stripe_connect_onboarding_complete?: boolean })?.stripe_connect_onboarding_complete ?? false,
   });
-
-  let promotedMemberEmail: string | null = null;
-  let promotedMemberName: string | null = null;
-  let waitlistMemberProfileId: string | null = null;
 
   if (action === "book" || action === "rebook") {
     // Capacity check for rebook path (book path uses atomic_book_session)
@@ -534,110 +709,17 @@ export async function executeBookingAction({
       }).catch((err) => logger.warn("Push notification failed", { error: err instanceof Error ? err.message : String(err) }));
     }
 
-    // Waitlist promotion
-    const { count: confirmedCount } = await adminSupabase
-      .from("bookings")
-      .select("id", { count: "exact", head: true })
-      .eq("session_id", sessionId)
-      .eq("status", "confirmed");
-
-    if ((confirmedCount ?? 0) < session.capacity) {
-      const { data: waitlistQueue } = await adminSupabase
-        .from("bookings")
-        .select("member_id")
-        .eq("session_id", sessionId)
-        .eq("status", "waitlist")
-        .order("created_at", { ascending: true });
-
-      for (const waitlistItem of waitlistQueue || []) {
-        const { data: waitlistMember } = await adminSupabase
-          .from("members")
-          .select("id, credits, profile_id")
-          .eq("id", waitlistItem.member_id)
-          .single();
-
-        if (!waitlistMember) continue;
-
-        // Check if promoted member has an active pass
-        const passFeatureEnabled = await isFeatureEnabled(member.studio_id, FEATURE_KEYS.STUDIO_PASS);
-        let promotedViaPass = false;
-        let promotedPassInfo: Awaited<ReturnType<typeof getActivePass>> = null;
-
-        if (passFeatureEnabled) {
-          promotedPassInfo = await getActivePass(adminSupabase, waitlistItem.member_id, session.class_id ?? undefined);
-        }
-
-        if (promotedPassInfo && promotedPassInfo.hasCapacity) {
-          // Member has a pass with capacity — use it
-          const instructorId = sessionAny.classes?.instructor_id;
-          if (instructorId) {
-            const passResult = await recordPassUsage(
-              adminSupabase,
-              promotedPassInfo.subscriptionId,
-              sessionId,
-              instructorId,
-              promotedPassInfo.classesUsed,
-              promotedPassInfo.maxClasses
-            );
-            if (passResult.success) {
-              promotedViaPass = true;
-            }
-            // If pass usage fails (e.g. race condition), fall through to credit deduction
-          }
-        }
-
-        if (!promotedViaPass) {
-          // No pass available — fall back to credit deduction
-          // クレジット必須モードで credits === 0 のメンバーはスキップ
-          if (requiresCredits && waitlistMember.credits === 0) continue;
-
-          // Atomically deduct credit before promoting
-          if (requiresCredits && waitlistMember.credits > 0) {
-            const { data: creditResult } = await adminSupabase.rpc("decrement_member_credits", {
-              p_member_id: waitlistItem.member_id,
-            });
-            if (creditResult === -99) continue; // insufficient credits, skip
-          }
-        }
-
-        const { data: promoted } = await adminSupabase
-          .from("profiles")
-          .select("full_name, email")
-          .eq("id", waitlistMember.profile_id)
-          .single();
-
-        if (promoted?.email) {
-          promotedMemberEmail = promoted.email;
-          promotedMemberName = promoted.full_name ?? "Member";
-          waitlistMemberProfileId = waitlistMember.profile_id;
-        }
-
-        await adminSupabase
-          .from("bookings")
-          .update({ status: "confirmed", booked_via_pass: promotedViaPass })
-          .eq("session_id", sessionId)
-          .eq("member_id", waitlistItem.member_id);
-
-        break;
-      }
-    }
-
-    if (promotedMemberEmail && promotedMemberName) {
-      const { subject, html } = waitlistPromoted({
-        ...emailPayload,
-        memberName: promotedMemberName,
-      });
-      await sendEmail({ to: promotedMemberEmail, subject, html });
-      // Push notification: waitlist promotion
-      if (waitlistMemberProfileId) {
-        sendPushNotification({
-          profileId: waitlistMemberProfileId,
-          studioId: member.studio_id,
-          type: "waitlist_promotion",
-          payload: pushWaitlistPromoted({ className, sessionDate, startTime }),
-        }).catch((err) => logger.warn("Push notification failed", { error: err instanceof Error ? err.message : String(err) }));
-      }
-    }
+    // Waitlist promotion — shared between this flow and /api/bookings/[id]/cancel
+    await promoteWaitlistedMember({
+      adminSupabase,
+      sessionId,
+      studioId: member.studio_id,
+      classTemplateId: session.class_id ?? undefined,
+      instructorId: sessionAny.classes?.instructor_id,
+      requiresCredits,
+      emailPayload: { sessionDate, startTime, studioName },
+      className,
+    });
   } else if (action === "leave_waitlist") {
     const { data: existing } = await adminSupabase
       .from("bookings")

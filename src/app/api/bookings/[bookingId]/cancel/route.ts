@@ -2,14 +2,13 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email/send";
-import { bookingCancelled, waitlistPromoted } from "@/lib/email/templates";
+import { bookingCancelled } from "@/lib/email/templates";
 import { sendPushNotification } from "@/lib/push/send";
-import { pushBookingCancelled, pushWaitlistPromoted } from "@/lib/push/templates";
+import { pushBookingCancelled } from "@/lib/push/templates";
 import { formatDate, formatTime } from "@/lib/utils";
 import { unwrapRelation } from "@/lib/supabase/relation";
 import { logger } from "@/lib/logger";
-import { isFeatureEnabled } from "@/lib/features/check-feature";
-import { FEATURE_KEYS } from "@/lib/features/feature-keys";
+import { promoteWaitlistedMember } from "@/lib/booking/actions";
 
 export async function POST(
   _request: Request,
@@ -185,120 +184,40 @@ export async function POST(
     }
 
     // ウェイトリスト昇格（確認済み予約のキャンセルの場合）
-    // Determine if credits are required for this studio
-    const { data: studioSettings } = await adminSupabase
-      .from("studios")
-      .select("booking_requires_credits, stripe_connect_onboarding_complete")
-      .eq("id", booking.studio_id)
-      .single();
-    const { getRequiresCredits } = await import("@/lib/booking-utils");
-    const requiresCredits = getRequiresCredits({
-      booking_requires_credits: (studioSettings as { booking_requires_credits?: boolean | null })?.booking_requires_credits ?? null,
-      stripe_connect_onboarding_complete: (studioSettings as { stripe_connect_onboarding_complete?: boolean })?.stripe_connect_onboarding_complete ?? false,
-    });
-
     if (wasConfirmed && session) {
-      const { count: confirmedCount } = await adminSupabase
-        .from("bookings")
-        .select("id", { count: "exact", head: true })
-        .eq("session_id", booking.session_id)
-        .eq("status", "confirmed");
+      const { data: studioSettings } = await adminSupabase
+        .from("studios")
+        .select("booking_requires_credits, stripe_connect_onboarding_complete")
+        .eq("id", booking.studio_id)
+        .single();
+      const { getRequiresCredits } = await import("@/lib/booking-utils");
+      const requiresCredits = getRequiresCredits({
+        booking_requires_credits: (studioSettings as { booking_requires_credits?: boolean | null })?.booking_requires_credits ?? null,
+        stripe_connect_onboarding_complete: (studioSettings as { stripe_connect_onboarding_complete?: boolean })?.stripe_connect_onboarding_complete ?? false,
+      });
 
-      if ((confirmedCount ?? 0) < session.capacity) {
-        // Find waitlisted members and promote the first eligible one
-        const { data: waitlistQueue } = await adminSupabase
-          .from("bookings")
-          .select("id, member_id")
-          .eq("session_id", booking.session_id)
-          .eq("status", "waitlist")
-          .order("created_at", { ascending: true });
+      // Get instructor + class_id for pass class restriction filtering
+      const { data: sessionForPromo } = await adminSupabase
+        .from("class_sessions")
+        .select("class_id, classes(instructor_id)")
+        .eq("id", booking.session_id)
+        .single();
+      const sessionPromo = sessionForPromo as { class_id?: string | null; classes?: { instructor_id?: string } | null } | null;
 
-        const passFeatureEnabled = await isFeatureEnabled(booking.studio_id, FEATURE_KEYS.STUDIO_PASS);
-
-        for (const waitlistItem of waitlistQueue || []) {
-          const { data: waitlistMember } = await adminSupabase
-            .from("members")
-            .select("id, credits, profile_id")
-            .eq("id", waitlistItem.member_id)
-            .single();
-
-          if (!waitlistMember) continue;
-
-          // Check if promoted member has an active pass
-          let promotedViaPass = false;
-          if (passFeatureEnabled) {
-            const today = new Date().toISOString().slice(0, 10);
-            const { data: passSubs } = await adminSupabase
-              .from("pass_subscriptions")
-              .select("id, classes_used_this_period, studio_passes(max_classes_per_month)")
-              .eq("member_id", waitlistItem.member_id)
-              .eq("status", "active")
-              .gte("current_period_end", today);
-
-            if (passSubs && passSubs.length > 0) {
-              for (const sub of passSubs) {
-                const pass = unwrapRelation<{ max_classes_per_month: number | null }>(sub.studio_passes);
-                const maxClasses = pass?.max_classes_per_month ?? null;
-                const used = sub.classes_used_this_period ?? 0;
-                if (maxClasses === null || used < maxClasses) {
-                  promotedViaPass = true;
-                  break;
-                }
-              }
-            }
-          }
-
-          if (!promotedViaPass) {
-            // No pass — fall back to credit deduction
-            // Skip members with 0 credits in credit-required mode
-            if (requiresCredits && waitlistMember.credits === 0) continue;
-
-            // Atomically deduct credit before promoting
-            if (requiresCredits && waitlistMember.credits > 0) {
-              const { data: creditResult } = await adminSupabase.rpc("decrement_member_credits", {
-                p_member_id: waitlistItem.member_id,
-              });
-              if (creditResult === -99) continue; // insufficient credits, skip
-            }
-          }
-
-          // Promote using booking ID for precision
-          await adminSupabase
-            .from("bookings")
-            .update({ status: "confirmed", booked_via_pass: promotedViaPass })
-            .eq("id", waitlistItem.id);
-
-          // Send promotion email
-          const { data: promotedProfile } = await adminSupabase
-            .from("profiles")
-            .select("full_name, email")
-            .eq("id", waitlistMember.profile_id)
-            .single();
-
-          if (promotedProfile?.email) {
-            const { subject, html } = waitlistPromoted({
-              ...emailPayload,
-              memberName: promotedProfile.full_name ?? "Member",
-            });
-            await sendEmail({ to: promotedProfile.email, subject, html });
-            // Push notification: waitlist promotion
-            if (waitlistMember.profile_id) {
-              sendPushNotification({
-                profileId: waitlistMember.profile_id,
-                studioId: booking.studio_id,
-                type: "waitlist_promotion",
-                payload: pushWaitlistPromoted({
-                  className,
-                  sessionDate: emailPayload.sessionDate,
-                  startTime: emailPayload.startTime,
-                }),
-              }).catch((err) => logger.warn("Push notification failed", { error: err instanceof Error ? err.message : String(err) }));
-            }
-          }
-
-          break;
-        }
-      }
+      await promoteWaitlistedMember({
+        adminSupabase,
+        sessionId: booking.session_id,
+        studioId: booking.studio_id,
+        classTemplateId: sessionPromo?.class_id ?? undefined,
+        instructorId: sessionPromo?.classes?.instructor_id,
+        requiresCredits,
+        emailPayload: {
+          sessionDate: emailPayload.sessionDate,
+          startTime: emailPayload.startTime,
+          studioName: emailPayload.studioName,
+        },
+        className,
+      });
     }
 
     return NextResponse.json({ success: true });
