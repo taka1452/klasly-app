@@ -8,6 +8,7 @@ import LanguageSelector from "@/components/i18n/language-selector";
 import RankRing from "@/components/levels/rank-ring";
 import StreakIndicator from "@/components/levels/streak-indicator";
 import { RANK_LABEL, type Rank } from "@/lib/rank";
+import { maskEmailForDisplay, maskNameForDisplay } from "@/lib/display-email";
 
 type Props = {
   userName: string;
@@ -28,9 +29,8 @@ export default function MemberHeader({
   streakAtRisk = false,
   onMenuClick,
 }: Props) {
-  const demoEmail = process.env.NEXT_PUBLIC_DEMO_DISPLAY_EMAIL;
-  const displayName = (demoEmail && userName.includes("@")) ? "Member" : userName;
-  const displayEmail = demoEmail || userEmail;
+  const displayEmail = maskEmailForDisplay(userEmail);
+  const displayName = maskNameForDisplay(userName, userEmail, "Member");
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -83,7 +83,7 @@ export default function MemberHeader({
           {rank && (
             <RankRing
               rank={rank}
-              initial={(userName?.[0] || "?").toUpperCase()}
+              initial={(displayName?.[0] || "?").toUpperCase()}
               size="sm"
             />
           )}

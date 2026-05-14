@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { maskEmailForDisplay, maskNameForDisplay } from "@/lib/display-email";
 
 const PAGE_NAMES: Record<string, string> = {
   "/dashboard": "Dashboard",
@@ -52,9 +53,8 @@ type HeaderProps = {
 };
 
 export default function Header({ userName, userEmail, onSidebarToggle, showAdminLink = false }: HeaderProps) {
-  const demoEmail = process.env.NEXT_PUBLIC_DEMO_DISPLAY_EMAIL;
-  const displayName = (demoEmail && userName.includes("@")) ? "Studio Owner" : userName;
-  const displayEmail = demoEmail || userEmail;
+  const displayEmail = maskEmailForDisplay(userEmail);
+  const displayName = maskNameForDisplay(userName, userEmail, "Studio Owner");
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -90,7 +90,7 @@ export default function Header({ userName, userEmail, onSidebarToggle, showAdmin
   }
 
   // 名前のイニシャルを取得
-  const initials = userName
+  const initials = displayName
     .split(" ")
     .map((n) => n[0])
     .join("")

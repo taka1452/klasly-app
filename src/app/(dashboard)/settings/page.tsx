@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import ContextHelpLink from "@/components/help/context-help-link";
 import SettingsContent from "@/components/settings/settings-content";
+import { maskEmailForDisplay, maskNameForDisplay } from "@/lib/display-email";
 
 export const metadata: Metadata = {
   title: "Settings - Klasly",
@@ -117,8 +118,8 @@ export default async function SettingsPage() {
       </p>
 
       <SettingsContent
-        fullName={profile.full_name || user.email || "\u2014"}
-        email={profile.email || user.email || "\u2014"}
+        fullName={maskNameForDisplay(profile.full_name || user.email || "\u2014", user.email, "Studio Owner")}
+        email={maskEmailForDisplay(profile.email || user.email || "\u2014")}
         bookingRequiresCredits={bookingRequiresCredits}
         stripeConnectComplete={stripeConnectComplete}
         isAlsoInstructor={!!instructorRecord}

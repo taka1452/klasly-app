@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { maskEmailForDisplay, maskNameForDisplay } from "@/lib/display-email";
 
 type InstructorHeaderProps = {
   userName: string;
@@ -16,9 +17,8 @@ export default function InstructorHeader({
   userEmail,
   onSidebarToggle,
 }: InstructorHeaderProps) {
-  const demoEmail = process.env.NEXT_PUBLIC_DEMO_DISPLAY_EMAIL;
-  const displayName = (demoEmail && userName.includes("@")) ? "Instructor" : userName;
-  const displayEmail = demoEmail || userEmail;
+  const displayEmail = maskEmailForDisplay(userEmail);
+  const displayName = maskNameForDisplay(userName, userEmail, "Instructor");
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -40,7 +40,7 @@ export default function InstructorHeader({
     router.refresh();
   }
 
-  const initials = userName
+  const initials = displayName
     .split(" ")
     .map((n) => n[0])
     .join("")

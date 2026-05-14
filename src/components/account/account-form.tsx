@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { User, Mail, Lock, Camera, Trash2 } from "lucide-react";
+import { maskEmailForDisplay } from "@/lib/display-email";
 
 type ProfileData = {
   id: string;
@@ -333,7 +334,7 @@ export default function AccountForm() {
               Email address
             </h2>
             <p className="text-xs text-gray-500">
-              Current: <span className="font-medium">{profile.auth_email}</span>
+              Current: <span className="font-medium">{maskEmailForDisplay(profile.auth_email)}</span>
             </p>
           </div>
         </div>

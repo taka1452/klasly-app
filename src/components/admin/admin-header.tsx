@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAdminLocale } from "@/lib/admin/locale-context";
+import { maskEmailForDisplay } from "@/lib/display-email";
 
 type AdminHeaderProps = {
   userEmail: string;
@@ -15,7 +16,7 @@ export default function AdminHeader({
   userEmail,
   onSidebarToggle,
 }: AdminHeaderProps) {
-  const displayEmail = process.env.NEXT_PUBLIC_DEMO_DISPLAY_EMAIL || userEmail;
+  const displayEmail = maskEmailForDisplay(userEmail);
   const router = useRouter();
   const { locale, setLocale, t } = useAdminLocale();
   const [menuOpen, setMenuOpen] = useState(false);

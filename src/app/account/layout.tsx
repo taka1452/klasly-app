@@ -8,6 +8,7 @@ import { getPlanAccess } from "@/lib/plan-guard";
 import { isAdmin } from "@/lib/admin/auth";
 import { getStudioFeatures } from "@/lib/features/check-feature";
 import { FeatureProvider } from "@/lib/features/feature-context";
+import { maskEmailForDisplay, maskNameForDisplay } from "@/lib/display-email";
 
 /**
  * /account レイアウト
@@ -48,8 +49,12 @@ export default async function AccountLayout({
     redirect("/onboarding");
   }
 
-  const userName = profile.full_name || user.email || "User";
-  const userEmail = user.email || "";
+  const userName = maskNameForDisplay(
+    profile.full_name || user.email || "User",
+    user.email,
+    "Studio Owner",
+  );
+  const userEmail = maskEmailForDisplay(user.email);
 
   // Owner / manager: dashboard shell
   if (profile.role === "owner" || profile.role === "manager") {

@@ -6,6 +6,7 @@ import DevRoleSwitcher from "@/components/ui/dev-role-switcher";
 import { getStudioFeatures } from "@/lib/features/check-feature";
 import { FeatureProvider } from "@/lib/features/feature-context";
 import AnnouncementBanner from "@/components/announcements/announcement-banner";
+import { maskEmailForDisplay, maskNameForDisplay } from "@/lib/display-email";
 
 export default async function InstructorLayout({
   children,
@@ -64,8 +65,12 @@ export default async function InstructorLayout({
     .single();
 
   const studioName = (studio as { name?: string })?.name || "Studio";
-  const userName = profile.full_name || user.email || "Instructor";
-  const userEmail = user.email || "";
+  const userName = maskNameForDisplay(
+    profile.full_name || user.email || "Instructor",
+    user.email,
+    "Instructor",
+  );
+  const userEmail = maskEmailForDisplay(user.email);
   const onboardingCompleted =
     (profile as { onboarding_completed?: boolean })?.onboarding_completed ?? true;
   const onboardingStep =

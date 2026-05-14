@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { maskEmailForDisplay, maskNameForDisplay } from "@/lib/display-email";
 
 type DrawerItem = {
   label: string;
@@ -51,9 +52,8 @@ export default function MemberDrawer({
   showVideos,
   showMyStats,
 }: Props) {
-  const demoEmail = process.env.NEXT_PUBLIC_DEMO_DISPLAY_EMAIL;
-  const displayName = (demoEmail && userName.includes("@")) ? "Member" : userName;
-  const displayEmail = demoEmail || userEmail;
+  const displayEmail = maskEmailForDisplay(userEmail);
+  const displayName = maskNameForDisplay(userName, userEmail, "Member");
   const pathname = usePathname();
   const router = useRouter();
 

@@ -15,6 +15,7 @@ import { FeatureProvider } from "@/lib/features/feature-context";
 import { ViewerProvider } from "@/lib/auth/viewer-context";
 import AnnouncementBanner from "@/components/announcements/announcement-banner";
 import { getManagerPermissions, type ManagerPermissions } from "@/lib/auth/check-manager-permission";
+import { maskEmailForDisplay, maskNameForDisplay } from "@/lib/display-email";
 
 export default async function DashboardLayout({
   children,
@@ -143,8 +144,8 @@ export default async function DashboardLayout({
       currentRole={profile.role}
       studioName={(profile.studios as { name?: string })?.name || "My Studio"}
       studioId={profile.studio_id}
-      userName={profile.full_name || user.email || "User"}
-      userEmail={user.email || ""}
+      userName={maskNameForDisplay(profile.full_name || user.email || "User", user.email, "Studio Owner")}
+      userEmail={maskEmailForDisplay(user.email)}
       planAccess={planAccess}
       showAdminLink={showAdminLink}
       isAlsoInstructor={isAlsoInstructor}

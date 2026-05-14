@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import WaiverGate from "@/components/waiver/waiver-gate";
 import MemberShell from "@/components/member/member-shell";
+import { maskEmailForDisplay, maskNameForDisplay } from "@/lib/display-email";
 
 export default async function MemberLayout({
   children,
@@ -82,8 +83,8 @@ export default async function MemberLayout({
   return (
     <MemberShell
       userId={user.id}
-      userEmail={user.email || ""}
-      fullName={profile.full_name || user.email || "User"}
+      userEmail={maskEmailForDisplay(user.email)}
+      fullName={maskNameForDisplay(profile.full_name || user.email || "User", user.email, "Member")}
       studioId={profile.studio_id}
       onboardingCompleted={profile.onboarding_completed ?? true}
       onboardingStep={profile.onboarding_step ?? 0}
