@@ -140,11 +140,15 @@ export async function POST(request: Request) {
               .eq("id", memberId)
               .single();
             const current = m?.credits ?? 0;
-            const next = Math.max(0, current) + credits;
-            await adminSupabase
-              .from("members")
-              .update({ credits: next })
-              .eq("id", memberId);
+            if (current === -1) {
+              // Already unlimited — skip credit addition
+            } else {
+              const next = Math.max(0, current) + credits;
+              await adminSupabase
+                .from("members")
+                .update({ credits: next })
+                .eq("id", memberId);
+            }
           }
 
           const { data: memberProfile } = await adminSupabase
@@ -1194,6 +1198,16 @@ async function handlePassSubscriptionCheckout(
     .maybeSingle();
 
   if (existing) return;
+
+  // Also check for any active subscription to the same pass by this member
+  const { data: activeDup } = await adminSupabase
+    .from("pass_subscriptions")
+    .select("id")
+    .eq("member_id", memberId)
+    .eq("studio_pass_id", studioPassId)
+    .eq("status", "active")
+    .maybeSingle();
+  if (activeDup) return;
 
   const connectedAccountId = (session as Stripe.Checkout.Session & { account?: string }).account;
   const expiresOn = session.metadata?.expires_on;

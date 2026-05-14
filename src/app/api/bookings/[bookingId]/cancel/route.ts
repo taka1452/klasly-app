@@ -8,6 +8,8 @@ import { pushBookingCancelled, pushWaitlistPromoted } from "@/lib/push/templates
 import { formatDate, formatTime } from "@/lib/utils";
 import { unwrapRelation } from "@/lib/supabase/relation";
 import { logger } from "@/lib/logger";
+import { isFeatureEnabled } from "@/lib/features/check-feature";
+import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
 export async function POST(
   _request: Request,
@@ -211,6 +213,8 @@ export async function POST(
           .eq("status", "waitlist")
           .order("created_at", { ascending: true });
 
+        const passFeatureEnabled = await isFeatureEnabled(booking.studio_id, FEATURE_KEYS.STUDIO_PASS);
+
         for (const waitlistItem of waitlistQueue || []) {
           const { data: waitlistMember } = await adminSupabase
             .from("members")
@@ -220,21 +224,48 @@ export async function POST(
 
           if (!waitlistMember) continue;
 
-          // Skip members with 0 credits in credit-required mode
-          if (requiresCredits && waitlistMember.credits === 0) continue;
+          // Check if promoted member has an active pass
+          let promotedViaPass = false;
+          if (passFeatureEnabled) {
+            const today = new Date().toISOString().slice(0, 10);
+            const { data: passSubs } = await adminSupabase
+              .from("pass_subscriptions")
+              .select("id, classes_used_this_period, studio_passes(max_classes_per_month)")
+              .eq("member_id", waitlistItem.member_id)
+              .eq("status", "active")
+              .gte("current_period_end", today);
 
-          // Atomically deduct credit before promoting
-          if (requiresCredits && waitlistMember.credits > 0) {
-            const { data: creditResult } = await adminSupabase.rpc("decrement_member_credits", {
-              p_member_id: waitlistItem.member_id,
-            });
-            if (creditResult === -99) continue; // insufficient credits, skip
+            if (passSubs && passSubs.length > 0) {
+              for (const sub of passSubs) {
+                const pass = unwrapRelation<{ max_classes_per_month: number | null }>(sub.studio_passes);
+                const maxClasses = pass?.max_classes_per_month ?? null;
+                const used = sub.classes_used_this_period ?? 0;
+                if (maxClasses === null || used < maxClasses) {
+                  promotedViaPass = true;
+                  break;
+                }
+              }
+            }
+          }
+
+          if (!promotedViaPass) {
+            // No pass — fall back to credit deduction
+            // Skip members with 0 credits in credit-required mode
+            if (requiresCredits && waitlistMember.credits === 0) continue;
+
+            // Atomically deduct credit before promoting
+            if (requiresCredits && waitlistMember.credits > 0) {
+              const { data: creditResult } = await adminSupabase.rpc("decrement_member_credits", {
+                p_member_id: waitlistItem.member_id,
+              });
+              if (creditResult === -99) continue; // insufficient credits, skip
+            }
           }
 
           // Promote using booking ID for precision
           await adminSupabase
             .from("bookings")
-            .update({ status: "confirmed" })
+            .update({ status: "confirmed", booked_via_pass: promotedViaPass })
             .eq("id", waitlistItem.id);
 
           // Send promotion email
