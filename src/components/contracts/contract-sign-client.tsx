@@ -407,7 +407,14 @@ function FieldRow({
               key={n}
               type="button"
               onClick={() => onChange(String(n))}
-              className={`flex h-9 w-9 items-center justify-center rounded-lg border text-sm font-medium transition-colors ${
+              // transform-only press feedback + GPU-only color transition.
+              // 160ms ease-out-strong matches the rest of the dashboard's
+              // button feel (see styles/design-eng.css).
+              style={{
+                transition:
+                  "transform 160ms cubic-bezier(0.23,1,0.32,1), background-color 160ms ease, border-color 160ms ease, color 160ms ease",
+              }}
+              className={`flex h-9 w-9 items-center justify-center rounded-lg border text-sm font-medium transform-gpu active:scale-[0.94] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/20 ${
                 current === n
                   ? "border-gray-900 bg-gray-900 text-white"
                   : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
