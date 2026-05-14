@@ -34,6 +34,101 @@ export async function POST(request: Request) {
       .eq("id", user.id)
       .single();
 
+    // --- Member self-delete branch (GDPR) ---
+    // Members can permanently delete their own account and data. This only
+    // touches their own member/booking/payment/etc. rows — not the studio
+    // or other members. Runs before the owner check so members aren't
+    // blocked by the "Only studio owners" error.
+    if (profile?.role === "member") {
+      const { data: memberRecord } = await adminSupabase
+        .from("members")
+        .select("id, stripe_subscription_id")
+        .eq("profile_id", user.id)
+        .maybeSingle();
+
+      const failedMemberCancellations: string[] = [];
+
+      if (memberRecord) {
+        const stripe = getStripe();
+
+        const safeCancel = async (subId: string, context: string) => {
+          try {
+            await stripe.subscriptions.cancel(subId);
+          } catch (err) {
+            const code = (err as { code?: string })?.code;
+            if (code !== "resource_missing") {
+              failedMemberCancellations.push(subId);
+              logger.error(
+                `account/delete: Stripe cancel failed (${context})`,
+                {
+                  memberId: memberRecord.id,
+                  subscriptionId: subId,
+                  error: err instanceof Error ? err.message : String(err),
+                }
+              );
+            }
+          }
+        };
+
+        // Cancel any member-level subscription
+        if (memberRecord.stripe_subscription_id) {
+          await safeCancel(memberRecord.stripe_subscription_id, "member-self");
+        }
+
+        // Cancel any active pass subscriptions
+        const { data: passSubs } = await adminSupabase
+          .from("pass_subscriptions")
+          .select("stripe_subscription_id")
+          .eq("member_id", memberRecord.id)
+          .not("stripe_subscription_id", "is", null);
+        for (const ps of passSubs || []) {
+          if (ps.stripe_subscription_id) {
+            await safeCancel(ps.stripe_subscription_id, "pass-self");
+          }
+        }
+
+        // Delete the member's own data. Most child rows cascade via FK, but
+        // we delete explicitly to be safe across environments.
+        await adminSupabase
+          .from("pass_subscriptions")
+          .delete()
+          .eq("member_id", memberRecord.id);
+        await adminSupabase
+          .from("bookings")
+          .delete()
+          .eq("member_id", memberRecord.id);
+        await adminSupabase
+          .from("class_reviews")
+          .delete()
+          .eq("member_id", memberRecord.id);
+        await adminSupabase
+          .from("waiver_signatures")
+          .delete()
+          .eq("member_id", memberRecord.id);
+        await adminSupabase
+          .from("payments")
+          .delete()
+          .eq("member_id", memberRecord.id);
+        await adminSupabase
+          .from("members")
+          .delete()
+          .eq("id", memberRecord.id);
+      }
+
+      // Remove profile + auth user
+      await adminSupabase.from("profiles").delete().eq("id", user.id);
+      await adminSupabase.auth.admin.deleteUser(user.id);
+
+      await serverSupabase.auth.signOut();
+
+      return NextResponse.json({
+        success: true,
+        ...(failedMemberCancellations.length > 0 && {
+          warning: `${failedMemberCancellations.length} Stripe subscription(s) could not be cancelled automatically. Please check Stripe dashboard.`,
+        }),
+      });
+    }
+
     if (profile?.role !== "owner" || !profile?.studio_id) {
       return NextResponse.json(
         { error: "Only studio owners can delete their account" },
