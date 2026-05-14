@@ -47,7 +47,7 @@ export default async function MemberLayout({
   const [memberRes, templateRes] = await Promise.all([
     supabase
       .from("members")
-      .select("waiver_signed")
+      .select("waiver_signed, is_minor, date_of_birth")
       .eq("profile_id", user.id)
       .eq("studio_id", profile.studio_id)
       .maybeSingle(),
@@ -58,8 +58,22 @@ export default async function MemberLayout({
       .maybeSingle(),
   ]);
 
+  // A member who was flagged as minor but has now turned 18 needs to re-sign
+  // as an adult — the prior guardian signature no longer applies.
+  const memberRow = memberRes.data as
+    | { waiver_signed?: boolean; is_minor?: boolean; date_of_birth?: string | null }
+    | null;
+  const agedOutOfMinor = (() => {
+    if (!memberRow?.is_minor || !memberRow.date_of_birth) return false;
+    const birth = new Date(memberRow.date_of_birth);
+    const ageMs = Date.now() - birth.getTime();
+    return ageMs / (365.25 * 24 * 60 * 60 * 1000) >= 18;
+  })();
+
   const needsWaiver =
-    !!templateRes.data && !!memberRes.data && !memberRes.data.waiver_signed;
+    !!templateRes.data &&
+    !!memberRow &&
+    (!memberRow.waiver_signed || agedOutOfMinor);
 
   if (needsWaiver) {
     return <WaiverGate needsWaiver>{children}</WaiverGate>;

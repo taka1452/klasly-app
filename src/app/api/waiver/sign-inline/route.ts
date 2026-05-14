@@ -51,7 +51,7 @@ export async function POST(request: Request) {
 
     const { data: member } = await supabase
       .from("members")
-      .select("id, profile_id, studio_id")
+      .select("id, profile_id, studio_id, is_minor, date_of_birth")
       .eq("id", memberId)
       .single();
 
@@ -60,6 +60,21 @@ export async function POST(request: Request) {
         { error: "Member not found or access denied" },
         { status: 403 }
       );
+    }
+
+    // Block self-signing for minors who haven't aged out. A genuine minor
+    // can't bypass the guardian flow by hitting this endpoint directly.
+    const memberData = member as { is_minor?: boolean; date_of_birth?: string | null };
+    if (memberData.is_minor && memberData.date_of_birth) {
+      const birth = new Date(memberData.date_of_birth);
+      const ageYears =
+        (Date.now() - birth.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+      if (ageYears < 18) {
+        return NextResponse.json(
+          { error: "A parent or legal guardian must sign for this member." },
+          { status: 403 }
+        );
+      }
     }
 
     const { data: template } = await supabase
@@ -95,11 +110,23 @@ export async function POST(request: Request) {
       );
     }
 
+    // Clear is_minor if the member was previously flagged as a minor but
+    // is now signing as an adult (aged out). The original guardian
+    // signature is now superseded.
+    const isAgedOutMinor = (() => {
+      if (!memberData.is_minor || !memberData.date_of_birth) return false;
+      const birth = new Date(memberData.date_of_birth);
+      return (
+        (Date.now() - birth.getTime()) / (365.25 * 24 * 60 * 60 * 1000) >= 18
+      );
+    })();
+
     const { error: updateError } = await supabase
       .from("members")
       .update({
         waiver_signed: true,
         waiver_signed_at: signedAt,
+        ...(isAgedOutMinor ? { is_minor: false } : {}),
       })
       .eq("id", memberId);
 
