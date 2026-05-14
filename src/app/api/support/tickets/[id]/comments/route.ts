@@ -15,7 +15,18 @@ async function getStudioIdForUser(
     .eq("id", userId)
     .single();
   const p = data as { studio_id: string | null; role: string } | null;
-  return p?.role === "owner" && p?.studio_id ? p.studio_id : null;
+  if (!p?.studio_id) return null;
+  if (p.role === "owner") return p.studio_id;
+  if (p.role === "manager") {
+    const { data: mgr } = await supabase
+      .from("managers")
+      .select("can_manage_settings")
+      .eq("profile_id", userId)
+      .eq("studio_id", p.studio_id)
+      .single();
+    if (mgr?.can_manage_settings) return p.studio_id;
+  }
+  return null;
 }
 
 /**

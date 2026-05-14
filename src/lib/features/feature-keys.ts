@@ -92,6 +92,8 @@ export const FEATURE_KEYS = {
   VIDEO_CONTENT: "extension.video_content",
   /** Member levels (Bronze/Silver/Gold/Platinum/Diamond) */
   MEMBER_LEVELS: "extension.member_levels",
+  /** Instructor achievements & trophies */
+  INSTRUCTOR_ACHIEVEMENTS: "extension.instructor_achievements",
 
   // ============================================
   // Payout Phase 3 features
@@ -156,6 +158,7 @@ export const DEFAULT_FEATURES: Record<FeatureKey, boolean> = {
   [FEATURE_KEYS.EMAIL_CAMPAIGNS]: false,
   [FEATURE_KEYS.VIDEO_CONTENT]: false,
   [FEATURE_KEYS.MEMBER_LEVELS]: false,
+  [FEATURE_KEYS.INSTRUCTOR_ACHIEVEMENTS]: false,
 
   // Payout Phase 3: default OFF
   [FEATURE_KEYS.CLASS_FEE_OVERRIDE]: false,
@@ -204,6 +207,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   [FEATURE_KEYS.EMAIL_CAMPAIGNS]: "Email Campaigns",
   [FEATURE_KEYS.VIDEO_CONTENT]: "Video Content",
   [FEATURE_KEYS.MEMBER_LEVELS]: "Member Levels",
+  [FEATURE_KEYS.INSTRUCTOR_ACHIEVEMENTS]: "Instructor Achievements",
 
   [FEATURE_KEYS.CLASS_FEE_OVERRIDE]: "Class Fee Override",
   [FEATURE_KEYS.FEE_SCHEDULES]: "Fee Schedules",
@@ -260,6 +264,7 @@ export const FEATURE_CATEGORIES = {
       FEATURE_KEYS.EMAIL_CAMPAIGNS,
       FEATURE_KEYS.VIDEO_CONTENT,
       FEATURE_KEYS.MEMBER_LEVELS,
+      FEATURE_KEYS.INSTRUCTOR_ACHIEVEMENTS,
     ],
   },
   payout: {

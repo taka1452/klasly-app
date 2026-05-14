@@ -13,6 +13,7 @@ type InstructorProfileData = {
     bio: string | null;
     specialties: string[];
     classes_count: number;
+    avatar_url: string | null;
     created_at: string;
   };
 };
@@ -112,9 +113,13 @@ export default function InstructorProfileCard({
         ) : data ? (
           <>
             <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-sky-100 text-lg font-semibold text-sky-700">
-                {getInitials(data.instructor.full_name)}
-              </div>
+              {data.instructor.avatar_url ? (
+                <img src={data.instructor.avatar_url} alt={data.instructor.full_name} className="h-14 w-14 shrink-0 rounded-full object-cover" />
+              ) : (
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-sky-100 text-lg font-semibold text-sky-700">
+                  {getInitials(data.instructor.full_name)}
+                </div>
+              )}
               <div>
                 <p className="text-xl font-bold text-gray-900">
                   {data.instructor.full_name}

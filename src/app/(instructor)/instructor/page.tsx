@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { formatTime } from "@/lib/utils";
 import WhatsNewBanner from "@/components/instructor/whats-new-banner";
+import InstructorAchievements from "@/components/achievements/instructor-achievements";
 
 export default async function InstructorDashboardPage() {
   const serverSupabase = await createServerClient();
@@ -163,6 +164,8 @@ export default async function InstructorDashboardPage() {
         </h1>
         <p className="mt-1 text-sm text-gray-500">{studioName}</p>
       </div>
+
+      <InstructorAchievements />
 
       <section className="mb-8" data-tour="assigned-classes">
         <h2 className="mb-4 text-lg font-semibold text-gray-900">

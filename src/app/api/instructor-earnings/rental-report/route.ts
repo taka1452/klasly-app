@@ -73,14 +73,22 @@ export async function GET(request: NextRequest) {
     let sessionCounts: Record<string, number> = {};
 
     if (perClassInstructorIds.length > 0) {
-      // Get classes for these instructors
-      const { data: classes } = await adminDb
-        .from("classes")
-        .select("id, instructor_id")
-        .eq("studio_id", profile.studio_id)
-        .in("instructor_id", perClassInstructorIds);
+      // Get classes for these instructors (both legacy and templates)
+      const [{ data: legacyClasses }, { data: templateClasses }] = await Promise.all([
+        adminDb
+          .from("classes")
+          .select("id, instructor_id")
+          .eq("studio_id", profile.studio_id)
+          .in("instructor_id", perClassInstructorIds),
+        adminDb
+          .from("class_templates")
+          .select("id, instructor_id")
+          .eq("studio_id", profile.studio_id)
+          .in("instructor_id", perClassInstructorIds),
+      ]);
+      const classes = [...(legacyClasses ?? []), ...(templateClasses ?? [])];
 
-      if (classes && classes.length > 0) {
+      if (classes.length > 0) {
         const classIds = classes.map((c) => c.id);
 
         // Count sessions per class in the month

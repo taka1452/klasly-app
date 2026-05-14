@@ -276,13 +276,21 @@ export async function DELETE(request: Request) {
 
     if (instructorRecord) {
       // アクティブなクラスがある場合はインストラクターレコードを残す（ロールを instructor に）
-      const { count: activeClasses } = await ctx.supabase
-        .from("classes")
-        .select("id", { count: "exact", head: true })
-        .eq("instructor_id", instructorRecord.id)
-        .eq("is_active", true);
+      const [{ count: legacyClasses }, { count: templateClasses }] = await Promise.all([
+        ctx.supabase
+          .from("classes")
+          .select("id", { count: "exact", head: true })
+          .eq("instructor_id", instructorRecord.id)
+          .eq("is_active", true),
+        ctx.supabase
+          .from("class_templates")
+          .select("id", { count: "exact", head: true })
+          .eq("instructor_id", instructorRecord.id)
+          .eq("is_active", true),
+      ]);
+      const activeClasses = (legacyClasses ?? 0) + (templateClasses ?? 0);
 
-      if (activeClasses && activeClasses > 0) {
+      if (activeClasses > 0) {
         // アクティブなクラスがあるためインストラクターとして保持
         await ctx.supabase
           .from("profiles")

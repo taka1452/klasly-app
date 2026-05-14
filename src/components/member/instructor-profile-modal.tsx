@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 type InstructorData = {
   id: string;
   full_name: string;
+  avatar_url: string | null;
   bio: string | null;
   specialties: string[];
 };
@@ -96,9 +97,13 @@ export default function InstructorProfileModal({
           ) : data ? (
             <div className="text-center">
               {/* Avatar */}
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 text-xl font-semibold text-brand-700">
-                {initials}
-              </div>
+              {data.avatar_url ? (
+                <img src={data.avatar_url} alt={data.full_name} className="mx-auto h-16 w-16 rounded-full object-cover" />
+              ) : (
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 text-xl font-semibold text-brand-700">
+                  {initials}
+                </div>
+              )}
 
               <h3 className="mt-3 text-lg font-semibold text-gray-900">
                 {data.full_name}

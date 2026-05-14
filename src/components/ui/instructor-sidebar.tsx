@@ -1,8 +1,10 @@
 "use client";
 
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useFeature } from "@/lib/features/feature-context";
+import FlowerBurst from "@/components/achievements/flower-burst";
 
 type InstructorSidebarProps = {
   studioName: string;
@@ -117,6 +119,17 @@ export default function InstructorSidebar({
 }: InstructorSidebarProps) {
   const pathname = usePathname();
   const { isEnabled } = useFeature();
+  const [flowerTrigger, setFlowerTrigger] = useState(false);
+
+  const handleAchievement = useCallback(() => {
+    setFlowerTrigger(false);
+    requestAnimationFrame(() => setFlowerTrigger(true));
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("instructor-achievement-earned", handleAchievement);
+    return () => window.removeEventListener("instructor-achievement-earned", handleAchievement);
+  }, [handleAchievement]);
 
   const navItems = instructorNavItems.filter(
     (item) => !item.featureKey || isEnabled(item.featureKey)
@@ -130,8 +143,9 @@ export default function InstructorSidebar({
         }`}
       >
         <div className="flex h-16 items-center justify-between border-b border-gray-200 px-6">
-          <Link href="/instructor" className="flex items-center gap-2">
+          <Link href="/instructor" className="relative flex items-center gap-2">
             <span className="text-xl font-bold text-emerald-700">Klasly</span>
+            <FlowerBurst trigger={flowerTrigger} />
           </Link>
           <button
             type="button"
@@ -186,8 +200,9 @@ export default function InstructorSidebar({
 
       <aside className="hidden w-64 flex-col border-r border-gray-200 bg-white md:flex">
         <div className="flex h-16 items-center border-b border-gray-200 px-6">
-          <Link href="/instructor" className="flex items-center gap-2">
+          <Link href="/instructor" className="relative flex items-center gap-2">
             <span className="text-xl font-bold text-emerald-700">Klasly</span>
+            <FlowerBurst trigger={flowerTrigger} />
           </Link>
         </div>
         <div className="border-b border-gray-200 px-6 py-3">

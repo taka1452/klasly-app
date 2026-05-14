@@ -976,6 +976,33 @@ export type MemberAchievement = {
 };
 
 // ============================================
+// Instructor Achievements
+// ============================================
+
+export type InstructorAchievementType =
+  | "first_class_taught"
+  | "ten_classes_taught"
+  | "fifty_classes_taught"
+  | "hundred_classes_taught"
+  | "five_hundred_classes_taught"
+  | "first_student"
+  | "fifty_students"
+  | "hundred_students"
+  | "earning_streak_3"
+  | "earning_streak_6"
+  | "earning_streak_12"
+  | "full_house";
+
+export type InstructorAchievement = {
+  id: string;
+  studio_id: string;
+  instructor_id: string;
+  achievement_type: InstructorAchievementType;
+  earned_at: string;
+  metadata: Record<string, unknown> | null;
+};
+
+// ============================================
 // Community Posts & Comments
 // ============================================
 

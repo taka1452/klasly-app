@@ -33,7 +33,7 @@ export default async function InstructorDetailPage({
 
   const { data: instructor } = await supabase
     .from("instructors")
-    .select("*, profiles(full_name, email, phone)")
+    .select("*, profiles(full_name, email, phone, avatar_url)")
     .eq("id", id)
     .single();
 
@@ -66,18 +66,27 @@ export default async function InstructorDetailPage({
     .eq("status", "active")
     .maybeSingle();
 
-  const { data: assignedClasses } = await supabase
-    .from("classes")
-    .select("id, name, day_of_week, start_time")
-    .eq("instructor_id", id)
-    .eq("is_active", true)
-    .order("day_of_week", { ascending: true })
-    .order("start_time", { ascending: true });
+  const [{ data: assignedClasses }, { data: assignedTemplates }] = await Promise.all([
+    supabase
+      .from("classes")
+      .select("id, name, day_of_week, start_time")
+      .eq("instructor_id", id)
+      .eq("is_active", true)
+      .order("day_of_week", { ascending: true })
+      .order("start_time", { ascending: true }),
+    supabase
+      .from("class_templates")
+      .select("id, name, duration_minutes")
+      .eq("instructor_id", id)
+      .eq("is_active", true)
+      .order("name", { ascending: true }),
+  ]);
 
   const profileData = instructor.profiles as {
     full_name?: string;
     email?: string;
     phone?: string;
+    avatar_url?: string;
   } | null;
   const rawProfile = Array.isArray(profileData) ? profileData[0] : profileData;
   const specialties = instructor.specialties as string[] | null;
@@ -135,6 +144,7 @@ export default async function InstructorDetailPage({
               rentalType: (instructor as { rental_type?: string }).rental_type as "none" | "flat_monthly" | "per_class" ?? "none",
               rentalAmount: (instructor as { rental_amount?: number }).rental_amount ?? 0,
               tierId: membership?.tier_id || "",
+              avatarUrl: rawProfile?.avatar_url || "",
             }}
           />
         </div>
@@ -192,7 +202,7 @@ export default async function InstructorDetailPage({
             const tierInfo = (Array.isArray(rawTier) ? rawTier[0] : rawTier) as { name: string; monthly_price: number } | null;
             if (!tierInfo) return null;
             const hasSubscription = !!membership.stripe_subscription_id;
-            const isPaid = tierInfo.monthly_price <= 0;
+            const isFree = tierInfo.monthly_price <= 0;
             return (
               <div className="card">
                 <h3 className="text-sm font-medium text-gray-500">
@@ -214,7 +224,7 @@ export default async function InstructorDetailPage({
                   <div>
                     <dt className="text-xs text-gray-400">Payment Status</dt>
                     <dd className="mt-0.5">
-                      {isPaid ? (
+                      {isFree ? (
                         <span className="inline-flex items-center rounded-full bg-gray-50 px-2.5 py-0.5 text-xs font-medium text-gray-500">Free</span>
                       ) : hasSubscription ? (
                         <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">Active</span>
@@ -235,9 +245,25 @@ export default async function InstructorDetailPage({
             <h3 className="text-sm font-medium text-gray-500">
               Assigned Classes
             </h3>
-            {assignedClasses && assignedClasses.length > 0 ? (
+            {(assignedClasses && assignedClasses.length > 0) || (assignedTemplates && assignedTemplates.length > 0) ? (
               <ul className="mt-4 space-y-2">
-                {assignedClasses.map((cls) => (
+                {assignedTemplates?.map((t) => (
+                  <li
+                    key={t.id}
+                    className="flex items-center justify-between text-sm"
+                  >
+                    <Link
+                      href={`/classes/${t.id}`}
+                      className="font-medium text-brand-600 hover:text-brand-700"
+                    >
+                      {t.name}
+                    </Link>
+                    <span className="text-gray-500">
+                      {t.duration_minutes} min
+                    </span>
+                  </li>
+                ))}
+                {assignedClasses?.map((cls) => (
                   <li
                     key={cls.id}
                     className="flex items-center justify-between text-sm"

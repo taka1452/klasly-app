@@ -50,7 +50,7 @@ export default async function InstructorsPage() {
 
   const { data: instructors } = await supabase
     .from("instructors")
-    .select("*, profiles(full_name, email, phone)")
+    .select("*, profiles(full_name, email, phone, avatar_url)")
     .eq("studio_id", profile.studio_id)
     .order("created_at", { ascending: false });
 

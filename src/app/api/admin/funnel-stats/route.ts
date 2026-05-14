@@ -59,15 +59,16 @@ export async function GET() {
     }
   }
 
-  // Stage 5: active_use - studios with at least 1 class, not demo
-  const { data: studiosWithClasses } = await supabase
-    .from("classes")
-    .select("studio_id")
-    .limit(1000);
+  // Stage 5: active_use - studios with at least 1 class (legacy or template), not demo
+  const [{ data: studiosWithClasses }, { data: studiosWithTemplates }] = await Promise.all([
+    supabase.from("classes").select("studio_id").limit(1000),
+    supabase.from("class_templates").select("studio_id").limit(1000),
+  ]);
 
-  const uniqueStudiosWithClasses = new Set(
-    (studiosWithClasses || []).map((c) => c.studio_id)
-  );
+  const uniqueStudiosWithClasses = new Set([
+    ...(studiosWithClasses || []).map((c) => c.studio_id),
+    ...(studiosWithTemplates || []).map((c) => c.studio_id),
+  ]);
 
   // Get non-demo studios
   const { data: allNonDemo } = await supabase

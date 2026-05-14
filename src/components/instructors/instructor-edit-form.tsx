@@ -29,6 +29,7 @@ type Props = {
     rentalType: RentalType;
     rentalAmount: number; // cents
     tierId: string; // current tier assignment ("" = none)
+    avatarUrl: string;
   };
 };
 
@@ -66,9 +67,32 @@ export default function InstructorEditForm({
       setRentalAmountDisplay("");
     }
   }
+  const [avatarUrl, setAvatarUrl] = useState(initialData.avatarUrl);
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+
+  async function handleAvatarUpload(file: File) {
+    if (file.size > 2 * 1024 * 1024) { setError("Photo must be under 2MB"); return; }
+    setAvatarUploading(true);
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch(`/api/instructors/${instructorId}/avatar`, { method: "POST", body: fd });
+    const data = await res.json();
+    setAvatarUploading(false);
+    if (!res.ok) { setError(data.error || "Upload failed"); return; }
+    setAvatarUrl(data.avatar_url);
+    setToast("Photo updated");
+  }
+
+  async function handleAvatarDelete() {
+    setAvatarUploading(true);
+    await fetch(`/api/instructors/${instructorId}/avatar`, { method: "DELETE" });
+    setAvatarUrl("");
+    setAvatarUploading(false);
+    setToast("Photo removed");
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -154,6 +178,35 @@ export default function InstructorEditForm({
             {error}
           </div>
         )}
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Photo</label>
+          <div className="mt-1 flex items-center gap-4">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="Avatar" className="h-16 w-16 rounded-full object-cover" />
+            ) : (
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 text-xl font-medium text-gray-400">
+                {fullName?.[0]?.toUpperCase() || "?"}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <label className={`btn-secondary cursor-pointer text-sm ${avatarUploading ? "opacity-50 pointer-events-none" : ""}`}>
+                {avatarUploading ? "Uploading…" : "Upload"}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAvatarUpload(f); }}
+                />
+              </label>
+              {avatarUrl && (
+                <button type="button" onClick={handleAvatarDelete} disabled={avatarUploading} className="btn-secondary text-sm text-red-600 hover:text-red-700">
+                  Remove
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700">

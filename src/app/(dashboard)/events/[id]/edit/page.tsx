@@ -81,6 +81,8 @@ export default function EditEventPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [color, setColor] = useState<string>(DEFAULT_EVENT_COLOR);
   const [isPublic, setIsPublic] = useState(true);
   const [currentStatus, setCurrentStatus] = useState("draft");
@@ -410,7 +412,7 @@ export default function EditEventPage() {
         capacity: parseInt(o.capacity || "10", 10),
         sort_order: idx,
         early_bird_price_cents: o.earlyBirdDollars ? Math.round(parseFloat(o.earlyBirdDollars) * 100) : null,
-        early_bird_deadline: o.earlyBirdDeadline ? new Date(o.earlyBirdDeadline).toISOString() : null,
+        early_bird_deadline: o.earlyBirdDeadline ? (() => { const [dp, tp] = o.earlyBirdDeadline.split("T"); const [y, mo, d] = dp.split("-").map(Number); const [h, mi] = tp.split(":").map(Number); return new Date(y, mo - 1, d, h, mi).toISOString(); })() : null,
       };
       if (o.id) {
         await supabase.from("event_options").update(optionData).eq("id", o.id);
@@ -434,6 +436,12 @@ export default function EditEventPage() {
           sort_order: idx,
         })),
       );
+    }
+
+    if (imageFile) {
+      const fd = new FormData();
+      fd.append("file", imageFile);
+      await fetch(`/api/events/${id}/image`, { method: "POST", body: fd });
     }
 
     router.push(`/events/${id}/manage`);
@@ -536,9 +544,36 @@ export default function EditEventPage() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Cover Image URL</label>
-              <input type="url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://example.com/retreat-image.jpg" className="input-field mt-1" />
-              <p className="mt-1 text-xs text-gray-400">Main hero image for your event page.</p>
+              <label className="block text-sm font-medium text-gray-700">Cover Image</label>
+              {(imagePreview || imageUrl) && (
+                <div className="relative mt-2 mb-2">
+                  <img src={imagePreview || imageUrl} alt="Preview" className="h-32 w-full rounded-lg object-cover" />
+                  <button type="button" onClick={() => { setImageFile(null); setImagePreview(null); setImageUrl(""); }} className="absolute top-1 right-1 rounded-full bg-black/60 p-1 text-white hover:bg-black/80">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (!f) return;
+                  if (f.size > 5 * 1024 * 1024) { alert("File must be under 5MB"); return; }
+                  setImageFile(f);
+                  const reader = new FileReader();
+                  reader.onload = (ev) => setImagePreview(ev.target?.result as string);
+                  reader.readAsDataURL(f);
+                  setImageUrl("");
+                }}
+                className="input-field mt-1"
+              />
+              {!imageFile && !imageUrl && (
+                <>
+                  <p className="my-1 text-center text-xs text-gray-400">or paste a URL</p>
+                  <input type="url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://example.com/image.jpg" className="input-field" />
+                </>
+              )}
             </div>
             <EventColorPicker value={color} onChange={setColor} />
             <div>

@@ -24,7 +24,7 @@ export const helpArticles: HelpArticle[] = [
       },
       {
         title: 'Connect Stripe',
-        description: 'Go to Settings → Payments → Connect Stripe. This lets you accept payments from members. Follow the Stripe onboarding — it takes about 5 minutes.',
+        description: 'Go to Settings → Stripe Connect. This lets you accept payments from members. Follow the Stripe onboarding — it takes about 5 minutes.',
       },
       {
         title: 'Create your first class',
@@ -36,7 +36,7 @@ export const helpArticles: HelpArticle[] = [
       },
       {
         title: 'Set up your waiver (optional)',
-        description: 'Go to Waivers → Edit Template to customize your waiver. You can send it to all members with one click.',
+        description: 'Go to Settings → Waiver Template to customize your waiver. You can send it to all members with one click.',
       },
     ],
     tips: [
@@ -846,7 +846,7 @@ export const helpArticles: HelpArticle[] = [
     keywords: ['product', 'plan', 'pricing', 'subscription', 'membership', 'pack', 'credit', 'drop-in', 'price'],
     steps: [
       {
-        title: 'Go to Settings → Products',
+        title: 'Go to Settings → Products & Pricing',
         description: 'This is where you define what members can buy.',
       },
       {
@@ -863,7 +863,7 @@ export const helpArticles: HelpArticle[] = [
       },
     ],
     tips: [
-      'You can create a promo code in Settings → Products → Promo Codes to offer discounts.',
+      'You can create a promo code in Settings → Products & Pricing → Promo Codes to offer discounts.',
       'Members can switch between plans — their credits carry over.',
     ],
     relatedArticles: ['connect-stripe', 'manage-member-credits', 'view-payment-history'],
@@ -976,7 +976,7 @@ export const helpArticles: HelpArticle[] = [
     steps: [
       {
         title: 'Go to Waivers',
-        description: 'Click "Waivers" in the sidebar.',
+        description: 'Go to Settings → Waiver Template.',
       },
       {
         title: 'Edit template',
@@ -1004,7 +1004,7 @@ export const helpArticles: HelpArticle[] = [
     steps: [
       {
         title: 'Go to Waivers',
-        description: 'Click "Waivers" in the sidebar. You\'ll see a list showing who has signed and who hasn\'t.',
+        description: 'Go to Settings → Waiver Template. You\'ll see a list showing who has signed and who hasn\'t.',
       },
       {
         title: 'Click "Send to All Unsigned"',
@@ -1093,7 +1093,7 @@ export const helpArticles: HelpArticle[] = [
       },
       {
         title: 'Set up rooms',
-        description: 'Go to Settings → Rooms. Add each room in your studio (e.g., "Main Studio", "Practitioner Room").',
+        description: 'Click "Rooms" in the sidebar. Add each room in your studio (e.g., "Main Studio", "Practitioner Room").',
       },
       {
         title: 'Define membership tiers',
@@ -1140,6 +1140,7 @@ export const helpArticles: HelpArticle[] = [
     tips: [
       'In Collective Mode, the instructor will also be prompted to connect their Stripe account.',
       'You can create an instructor without sending an invitation if you prefer to set up their profile first.',
+      'Upload a profile photo from the instructor detail page — JPG, PNG, or WebP up to 2 MB. The photo appears in the instructor list and on member-facing pages.',
       'You can also import instructors in bulk via CSV.',
     ],
     relatedArticles: ['collective-overview', 'assign-manager-role'],
@@ -1386,7 +1387,7 @@ export const helpArticles: HelpArticle[] = [
       },
       {
         title: 'Fill in event details',
-        description: 'Enter the name, dates, location, description, and upload an image.',
+        description: 'Enter the name, dates, location, description, and upload a cover image (JPG, PNG, or WebP — max 5 MB). You can also add or change the image later from the Edit page.',
       },
       {
         title: 'Add pricing options',
@@ -2198,6 +2199,43 @@ export const helpArticles: HelpArticle[] = [
       'You can turn off specific notification types while keeping others on.',
     ],
     relatedArticles: ['member-pwa-install'],
+  },
+
+  // ═══════════════════════════════════════
+  // INSTRUCTOR ACHIEVEMENTS
+  // ═══════════════════════════════════════
+
+  {
+    id: 'instructor-achievements',
+    title: 'Instructor achievements & trophies',
+    summary: 'Earn badges for teaching milestones, student counts, earning streaks, and sold-out classes.',
+    category: 'collective-mode',
+    audience: ['owner', 'instructor'],
+    keywords: ['achievement', 'trophy', 'badge', 'milestone', 'streak', 'instructor', 'reward', 'gamification'],
+    steps: [
+      {
+        title: 'Enable the feature',
+        description: 'Go to Settings → Features and turn on "Instructor Achievements". The feature is off by default.',
+      },
+      {
+        title: 'How achievements are earned',
+        description: 'Badges are awarded automatically based on teaching activity: classes taught (1, 10, 50, 100, 500), unique students served (1, 50, 100), consecutive earning months (3, 6, 12), and selling out a class (Full House).',
+      },
+      {
+        title: 'View your achievements',
+        description: 'Instructors see their earned badges on the Instructor Dashboard under "Your Achievements". Badges appear as colored circles with labels.',
+      },
+      {
+        title: 'Owner / manager view',
+        description: 'Owners and managers can see each instructor’s achievements, which helps recognize top performers.',
+      },
+    ],
+    tips: [
+      'Achievements are checked each time you visit the Instructor Dashboard, so new badges appear automatically.',
+      'The Full House badge is earned the first time any of your classes reaches full capacity.',
+      'Earning streaks count consecutive calendar months with at least one payout.',
+    ],
+    relatedArticles: ['collective-overview', 'invite-instructor'],
   },
 
 ];

@@ -56,7 +56,7 @@ export async function GET(
 
     const { data: instructor } = await supabase
       .from("instructors")
-      .select("*, profiles(full_name, email, phone)")
+      .select("*, profiles(full_name, email, phone, avatar_url)")
       .eq("id", instructorId)
       .single();
 
@@ -74,7 +74,7 @@ export async function GET(
     const rawProfile = Array.isArray(instructor.profiles)
       ? instructor.profiles[0]
       : instructor.profiles;
-    const p = rawProfile as { full_name?: string; email?: string; phone?: string } | null;
+    const p = rawProfile as { full_name?: string; email?: string; phone?: string; avatar_url?: string } | null;
     const specialties = instructor.specialties as string[] | null;
 
     // Count from both legacy classes and class_templates
@@ -101,6 +101,7 @@ export async function GET(
         bio: instructor.bio ?? null,
         specialties: specialties ?? [],
         classes_count: classesCount ?? 0,
+        avatar_url: p?.avatar_url ?? null,
         created_at: instructor.created_at,
       },
     });

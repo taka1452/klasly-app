@@ -146,8 +146,8 @@ export async function GET(request: Request) {
 
     const passItems = passDistributions ?? [];
     const passSummary = {
-      totalPayout: passItems.reduce((s, d) => s + d.payout_amount, 0),
-      totalClasses: passItems.reduce((s, d) => s + d.total_classes, 0),
+      totalPayout: passItems.reduce((s, d) => s + (d.payout_amount ?? 0), 0),
+      totalClasses: passItems.reduce((s, d) => s + (d.total_classes ?? 0), 0),
       count: passItems.length,
     };
 

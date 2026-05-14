@@ -39,7 +39,7 @@ export async function GET(
 
     const { data: instructor } = await supabase
       .from("instructors")
-      .select("id, bio, specialties, studio_id, profiles(full_name)")
+      .select("id, bio, specialties, studio_id, profiles(full_name, avatar_url)")
       .eq("id", instructorId)
       .single();
 
@@ -53,11 +53,12 @@ export async function GET(
     const rawProfile = Array.isArray(instructor.profiles)
       ? instructor.profiles[0]
       : instructor.profiles;
-    const p = rawProfile as { full_name?: string } | null;
+    const p = rawProfile as { full_name?: string; avatar_url?: string } | null;
 
     return NextResponse.json({
       id: instructor.id,
       full_name: p?.full_name ?? "Instructor",
+      avatar_url: p?.avatar_url ?? null,
       bio: instructor.bio ?? null,
       specialties: (instructor.specialties as string[] | null) ?? [],
     });

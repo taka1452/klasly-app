@@ -156,6 +156,14 @@ export async function POST(
       );
     }
 
+    // owner/manager のロールをインストラクター招待で上書きしない
+    if (existingProfile?.role === "owner" || existingProfile?.role === "manager") {
+      return NextResponse.json(
+        { error: "You already have an admin account. Use the instructor toggle in your dashboard settings instead." },
+        { status: 409 }
+      );
+    }
+
     // Determine role from invite
     const joinRole = invite.invite_role === "manager" ? "manager" : "instructor";
 

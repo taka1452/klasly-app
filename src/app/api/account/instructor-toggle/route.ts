@@ -72,13 +72,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, enabled: false });
     }
 
-    const { count } = await ctx.supabase
-      .from("classes")
-      .select("id", { count: "exact", head: true })
-      .eq("instructor_id", instructor.id)
-      .eq("is_active", true);
+    const [{ count: legacyCount }, { count: templateCount }] = await Promise.all([
+      ctx.supabase
+        .from("classes")
+        .select("id", { count: "exact", head: true })
+        .eq("instructor_id", instructor.id)
+        .eq("is_active", true),
+      ctx.supabase
+        .from("class_templates")
+        .select("id", { count: "exact", head: true })
+        .eq("instructor_id", instructor.id)
+        .eq("is_active", true),
+    ]);
+    const count = (legacyCount ?? 0) + (templateCount ?? 0);
 
-    if (count && count > 0) {
+    if (count > 0) {
       return NextResponse.json(
         { error: "Cannot disable while you have active classes. Deactivate or reassign them first." },
         { status: 409 }

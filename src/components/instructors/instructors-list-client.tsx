@@ -6,7 +6,7 @@ import InstructorProfileCard from "./instructor-profile-card";
 type Instructor = {
   id: string;
   profile_id?: string;
-  profiles?: { full_name?: string; email?: string; phone?: string } | null;
+  profiles?: { full_name?: string; email?: string; phone?: string; avatar_url?: string | null } | null;
   specialties: string[] | null;
 };
 
@@ -32,6 +32,7 @@ export default function InstructorsListClient({
             full_name?: string;
             email?: string;
             phone?: string;
+            avatar_url?: string | null;
           } | null;
           const raw = Array.isArray(profileData) ? profileData[0] : profileData;
           const specialties = instructor.specialties as string[] | null;
@@ -44,17 +45,26 @@ export default function InstructorsListClient({
               onClick={() => setSelectedId(instructor.id)}
               className="card cursor-pointer text-left transition-[transform,background-color] duration-150 ease-out hover:bg-gray-50 active:scale-[0.98]"
             >
-              <h3 className="font-medium text-gray-900">
-                {raw?.full_name || "—"}
-                {instructor.profile_id && memberSet.has(instructor.profile_id) && (
-                  <span className="ml-1.5 inline-flex rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-700">
-                    Member
-                  </span>
+              <div className="mb-3 flex items-center gap-3">
+                {raw?.avatar_url ? (
+                  <img src={raw.avatar_url} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
+                ) : (
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sky-100 text-sm font-semibold text-sky-700">
+                    {(raw?.full_name || "?").split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2)}
+                  </div>
                 )}
-              </h3>
-              <p className="mt-1 text-sm text-gray-500">
-                {raw?.email || "—"}
-              </p>
+                <div className="min-w-0">
+                  <h3 className="truncate font-medium text-gray-900">
+                    {raw?.full_name || "—"}
+                    {instructor.profile_id && memberSet.has(instructor.profile_id) && (
+                      <span className="ml-1.5 inline-flex rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-700">
+                        Member
+                      </span>
+                    )}
+                  </h3>
+                  <p className="truncate text-sm text-gray-500">{raw?.email || "—"}</p>
+                </div>
+              </div>
               {specialties && specialties.length > 0 && (
                 <p className="mt-2 text-xs text-gray-600">
                   {specialties.join(", ")}
