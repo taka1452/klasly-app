@@ -1,9 +1,10 @@
 import { checkPlanLimit } from "@/lib/plan-limits";
 import { sendEmail } from "@/lib/email/send";
-import { welcomeMember } from "@/lib/email/templates";
+import { welcomeMember, guardianWaiverInvite } from "@/lib/email/templates";
 import { NextResponse } from "next/server";
 import { getAppUrl } from "@/lib/app-url";
 import { getDashboardContext } from "@/lib/auth/dashboard-access";
+import { randomUUID } from "crypto";
 export async function POST(request: Request) {
   try {
     // Rate limiting is handled by middleware
@@ -37,9 +38,22 @@ export async function POST(request: Request) {
     // intake fields. We still accept (and surface) the existing required
     // fields plus the new ones.
     const VALID_GENDERS = ["female", "male", "prefer_not_to_say"] as const;
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!fullName || !email) {
       return NextResponse.json(
         { error: "Missing required fields: fullName, email" },
+        { status: 400 }
+      );
+    }
+    if (typeof email !== "string" || !EMAIL_RE.test(email.trim())) {
+      return NextResponse.json(
+        { error: "Please enter a valid email address" },
+        { status: 400 }
+      );
+    }
+    if (isMinor && guardianEmail && (typeof guardianEmail !== "string" || !EMAIL_RE.test(guardianEmail.trim()))) {
+      return NextResponse.json(
+        { error: "Please enter a valid guardian email address" },
         { status: 400 }
       );
     }
@@ -238,6 +252,46 @@ export async function POST(request: Request) {
       magicLinkUrl,
     });
     await sendEmail({ to: email, subject, html });
+
+    // 5. For minors with a guardian email, auto-create a guardian-sign
+    //    token and email the guardian. Without this, owners had to remember
+    //    to manually trigger the invite from the member page.
+    if (isMinor && guardianEmail && newMember?.id) {
+      const { data: waiverTemplate } = await adminSupabase
+        .from("waiver_templates")
+        .select("id")
+        .eq("studio_id", targetStudioId)
+        .maybeSingle();
+
+      if (waiverTemplate) {
+        const guardianToken = randomUUID();
+        const { error: sigErr } = await adminSupabase
+          .from("waiver_signatures")
+          .insert({
+            member_id: newMember.id,
+            studio_id: targetStudioId,
+            template_id: waiverTemplate.id,
+            sign_token: guardianToken,
+            signed_name: "",
+            signed_at: null,
+            token_used: false,
+            is_minor: true,
+          });
+
+        if (!sigErr) {
+          const guardianSignUrl = `${getAppUrl()}/waiver/guardian-sign?token=${guardianToken}`;
+          const { subject: gSubject, html: gHtml } = guardianWaiverInvite({
+            memberName: fullName,
+            studioName: studioData?.name ?? "Studio",
+            signUrl: guardianSignUrl,
+          });
+          // Fire-and-forget — main response shouldn't fail if email send hiccups
+          sendEmail({ to: guardianEmail, subject: gSubject, html: gHtml }).catch(
+            () => {}
+          );
+        }
+      }
+    }
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {

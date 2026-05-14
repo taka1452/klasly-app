@@ -33,11 +33,36 @@ export async function POST(request: Request) {
     );
   }
 
+  // Pre-check: another profile in this app already uses this email
+  // (Supabase auth.users has its own uniqueness check but this surfaces a
+  // cleaner error before the confirmation email round-trip.)
+  const { data: duplicateProfile } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("email", newEmail)
+    .neq("id", user.id)
+    .maybeSingle();
+  if (duplicateProfile) {
+    return NextResponse.json(
+      { error: "This email is already in use by another account." },
+      { status: 409 }
+    );
+  }
+
   const { error } = await supabase.auth.updateUser({ email: newEmail });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
+
+  // Sync profiles.email so dashboards, exports, and email templates that
+  // read from profiles (not auth.users) show the new address. The
+  // auth.users update above is the source of truth for sign-in; the
+  // profiles row is a denormalized mirror used throughout the app.
+  await supabase
+    .from("profiles")
+    .update({ email: newEmail })
+    .eq("id", user.id);
 
   return NextResponse.json({
     success: true,
