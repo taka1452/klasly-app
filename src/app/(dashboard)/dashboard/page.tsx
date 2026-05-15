@@ -8,6 +8,8 @@ import {
   formatCurrency,
 } from "@/lib/utils";
 import { getOwnerSetupTasks } from "@/lib/setup-tasks";
+import { ActivityFeedSection } from "@/components/dashboard/activity/activity-feed-section";
+import type { ActivityRole, ManagerPerms } from "@/lib/activity/types";
 import SetupChecklistCard from "@/components/ui/setup-checklist-card";
 import SampleDataInvite from "@/components/ui/sample-data-invite";
 import ContextHelpLink from "@/components/help/context-help-link";
@@ -39,7 +41,7 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, studio_id, role, onboarding_completed")
+    .select("id, full_name, studio_id, role, onboarding_completed, activity_feed_prefs")
     .eq("id", user.id)
     .single();
 
@@ -52,7 +54,7 @@ export default async function DashboardPage() {
   if (profile.role === "manager") {
     const { data: mgr } = await supabase
       .from("managers")
-      .select("can_manage_members, can_manage_classes, can_manage_bookings, can_manage_rooms, can_view_payments, can_send_messages, can_manage_instructors, can_teach")
+      .select("can_manage_members, can_manage_classes, can_manage_bookings, can_manage_rooms, can_view_payments, can_send_messages, can_manage_instructors, can_teach, can_manage_settings")
       .eq("profile_id", user.id)
       .eq("studio_id", profile.studio_id)
       .single();
@@ -94,6 +96,13 @@ export default async function DashboardPage() {
     setupGuideHref =
       info?.payout_model === "instructor_direct" ? "/settings/collective-setup" : null;
   }
+
+  // Activity feed widget needs the studio's alert thresholds.
+  const { data: studioForActivity } = await supabase
+    .from("studios")
+    .select("id, activity_feed_settings")
+    .eq("id", profile.studio_id)
+    .single();
 
   const today = new Date().toISOString().split("T")[0];
   const now = new Date();
@@ -279,101 +288,6 @@ export default async function DashboardPage() {
     },
     {} as Record<string, number>,
   );
-
-  // Recent activity: bookings (booked/cancelled) + member signups
-  const { data: recentBookings } = await supabase
-    .from("bookings")
-    .select(
-      `
-      id,
-      created_at,
-      status,
-      members (
-        profiles (full_name)
-      ),
-      class_sessions (
-        session_date,
-        classes (name)
-      )
-    `
-    )
-    .eq("studio_id", profile.studio_id)
-    .order("created_at", { ascending: false })
-    .limit(15);
-
-  const { data: recentMembers } = await supabase
-    .from("members")
-    .select(
-      `
-      id,
-      created_at,
-      profiles (full_name)
-    `
-    )
-    .eq("studio_id", profile.studio_id)
-    .order("created_at", { ascending: false })
-    .limit(10);
-
-  type ActivityItem = {
-    created_at: string;
-    type: "booked" | "cancelled" | "member_joined";
-    label: string;
-  };
-
-  const activities: ActivityItem[] = [];
-
-  (recentBookings || []).forEach((b) => {
-    const members = b.members as { profiles?: { full_name?: string } } | null;
-    const session = b.class_sessions as {
-      session_date?: string;
-      classes?: { name?: string };
-    } | null;
-    const rawSession = Array.isArray(session) ? session[0] : session;
-    const rawMembers = Array.isArray(members) ? members[0] : members;
-    const classesRef = rawSession?.classes;
-    const className =
-      (classesRef && !Array.isArray(classesRef)
-        ? (classesRef as { name?: string }).name
-        : undefined) || "—";
-    const memberName =
-      (rawMembers?.profiles && !Array.isArray(rawMembers.profiles)
-        ? (rawMembers.profiles as { full_name?: string }).full_name
-        : undefined) || "Unknown";
-    const dateStr = rawSession?.session_date
-      ? formatDate(rawSession.session_date).replace(/, \d{4}$/, "")
-      : "—";
-
-    if (b.status === "cancelled") {
-      activities.push({
-        created_at: b.created_at,
-        type: "cancelled",
-        label: `${memberName} cancelled ${className} - ${dateStr}`,
-      });
-    } else {
-      activities.push({
-        created_at: b.created_at,
-        type: "booked",
-        label: `${memberName} booked ${className} - ${dateStr}`,
-      });
-    }
-  });
-
-  (recentMembers || []).forEach((m) => {
-    const profiles = m.profiles as { full_name?: string } | null;
-    const raw = Array.isArray(profiles) ? profiles[0] : profiles;
-    const name = raw?.full_name || "Someone";
-    activities.push({
-      created_at: m.created_at,
-      type: "member_joined",
-      label: `${name} joined as a member`,
-    });
-  });
-
-  activities.sort(
-    (a, b) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  );
-  const topActivities = activities.slice(0, 10);
 
   const revenueChange =
     prevMonthRevenue > 0
@@ -726,87 +640,26 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* Recent activity */}
+      {/* Activity feed */}
       <div className="mt-10 md:mt-12">
-        <h2 className="mb-5 text-lg font-semibold text-gray-900">
-          Recent Activity
-        </h2>
-        <div className="card overflow-hidden p-0">
-          {topActivities.length > 0 ? (
-            <div className="divide-y divide-gray-200">
-              {topActivities.map((a, i) => (
-                <div
-                  key={`${a.type}-${a.created_at}-${i}`}
-                  className="flex items-center gap-3 px-4 py-3 md:px-6"
-                >
-                  <div
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-                      a.type === "booked"
-                        ? "bg-green-100 text-green-600"
-                        : a.type === "cancelled"
-                          ? "bg-red-100 text-red-600"
-                          : "bg-brand-100 text-brand-600"
-                    }`}
-                  >
-                    {a.type === "booked" ? (
-                      <svg
-                        className="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={2}
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M4.5 12.75l6 6 9-13.5"
-                        />
-                      </svg>
-                    ) : a.type === "cancelled" ? (
-                      <svg
-                        className="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={2}
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    ) : (
-                      <svg
-                        className="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={2}
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-                        />
-                      </svg>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-900 truncate">{a.label}</p>
-                    <p className="text-xs text-gray-400">
-                      {a.created_at ? formatDate(a.created_at.split("T")[0]) : ""}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="px-6 py-12 text-center">
-              <p className="text-sm text-gray-500">No recent activity.</p>
-            </div>
-          )}
-        </div>
+        <ActivityFeedSection
+          supabase={supabase}
+          studio={
+            studioForActivity ?? {
+              id: profile.studio_id,
+              activity_feed_settings: {},
+            }
+          }
+          profile={{
+            id: profile.id,
+            role: profile.role as ActivityRole,
+            activity_feed_prefs:
+              (profile as { activity_feed_prefs?: Record<string, unknown> | null })
+                .activity_feed_prefs ?? {},
+          }}
+          managerPerms={(managerPerms as ManagerPerms | null) ?? null}
+          variant="widget"
+        />
       </div>
     </div>
   );

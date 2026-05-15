@@ -2238,6 +2238,39 @@ export const helpArticles: HelpArticle[] = [
     relatedArticles: ['collective-overview', 'invite-instructor'],
   },
 
+  {
+    id: 'activity-feed',
+    title: 'Activity feed: see everything happening in your studio',
+    summary: 'The Activity widget on your Dashboard (and the full page at /dashboard/activity) shows bookings, payments, schedule changes, new members, alerts, and more — filtered by role.',
+    category: 'analytics',
+    audience: ['owner', 'manager', 'instructor', 'member'],
+    keywords: ['activity', 'feed', 'timeline', 'log', 'history', 'alerts', 'notifications', 'recent'],
+    steps: [
+      {
+        title: 'Open the Activity widget',
+        description: 'On the Dashboard Home, scroll to the Activity card. It shows the last 14 days of relevant events. Click "See all" to open the full page with 30 days of history.',
+      },
+      {
+        title: 'Switch tabs to focus',
+        description: 'Use the tabs (All, Bookings, Billing, Operations, Members, Alerts) to narrow the feed. The Alerts tab has a red badge with the number of items that need attention.',
+      },
+      {
+        title: 'Adjust alert thresholds',
+        description: 'Owners (and Managers with the Settings permission) can open the gear icon to change when alerts fire — inactive member days, no-show streak, unpaid grace, waiver follow-up, contract awaiting, and cancellation-rate threshold.',
+      },
+      {
+        title: 'Hide read items',
+        description: 'Anyone can toggle "Hide read items" in the gear popover. This preference is saved per profile.',
+      },
+    ],
+    tips: [
+      'Each event row uses a coloured left border for urgency: red = critical, amber = warning, green = success, none = informational.',
+      'Members only see their own activity (their bookings, their pass purchases, their waiver) plus studio-wide announcements.',
+      'Managers see categories that match their permissions — e.g. a Manager without "view payments" will not see the Billing tab.',
+    ],
+    relatedArticles: [],
+  },
+
 ];
 
 // Helper: get all articles for a category
