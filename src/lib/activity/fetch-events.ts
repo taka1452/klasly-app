@@ -132,8 +132,8 @@ function pickName(row: { profiles?: { full_name?: string | null } | null }):
 }
 
 function bookingTitle(
-  memberName: string | undefined,
-  className: string | undefined,
+  memberName: string | null | undefined,
+  className: string | null | undefined,
 ): string {
   const who = memberName ?? "A member";
   const what = className ?? "a session";
