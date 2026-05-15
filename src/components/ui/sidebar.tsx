@@ -532,6 +532,20 @@ export default function Sidebar({
         </div>
         <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
           <NavList items={navItems} pathname={pathname} onMobileClose={onMobileClose} unreadMessageCount={unreadCount} />
+          {showAdminLink && (
+            <div className="mt-3 border-t border-gray-100 pt-3">
+              <Link
+                href="/admin"
+                onClick={onMobileClose}
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                </svg>
+                Admin
+              </Link>
+            </div>
+          )}
         </nav>
         <div className="border-t border-gray-200 px-6 py-4 space-y-2">
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
@@ -572,6 +586,19 @@ export default function Sidebar({
       {/* ナビゲーション */}
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
         <NavList items={navItems} pathname={pathname} unreadMessageCount={unreadCount} />
+        {showAdminLink && (
+          <div className="mt-3 border-t border-gray-100 pt-3">
+            <Link
+              href="/admin"
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+              </svg>
+              Admin
+            </Link>
+          </div>
+        )}
       </nav>
 
       {/* フッター */}
