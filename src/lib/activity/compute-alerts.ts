@@ -10,14 +10,78 @@ interface ComputeAlertsOptions {
 export async function computeAlertEvents(
   opts: ComputeAlertsOptions,
 ): Promise<ActivityEvent[]> {
-  const [inactive, failedPayments, unsignedWaivers, stuckContracts] =
-    await Promise.all([
-      computeInactiveMembers(opts),
-      computeFailedPayments(opts),
-      computeUnsignedWaivers(opts),
-      computeStuckContracts(opts),
-    ]);
-  return [...inactive, ...failedPayments, ...unsignedWaivers, ...stuckContracts];
+  const [
+    inactive,
+    failedPayments,
+    unsignedWaivers,
+    stuckContracts,
+    connectIncomplete,
+  ] = await Promise.all([
+    computeInactiveMembers(opts),
+    computeFailedPayments(opts),
+    computeUnsignedWaivers(opts),
+    computeStuckContracts(opts),
+    computeConnectIncomplete(opts),
+  ]);
+  return [
+    ...inactive,
+    ...failedPayments,
+    ...unsignedWaivers,
+    ...stuckContracts,
+    ...connectIncomplete,
+  ];
+}
+
+async function computeConnectIncomplete({
+  supabase,
+  studioId,
+}: ComputeAlertsOptions): Promise<ActivityEvent[]> {
+  // Only relevant when the studio uses Collective Mode (instructors take
+  // payments directly through Stripe Connect). Studio Mode collects via the
+  // studio's own account, so an instructor's Connect status doesn't matter.
+  const { data: studio } = await supabase
+    .from("studios")
+    .select("payout_model")
+    .eq("id", studioId)
+    .single();
+  if ((studio as { payout_model?: string } | null)?.payout_model !== "instructor_direct") {
+    return [];
+  }
+
+  const cutoff = new Date(Date.now() - 7 * 86_400_000).toISOString();
+
+  const { data, error } = await supabase
+    .from("instructors")
+    .select(
+      `id, created_at, profile_id, profiles:profile_id ( full_name )`,
+    )
+    .eq("studio_id", studioId)
+    .eq("stripe_onboarding_complete", false)
+    .lt("created_at", cutoff)
+    .order("created_at", { ascending: true })
+    .limit(50);
+
+  if (error || !data) return [];
+
+  return (data as unknown as InstructorRow[]).map((r) => ({
+    id: `alert-connect-${r.id}`,
+    category: "alert",
+    severity: "warning",
+    title: `${r.profiles?.full_name ?? "An instructor"} hasn't finished Stripe Connect`,
+    subtitle: `Invited ${r.created_at.slice(0, 10)} — payouts blocked until complete`,
+    occurredAt: r.created_at,
+    actionRequired: true,
+    ctaLabel: "Open instructors",
+    ctaHref: "/dashboard/instructors",
+    scope: { instructorId: r.profile_id ?? null },
+  }));
+}
+
+interface InstructorRow {
+  id: string;
+  created_at: string;
+  profile_id: string | null;
+  profiles: { full_name?: string | null } | null;
 }
 
 async function computeInactiveMembers({

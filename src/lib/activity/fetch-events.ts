@@ -39,6 +39,7 @@ export async function fetchActivityEvents(
     announcements,
     roomBookings,
     payments,
+    overages,
     alerts,
   ] = await Promise.all([
     fetchBookingEvents(opts.supabase, opts.studioId, since),
@@ -52,6 +53,7 @@ export async function fetchActivityEvents(
     fetchAnnouncementEvents(opts.supabase, opts.studioId, since),
     fetchRoomBookingEvents(opts.supabase, opts.studioId, since),
     fetchPaymentEvents(opts.supabase, opts.studioId, since),
+    fetchOverageChargeEvents(opts.supabase, opts.studioId, since),
     computeAlertEvents({
       supabase: opts.supabase,
       studioId: opts.studioId,
@@ -71,6 +73,7 @@ export async function fetchActivityEvents(
     ...announcements,
     ...roomBookings,
     ...payments,
+    ...overages,
     ...alerts,
   ];
 
@@ -355,20 +358,140 @@ async function fetchClassChangeEvents(
 
   if (error || !data) return [];
 
-  return (data as unknown as RawAuditRow[]).map((r) => {
-    const isCancelled = /cancel|void/i.test(r.change_type);
+  // For session_cancelled rows, batch lookup the session details so we can
+  // surface "hours returned" vs "hours forfeited" attribution — Jamie's
+  // contract-billing concern from the Round 8 thread.
+  const auditRows = data as unknown as RawAuditRow[];
+  const sessionIds = auditRows
+    .filter((r) => r.change_type === "session_cancelled" && r.session_id)
+    .map((r) => r.session_id as string);
+
+  const sessionMeta = new Map<string, SessionCancelMeta>();
+  if (sessionIds.length > 0) {
+    const { data: sessions } = await supabase
+      .from("class_sessions")
+      .select(
+        `id, cancelled_by_role, hours_returned, instructor_id,
+         instructors:instructor_id ( profile_id, profiles:profile_id ( full_name ) )`,
+      )
+      .in("id", sessionIds);
+    if (sessions) {
+      for (const s of sessions as unknown as RawSessionMetaRow[]) {
+        sessionMeta.set(s.id, {
+          cancelledByRole: s.cancelled_by_role ?? null,
+          hoursReturned: s.hours_returned ?? null,
+          instructorProfileId: s.instructors?.profile_id ?? null,
+          instructorName: s.instructors?.profiles?.full_name ?? null,
+        });
+      }
+    }
+  }
+
+  return auditRows.map((r) => {
+    const meta = classifyChangeType(r.change_type);
+    let title = meta.titlePrefix ? `${meta.titlePrefix}: ${r.summary}` : r.summary;
+    let subtitle: string | undefined;
+    let severity = meta.severity;
+    let instructorScope: string | null = null;
+
+    if (r.change_type === "session_cancelled" && r.session_id) {
+      const sm = sessionMeta.get(r.session_id);
+      if (sm) {
+        instructorScope = sm.instructorProfileId;
+        const name = sm.instructorName ?? "Instructor";
+        if (sm.cancelledByRole === "instructor") {
+          severity = "warning";
+          subtitle = sm.hoursReturned
+            ? `${name} self-cancelled — hours returned`
+            : `${name} self-cancelled — hours forfeited`;
+        } else if (sm.cancelledByRole) {
+          subtitle = sm.hoursReturned
+            ? `Cancelled by admin — hours returned to ${name}`
+            : `Cancelled by admin — hours forfeited`;
+        }
+      }
+    }
+
     return {
       id: `class-change-${r.id}`,
-      category: "operations" as const,
-      severity: isCancelled ? "warning" : "info",
-      title: r.summary || "Class updated",
+      category: meta.category,
+      severity,
+      title: title || "Class updated",
+      subtitle,
       occurredAt: r.created_at,
       ctaLabel: r.template_id ? "View class" : undefined,
       ctaHref: r.template_id ? `/dashboard/classes/${r.template_id}` : undefined,
       scope: {
         templateId: r.template_id ?? null,
         sessionId: r.session_id ?? null,
+        instructorId: instructorScope,
       },
+    };
+  });
+}
+
+function classifyChangeType(t: string): {
+  category: ActivityEvent["category"];
+  severity: ActivityEvent["severity"];
+  titlePrefix?: string;
+} {
+  switch (t) {
+    case "session_instructor_changed":
+    case "template_instructor_changed":
+      return { category: "operations", severity: "warning", titlePrefix: "Sub" };
+    case "session_hours_returned":
+      return { category: "operations", severity: "info", titlePrefix: "Hours adjusted" };
+    case "session_cancelled":
+      return { category: "operations", severity: "warning" };
+    case "session_date_changed":
+    case "session_time_changed":
+      return { category: "operations", severity: "warning" };
+    case "template_price_changed":
+    case "template_capacity_changed":
+    case "template_duration_changed":
+    case "template_updated":
+    case "session_room_changed":
+    default:
+      return { category: "operations", severity: "info" };
+  }
+}
+
+async function fetchOverageChargeEvents(
+  supabase: SupabaseClient,
+  studioId: string,
+  since: string,
+): Promise<ActivityEvent[]> {
+  const { data, error } = await supabase
+    .from("instructor_overage_charges")
+    .select(
+      `id, period_start, period_end, tier_name, overage_minutes,
+       total_charge_cents, status, created_at, instructor_id,
+       instructors:instructor_id ( profile_id, profiles:profile_id ( full_name ) )`,
+    )
+    .eq("studio_id", studioId)
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(PER_SOURCE_LIMIT);
+
+  if (error || !data) return [];
+
+  return (data as unknown as RawOverageRow[]).map((r) => {
+    const name = r.instructors?.profiles?.full_name ?? "An instructor";
+    const overageH = (r.overage_minutes / 60).toFixed(1);
+    const amount = `$${(r.total_charge_cents / 100).toFixed(2)}`;
+    const paid = r.status === "paid";
+    const waived = r.status === "waived";
+    return {
+      id: `overage-${r.id}`,
+      category: "billing" as const,
+      severity: paid ? "success" : waived ? "info" : "warning",
+      title: `${name} went ${overageH}h over ${r.tier_name}`,
+      subtitle: `${amount} for ${r.period_start.slice(0, 7)} · ${r.status}`,
+      occurredAt: r.created_at,
+      actionRequired: !paid && !waived,
+      ctaLabel: "View instructor",
+      ctaHref: "/dashboard/instructors",
+      scope: { instructorId: r.instructors?.profile_id ?? null },
     };
   });
 }
@@ -712,4 +835,38 @@ interface RawPaymentRow {
   status: string;
   amount_cents: number;
   paid_at: string | null;
+}
+
+interface SessionCancelMeta {
+  cancelledByRole: string | null;
+  hoursReturned: boolean | null;
+  instructorProfileId: string | null;
+  instructorName: string | null;
+}
+
+interface RawSessionMetaRow {
+  id: string;
+  cancelled_by_role: string | null;
+  hours_returned: boolean | null;
+  instructor_id: string | null;
+  instructors: {
+    profile_id?: string | null;
+    profiles?: ProfilePart;
+  } | null;
+}
+
+interface RawOverageRow {
+  id: string;
+  period_start: string;
+  period_end: string;
+  tier_name: string;
+  overage_minutes: number;
+  total_charge_cents: number;
+  status: string;
+  created_at: string;
+  instructor_id: string | null;
+  instructors: {
+    profile_id?: string | null;
+    profiles?: ProfilePart;
+  } | null;
 }
