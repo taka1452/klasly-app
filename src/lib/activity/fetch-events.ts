@@ -389,7 +389,6 @@ async function fetchClassChangeEvents(
 
   return auditRows.map((r) => {
     const meta = classifyChangeType(r.change_type);
-    let title = meta.titlePrefix ? `${meta.titlePrefix}: ${r.summary}` : r.summary;
     let subtitle: string | undefined;
     let severity = meta.severity;
     let instructorScope: string | null = null;
@@ -402,12 +401,12 @@ async function fetchClassChangeEvents(
         if (sm.cancelledByRole === "instructor") {
           severity = "warning";
           subtitle = sm.hoursReturned
-            ? `${name} self-cancelled — hours returned`
-            : `${name} self-cancelled — hours forfeited`;
+            ? `Self-cancel by ${name} — hours returned`
+            : `Self-cancel by ${name} — hours forfeited`;
         } else if (sm.cancelledByRole) {
           subtitle = sm.hoursReturned
-            ? `Cancelled by admin — hours returned to ${name}`
-            : `Cancelled by admin — hours forfeited`;
+            ? `Admin cancel — ${name}'s hours returned`
+            : `Admin cancel — ${name}'s hours forfeited`;
         }
       }
     }
@@ -416,7 +415,7 @@ async function fetchClassChangeEvents(
       id: `class-change-${r.id}`,
       category: meta.category,
       severity,
-      title: title || "Class updated",
+      title: r.summary || "Class updated",
       subtitle,
       occurredAt: r.created_at,
       ctaLabel: r.template_id ? "View class" : undefined,
@@ -433,19 +432,15 @@ async function fetchClassChangeEvents(
 function classifyChangeType(t: string): {
   category: ActivityEvent["category"];
   severity: ActivityEvent["severity"];
-  titlePrefix?: string;
 } {
   switch (t) {
     case "session_instructor_changed":
     case "template_instructor_changed":
-      return { category: "operations", severity: "warning", titlePrefix: "Sub" };
-    case "session_hours_returned":
-      return { category: "operations", severity: "info", titlePrefix: "Hours adjusted" };
     case "session_cancelled":
-      return { category: "operations", severity: "warning" };
     case "session_date_changed":
     case "session_time_changed":
       return { category: "operations", severity: "warning" };
+    case "session_hours_returned":
     case "template_price_changed":
     case "template_capacity_changed":
     case "template_duration_changed":
@@ -477,7 +472,7 @@ async function fetchOverageChargeEvents(
 
   return (data as unknown as RawOverageRow[]).map((r) => {
     const name = r.instructors?.profiles?.full_name ?? "An instructor";
-    const overageH = (r.overage_minutes / 60).toFixed(1);
+    const overageH = formatHours(r.overage_minutes / 60);
     const amount = `$${(r.total_charge_cents / 100).toFixed(2)}`;
     const paid = r.status === "paid";
     const waived = r.status === "waived";
@@ -485,15 +480,27 @@ async function fetchOverageChargeEvents(
       id: `overage-${r.id}`,
       category: "billing" as const,
       severity: paid ? "success" : waived ? "info" : "warning",
-      title: `${name} went ${overageH}h over ${r.tier_name}`,
-      subtitle: `${amount} for ${r.period_start.slice(0, 7)} · ${r.status}`,
+      title: `${name} went ${overageH} over ${r.tier_name}`,
+      subtitle: `${amount} overage — ${formatPeriod(r.period_start)}`,
       occurredAt: r.created_at,
       actionRequired: !paid && !waived,
-      ctaLabel: "View instructor",
+      ctaLabel: "View instructors",
       ctaHref: "/dashboard/instructors",
       scope: { instructorId: r.instructors?.profile_id ?? null },
     };
   });
+}
+
+function formatHours(h: number): string {
+  if (Number.isInteger(h)) return `${h}h`;
+  const rounded = Math.round(h * 10) / 10;
+  return Number.isInteger(rounded) ? `${rounded}h` : `${rounded}h`;
+}
+
+function formatPeriod(isoDate: string): string {
+  const d = new Date(isoDate);
+  if (Number.isNaN(d.getTime())) return isoDate.slice(0, 7);
+  return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
 
 async function fetchReviewEvents(
