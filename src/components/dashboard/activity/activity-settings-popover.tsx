@@ -9,6 +9,7 @@ import type {
   AlertThresholds,
   DisplayPrefs,
 } from "@/lib/activity/types";
+import { csrfFetch } from "@/lib/api/csrf-client";
 
 interface Props {
   initialThresholds: AlertThresholds;
@@ -50,9 +51,8 @@ export function ActivitySettingsPopover({
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch("/api/activity/settings", {
+      const res = await csrfFetch("/api/activity/settings", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           thresholds: canEditThresholds ? thresholds : undefined,
           displayPrefs: prefs,

@@ -7,7 +7,9 @@ import type {
   ActivityRole,
   ManagerPerms,
 } from "@/lib/activity/types";
+import { CollapsibleSection } from "@/components/dashboard/collapsible-section";
 import { ActivityFeedWidget } from "./activity-feed-widget";
+import { ActivitySettingsPopover } from "./activity-settings-popover";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -59,7 +61,7 @@ export async function ActivityFeedSection({
     limit: variant === "fullpage" ? 200 : 30,
   });
 
-  return (
+  const widget = (
     <ActivityFeedWidget
       events={events}
       role={profile.role}
@@ -69,11 +71,31 @@ export async function ActivityFeedSection({
       variant={variant}
       limit={limit ?? (variant === "widget" ? 6 : undefined)}
       showSeeAll={showSeeAll ?? variant === "widget"}
+      showHeader={variant === "fullpage"}
       emptyMessage={
         variant === "fullpage"
           ? "No activity in the last 30 days yet."
           : "No recent activity yet."
       }
     />
+  );
+
+  if (variant === "fullpage") return widget;
+
+  return (
+    <CollapsibleSection
+      id="activity-home"
+      title="Activity"
+      className=""
+      actions={
+        <ActivitySettingsPopover
+          initialThresholds={thresholds}
+          initialDisplayPrefs={displayPrefs}
+          canEditThresholds={canEditThresholds}
+        />
+      }
+    >
+      {widget}
+    </CollapsibleSection>
   );
 }

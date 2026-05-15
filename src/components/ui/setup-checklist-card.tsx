@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { HelpCircle } from "lucide-react";
 import type { SetupTask } from "./setup-task-list";
+import { SetupDismissButton } from "./setup-dismiss-button";
 
 type Props = {
   tasks: SetupTask[];
   guideHref?: string | null;
   guideLabel?: string;
+  dismissible?: boolean;
 };
 
 /**
@@ -17,6 +19,7 @@ export default function SetupChecklistCard({
   tasks,
   guideHref = null,
   guideLabel = "View full setup guide",
+  dismissible = false,
 }: Props) {
   if (tasks.length === 0) return null;
 
@@ -33,9 +36,14 @@ export default function SetupChecklistCard({
     <section
       aria-label="Studio setup checklist"
       data-tour="setup-checklist"
-      className="mb-8 rounded-xl border border-gray-200 bg-white p-6 md:p-7"
+      className="relative mb-8 rounded-xl border border-gray-200 bg-white p-6 md:p-7"
     >
-      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+      {dismissible && (
+        <div className="absolute right-3 top-3">
+          <SetupDismissButton />
+        </div>
+      )}
+      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 pr-8">
         <h2 className="text-base font-semibold tracking-tight text-gray-900">
           Finish setting up your studio
         </h2>

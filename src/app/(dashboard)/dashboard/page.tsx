@@ -9,6 +9,7 @@ import {
 } from "@/lib/utils";
 import { getOwnerSetupTasks } from "@/lib/setup-tasks";
 import { ActivityFeedSection } from "@/components/dashboard/activity/activity-feed-section";
+import { CollapsibleSection } from "@/components/dashboard/collapsible-section";
 import type { ActivityRole, ManagerPerms } from "@/lib/activity/types";
 import SetupChecklistCard from "@/components/ui/setup-checklist-card";
 import SampleDataInvite from "@/components/ui/sample-data-invite";
@@ -41,7 +42,7 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, full_name, studio_id, role, onboarding_completed, activity_feed_prefs")
+    .select("id, full_name, studio_id, role, onboarding_completed, activity_feed_prefs, dashboard_prefs")
     .eq("id", user.id)
     .single();
 
@@ -65,6 +66,12 @@ export default async function DashboardPage() {
   const canManageMembers = isOwner || managerPerms?.can_manage_members;
   const canManageClasses = isOwner || managerPerms?.can_manage_classes;
   const canManageBookings = isOwner || managerPerms?.can_manage_bookings;
+
+  const dashboardPrefs =
+    (profile as { dashboard_prefs?: Record<string, unknown> | null }).dashboard_prefs ?? {};
+  const setupChecklistDismissed =
+    (dashboardPrefs as { setup_checklist_dismissed?: boolean })
+      .setup_checklist_dismissed === true;
 
   // オーナー向け: Setup Checklist 用の studio 情報を取得。
   // 課金ステータス (past_due/grace/trial) は dashboard layout の
@@ -326,9 +333,35 @@ export default async function DashboardPage() {
         )}
       </div>
 
-      {/* Inline setup checklist for owners (hidden when complete) */}
-      {isOwner && setupTasks.length > 0 && (
-        <SetupChecklistCard tasks={setupTasks} guideHref={setupGuideHref} />
+      {/* Activity feed — primary signal, top of the page */}
+      <div className="mb-10 md:mb-12">
+        <ActivityFeedSection
+          supabase={supabase}
+          studio={
+            studioForActivity ?? {
+              id: profile.studio_id,
+              activity_feed_settings: {},
+            }
+          }
+          profile={{
+            id: profile.id,
+            role: profile.role as ActivityRole,
+            activity_feed_prefs:
+              (profile as { activity_feed_prefs?: Record<string, unknown> | null })
+                .activity_feed_prefs ?? {},
+          }}
+          managerPerms={(managerPerms as ManagerPerms | null) ?? null}
+          variant="widget"
+        />
+      </div>
+
+      {/* Inline setup checklist for owners (hidden when complete or dismissed) */}
+      {isOwner && setupTasks.length > 0 && !setupChecklistDismissed && (
+        <SetupChecklistCard
+          tasks={setupTasks}
+          guideHref={setupGuideHref}
+          dismissible
+        />
       )}
 
       {/* Trial-period invite to seed sample data — only when the studio
@@ -419,10 +452,10 @@ export default async function DashboardPage() {
       </div>
 
       {/* Revenue breakdown */}
-      {canViewPayments && <div className="mt-10 md:mt-12">
-        <h2 className="mb-5 text-lg font-semibold text-gray-900">
-          Revenue Breakdown (This Month)
-        </h2>
+      {canViewPayments && <CollapsibleSection
+        id="revenue-breakdown"
+        title="Revenue Breakdown (This Month)"
+      >
         <div className="card space-y-4">
           <div>
             <div className="flex justify-between text-sm">
@@ -475,14 +508,14 @@ export default async function DashboardPage() {
             </div>
           </div>
         </div>
-      </div>}
+      </CollapsibleSection>}
 
       {/* Failed payments */}
       {canViewPayments && failedPayments && failedPayments.length > 0 && (
-        <div className="mt-10 md:mt-12">
-          <h2 className="mb-5 text-lg font-semibold text-gray-900">
-            Failed Payments
-          </h2>
+        <CollapsibleSection
+          id="failed-payments"
+          title="Failed Payments"
+        >
           <div className="card overflow-hidden p-0">
             <div className="divide-y divide-gray-200">
               {failedPayments.map((p) => {
@@ -527,14 +560,11 @@ export default async function DashboardPage() {
               })}
             </div>
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Today's classes */}
-      <div className="mt-10 md:mt-12">
-        <h2 className="mb-5 text-lg font-semibold text-gray-900">
-          Today&apos;s Classes
-        </h2>
+      <CollapsibleSection id="todays-classes" title="Today's Classes">
         <div className="card overflow-hidden p-0">
           {todayClassesList && todayClassesList.length > 0 ? (
             <div className="divide-y divide-gray-200">
@@ -596,19 +626,22 @@ export default async function DashboardPage() {
             </div>
           )}
         </div>
-      </div>
+      </CollapsibleSection>
 
       {/* Upcoming events */}
       {upcomingEvents && upcomingEvents.length > 0 && (
-        <div className="mt-10 md:mt-12">
-          <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Upcoming Events
-            </h2>
-            <Link href="/events" className="text-sm text-brand-600 transition-colors duration-150 hover:text-brand-700">
+        <CollapsibleSection
+          id="upcoming-events"
+          title="Upcoming Events"
+          actions={
+            <Link
+              href="/events"
+              className="text-sm text-brand-600 transition-colors duration-150 hover:text-brand-700"
+            >
               View all →
             </Link>
-          </div>
+          }
+        >
           <div className="card overflow-hidden p-0">
             <div className="divide-y divide-gray-200">
               {upcomingEvents.map((ev) => {
@@ -637,30 +670,9 @@ export default async function DashboardPage() {
               })}
             </div>
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
-      {/* Activity feed */}
-      <div className="mt-10 md:mt-12">
-        <ActivityFeedSection
-          supabase={supabase}
-          studio={
-            studioForActivity ?? {
-              id: profile.studio_id,
-              activity_feed_settings: {},
-            }
-          }
-          profile={{
-            id: profile.id,
-            role: profile.role as ActivityRole,
-            activity_feed_prefs:
-              (profile as { activity_feed_prefs?: Record<string, unknown> | null })
-                .activity_feed_prefs ?? {},
-          }}
-          managerPerms={(managerPerms as ManagerPerms | null) ?? null}
-          variant="widget"
-        />
-      </div>
     </div>
   );
 }
