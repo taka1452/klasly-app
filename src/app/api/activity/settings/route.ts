@@ -80,7 +80,7 @@ export async function POST(request: Request) {
   // Persist display prefs for the current user.
   if (displayPrefsPatch) {
     const merged = {
-      ...(DEFAULT_DISPLAY_PREFS as Record<string, unknown>),
+      ...(DEFAULT_DISPLAY_PREFS as unknown as Record<string, unknown>),
       ...((profile.activity_feed_prefs as Record<string, unknown>) ?? {}),
       ...displayPrefsPatch,
     };
@@ -119,7 +119,7 @@ export async function POST(request: Request) {
       .single();
 
     const merged = {
-      ...(DEFAULT_ALERT_THRESHOLDS as Record<string, unknown>),
+      ...(DEFAULT_ALERT_THRESHOLDS as unknown as Record<string, unknown>),
       ...((studio?.activity_feed_settings as Record<string, unknown>) ?? {}),
       ...thresholdsPatch,
     };
