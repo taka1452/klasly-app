@@ -41,50 +41,75 @@ export function ActivityFeedItem({ event }: { event: ActivityEvent }) {
     return () => window.clearInterval(id);
   }, [event.occurredAt]);
 
-  return (
-    <div
-      className={`relative flex items-start gap-3 bg-white px-4 py-3 transition-colors duration-150 hover:bg-gray-50 md:px-6 ${severityBorder[event.severity]}`}
-    >
+  const interactive = !!event.ctaHref;
+  const baseClasses = `group relative flex items-center gap-2.5 bg-white px-4 py-2.5 md:px-6 ${severityBorder[event.severity]}`;
+  const interactiveClasses = interactive
+    ? "transition-colors duration-150 hover:bg-gray-50 focus-visible:bg-gray-50 focus-visible:outline-none"
+    : "";
+
+  const body = (
+    <>
       {event.unread && (
         <span
           className="pointer-events-none absolute left-2 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-brand-500"
           aria-label="Unread"
         />
       )}
-      <div className="min-w-0 flex-1 pl-2">
-        <div className="mb-0.5 flex items-center gap-2">
-          <span
-            className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium ${pill.classes}`}
-          >
-            {pill.label}
-          </span>
-          <span
-            className="text-xs tabular-nums text-gray-500"
-            suppressHydrationWarning
-          >
-            {relative}
-          </span>
-        </div>
-        <p className="text-sm font-medium text-gray-900">{event.title}</p>
+      <span
+        className={`inline-flex shrink-0 items-center rounded px-1.5 py-0.5 text-[10px] font-medium ${pill.classes}`}
+      >
+        {pill.label}
+      </span>
+      <p className="min-w-0 flex-1 truncate text-sm text-gray-900">
+        <span className="font-medium">{event.title}</span>
         {event.subtitle && (
-          <p className="mt-0.5 line-clamp-2 text-xs text-gray-500">
-            {event.subtitle}
-          </p>
+          <>
+            <span className="mx-1.5 text-gray-300" aria-hidden="true">
+              ·
+            </span>
+            <span className="text-gray-500">{event.subtitle}</span>
+          </>
         )}
-        {event.ctaLabel && event.ctaHref && (
-          <Link
-            href={event.ctaHref}
-            className="mt-2 -ml-0.5 inline-flex items-center rounded px-0.5 py-0.5 text-xs font-medium text-brand-700 transition-colors hover:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1"
-          >
-            {event.ctaLabel} →
-          </Link>
-        )}
-      </div>
+      </p>
       {event.actionRequired && (
         <span className="inline-flex shrink-0 items-center rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
           Action needed
         </span>
       )}
-    </div>
+      <span
+        className="shrink-0 text-xs tabular-nums text-gray-500"
+        suppressHydrationWarning
+      >
+        {relative}
+      </span>
+      {interactive && (
+        <svg
+          aria-hidden="true"
+          className="h-3.5 w-3.5 shrink-0 text-gray-300 motion-safe:transition-colors group-hover:text-gray-500"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            fillRule="evenodd"
+            d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+            clipRule="evenodd"
+          />
+        </svg>
+      )}
+    </>
   );
+
+  if (interactive) {
+    return (
+      <Link
+        href={event.ctaHref!}
+        title={event.ctaLabel}
+        className={`${baseClasses} ${interactiveClasses}`}
+      >
+        {body}
+      </Link>
+    );
+  }
+
+  return <div className={baseClasses}>{body}</div>;
 }

@@ -69,7 +69,7 @@ export async function ActivityFeedSection({
       displayPrefs={displayPrefs}
       canEditThresholds={canEditThresholds}
       variant={variant}
-      limit={limit ?? (variant === "widget" ? 6 : undefined)}
+      limit={limit ?? (variant === "widget" ? 10 : undefined)}
       showSeeAll={showSeeAll ?? variant === "widget"}
       showHeader={false}
       emptyMessage={
