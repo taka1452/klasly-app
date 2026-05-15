@@ -9,21 +9,12 @@ export function formatRelativeTime(iso: string, now: Date = new Date()): string 
   if (Number.isNaN(then)) return "";
   const diff = now.getTime() - then;
 
-  if (diff < MINUTE) return "just now";
-  if (diff < HOUR) {
-    const m = Math.floor(diff / MINUTE);
-    return `${m}m ago`;
-  }
-  if (diff < DAY) {
-    const h = Math.floor(diff / HOUR);
-    return `${h}h ago`;
-  }
-  if (diff < WEEK) {
-    const d = Math.floor(diff / DAY);
-    return d === 1 ? "yesterday" : `${d}d ago`;
-  }
+  if (diff < MINUTE) return "now";
+  if (diff < HOUR) return `${Math.floor(diff / MINUTE)}m`;
+  if (diff < DAY) return `${Math.floor(diff / HOUR)}h`;
+  if (diff < WEEK) return `${Math.floor(diff / DAY)}d`;
   const w = Math.floor(diff / WEEK);
-  if (w < 5) return `${w}w ago`;
+  if (w < 5) return `${w}w`;
   return new Date(then).toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",

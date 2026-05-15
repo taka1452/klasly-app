@@ -44,7 +44,7 @@ export function ActivityFeedItem({ event }: { event: ActivityEvent }) {
   const interactive = !!event.ctaHref;
   const baseClasses = `group relative flex items-center gap-2.5 bg-white px-4 py-2.5 md:px-6 ${severityBorder[event.severity]}`;
   const interactiveClasses = interactive
-    ? "transition-colors duration-150 hover:bg-gray-50 focus-visible:bg-gray-50 focus-visible:outline-none"
+    ? "motion-safe:transition-colors motion-safe:duration-150 hover:bg-gray-50 focus-visible:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500"
     : "";
 
   const body = (
@@ -85,7 +85,7 @@ export function ActivityFeedItem({ event }: { event: ActivityEvent }) {
       {interactive && (
         <svg
           aria-hidden="true"
-          className="h-3.5 w-3.5 shrink-0 text-gray-300 motion-safe:transition-colors group-hover:text-gray-500"
+          className="h-3.5 w-3.5 shrink-0 text-gray-300 motion-safe:transition motion-safe:duration-150 motion-safe:ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:translate-x-0.5 group-hover:text-gray-500"
           viewBox="0 0 20 20"
           fill="currentColor"
         >

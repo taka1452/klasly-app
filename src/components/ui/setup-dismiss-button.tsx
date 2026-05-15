@@ -28,7 +28,7 @@ export function SetupDismissButton() {
       onClick={dismiss}
       disabled={busy}
       aria-label="Dismiss setup checklist"
-      className="inline-flex h-7 w-7 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1 disabled:opacity-50"
+      className="inline-flex h-7 w-7 items-center justify-center rounded-md text-gray-400 motion-safe:transition motion-safe:duration-150 motion-safe:ease-[cubic-bezier(0.23,1,0.32,1)] hover:bg-gray-100 hover:text-gray-700 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1 disabled:opacity-50 disabled:active:scale-100"
     >
       {busy ? (
         <svg
