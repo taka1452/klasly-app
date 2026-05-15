@@ -107,7 +107,8 @@ export function ActivityFeedWidget({
                 key={t.key}
                 type="button"
                 onClick={() => setTab(t.key)}
-                className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                aria-pressed={active}
+                className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1 ${
                   active
                     ? "bg-gray-900 text-white"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -116,7 +117,7 @@ export function ActivityFeedWidget({
                 {t.label}
                 {isAlert && alertCount > 0 && (
                   <span
-                    className={`inline-flex min-w-[18px] items-center justify-center rounded-full px-1.5 text-[10px] font-semibold leading-4 ${
+                    className={`inline-flex min-w-[18px] items-center justify-center rounded-full px-1.5 text-[10px] font-semibold leading-4 tabular-nums ${
                       active ? "bg-white text-gray-900" : "bg-red-600 text-white"
                     }`}
                   >
@@ -130,14 +131,10 @@ export function ActivityFeedWidget({
       </div>
       {variant === "fullpage" && (
         <div className="flex flex-wrap items-center gap-2 border-t border-gray-100 px-4 py-3 md:px-6">
-          <span className="text-xs text-gray-500">
-            Last 30 days
+          <span className="text-xs text-gray-500">Last 30 days</span>
+          <span className="ml-auto text-xs tabular-nums text-gray-500">
+            {filtered.length} event{filtered.length === 1 ? "" : "s"}
           </span>
-          <div className="ml-auto flex items-center gap-2">
-            <span className="text-xs text-gray-500">
-              {filtered.length} event{filtered.length === 1 ? "" : "s"}
-            </span>
-          </div>
         </div>
       )}
       {list.length > 0 ? (
@@ -157,7 +154,7 @@ export function ActivityFeedWidget({
         <div className="border-t border-gray-100 px-4 py-3 text-center md:px-6">
           <Link
             href="/dashboard/activity"
-            className="text-xs font-medium text-brand-700 hover:text-brand-800"
+            className="inline-flex rounded text-xs font-medium text-brand-700 transition-colors hover:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
           >
             See all →
           </Link>

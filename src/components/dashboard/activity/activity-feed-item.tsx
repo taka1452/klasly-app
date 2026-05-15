@@ -43,11 +43,11 @@ export function ActivityFeedItem({ event }: { event: ActivityEvent }) {
 
   return (
     <div
-      className={`relative flex items-start gap-3 bg-white px-4 py-3 transition-colors hover:bg-gray-50 md:px-6 ${severityBorder[event.severity]}`}
+      className={`relative flex items-start gap-3 bg-white px-4 py-3 transition-colors duration-150 hover:bg-gray-50 md:px-6 ${severityBorder[event.severity]}`}
     >
       {event.unread && (
         <span
-          className="absolute left-2 top-5 h-1.5 w-1.5 rounded-full bg-brand-500"
+          className="pointer-events-none absolute left-2 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-brand-500"
           aria-label="Unread"
         />
       )}
@@ -58,25 +58,30 @@ export function ActivityFeedItem({ event }: { event: ActivityEvent }) {
           >
             {pill.label}
           </span>
-          <span className="text-xs text-gray-500" suppressHydrationWarning>
+          <span
+            className="text-xs tabular-nums text-gray-500"
+            suppressHydrationWarning
+          >
             {relative}
           </span>
         </div>
         <p className="text-sm font-medium text-gray-900">{event.title}</p>
         {event.subtitle && (
-          <p className="mt-0.5 text-xs text-gray-500">{event.subtitle}</p>
+          <p className="mt-0.5 line-clamp-2 text-xs text-gray-500">
+            {event.subtitle}
+          </p>
         )}
         {event.ctaLabel && event.ctaHref && (
           <Link
             href={event.ctaHref}
-            className="mt-2 inline-flex items-center text-xs font-medium text-brand-700 hover:text-brand-800"
+            className="mt-2 -ml-0.5 inline-flex items-center rounded px-0.5 py-0.5 text-xs font-medium text-brand-700 transition-colors hover:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1"
           >
             {event.ctaLabel} →
           </Link>
         )}
       </div>
       {event.actionRequired && (
-        <span className="inline-flex shrink-0 items-center rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-semibold text-white">
+        <span className="inline-flex shrink-0 items-center rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
           Action needed
         </span>
       )}

@@ -80,7 +80,7 @@ export function ActivitySettingsPopover({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1"
         aria-label="Activity settings"
         aria-expanded={open}
       >
@@ -101,7 +101,7 @@ export function ActivitySettingsPopover({
       </button>
       {open && (
         <div
-          className="popover-in absolute right-0 top-10 z-20 w-80 rounded-lg border border-gray-200 bg-white p-4 shadow-lg"
+          className="popover-in absolute right-0 top-10 z-20 w-[min(20rem,calc(100vw-1.5rem))] rounded-lg border border-gray-200 bg-white p-4 shadow-lg"
           style={{ "--popover-origin": "top right" } as React.CSSProperties}
         >
           <h3 className="mb-3 text-sm font-semibold text-gray-900">
@@ -203,7 +203,7 @@ export function ActivitySettingsPopover({
             <button
               type="button"
               onClick={resetDefaults}
-              className="text-xs font-medium text-gray-500 hover:text-gray-700"
+              className="rounded text-xs font-medium text-gray-500 transition-colors hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
             >
               Reset defaults
             </button>
@@ -211,9 +211,32 @@ export function ActivitySettingsPopover({
               type="button"
               onClick={save}
               disabled={saving}
-              className="inline-flex items-center rounded-md bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700 disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 rounded-md bg-brand-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 disabled:opacity-60"
             >
-              {saving ? "Saving…" : "Save"}
+              {saving && (
+                <svg
+                  className="h-3 w-3 motion-safe:animate-spin"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeOpacity="0.25"
+                    strokeWidth="3"
+                  />
+                  <path
+                    d="M12 2a10 10 0 0 1 10 10"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              )}
+              {saving ? "Saving" : "Save"}
             </button>
           </div>
         </div>
@@ -245,7 +268,7 @@ function ThresholdRow({
             const next = Number.parseInt(e.target.value, 10);
             onChange(Number.isNaN(next) ? 0 : next);
           }}
-          className="w-14 rounded border border-gray-300 px-2 py-1 text-right text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          className="w-14 rounded border border-gray-300 px-2 py-1 text-right text-sm tabular-nums text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
         />
         <span className="w-8 text-xs text-gray-500">{unit}</span>
       </div>

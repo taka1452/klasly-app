@@ -52,30 +52,21 @@ export default async function ActivityPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Activity</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Everything happening in your studio — signups, payments, schedule
-          changes, and alerts.
-        </p>
-      </div>
-      <ActivityFeedSection
-        supabase={supabase}
-        studio={
-          studio ?? {
-            id: profile.studio_id,
-            activity_feed_settings: {},
-          }
+    <ActivityFeedSection
+      supabase={supabase}
+      studio={
+        studio ?? {
+          id: profile.studio_id,
+          activity_feed_settings: {},
         }
-        profile={{
-          id: profile.id,
-          role: profile.role as ActivityRole,
-          activity_feed_prefs: profile.activity_feed_prefs ?? {},
-        }}
-        managerPerms={managerPerms}
-        variant="fullpage"
-      />
-    </div>
+      }
+      profile={{
+        id: profile.id,
+        role: profile.role as ActivityRole,
+        activity_feed_prefs: profile.activity_feed_prefs ?? {},
+      }}
+      managerPerms={managerPerms}
+      variant="fullpage"
+    />
   );
 }

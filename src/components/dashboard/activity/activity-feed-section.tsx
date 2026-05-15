@@ -71,7 +71,7 @@ export async function ActivityFeedSection({
       variant={variant}
       limit={limit ?? (variant === "widget" ? 6 : undefined)}
       showSeeAll={showSeeAll ?? variant === "widget"}
-      showHeader={variant === "fullpage"}
+      showHeader={false}
       emptyMessage={
         variant === "fullpage"
           ? "No activity in the last 30 days yet."
@@ -80,20 +80,40 @@ export async function ActivityFeedSection({
     />
   );
 
-  if (variant === "fullpage") return widget;
+  const settingsButton = (
+    <ActivitySettingsPopover
+      initialThresholds={thresholds}
+      initialDisplayPrefs={displayPrefs}
+      canEditThresholds={canEditThresholds}
+    />
+  );
+
+  if (variant === "fullpage") {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
+              Activity
+            </h1>
+            <p className="mt-1 text-sm text-gray-500">
+              Everything happening in your studio — signups, payments, schedule
+              changes, and alerts.
+            </p>
+          </div>
+          <div className="shrink-0">{settingsButton}</div>
+        </div>
+        {widget}
+      </div>
+    );
+  }
 
   return (
     <CollapsibleSection
       id="activity-home"
       title="Activity"
       className=""
-      actions={
-        <ActivitySettingsPopover
-          initialThresholds={thresholds}
-          initialDisplayPrefs={displayPrefs}
-          canEditThresholds={canEditThresholds}
-        />
-      }
+      actions={settingsButton}
     >
       {widget}
     </CollapsibleSection>

@@ -53,10 +53,10 @@ export function CollapsibleSection({
           onClick={toggle}
           aria-expanded={open}
           aria-controls={`section-${id}`}
-          className="group flex flex-1 items-center gap-2 text-left"
+          className="group -mx-1.5 -my-1 inline-flex flex-1 items-center gap-2 rounded-md px-1.5 py-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
         >
           <svg
-            className={`h-4 w-4 shrink-0 text-gray-400 transition-transform duration-200 group-hover:text-gray-600 ${
+            className={`h-4 w-4 shrink-0 text-gray-400 group-hover:text-gray-600 motion-safe:transition-transform motion-safe:duration-200 motion-safe:ease-[cubic-bezier(0.23,1,0.32,1)] ${
               open ? "rotate-90" : ""
             }`}
             viewBox="0 0 20 20"
