@@ -305,14 +305,11 @@ export default async function DashboardPage() {
   return (
     <div>
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-gray-900">Dashboard</h1>
-            <ContextHelpLink href="/help/getting-started/studio-setup-overview" />
-          </div>
-          <p className="mt-1 text-sm text-gray-500">
+        <div className="flex items-center gap-2">
+          <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-gray-900">
             <TimeOfDayGreeting name={profile?.full_name} />
-          </p>
+          </h1>
+          <ContextHelpLink href="/help/getting-started/studio-setup-overview" />
         </div>
         {canManageClasses && (
           <Link
@@ -326,7 +323,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Activity feed — primary signal, top of the page */}
-      <div className="mb-10 md:mb-12">
+      <div className="widget-section-enter mb-10 md:mb-12" style={{ animationDelay: "0ms" }}>
         <ActivityFeedSection
           supabase={supabase}
           studio={
@@ -371,7 +368,8 @@ export default async function DashboardPage() {
 
       {/* Stats — Revenue featured (tinted, larger type); secondary metrics compact */}
       <div
-        className="flex flex-col gap-4 md:gap-5 lg:flex-row lg:items-stretch"
+        className="widget-section-enter flex flex-col gap-4 md:gap-5 lg:flex-row lg:items-stretch"
+        style={{ animationDelay: "80ms" }}
         data-tour="dashboard-stats"
       >
         {canViewPayments && (
@@ -447,6 +445,8 @@ export default async function DashboardPage() {
       {canViewPayments && <CollapsibleSection
         id="revenue-breakdown"
         title="Revenue Breakdown (This Month)"
+        className="widget-section-enter mt-10 md:mt-12"
+        style={{ animationDelay: "160ms" }}
       >
         <div className="card space-y-4">
           <div>
@@ -507,6 +507,8 @@ export default async function DashboardPage() {
         <CollapsibleSection
           id="failed-payments"
           title="Failed Payments"
+          className="widget-section-enter mt-10 md:mt-12"
+          style={{ animationDelay: "240ms" }}
         >
           <div className="card overflow-hidden p-0">
             <div className="divide-y divide-gray-200">
@@ -521,7 +523,7 @@ export default async function DashboardPage() {
                 return (
                   <div
                     key={p.id}
-                    className="flex items-center justify-between gap-4 px-4 py-3 md:px-6 md:py-4"
+                    className="row-hover-lift flex items-center justify-between gap-4 px-4 py-3 md:px-6 md:py-4"
                   >
                     <div>
                       <p className="font-medium text-gray-900">{name}</p>
@@ -534,7 +536,7 @@ export default async function DashboardPage() {
                         memberEmail ? (
                           <a
                             href={`mailto:${memberEmail}`}
-                            className="underline transition-colors duration-150 hover:text-gray-600"
+                            className="row-action underline hover:text-gray-600"
                           >
                             Contact member
                           </a>
@@ -542,7 +544,7 @@ export default async function DashboardPage() {
                           <span>Contact member to update card</span>
                         )
                       ) : (
-                        <Link href="/settings/billing" className="underline transition-colors duration-150 hover:text-gray-600">
+                        <Link href="/settings/billing" className="row-action underline hover:text-gray-600">
                           Update billing →
                         </Link>
                       )}
@@ -556,7 +558,10 @@ export default async function DashboardPage() {
       )}
 
       {/* Today's classes */}
-      <CollapsibleSection id="todays-classes" title="Today's Classes">
+      <CollapsibleSection id="todays-classes" title="Today's Classes"
+        className="widget-section-enter mt-10 md:mt-12"
+        style={{ animationDelay: "320ms" }}
+      >
         <div className="card overflow-hidden p-0">
           {todayClassesList && todayClassesList.length > 0 ? (
             <div className="divide-y divide-gray-200">
@@ -574,7 +579,7 @@ export default async function DashboardPage() {
                 return (
                   <div
                     key={session.id}
-                    className="flex items-center justify-between gap-4 px-4 py-3 md:px-6 md:py-4 transition-colors duration-150 ease-out hover:bg-gray-50"
+                    className="row-hover-lift flex items-center justify-between gap-4 px-4 py-3 md:px-6 md:py-4"
                   >
                     <Link
                       href={`/bookings/${session.id}`}
@@ -594,14 +599,14 @@ export default async function DashboardPage() {
                     {canManageBookings && (classIdForLink ? (
                       <Link
                         href={`/calendar/${classIdForLink}/sessions/${session.id}`}
-                        className="shrink-0 text-sm text-blue-600 transition-colors duration-150 hover:text-blue-800"
+                        className="row-action shrink-0 text-sm text-blue-600 hover:text-blue-800"
                       >
                         Take Attendance →
                       </Link>
                     ) : (
                       <Link
                         href={`/bookings/${session.id}`}
-                        className="shrink-0 text-sm text-blue-600 transition-colors duration-150 hover:text-blue-800"
+                        className="row-action shrink-0 text-sm text-blue-600 hover:text-blue-800"
                       >
                         View →
                       </Link>
@@ -611,7 +616,7 @@ export default async function DashboardPage() {
               })}
             </div>
           ) : (
-            <div className="px-6 py-12 text-center">
+            <div className="empty-fade-in px-6 py-12 text-center">
               <p className="text-sm text-gray-500">
                 No classes scheduled for today.
               </p>
@@ -625,6 +630,8 @@ export default async function DashboardPage() {
         <CollapsibleSection
           id="upcoming-events"
           title="Upcoming Events"
+          className="widget-section-enter mt-10 md:mt-12"
+          style={{ animationDelay: "400ms" }}
           actions={
             <Link
               href="/events"
@@ -642,7 +649,7 @@ export default async function DashboardPage() {
                   <Link
                     key={ev.id}
                     href={`/events/${ev.id}/manage`}
-                    className="flex items-center justify-between gap-4 px-4 py-3 md:px-6 md:py-4 transition-colors duration-150 ease-out hover:bg-gray-50"
+                    className="row-hover-lift flex items-center justify-between gap-4 px-4 py-3 md:px-6 md:py-4"
                   >
                     <div>
                       <p className="font-medium text-gray-900">{ev.name}</p>

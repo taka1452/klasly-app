@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 interface Props {
   id: string;
@@ -8,6 +8,7 @@ interface Props {
   defaultOpen?: boolean;
   actions?: React.ReactNode;
   className?: string;
+  style?: React.CSSProperties;
   children: React.ReactNode;
 }
 
@@ -17,11 +18,11 @@ export function CollapsibleSection({
   defaultOpen = true,
   actions,
   className,
+  style,
   children,
 }: Props) {
   const [open, setOpen] = useState(defaultOpen);
   const [mounted, setMounted] = useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const stored = window.localStorage.getItem(`dashboard-collapse:${id}`);
@@ -46,7 +47,7 @@ export function CollapsibleSection({
   }
 
   return (
-    <section className={className ?? "mt-10 md:mt-12"}>
+    <section className={className ?? "mt-10 md:mt-12"} style={style}>
       <div className="mb-5 flex items-center justify-between gap-3">
         <button
           type="button"
@@ -77,11 +78,12 @@ export function CollapsibleSection({
       </div>
       <div
         id={`section-${id}`}
-        ref={contentRef}
-        hidden={mounted && !open}
+        className={`collapsible-grid ${mounted && !open ? "collapsible-closed" : "collapsible-open"}`}
         aria-hidden={mounted && !open}
       >
-        {children}
+        <div className="overflow-hidden">
+          {children}
+        </div>
       </div>
     </section>
   );
