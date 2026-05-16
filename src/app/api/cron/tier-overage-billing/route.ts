@@ -74,7 +74,6 @@ export async function GET(request: Request) {
     }
 
     for (const studio of studios) {
-      // Get all active memberships with tiers that have overage billing enabled
       const { data: memberships } = await supabase
         .from("instructor_memberships")
         .select(`
@@ -88,6 +87,19 @@ export async function GET(request: Request) {
         .eq("status", "active");
 
       if (!memberships || memberships.length === 0) continue;
+
+      // Batch-fetch instructor profiles for this studio's memberships
+      const memberInstrIds = Array.from(new Set<string>(memberships.map((m) => m.instructor_id)));
+      const { data: instrProfileRows } = await supabase
+        .from("instructors")
+        .select("id, profile_id, profiles(email, full_name)")
+        .in("id", memberInstrIds);
+
+      const instrProfileMap = new Map<string, { email: string; full_name: string } | null>();
+      for (const ip of instrProfileRows ?? []) {
+        const p = unwrapRelation<{ email: string; full_name: string }>(ip.profiles);
+        instrProfileMap.set(ip.id, p);
+      }
 
       for (const membership of memberships) {
         const tier = unwrapRelation<{
@@ -159,17 +171,7 @@ export async function GET(request: Request) {
           continue;
         }
 
-        // Get instructor profile info
-        const { data: instructorProfile } = await supabase
-          .from("instructors")
-          .select("profile_id, profiles(email, full_name)")
-          .eq("id", membership.instructor_id)
-          .single();
-
-        const profile = unwrapRelation<{
-          email: string;
-          full_name: string;
-        }>(instructorProfile?.profiles);
+        const profile = instrProfileMap.get(membership.instructor_id) ?? null;
 
         // Attempt Stripe charge
         const customerId = membership.stripe_customer_id;

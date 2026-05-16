@@ -17,19 +17,25 @@ export async function POST(
 
   const adminDb = createAdminClient();
 
-  // Get booking
-  const { data: booking } = await adminDb
-    .from("event_bookings")
-    .select("id, event_id, event_option_id, guest_name, guest_email, booking_status")
-    .eq("id", bookingId)
-    .single();
+  // Booking (with option name via JOIN) + profile are independent — parallelize
+  const [{ data: booking }, { data: profile }] = await Promise.all([
+    adminDb
+      .from("event_bookings")
+      .select("id, event_id, event_option_id, guest_name, guest_email, booking_status, event_options(name)")
+      .eq("id", bookingId)
+      .single(),
+    adminDb
+      .from("profiles")
+      .select("role, studio_id")
+      .eq("id", user.id)
+      .single(),
+  ]);
 
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
   if (booking.booking_status !== "waitlisted") {
     return NextResponse.json({ error: "Booking is not on waitlist" }, { status: 400 });
   }
 
-  // Verify user is owner of this event's studio
   const { data: event } = await adminDb
     .from("events")
     .select("id, name, start_date, end_date, studio_id")
@@ -42,12 +48,6 @@ export async function POST(
   if (!retreatEnabled) {
     return NextResponse.json({ error: "Feature not available" }, { status: 404 });
   }
-
-  const { data: profile } = await adminDb
-    .from("profiles")
-    .select("role, studio_id")
-    .eq("id", user.id)
-    .single();
 
   if (!profile || profile.studio_id !== event.studio_id || (profile.role !== "owner" && profile.role !== "manager")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -72,14 +72,9 @@ export async function POST(
     .update({ booking_status: "confirmed", updated_at: new Date().toISOString() })
     .eq("id", bookingId);
 
-  // Get option name
-  const { data: opt } = await adminDb
-    .from("event_options")
-    .select("name")
-    .eq("id", booking.event_option_id)
-    .single();
+  // Option name already joined in booking query
+  const opt = Array.isArray(booking.event_options) ? booking.event_options[0] : booking.event_options;
 
-  // Send email
   try {
     await sendEmail({
       to: booking.guest_email,
@@ -87,7 +82,7 @@ export async function POST(
       html: eventWaitlistPromoted({
         guestName: booking.guest_name,
         eventName: event.name,
-        optionName: opt?.name || "",
+        optionName: (opt as { name?: string })?.name || "",
         startDate: event.start_date,
         endDate: event.end_date,
       }),

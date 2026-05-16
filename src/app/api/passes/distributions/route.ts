@@ -50,54 +50,30 @@ export async function GET(request: Request) {
       .lte("period_start", periodEnd)
       .order("total_classes", { ascending: false });
 
-    // Get instructor names
     const instructorIds = Array.from(new Set((distributions ?? []).map((d: { instructor_id: string }) => d.instructor_id)));
-    let instructorNames: Record<string, string> = {};
-    if (instructorIds.length > 0) {
-      const { data: instructors } = await adminSupabase
-        .from("instructors")
-        .select("id, profile_id")
-        .in("id", instructorIds);
-
-      if (instructors && instructors.length > 0) {
-        const profileIds = instructors.map((i) => i.profile_id).filter(Boolean);
-        const { data: profiles } = await adminSupabase
-          .from("profiles")
-          .select("id, full_name")
-          .in("id", profileIds);
-
-        const profileNameMap = new Map((profiles ?? []).map((p) => [p.id, p.full_name ?? "Unknown"]));
-        for (const inst of instructors) {
-          instructorNames[inst.id] = profileNameMap.get(inst.profile_id) ?? "Unknown";
-        }
-      }
-    }
-
-    // Get pass info
     const passIds = Array.from(new Set((distributions ?? []).map((d: { studio_pass_id: string }) => d.studio_pass_id)));
-    let passInfo: Record<string, { name: string; price_cents: number }> = {};
-    if (passIds.length > 0) {
-      const { data: passes } = await adminSupabase
-        .from("studio_passes")
-        .select("id, name, price_cents")
-        .in("id", passIds);
-      for (const p of passes ?? []) {
-        passInfo[p.id] = { name: p.name, price_cents: p.price_cents };
-      }
+
+    const [instrResult, passResult, { data: studio }, { data: feeRow }] = await Promise.all([
+      instructorIds.length > 0
+        ? adminSupabase.from("instructors").select("id, profiles(full_name)").in("id", instructorIds)
+        : Promise.resolve({ data: [] as { id: string; profiles: { full_name: string | null } | null }[] }),
+      passIds.length > 0
+        ? adminSupabase.from("studio_passes").select("id, name, price_cents").in("id", passIds)
+        : Promise.resolve({ data: [] as { id: string; name: string; price_cents: number }[] }),
+      adminSupabase.from("studios").select("studio_fee_percentage").eq("id", profile.studio_id).single(),
+      adminSupabase.from("platform_settings").select("value").eq("key", "platform_fee_percent").single(),
+    ]);
+
+    const instructorNames: Record<string, string> = {};
+    for (const inst of instrResult.data ?? []) {
+      const p = Array.isArray(inst.profiles) ? (inst.profiles as { full_name?: string }[])[0] : inst.profiles as { full_name?: string } | null;
+      instructorNames[inst.id] = p?.full_name ?? "Unknown";
     }
 
-    // Get studio fee info
-    const { data: studio } = await adminSupabase
-      .from("studios")
-      .select("studio_fee_percentage")
-      .eq("id", profile.studio_id)
-      .single();
-
-    const { data: feeRow } = await adminSupabase
-      .from("platform_settings")
-      .select("value")
-      .eq("key", "platform_fee_percent")
-      .single();
+    const passInfo: Record<string, { name: string; price_cents: number }> = {};
+    for (const p of passResult.data ?? []) {
+      passInfo[p.id] = { name: p.name, price_cents: p.price_cents };
+    }
 
     return NextResponse.json({
       distributions: distributions ?? [],

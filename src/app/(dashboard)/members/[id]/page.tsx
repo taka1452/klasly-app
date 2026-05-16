@@ -41,49 +41,48 @@ export default async function MemberDetailPage({
       )
     : serverSupabase;
 
-  const { data: member } = await supabase
-    .from("members")
-    .select("*, profiles(full_name, email, phone)")
-    .eq("id", id)
-    .single();
+  // Batch 1: member + ownerProfile are independent
+  const [{ data: member }, { data: ownerProfile }] = await Promise.all([
+    supabase
+      .from("members")
+      .select("*, profiles(full_name, email, phone)")
+      .eq("id", id)
+      .single(),
+    supabase
+      .from("profiles")
+      .select("studio_id")
+      .eq("id", user.id)
+      .single(),
+  ]);
 
   if (!member) {
     notFound();
   }
 
-  // オーナーの studio_id と一致するか確認
-  const { data: ownerProfile } = await supabase
-    .from("profiles")
-    .select("studio_id")
-    .eq("id", user.id)
-    .single();
-
   if (ownerProfile?.studio_id !== member.studio_id) {
     notFound();
   }
 
-  // Check if this member is also an instructor
-  const { data: instructorRecord } = member.profile_id
-    ? await supabase
-        .from("instructors")
-        .select("id")
-        .eq("studio_id", member.studio_id)
-        .eq("profile_id", member.profile_id)
-        .maybeSingle()
-    : { data: null };
-
-  // Check if this is a test account
-  let testAccountInfo: { email: string; password: string } | null = null;
-  if (serviceRoleKey && member.profile_id) {
-    const { data: authData } = await supabase.auth.admin.getUserById(member.profile_id);
-    const meta = authData?.user?.user_metadata;
-    if (meta?.is_test_account && meta?.default_password) {
-      testAccountInfo = {
-        email: member.profiles?.email || "",
-        password: meta.default_password as string,
-      };
-    }
-  }
+  // Batch 2: instructor check + test account info (both need member.profile_id)
+  const [{ data: instructorRecord }, testAccountInfo] = await Promise.all([
+    member.profile_id
+      ? supabase
+          .from("instructors")
+          .select("id")
+          .eq("studio_id", member.studio_id)
+          .eq("profile_id", member.profile_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    (async (): Promise<{ email: string; password: string } | null> => {
+      if (!serviceRoleKey || !member.profile_id) return null;
+      const { data: authData } = await supabase.auth.admin.getUserById(member.profile_id);
+      const meta = authData?.user?.user_metadata;
+      if (meta?.is_test_account && meta?.default_password) {
+        return { email: member.profiles?.email || "", password: meta.default_password as string };
+      }
+      return null;
+    })(),
+  ]);
 
   return (
     <div>

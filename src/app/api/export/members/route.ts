@@ -15,7 +15,7 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const supabase = ctx.supabase;
-  const { data: rows } = await supabase.from("members").select("*, profiles(full_name, email, phone)").eq("studio_id", ctx.studioId).order("joined_at", { ascending: false });
+  const { data: rows } = await supabase.from("members").select("id, plan_type, credits, status, waiver_signed, joined_at, profiles(full_name, email, phone)").eq("studio_id", ctx.studioId).order("joined_at", { ascending: false }).limit(10000);
   const headers = ["Name", "Email", "Phone", "Plan Type", "Credits", "Status", "Waiver Signed", "Joined At"];
   const lines: string[] = [headers.map(escapeCsvCell).join(",")];
   for (const m of rows ?? []) {

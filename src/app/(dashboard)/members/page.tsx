@@ -23,6 +23,13 @@ export default async function MembersPage({
   searchParams: Promise<{ q?: string; status?: string; tag?: string }>;
 }) {
   const params = await searchParams;
+
+  // checkManagerPermission already does getUser + profile + managers query
+  const permCheck = await checkManagerPermission("can_manage_members");
+  if (!permCheck.allowed) {
+    redirect("/dashboard");
+  }
+
   const serverSupabase = await createServerClient();
   const {
     data: { user },
@@ -30,12 +37,6 @@ export default async function MembersPage({
 
   if (!user) {
     redirect("/login");
-  }
-
-  // マネージャー権限チェック（can_manage_members）
-  const permCheck = await checkManagerPermission("can_manage_members");
-  if (!permCheck.allowed) {
-    redirect("/dashboard");
   }
 
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -56,37 +57,34 @@ export default async function MembersPage({
     redirect("/onboarding");
   }
 
-  // 会員一覧を取得（profiles と JOIN、waiver_signed 含む）
-  let query = supabase
+  // 会員一覧とインストラクター情報を並列取得
+  let membersQuery = supabase
     .from("members")
     .select("*, profiles(full_name, email, phone)")
     .eq("studio_id", profile.studio_id)
     .order("created_at", { ascending: false });
 
-  // ステータスフィルター
   if (params.status && params.status !== "all") {
-    query = query.eq("status", params.status);
+    membersQuery = membersQuery.eq("status", params.status);
   }
-
-  // タグフィルター: members.tags は text[]
   if (params.tag && params.tag !== "all") {
-    query = query.contains("tags", [params.tag]);
+    membersQuery = membersQuery.contains("tags", [params.tag]);
   }
 
-  const { data: members } = await query;
+  const [{ data: members }, { data: instructorRows }] = await Promise.all([
+    membersQuery,
+    supabase
+      .from("instructors")
+      .select("profile_id")
+      .eq("studio_id", profile.studio_id),
+  ]);
 
-  // Collect distinct tags across this studio for the filter dropdown.
   const tagSet = new Set<string>();
   for (const m of (members || []) as { tags?: string[] }[]) {
     for (const t of m.tags || []) tagSet.add(t);
   }
   const allTags = Array.from(tagSet).sort();
 
-  // Fetch instructor profile_ids so we can badge members who are also instructors
-  const { data: instructorRows } = await supabase
-    .from("instructors")
-    .select("profile_id")
-    .eq("studio_id", profile.studio_id);
   const instructorProfileIds = new Set(
     (instructorRows ?? []).map((i: { profile_id: string }) => i.profile_id)
   );

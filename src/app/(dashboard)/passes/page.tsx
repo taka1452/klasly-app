@@ -15,70 +15,66 @@ export default async function PassesPage() {
   const enabled = await isFeatureEnabled(ctx.studioId, FEATURE_KEYS.STUDIO_PASS);
   if (!enabled) redirect("/dashboard");
 
-  const { data: passes } = await ctx.supabase
-    .from("studio_passes")
-    .select("id, name, description, price_cents, max_classes_per_month, auto_distribute, is_active, created_at, expires_on")
-    .eq("studio_id", ctx.studioId)
-    .order("created_at", { ascending: false });
-
-  // Count active subscriptions per pass
-  const passIds = (passes ?? []).map((p) => p.id);
-  let subCounts: Record<string, number> = {};
-  if (passIds.length > 0) {
-    const { data: subs } = await ctx.supabase
-      .from("pass_subscriptions")
-      .select("studio_pass_id")
-      .in("studio_pass_id", passIds)
-      .eq("status", "active");
-
-    if (subs) {
-      for (const s of subs) {
-        subCounts[s.studio_pass_id] = (subCounts[s.studio_pass_id] ?? 0) + 1;
-      }
-    }
-  }
-
-  // --- Stats ---
-  const totalActiveSubscribers = Object.values(subCounts).reduce((sum, n) => sum + n, 0);
-
-  // MRR: sum of price_cents * active subscriber count per pass
-  const mrr = (passes ?? []).reduce((sum, pass) => {
-    const count = subCounts[pass.id] ?? 0;
-    return sum + pass.price_cents * count;
-  }, 0);
-
-  // This month's pass bookings
   const now = new Date();
   const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
   const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const monthEnd = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, "0")}-01`;
 
-  let passBookingsThisMonth = 0;
-  if (passIds.length > 0) {
-    const { count } = await ctx.supabase
-      .from("bookings")
+  // --- Batch 1: passes list + pending distributions (no dependency) ---
+  const [{ data: passes }, { count: pendingDistCount }] = await Promise.all([
+    ctx.supabase
+      .from("studio_passes")
+      .select("id, name, description, price_cents, max_classes_per_month, auto_distribute, is_active, created_at, expires_on")
+      .eq("studio_id", ctx.studioId)
+      .order("created_at", { ascending: false }),
+    ctx.supabase
+      .from("pass_distributions")
       .select("id", { count: "exact", head: true })
       .eq("studio_id", ctx.studioId)
-      .eq("booked_via_pass", true)
-      .gte("created_at", monthStart)
-      .lt("created_at", monthEnd);
-    passBookingsThisMonth = count ?? 0;
-  }
+      .eq("status", "pending"),
+  ]);
 
-  // Top 5 members by pass usage this month
+  const passIds = (passes ?? []).map((p) => p.id);
+
+  // --- Batch 2: all pass-dependent stats in parallel ---
   type UsageRow = { member_id: string; members?: { profiles?: { full_name?: string } } };
+  let subCounts: Record<string, number> = {};
+  let passBookingsThisMonth = 0;
   let topMembers: { name: string; count: number }[] = [];
-  if (passIds.length > 0) {
-    const { data: usage } = await ctx.supabase
-      .from("pass_class_usage")
-      .select("member_id, members(profiles(full_name))")
-      .in("studio_pass_id", passIds)
-      .gte("used_at", monthStart)
-      .lt("used_at", monthEnd);
 
-    if (usage && usage.length > 0) {
+  if (passIds.length > 0) {
+    const [subsResult, bookingsCountResult, usageResult] = await Promise.all([
+      ctx.supabase
+        .from("pass_subscriptions")
+        .select("studio_pass_id")
+        .in("studio_pass_id", passIds)
+        .eq("status", "active"),
+      ctx.supabase
+        .from("bookings")
+        .select("id", { count: "exact", head: true })
+        .eq("studio_id", ctx.studioId)
+        .eq("booked_via_pass", true)
+        .gte("created_at", monthStart)
+        .lt("created_at", monthEnd),
+      ctx.supabase
+        .from("pass_class_usage")
+        .select("member_id, members(profiles(full_name))")
+        .in("studio_pass_id", passIds)
+        .gte("used_at", monthStart)
+        .lt("used_at", monthEnd),
+    ]);
+
+    if (subsResult.data) {
+      for (const s of subsResult.data) {
+        subCounts[s.studio_pass_id] = (subCounts[s.studio_pass_id] ?? 0) + 1;
+      }
+    }
+
+    passBookingsThisMonth = bookingsCountResult.count ?? 0;
+
+    if (usageResult.data && usageResult.data.length > 0) {
       const memberMap = new Map<string, { name: string; count: number }>();
-      for (const row of usage as UsageRow[]) {
+      for (const row of usageResult.data as UsageRow[]) {
         const existing = memberMap.get(row.member_id);
         if (existing) {
           existing.count += 1;
@@ -93,12 +89,11 @@ export default async function PassesPage() {
     }
   }
 
-  // Check for pending distributions awaiting approval
-  const { count: pendingDistCount } = await ctx.supabase
-    .from("pass_distributions")
-    .select("id", { count: "exact", head: true })
-    .eq("studio_id", ctx.studioId)
-    .eq("status", "pending");
+  const totalActiveSubscribers = Object.values(subCounts).reduce((sum, n) => sum + n, 0);
+  const mrr = (passes ?? []).reduce((sum, pass) => {
+    const count = subCounts[pass.id] ?? 0;
+    return sum + pass.price_cents * count;
+  }, 0);
 
   return (
     <div>

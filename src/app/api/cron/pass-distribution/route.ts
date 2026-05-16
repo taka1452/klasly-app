@@ -94,6 +94,29 @@ export async function GET(request: Request) {
       .single();
     const platformFeePercent = parseFloat(feeRow?.value ?? "0.5");
 
+    // Batch-fetch studio fees and owner profiles before the loop
+    const passStudioIds = Array.from(new Set<string>(passes.map((p) => p.studio_id)));
+    const [{ data: studioRows }, { data: ownerRows }] = await Promise.all([
+      supabase
+        .from("studios")
+        .select("id, studio_fee_percentage, studio_fee_type")
+        .in("id", passStudioIds),
+      supabase
+        .from("profiles")
+        .select("studio_id, full_name, email")
+        .in("studio_id", passStudioIds)
+        .eq("role", "owner"),
+    ]);
+
+    const studioMap = new Map<string, { studio_fee_percentage: number; studio_fee_type: string | null }>();
+    for (const s of studioRows ?? []) {
+      studioMap.set(s.id, s);
+    }
+    const ownerMap = new Map<string, { full_name: string | null; email: string | null }>();
+    for (const o of ownerRows ?? []) {
+      ownerMap.set(o.studio_id, o);
+    }
+
     for (const pass of passes) {
       // Count active subscriptions for this pass during the prev month
       const { data: activeSubs } = await supabase
@@ -131,13 +154,7 @@ export async function GET(request: Request) {
       const stripeFee = Math.round(grossRevenue * 0.029 + subCount * 30);
       const klaslyFee = Math.round(grossRevenue * (platformFeePercent / 100));
 
-      // Get studio fee
-      const { data: studio } = await supabase
-        .from("studios")
-        .select("studio_fee_percentage, studio_fee_type")
-        .eq("id", pass.studio_id)
-        .single();
-
+      const studio = studioMap.get(pass.studio_id);
       const studioFeePercent = studio?.studio_fee_percentage ?? 0;
       const studioFee = Math.round(grossRevenue * (studioFeePercent / 100));
 
@@ -151,7 +168,6 @@ export async function GET(request: Request) {
       const distributions = entries.map(([instructorId, count], index) => {
         let payout: number;
         if (index === entries.length - 1) {
-          // Last instructor gets remainder to avoid rounding issues
           payout = distributableAmount - distributed;
         } else {
           payout = Math.floor(distributableAmount * (count / totalPoolClasses));
@@ -182,13 +198,7 @@ export async function GET(request: Request) {
 
       // Send review email if auto_distribute is OFF
       if (!pass.auto_distribute) {
-        const { data: ownerProfile } = await supabase
-          .from("profiles")
-          .select("full_name, email")
-          .eq("studio_id", pass.studio_id)
-          .eq("role", "owner")
-          .single();
-
+        const ownerProfile = ownerMap.get(pass.studio_id);
         if (ownerProfile?.email) {
           const { subject, html } = passDistributionReview({
             ownerName: ownerProfile.full_name ?? "Studio Owner",

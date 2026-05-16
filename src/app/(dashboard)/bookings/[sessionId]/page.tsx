@@ -37,34 +37,35 @@ export default async function SessionBookingsPage({
       )
     : serverSupabase;
 
-  const { data: session } = await supabase
-    .from("class_sessions")
-    .select(
-      "*, class_templates(name), rooms(name), instructors(profiles(full_name))",
-    )
-    .eq("id", sessionId)
-    .single();
+  // All 3 queries are independent — parallelize
+  const [{ data: session }, { data: ownerProfile }, { data: bookings }] = await Promise.all([
+    supabase
+      .from("class_sessions")
+      .select(
+        "*, class_templates(name), rooms(name), instructors(profiles(full_name))",
+      )
+      .eq("id", sessionId)
+      .single(),
+    supabase
+      .from("profiles")
+      .select("studio_id")
+      .eq("id", user.id)
+      .single(),
+    supabase
+      .from("bookings")
+      .select("id, member_id, status, attended, booked_via_pass, members(profiles(full_name))")
+      .eq("session_id", sessionId)
+      .neq("status", "cancelled")
+      .order("created_at", { ascending: true }),
+  ]);
 
   if (!session) {
     notFound();
   }
 
-  const { data: ownerProfile } = await supabase
-    .from("profiles")
-    .select("studio_id")
-    .eq("id", user.id)
-    .single();
-
   if (ownerProfile?.studio_id !== session.studio_id) {
     notFound();
   }
-
-  const { data: bookings } = await supabase
-    .from("bookings")
-    .select("id, member_id, status, attended, booked_via_pass, members(profiles(full_name))")
-    .eq("session_id", sessionId)
-    .neq("status", "cancelled")
-    .order("created_at", { ascending: true });
 
   type SessionMeta = {
     title?: string | null;

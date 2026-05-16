@@ -22,76 +22,35 @@ export async function GET(
       return NextResponse.json({ error: "Studio not found" }, { status: 404 });
     }
 
-    const { data: owner } = await supabase
-      .from("profiles")
-      .select("full_name, email")
-      .eq("studio_id", studioId)
-      .eq("role", "owner")
-      .single();
-
-    const { count: membersActive } = await supabase
-      .from("members")
-      .select("id", { count: "exact", head: true })
-      .eq("studio_id", studioId)
-      .eq("status", "active");
-    const { count: membersPaused } = await supabase
-      .from("members")
-      .select("id", { count: "exact", head: true })
-      .eq("studio_id", studioId)
-      .eq("status", "paused");
-    const { count: membersCancelled } = await supabase
-      .from("members")
-      .select("id", { count: "exact", head: true })
-      .eq("studio_id", studioId)
-      .eq("status", "cancelled");
-
-    const { count: instructorsCount } = await supabase
-      .from("instructors")
-      .select("id", { count: "exact", head: true })
-      .eq("studio_id", studioId);
-
-    const { count: classesActive } = await supabase
-      .from("classes")
-      .select("id", { count: "exact", head: true })
-      .eq("studio_id", studioId)
-      .eq("is_active", true);
-
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    const { count: bookings30d } = await supabase
-      .from("bookings")
-      .select("id", { count: "exact", head: true })
-      .eq("studio_id", studioId)
-      .gte("created_at", thirtyDaysAgo);
 
-    const { count: attended30d } = await supabase
-      .from("bookings")
-      .select("id", { count: "exact", head: true })
-      .eq("studio_id", studioId)
-      .eq("attended", true)
-      .gte("created_at", thirtyDaysAgo);
-
-    const { count: dropIn30d } = await supabase
-      .from("drop_in_attendances")
-      .select("id", { count: "exact", head: true })
-      .eq("studio_id", studioId)
-      .gte("attended_at", thirtyDaysAgo);
-
-    const { count: membersTotal } = await supabase
-      .from("members")
-      .select("id", { count: "exact", head: true })
-      .eq("studio_id", studioId);
-    const { count: waiverSigned } = await supabase
-      .from("members")
-      .select("id", { count: "exact", head: true })
-      .eq("studio_id", studioId)
-      .eq("waiver_signed", true);
-
-    const { data: payments } = await supabase
-      .from("payments")
-      .select("id, amount, type, status, paid_at, created_at, stripe_payment_intent_id")
-      .eq("studio_id", studioId)
-      .order("created_at", { ascending: false })
-      .limit(10);
+    const [
+      { data: owner },
+      { count: membersActive },
+      { count: membersPaused },
+      { count: membersCancelled },
+      { count: instructorsCount },
+      { count: classesActive },
+      { count: bookings30d },
+      { count: attended30d },
+      { count: dropIn30d },
+      { count: membersTotal },
+      { count: waiverSigned },
+      { data: payments },
+    ] = await Promise.all([
+      supabase.from("profiles").select("full_name, email").eq("studio_id", studioId).eq("role", "owner").single(),
+      supabase.from("members").select("id", { count: "exact", head: true }).eq("studio_id", studioId).eq("status", "active"),
+      supabase.from("members").select("id", { count: "exact", head: true }).eq("studio_id", studioId).eq("status", "paused"),
+      supabase.from("members").select("id", { count: "exact", head: true }).eq("studio_id", studioId).eq("status", "cancelled"),
+      supabase.from("instructors").select("id", { count: "exact", head: true }).eq("studio_id", studioId),
+      supabase.from("classes").select("id", { count: "exact", head: true }).eq("studio_id", studioId).eq("is_active", true),
+      supabase.from("bookings").select("id", { count: "exact", head: true }).eq("studio_id", studioId).gte("created_at", thirtyDaysAgo),
+      supabase.from("bookings").select("id", { count: "exact", head: true }).eq("studio_id", studioId).eq("attended", true).gte("created_at", thirtyDaysAgo),
+      supabase.from("drop_in_attendances").select("id", { count: "exact", head: true }).eq("studio_id", studioId).gte("attended_at", thirtyDaysAgo),
+      supabase.from("members").select("id", { count: "exact", head: true }).eq("studio_id", studioId),
+      supabase.from("members").select("id", { count: "exact", head: true }).eq("studio_id", studioId).eq("waiver_signed", true),
+      supabase.from("payments").select("id, amount, type, status, paid_at, created_at, stripe_payment_intent_id").eq("studio_id", studioId).order("created_at", { ascending: false }).limit(10),
+    ]);
 
     return NextResponse.json({
       studio: {

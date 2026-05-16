@@ -33,7 +33,8 @@ export async function GET(request: Request) {
     .eq("studio_id", ctx.studioId)
     .gte("created_at", from + "T00:00:00.000Z")
     .lte("created_at", to + "T23:59:59.999Z")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(10000);
   const headers = ["Date", "Class Name", "Member Name", "Member Email", "Status", "Attended", "Credit Deducted"];
   const lines: string[] = [headers.map(escapeCsvCell).join(",")];
   for (const b of bookings ?? []) {

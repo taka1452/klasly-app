@@ -41,7 +41,7 @@ export default async function DashboardLayout({
 
   const { data: profile } = await adminSupabase
     .from("profiles")
-    .select("*, studios(*)")
+    .select("id, full_name, studio_id, role, onboarding_completed, onboarding_step, onboarding_started_at, studios(name, stripe_subscription_id, plan_status, grace_period_ends_at, trial_ends_at, stripe_connect_onboarding_complete, drop_in_price, monthly_price, payout_model, studio_fee_percentage)")
     .eq("id", user.id)
     .single();
 

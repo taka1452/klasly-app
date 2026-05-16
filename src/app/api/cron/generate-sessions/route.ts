@@ -138,6 +138,26 @@ export async function GET(request: Request) {
       return `${year}-${month}-${day}`;
     };
 
+    // Batch fetch recurrence_end_date for all templates used by groups
+    const templateIds = Array.from(new Set(
+      Array.from(groupMap.values())
+        .map(g => g.template.template_id as string | null)
+        .filter((id): id is string => !!id)
+    ));
+    const recurrenceEndMap = new Map<string, Date>();
+    if (templateIds.length > 0) {
+      const { data: templates } = await supabase
+        .from("class_templates")
+        .select("id, recurrence_end_date")
+        .in("id", templateIds);
+      for (const t of templates ?? []) {
+        if (t.recurrence_end_date) {
+          const [eY, eM, eD] = (t.recurrence_end_date as string).split("-").map(Number);
+          recurrenceEndMap.set(t.id, new Date(eY, eM - 1, eD));
+        }
+      }
+    }
+
     let totalCreated = 0;
     let groupsProcessed = 0;
     let roomConflicts = 0;
@@ -165,19 +185,7 @@ export async function GET(request: Request) {
       const targetDate = new Date(todayObj);
       targetDate.setDate(todayObj.getDate() + weeksAhead * 7);
 
-      // Check if the template has a recurrence_end_date
-      let recurrenceEndDate: Date | null = null;
-      if (src.template_id) {
-        const { data: tmpl } = await supabase
-          .from("class_templates")
-          .select("recurrence_end_date")
-          .eq("id", src.template_id)
-          .single();
-        if (tmpl?.recurrence_end_date) {
-          const [eY, eM, eD] = (tmpl.recurrence_end_date as string).split("-").map(Number);
-          recurrenceEndDate = new Date(eY, eM - 1, eD);
-        }
-      }
+      const recurrenceEndDate = src.template_id ? recurrenceEndMap.get(src.template_id as string) ?? null : null;
 
       // Generate weekly dates starting from latestDate + 7 days
       const expectedDates: string[] = [];
@@ -229,25 +237,20 @@ export async function GET(request: Request) {
             : src.end_time
           : null;
 
-      // Room conflict check: if session has a room, verify availability
-      if (src.room_id) {
-        const availableDates: string[] = [];
-        for (const date of missingDates) {
-          const { data: conflicts } = await supabase
-            .from("class_sessions")
-            .select("id")
-            .eq("room_id", src.room_id)
-            .eq("session_date", date)
-            .eq("is_cancelled", false)
-            .lt("start_time", endTimeFormatted || startTimeFormatted)
-            .gt("end_time", startTimeFormatted);
+      // Room conflict check: batch fetch all conflicting sessions at once
+      if (src.room_id && missingDates.length > 0) {
+        const { data: conflicts } = await supabase
+          .from("class_sessions")
+          .select("session_date")
+          .eq("room_id", src.room_id)
+          .in("session_date", missingDates)
+          .eq("is_cancelled", false)
+          .lt("start_time", endTimeFormatted || startTimeFormatted)
+          .gt("end_time", startTimeFormatted);
 
-          if (conflicts && conflicts.length > 0) {
-            roomConflicts++;
-            continue;
-          }
-          availableDates.push(date);
-        }
+        const conflictDates = new Set((conflicts ?? []).map(c => c.session_date));
+        const availableDates = missingDates.filter(date => !conflictDates.has(date));
+        roomConflicts += missingDates.length - availableDates.length;
         missingDates = availableDates;
       }
 

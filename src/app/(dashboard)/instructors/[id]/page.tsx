@@ -31,71 +31,63 @@ export default async function InstructorDetailPage({
       )
     : serverSupabase;
 
-  const { data: instructor } = await supabase
-    .from("instructors")
-    .select("*, profiles(full_name, email, phone, avatar_url)")
-    .eq("id", id)
-    .single();
+  // Batch 1: instructor + ownerProfile are independent
+  const [{ data: instructor }, { data: ownerProfile }] = await Promise.all([
+    supabase
+      .from("instructors")
+      .select("*, profiles(full_name, email, phone, avatar_url)")
+      .eq("id", id)
+      .single(),
+    supabase
+      .from("profiles")
+      .select("studio_id, role")
+      .eq("id", user.id)
+      .single(),
+  ]);
 
   if (!instructor) {
     notFound();
   }
 
-  const { data: ownerProfile } = await supabase
-    .from("profiles")
-    .select("studio_id, role")
-    .eq("id", user.id)
-    .single();
-
   if (ownerProfile?.studio_id !== instructor.studio_id) {
     notFound();
   }
 
-  // Fetch tiers and current membership for this instructor
-  const { data: tiers } = await supabase
-    .from("instructor_membership_tiers")
-    .select("id, name, monthly_minutes, monthly_price, allow_overage, overage_rate_cents")
-    .eq("studio_id", instructor.studio_id)
-    .eq("is_active", true)
-    .order("sort_order", { ascending: true });
-
-  const { data: membership } = await supabase
-    .from("instructor_memberships")
-    .select("tier_id, stripe_subscription_id, cancel_at_period_end, current_period_end, instructor_membership_tiers(name, monthly_price, monthly_minutes, allow_overage, overage_rate_cents)")
-    .eq("instructor_id", id)
-    .eq("status", "active")
-    .maybeSingle();
-
-  // Current-month usage so the admin can see "X hr used / Y hr remaining"
-  // without waiting for month-end billing. Sums duration_minutes from
-  // class_sessions taught by this instructor in the current calendar month.
-  // (Cancelled sessions excluded — matches the rental report logic.)
-  let monthlyUsedMinutes = 0;
-  if (membership?.tier_id) {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1;
-    const monthStart = `${year}-${String(month).padStart(2, "0")}-01`;
-    const nextYear = month === 12 ? year + 1 : year;
-    const nextMonth = month === 12 ? 1 : month + 1;
-    const monthEnd = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`;
-
-    const { data: monthSessions } = await supabase
-      .from("class_sessions")
-      .select("duration_minutes")
+  // Batch 2: tiers + membership are independent (both need studio_id/instructor_id)
+  const [{ data: tiers }, { data: membership }] = await Promise.all([
+    supabase
+      .from("instructor_membership_tiers")
+      .select("id, name, monthly_minutes, monthly_price, allow_overage, overage_rate_cents")
+      .eq("studio_id", instructor.studio_id)
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true }),
+    supabase
+      .from("instructor_memberships")
+      .select("tier_id, stripe_subscription_id, cancel_at_period_end, current_period_end, instructor_membership_tiers(name, monthly_price, monthly_minutes, allow_overage, overage_rate_cents)")
       .eq("instructor_id", id)
-      .gte("session_date", monthStart)
-      .lt("session_date", monthEnd)
-      .eq("is_cancelled", false);
+      .eq("status", "active")
+      .maybeSingle(),
+  ]);
 
-    if (monthSessions) {
-      for (const s of monthSessions) {
-        monthlyUsedMinutes += s.duration_minutes ?? 0;
-      }
-    }
-  }
+  // Batch 3: monthly usage + assigned classes/templates (all independent)
+  const now = new Date();
+  const year = now.getFullYear();
+  const mnth = now.getMonth() + 1;
+  const monthStart = `${year}-${String(mnth).padStart(2, "0")}-01`;
+  const nextYear = mnth === 12 ? year + 1 : year;
+  const nextMonth = mnth === 12 ? 1 : mnth + 1;
+  const monthEnd = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`;
 
-  const [{ data: assignedClasses }, { data: assignedTemplates }] = await Promise.all([
+  const [{ data: monthSessions }, { data: assignedClasses }, { data: assignedTemplates }, testAccountInfo] = await Promise.all([
+    membership?.tier_id
+      ? supabase
+          .from("class_sessions")
+          .select("duration_minutes")
+          .eq("instructor_id", id)
+          .gte("session_date", monthStart)
+          .lt("session_date", monthEnd)
+          .eq("is_cancelled", false)
+      : Promise.resolve({ data: null }),
     supabase
       .from("classes")
       .select("id, name, day_of_week, start_time")
@@ -109,7 +101,24 @@ export default async function InstructorDetailPage({
       .eq("instructor_id", id)
       .eq("is_active", true)
       .order("name", { ascending: true }),
+    (async (): Promise<{ email: string; password: string } | null> => {
+      if (!serviceRoleKey) return null;
+      const { data: authData } = await supabase.auth.admin.getUserById(instructor.profile_id);
+      const meta = authData?.user?.user_metadata;
+      if (meta?.is_test_account && meta?.default_password) {
+        const rawProfile = Array.isArray(instructor.profiles) ? (instructor.profiles as any[])[0] : instructor.profiles;
+        return { email: (rawProfile as any)?.email || "", password: meta.default_password as string };
+      }
+      return null;
+    })(),
   ]);
+
+  let monthlyUsedMinutes = 0;
+  if (monthSessions) {
+    for (const s of monthSessions) {
+      monthlyUsedMinutes += s.duration_minutes ?? 0;
+    }
+  }
 
   const profileData = instructor.profiles as {
     full_name?: string;
@@ -119,19 +128,6 @@ export default async function InstructorDetailPage({
   } | null;
   const rawProfile = Array.isArray(profileData) ? profileData[0] : profileData;
   const specialties = instructor.specialties as string[] | null;
-
-  // Check if this is a test account
-  let testAccountInfo: { email: string; password: string } | null = null;
-  if (serviceRoleKey) {
-    const { data: authData } = await supabase.auth.admin.getUserById(instructor.profile_id);
-    const meta = authData?.user?.user_metadata;
-    if (meta?.is_test_account && meta?.default_password) {
-      testAccountInfo = {
-        email: rawProfile?.email || "",
-        password: meta.default_password as string,
-      };
-    }
-  }
 
   return (
     <div>

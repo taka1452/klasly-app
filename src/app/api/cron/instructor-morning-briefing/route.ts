@@ -79,33 +79,62 @@ export async function GET(request: Request) {
       }
     }
 
+    // Batch fetch all data before the loop to avoid N+1 queries
+    const instructorIds = Array.from(byInstructor.keys());
+    const allSessionIds = sessions.map(s => s.id);
+
+    const [{ data: instructorRows }, { data: allTodayBookings }, { data: allPriorSessions }] = await Promise.all([
+      adminDb.from("instructors").select("id, profile_id").in("id", instructorIds),
+      adminDb.from("bookings").select("session_id, member_id, members(current_streak_weeks, profiles(full_name))").in("session_id", allSessionIds).eq("status", "confirmed"),
+      adminDb.from("class_sessions").select("id, instructor_id").in("instructor_id", instructorIds).lt("session_date", todayIso),
+    ]);
+
+    const profileIdMap = new Map<string, string>();
+    for (const inst of instructorRows ?? []) profileIdMap.set(inst.id, inst.profile_id);
+
+    type BookingRow = { session_id: string; member_id: string; members?: { current_streak_weeks?: number | null; profiles?: { full_name?: string | null } | null } | null };
+    const bookingsBySessionId = new Map<string, BookingRow[]>();
+    for (const b of (allTodayBookings ?? []) as BookingRow[]) {
+      if (!bookingsBySessionId.has(b.session_id)) bookingsBySessionId.set(b.session_id, []);
+      bookingsBySessionId.get(b.session_id)!.push(b);
+    }
+
+    const sessionInstructorMap = new Map<string, string>();
+    for (const s of (allPriorSessions ?? []) as Array<{ id: string; instructor_id: string }>) {
+      sessionInstructorMap.set(s.id, s.instructor_id);
+    }
+
+    // Batch fetch prior attended bookings (depends on prior session IDs)
+    const allPriorSessionIds = (allPriorSessions ?? []).map((s: { id: string }) => s.id);
+    const { data: allPriorBookings } = allPriorSessionIds.length > 0
+      ? await adminDb.from("bookings").select("session_id, member_id").in("session_id", allPriorSessionIds).eq("attended", true)
+      : { data: [] };
+
+    const veteransByInstructor = new Map<string, Set<string>>();
+    for (const b of (allPriorBookings ?? []) as Array<{ session_id: string; member_id: string }>) {
+      const instrId = sessionInstructorMap.get(b.session_id);
+      if (instrId) {
+        if (!veteransByInstructor.has(instrId)) veteransByInstructor.set(instrId, new Set());
+        veteransByInstructor.get(instrId)!.add(b.member_id);
+      }
+    }
+
     let totalSent = 0;
 
     for (const [instructorId, info] of Array.from(byInstructor.entries())) {
-      // Profile id for this instructor
-      const { data: inst } = await adminDb
-        .from("instructors")
-        .select("profile_id")
-        .eq("id", instructorId)
-        .maybeSingle();
-      if (!inst?.profile_id) continue;
+      const profileId = profileIdMap.get(instructorId);
+      if (!profileId) continue;
 
-      // Today's confirmed bookings → student set
-      const { data: todayBookings } = await adminDb
-        .from("bookings")
-        .select("member_id, members(current_streak_weeks, profiles(full_name))")
-        .in("session_id", info.sessionIds)
-        .eq("status", "confirmed");
+      // Gather today's bookings from the batch Map
+      const todayBookings: BookingRow[] = [];
+      for (const sid of info.sessionIds) {
+        const bs = bookingsBySessionId.get(sid);
+        if (bs) todayBookings.push(...bs);
+      }
 
       const memberIds = new Set<string>();
       const loyaltyCandidates: Array<{ name: string; streak: number }> = [];
-      for (const b of (todayBookings ?? []) as Array<{
-        member_id: string;
-        members?: {
-          current_streak_weeks?: number | null;
-          profiles?: { full_name?: string | null } | null;
-        } | null;
-      }>) {
+      for (const b of todayBookings) {
         memberIds.add(b.member_id);
         const streak = b.members?.current_streak_weeks ?? 0;
         const name = b.members?.profiles?.full_name;
@@ -114,39 +143,10 @@ export async function GET(request: Request) {
         }
       }
 
-      // Detect "new faces": members who have never attended a session
-      // taught by this instructor before today (no past pass_class_usage
-      // and no prior bookings on this instructor's sessions)
       let newStudentCount = 0;
       if (memberIds.size > 0) {
-        const memberIdList = Array.from(memberIds);
-        const { data: priorSessions } = await adminDb
-          .from("class_sessions")
-          .select("id")
-          .eq("instructor_id", instructorId)
-          .lt("session_date", todayIso);
-        const priorSessionIds = (priorSessions ?? []).map(
-          (s) => (s as { id: string }).id
-        );
-
-        if (priorSessionIds.length === 0) {
-          newStudentCount = memberIdList.length;
-        } else {
-          const { data: priorBookings } = await adminDb
-            .from("bookings")
-            .select("member_id")
-            .in("session_id", priorSessionIds)
-            .eq("attended", true)
-            .in("member_id", memberIdList);
-          const veteranIds = new Set(
-            (priorBookings ?? []).map(
-              (r) => (r as { member_id: string }).member_id
-            )
-          );
-          newStudentCount = memberIdList.filter(
-            (id) => !veteranIds.has(id)
-          ).length;
-        }
+        const veteranIds = veteransByInstructor.get(instructorId) ?? new Set();
+        newStudentCount = Array.from(memberIds).filter(id => !veteranIds.has(id)).length;
       }
 
       let loyaltyHighlight: string | null = null;
@@ -164,7 +164,7 @@ export async function GET(request: Request) {
 
       try {
         const r = await sendPushNotification({
-          profileId: inst.profile_id,
+          profileId,
           studioId: info.studioId,
           type: "instructor_morning_briefing",
           payload,

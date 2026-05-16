@@ -226,71 +226,70 @@ export async function POST(request: Request) {
       .eq("studio_id", studioId);
     const userIdsToDelete = (studioProfiles || []).map((p) => p.id);
 
-    // Delete in order (respecting FK constraints)
-    // 1. Event-related
-    await adminSupabase.from("event_bookings").delete().eq("studio_id", studioId);
-    await adminSupabase.from("events").delete().eq("studio_id", studioId);
+    // Delete in order (respecting FK constraints), parallelized where safe
+    const del = (table: string, col = "studio_id") =>
+      adminSupabase.from(table).delete().eq(col, studioId);
 
-    // 2. Booking & attendance related
-    await adminSupabase.from("drop_in_attendances").delete().eq("studio_id", studioId);
-    await adminSupabase.from("bookings").delete().eq("studio_id", studioId);
-
-    // 3. Payments
-    await adminSupabase.from("payments").delete().eq("studio_id", studioId);
-
-    // 4. Pass subscriptions (depends on members)
+    // Layer 1: leaf tables (no dependents)
     const { data: memberIdsForDelete } = await adminSupabase
       .from("members")
       .select("id")
       .eq("studio_id", studioId);
-    if (memberIdsForDelete && memberIdsForDelete.length > 0) {
-      await adminSupabase
-        .from("pass_subscriptions")
-        .delete()
-        .in("member_id", memberIdsForDelete.map((m) => m.id));
-    }
 
-    // 5. Instructor-related (depends on instructors)
-    await adminSupabase.from("instructor_earnings").delete().eq("studio_id", studioId);
-    await adminSupabase.from("instructor_overage_charges").delete().eq("studio_id", studioId);
-    await adminSupabase.from("instructor_memberships").delete().eq("studio_id", studioId);
-    await adminSupabase.from("instructor_fee_overrides").delete().eq("studio_id", studioId);
-    await adminSupabase.from("soap_notes").delete().eq("studio_id", studioId);
+    await Promise.all([
+      del("event_bookings"),
+      del("drop_in_attendances"),
+      del("payments"),
+      del("instructor_earnings"),
+      del("instructor_overage_charges"),
+      del("instructor_memberships"),
+      del("instructor_fee_overrides"),
+      del("soap_notes"),
+      del("email_logs"),
+      del("messages"),
+      ...(memberIdsForDelete && memberIdsForDelete.length > 0
+        ? [adminSupabase.from("pass_subscriptions").delete().in("member_id", memberIdsForDelete.map((m) => m.id))]
+        : []),
+    ]);
 
-    // 6. Sessions & classes
-    await adminSupabase.from("class_sessions").delete().eq("studio_id", studioId);
-    await adminSupabase.from("classes").delete().eq("studio_id", studioId);
-    await adminSupabase.from("class_templates").delete().eq("studio_id", studioId);
+    // Layer 2: depends on layer 1 being cleared
+    await Promise.all([
+      del("bookings"),
+      del("events"),
+      del("class_sessions"),
+    ]);
 
-    // 7. People
-    await adminSupabase.from("members").delete().eq("studio_id", studioId);
-    await adminSupabase.from("managers").delete().eq("studio_id", studioId);
-    await adminSupabase.from("instructors").delete().eq("studio_id", studioId);
+    // Layer 3: depends on layer 2
+    await Promise.all([
+      del("classes"),
+      del("class_templates"),
+      del("members"),
+      del("managers"),
+      del("instructors"),
+    ]);
 
-    // 8. Studio settings & metadata
-    await adminSupabase.from("instructor_membership_tiers").delete().eq("studio_id", studioId);
-    await adminSupabase.from("instructor_invite_tokens").delete().eq("studio_id", studioId);
-    await adminSupabase.from("studio_features").delete().eq("studio_id", studioId);
-    await adminSupabase.from("widget_settings").delete().eq("studio_id", studioId);
-    await adminSupabase.from("waiver_templates").delete().eq("studio_id", studioId);
-    await adminSupabase.from("products").delete().eq("studio_id", studioId);
-    await adminSupabase.from("referral_codes").delete().eq("studio_id", studioId);
-    await adminSupabase.from("referral_rewards").delete().eq("referrer_studio_id", studioId);
-    await adminSupabase.from("referral_rewards").delete().eq("referred_studio_id", studioId);
-    await adminSupabase.from("email_logs").delete().eq("studio_id", studioId);
-    await adminSupabase.from("rooms").delete().eq("studio_id", studioId);
+    // Layer 4: studio settings & metadata
+    await Promise.all([
+      del("instructor_membership_tiers"),
+      del("instructor_invite_tokens"),
+      del("studio_features"),
+      del("widget_settings"),
+      del("waiver_templates"),
+      del("products"),
+      del("referral_codes"),
+      adminSupabase.from("referral_rewards").delete().eq("referrer_studio_id", studioId),
+      adminSupabase.from("referral_rewards").delete().eq("referred_studio_id", studioId),
+      del("rooms"),
+    ]);
 
-    // 9. Messages — null out sender/recipient before profile deletion to preserve history
-    await adminSupabase.from("messages").delete().eq("studio_id", studioId);
-
-    // 10. Profiles & studio
-    await adminSupabase.from("profiles").delete().eq("studio_id", studioId);
+    // Layer 5: profiles & studio (must be last)
+    await del("profiles");
     await adminSupabase.from("studios").delete().eq("id", studioId);
 
-    // Delete auth users
-    for (const uid of userIdsToDelete) {
-      await adminSupabase.auth.admin.deleteUser(uid);
-    }
+    // Delete auth users (parallelized)
+    await Promise.allSettled(
+      userIdsToDelete.map((uid) => adminSupabase.auth.admin.deleteUser(uid)),
+    );
 
     // Sign out the current user
     await serverSupabase.auth.signOut();

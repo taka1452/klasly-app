@@ -62,12 +62,19 @@ export async function GET(request: Request) {
     const stripe = getStripe();
     const today = new Date().toISOString().slice(0, 10);
 
-    // Get all pending installments due today or earlier
+    // Get all pending installments with related data in a single join query
     const { data: dueInstallments } = await supabase
       .from("event_payment_schedule")
-      .select(
-        "id, event_booking_id, installment_number, amount_cents, stripe_payment_method_id, due_date",
-      )
+      .select(`
+        id, event_booking_id, installment_number, amount_cents, stripe_payment_method_id, due_date,
+        event_bookings(
+          id, event_id, guest_name, guest_email, total_amount_cents,
+          events(
+            id, name, studio_id, instructor_id, start_date, end_date, location_name,
+            studios(id, name, payout_model, studio_fee_percentage, stripe_connect_account_id, currency)
+          )
+        )
+      `)
       .eq("status", "pending")
       .lte("due_date", today)
       .order("due_date");
@@ -77,8 +84,34 @@ export async function GET(request: Request) {
       return NextResponse.json({ processed: 0, failed: 0 });
     }
 
+    // Fetch platform fee once (shared across all installments)
+    const { data: feeRow } = await supabase
+      .from("platform_settings")
+      .select("value")
+      .eq("key", "platform_fee_percent")
+      .single();
+    const platformFeePercent = parseFloat(feeRow?.value ?? "0") / 100;
+
+    // Batch fetch instructors for collective-mode events
+    const instructorIds = Array.from(
+      new Set<string>(
+        dueInstallments
+          .map((i) => (i.event_bookings as any)?.events?.instructor_id)
+          .filter(Boolean),
+      ),
+    );
+    const instructorMap = new Map<string, { stripe_account_id: string | null; stripe_onboarding_complete: boolean }>();
+    if (instructorIds.length > 0) {
+      const { data: instructors } = await supabase
+        .from("instructors")
+        .select("id, stripe_account_id, stripe_onboarding_complete")
+        .in("id", instructorIds);
+      for (const inst of instructors ?? []) {
+        instructorMap.set(inst.id, inst);
+      }
+    }
+
     for (const installment of dueInstallments) {
-      // Skip installment #1 (paid at checkout)
       if (installment.installment_number === 1) continue;
 
       if (!installment.stripe_payment_method_id) {
@@ -90,61 +123,25 @@ export async function GET(request: Request) {
       }
 
       try {
-        // Get booking + event for Stripe account
-        const { data: booking } = await supabase
-          .from("event_bookings")
-          .select("id, event_id, guest_name, guest_email, total_amount_cents")
-          .eq("id", installment.event_booking_id)
-          .single();
-
+        const booking = installment.event_bookings as any;
         if (!booking) continue;
-
-        const { data: event } = await supabase
-          .from("events")
-          .select("id, name, studio_id, instructor_id, start_date, end_date, location_name")
-          .eq("id", booking.event_id)
-          .single();
-
+        const event = booking.events;
         if (!event) continue;
-
-        const { data: studio } = await supabase
-          .from("studios")
-          .select(
-            "id, name, payout_model, studio_fee_percentage, stripe_connect_account_id, currency",
-          )
-          .eq("id", event.studio_id)
-          .single();
-
+        const studio = event.studios;
         if (!studio?.stripe_connect_account_id) continue;
 
-        // Determine destination
         let stripeAccountId = studio.stripe_connect_account_id;
-        let applicationFee = 0;
-
-        // Platform fee
-        const { data: feeRow } = await supabase
-          .from("platform_settings")
-          .select("value")
-          .eq("key", "platform_fee_percent")
-          .single();
-        const platformFeePercent = parseFloat(feeRow?.value ?? "0") / 100;
         const platformFee =
           platformFeePercent > 0
             ? Math.round(installment.amount_cents * platformFeePercent)
             : 0;
-        applicationFee = platformFee;
+        let applicationFee = platformFee;
 
-        // Collective Mode
         if (
           studio.payout_model === "instructor_direct" &&
           event.instructor_id
         ) {
-          const { data: instructor } = await supabase
-            .from("instructors")
-            .select("stripe_account_id, stripe_onboarding_complete")
-            .eq("id", event.instructor_id)
-            .single();
-
+          const instructor = instructorMap.get(event.instructor_id);
           if (
             instructor?.stripe_account_id &&
             instructor.stripe_onboarding_complete
@@ -158,8 +155,6 @@ export async function GET(request: Request) {
           }
         }
 
-        // Create off-session PaymentIntent
-        // First, find or create a customer for the payment method on this connected account
         const pi = await stripe.paymentIntents.create(
           {
             amount: installment.amount_cents,
@@ -259,72 +254,67 @@ export async function GET(request: Request) {
 
         const totalFails = failCount ?? 1;
 
-        // Get booking info for notifications
-        const { data: booking } = await supabase
-          .from("event_bookings")
-          .select("guest_name, guest_email, event_id")
-          .eq("id", installment.event_booking_id)
-          .single();
-
-        const { data: event } = booking
-          ? await supabase
-              .from("events")
-              .select("name, studio_id")
-              .eq("id", booking.event_id)
-              .single()
-          : { data: null };
+        // Reuse already-fetched booking/event data from the join query
+        const errBooking = installment.event_bookings as any;
+        const errEvent = errBooking?.events;
 
         if (totalFails < 3) {
-          // Reset to pending for retry on next cron run
           await supabase
             .from("event_payment_schedule")
             .update({ status: "pending" })
             .eq("id", installment.id);
         }
 
-        if (totalFails >= 3 && booking && event) {
-          // Notify owner
+        if (totalFails >= 3 && errBooking && errEvent) {
+          const studioId = errEvent.studio_id;
           const { data: ownerProfile } = await supabase
             .from("profiles")
             .select("id, email")
-            .eq("studio_id", event.studio_id)
+            .eq("studio_id", studioId)
             .eq("role", "owner")
             .limit(1)
             .single();
 
+          const emailPromises: Promise<unknown>[] = [];
+
           if (ownerProfile?.email) {
             const ownerEmail = ownerInstallmentFailedNotification({
               ownerName: "Studio Owner",
-              guestName: booking.guest_name || "Guest",
-              guestEmail: booking.guest_email,
-              eventName: event.name,
+              guestName: errBooking.guest_name || "Guest",
+              guestEmail: errBooking.guest_email,
+              eventName: errEvent.name,
               amount: installment.amount_cents,
               failCount: totalFails,
             });
-            await sendEmail({
-              to: ownerProfile.email,
-              subject: ownerEmail.subject,
-              html: ownerEmail.html,
-              studioId: event.studio_id,
-              templateName: "owner_installment_failed",
-            });
+            emailPromises.push(
+              sendEmail({
+                to: ownerProfile.email,
+                subject: ownerEmail.subject,
+                html: ownerEmail.html,
+                studioId,
+                templateName: "owner_installment_failed",
+              }),
+            );
           }
 
-          // Notify guest
-          if (booking.guest_email) {
+          if (errBooking.guest_email) {
             const guestMail = installmentPaymentFailed({
-              guestName: booking.guest_name || "Guest",
-              eventName: event.name,
+              guestName: errBooking.guest_name || "Guest",
+              eventName: errEvent.name,
               amount: installment.amount_cents,
             });
-            await sendEmail({
-              to: booking.guest_email,
-              subject: guestMail.subject,
-              html: guestMail.html,
-              studioId: event.studio_id,
-              templateName: "installment_payment_failed",
-            });
+            emailPromises.push(
+              sendEmail({
+                to: errBooking.guest_email,
+                subject: guestMail.subject,
+                html: guestMail.html,
+                studioId,
+                templateName: "installment_payment_failed",
+              }),
+            );
           }
+
+          await Promise.allSettled(emailPromises);
         }
 
         failed++;

@@ -24,31 +24,32 @@ export async function GET(
     serviceRoleKey,
   );
 
-  const { data: event } = await supabase
-    .from("events")
-    .select(
-      "id, name, studio_id, start_date, end_date, location_name, payment_type, installment_count, cancellation_policy_text, application_fields",
-    )
-    .eq("id", eventId)
-    .eq("status", "published")
-    .single();
+  // Event + options both use eventId from params — parallelize
+  const [{ data: event }, { data: options }] = await Promise.all([
+    supabase
+      .from("events")
+      .select(
+        "id, name, studio_id, start_date, end_date, location_name, payment_type, installment_count, cancellation_policy_text, application_fields",
+      )
+      .eq("id", eventId)
+      .eq("status", "published")
+      .single(),
+    supabase
+      .from("event_options")
+      .select("id, name, description, price_cents, capacity, is_active, early_bird_price_cents, early_bird_deadline")
+      .eq("event_id", eventId)
+      .eq("is_active", true)
+      .order("sort_order"),
+  ]);
 
   if (!event) {
     return NextResponse.json({ error: "Event not found" }, { status: 404 });
   }
 
-  // Feature flag check
   const retreatEnabled = await isFeatureEnabled(event.studio_id, FEATURE_KEYS.RETREAT_BOOKING);
   if (!retreatEnabled) {
     return NextResponse.json({ error: "Feature not available" }, { status: 404 });
   }
-
-  const { data: options } = await supabase
-    .from("event_options")
-    .select("id, name, description, price_cents, capacity, is_active, early_bird_price_cents, early_bird_deadline")
-    .eq("event_id", eventId)
-    .eq("is_active", true)
-    .order("sort_order");
 
   const optionIds = (options || []).map((o) => o.id);
   const { data: bookings } =

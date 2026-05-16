@@ -152,21 +152,11 @@ export async function POST(request: Request) {
             }
           }
 
-          const { data: memberProfile } = await adminSupabase
-            .from("members")
-            .select("profiles(full_name, email)")
-            .eq("id", memberId)
-            .single();
-          const { data: studioData } = await adminSupabase
-            .from("studios")
-            .select("name")
-            .eq("id", studioId)
-            .single();
-          const { data: productRow } = await adminSupabase
-            .from("products")
-            .select("name")
-            .eq("id", productId)
-            .single();
+          const [{ data: memberProfile }, { data: studioData }, { data: productRow }] = await Promise.all([
+            adminSupabase.from("members").select("profiles(full_name, email)").eq("id", memberId).single(),
+            adminSupabase.from("studios").select("name").eq("id", studioId).single(),
+            adminSupabase.from("products").select("name").eq("id", productId).single(),
+          ]);
           const memberProf = (memberProfile as { profiles?: { full_name?: string; email?: string } })?.profiles;
           const prof = Array.isArray(memberProf) ? memberProf[0] : memberProf;
           const toEmail = prof?.email;
@@ -412,15 +402,13 @@ export async function POST(request: Request) {
             paid_at: new Date().toISOString(),
           });
 
-          const { data: passStudio } = await adminSupabase.from("studios").select("name").eq("id", passSubPaid.studio_id).single();
+          const [{ data: passStudio }, { data: passMemberProf }, { data: passOwnerPaid }] = await Promise.all([
+            adminSupabase.from("studios").select("name").eq("id", passSubPaid.studio_id).single(),
+            adminSupabase.from("members").select("profiles(full_name, email)").eq("id", passSubPaid.member_id).single(),
+            adminSupabase.from("profiles").select("full_name, email").eq("studio_id", passSubPaid.studio_id).eq("role", "owner").limit(1).single(),
+          ]);
           const passStudioName = passStudio?.name ?? "Studio";
           const passName = (passSubPaid.studio_passes as { name?: string } | null)?.name ?? "Pass subscription";
-
-          const { data: passMemberProf } = await adminSupabase
-            .from("members")
-            .select("profiles(full_name, email)")
-            .eq("id", passSubPaid.member_id)
-            .single();
           const pmp = (passMemberProf as { profiles?: { full_name?: string; email?: string } })?.profiles;
           const pmpf = Array.isArray(pmp) ? pmp[0] : pmp;
 
@@ -428,8 +416,6 @@ export async function POST(request: Request) {
             const receipt = paymentReceipt({ memberName: pmpf.full_name ?? "Member", amount: invoice.amount_paid, description: passName, studioName: passStudioName });
             await sendEmail({ to: pmpf.email, subject: receipt.subject, html: receipt.html, studioId: passSubPaid.studio_id, templateName: "payment_receipt" });
           }
-
-          const { data: passOwnerPaid } = await adminSupabase.from("profiles").select("full_name, email").eq("studio_id", passSubPaid.studio_id).eq("role", "owner").limit(1).single();
           if (passOwnerPaid?.email) {
             const notice = memberPaymentSuccessOwnerNotice({
               ownerName: passOwnerPaid.full_name ?? "Studio Owner",
@@ -463,15 +449,13 @@ export async function POST(request: Request) {
             paid_at: new Date().toISOString(),
           });
 
-          const { data: instrStudio } = await adminSupabase.from("studios").select("name").eq("id", instrMemPaid.studio_id).single();
+          const [{ data: instrStudio }, { data: instrProfile }, { data: instrOwnerPaid }] = await Promise.all([
+            adminSupabase.from("studios").select("name").eq("id", instrMemPaid.studio_id).single(),
+            adminSupabase.from("instructors").select("profiles(full_name, email)").eq("id", instrMemPaid.instructor_id).single(),
+            adminSupabase.from("profiles").select("full_name, email").eq("studio_id", instrMemPaid.studio_id).eq("role", "owner").limit(1).single(),
+          ]);
           const instrStudioName = instrStudio?.name ?? "Studio";
           const tierName = (instrMemPaid.instructor_membership_tiers as { name?: string } | null)?.name ?? "Instructor membership";
-
-          const { data: instrProfile } = await adminSupabase
-            .from("instructors")
-            .select("profiles(full_name, email)")
-            .eq("id", instrMemPaid.instructor_id)
-            .single();
           const ip = (instrProfile as { profiles?: { full_name?: string; email?: string } })?.profiles;
           const ipf = Array.isArray(ip) ? ip[0] : ip;
 
@@ -479,8 +463,6 @@ export async function POST(request: Request) {
             const receipt = paymentReceipt({ memberName: ipf.full_name ?? "Instructor", amount: invoice.amount_paid, description: tierName, studioName: instrStudioName });
             await sendEmail({ to: ipf.email, subject: receipt.subject, html: receipt.html, studioId: instrMemPaid.studio_id, templateName: "payment_receipt" });
           }
-
-          const { data: instrOwnerPaid } = await adminSupabase.from("profiles").select("full_name, email").eq("studio_id", instrMemPaid.studio_id).eq("role", "owner").limit(1).single();
           if (instrOwnerPaid?.email) {
             const notice = memberPaymentSuccessOwnerNotice({
               ownerName: instrOwnerPaid.full_name ?? "Studio Owner",
@@ -519,18 +501,10 @@ export async function POST(request: Request) {
             paid_at: new Date().toISOString(),
           });
 
-          const { data: ownerProfile } = await adminSupabase
-            .from("profiles")
-            .select("full_name, email")
-            .eq("studio_id", studio.id)
-            .eq("role", "owner")
-            .limit(1)
-            .single();
-          const { data: studioData } = await adminSupabase
-            .from("studios")
-            .select("name")
-            .eq("id", studio.id)
-            .single();
+          const [{ data: ownerProfile }, { data: studioData }] = await Promise.all([
+            adminSupabase.from("profiles").select("full_name, email").eq("studio_id", studio.id).eq("role", "owner").limit(1).single(),
+            adminSupabase.from("studios").select("name").eq("id", studio.id).single(),
+          ]);
           if (ownerProfile?.email) {
             const { subject, html } = paymentReceipt({
               memberName: ownerProfile.full_name ?? "Studio Owner",
@@ -692,16 +666,11 @@ export async function POST(request: Request) {
             paid_at: new Date().toISOString(),
           });
 
-          const { data: prof } = await adminSupabase
-            .from("members")
-            .select("profiles(full_name, email)")
-            .eq("id", member.id)
-            .single();
-          const { data: studioData } = await adminSupabase
-            .from("studios")
-            .select("name")
-            .eq("id", member.studio_id)
-            .single();
+          const [{ data: prof }, { data: studioData }, { data: ownerForMemberPaid }] = await Promise.all([
+            adminSupabase.from("members").select("profiles(full_name, email)").eq("id", member.id).single(),
+            adminSupabase.from("studios").select("name").eq("id", member.studio_id).single(),
+            adminSupabase.from("profiles").select("full_name, email").eq("studio_id", member.studio_id).eq("role", "owner").limit(1).single(),
+          ]);
           const p = (prof as { profiles?: { full_name?: string; email?: string } })?.profiles;
           const pf = Array.isArray(p) ? p[0] : p;
           const memberName = pf?.full_name ?? "Member";
@@ -723,15 +692,6 @@ export async function POST(request: Request) {
               templateName: "payment_receipt",
             });
           }
-
-          // Notify studio owner of member payment
-          const { data: ownerForMemberPaid } = await adminSupabase
-            .from("profiles")
-            .select("full_name, email")
-            .eq("studio_id", member.studio_id)
-            .eq("role", "owner")
-            .limit(1)
-            .single();
           if (ownerForMemberPaid?.email) {
             const notice = memberPaymentSuccessOwnerNotice({
               ownerName: ownerForMemberPaid.full_name ?? "Studio Owner",
@@ -781,19 +741,13 @@ export async function POST(request: Request) {
             .eq("id", passSubFailed.id)
             .single();
           if (passSubDetail) {
-            const { data: passStudioData } = await adminSupabase
-              .from("studios")
-              .select("name")
-              .eq("id", passSubDetail.studio_id)
-              .single();
+            const [{ data: passStudioData }, { data: passMemberProf }, { data: passOwner }] = await Promise.all([
+              adminSupabase.from("studios").select("name").eq("id", passSubDetail.studio_id).single(),
+              adminSupabase.from("members").select("profiles(full_name, email)").eq("id", passSubDetail.member_id).single(),
+              adminSupabase.from("profiles").select("full_name, email").eq("studio_id", passSubDetail.studio_id).eq("role", "owner").limit(1).single(),
+            ]);
             const passStudioName = passStudioData?.name ?? "Studio";
             const passName = (passSubDetail.studio_passes as { name?: string } | null)?.name ?? "Pass subscription";
-
-            const { data: passMemberProf } = await adminSupabase
-              .from("members")
-              .select("profiles(full_name, email)")
-              .eq("id", passSubDetail.member_id)
-              .single();
             const pm = (passMemberProf as { profiles?: { full_name?: string; email?: string } })?.profiles;
             const pmf = Array.isArray(pm) ? pm[0] : pm;
 
@@ -805,15 +759,6 @@ export async function POST(request: Request) {
               });
               await sendEmail({ to: pmf.email, subject: email.subject, html: email.html, studioId: passSubDetail.studio_id, templateName: "payment_failed" });
             }
-
-            // Notify studio owner
-            const { data: passOwner } = await adminSupabase
-              .from("profiles")
-              .select("full_name, email")
-              .eq("studio_id", passSubDetail.studio_id)
-              .eq("role", "owner")
-              .limit(1)
-              .single();
             if (passOwner?.email) {
               const notice = memberPaymentFailedOwnerNotice({
                 ownerName: passOwner.full_name ?? "Studio Owner",
@@ -847,15 +792,13 @@ export async function POST(request: Request) {
             payment_type: "instructor_membership",
           });
 
-          const { data: instrFailedStudio } = await adminSupabase.from("studios").select("name").eq("id", instrMemFailed.studio_id).single();
+          const [{ data: instrFailedStudio }, { data: instrFailedProfile }, { data: instrFailedOwner }] = await Promise.all([
+            adminSupabase.from("studios").select("name").eq("id", instrMemFailed.studio_id).single(),
+            adminSupabase.from("instructors").select("profiles(full_name, email)").eq("id", instrMemFailed.instructor_id).single(),
+            adminSupabase.from("profiles").select("full_name, email").eq("studio_id", instrMemFailed.studio_id).eq("role", "owner").limit(1).single(),
+          ]);
           const instrFailedStudioName = instrFailedStudio?.name ?? "Studio";
           const instrFailedTierName = (instrMemFailed.instructor_membership_tiers as { name?: string } | null)?.name ?? "Instructor membership";
-
-          const { data: instrFailedProfile } = await adminSupabase
-            .from("instructors")
-            .select("profiles(full_name, email)")
-            .eq("id", instrMemFailed.instructor_id)
-            .single();
           const ifp = (instrFailedProfile as { profiles?: { full_name?: string; email?: string } })?.profiles;
           const ifpf = Array.isArray(ifp) ? ifp[0] : ifp;
 
@@ -863,8 +806,6 @@ export async function POST(request: Request) {
             const email = paymentFailed({ memberName: ifpf.full_name ?? "Instructor", amount: invoice.amount_due, studioName: instrFailedStudioName });
             await sendEmail({ to: ifpf.email, subject: email.subject, html: email.html, studioId: instrMemFailed.studio_id, templateName: "payment_failed" });
           }
-
-          const { data: instrFailedOwner } = await adminSupabase.from("profiles").select("full_name, email").eq("studio_id", instrMemFailed.studio_id).eq("role", "owner").limit(1).single();
           if (instrFailedOwner?.email) {
             const notice = memberPaymentFailedOwnerNotice({
               ownerName: instrFailedOwner.full_name ?? "Studio Owner",
@@ -910,18 +851,10 @@ export async function POST(request: Request) {
             payment_type: "subscription",
           });
 
-          const { data: ownerProfile } = await adminSupabase
-            .from("profiles")
-            .select("full_name, email")
-            .eq("studio_id", studio.id)
-            .eq("role", "owner")
-            .limit(1)
-            .single();
-          const { data: studioData } = await adminSupabase
-            .from("studios")
-            .select("name")
-            .eq("id", studio.id)
-            .single();
+          const [{ data: ownerProfile }, { data: studioData }] = await Promise.all([
+            adminSupabase.from("profiles").select("full_name, email").eq("studio_id", studio.id).eq("role", "owner").limit(1).single(),
+            adminSupabase.from("studios").select("name").eq("id", studio.id).single(),
+          ]);
           if (ownerProfile?.email) {
             const { subject, html } = paymentFailed({
               memberName: ownerProfile.full_name ?? "Studio Owner",
@@ -957,16 +890,11 @@ export async function POST(request: Request) {
             payment_type: "monthly",
           });
 
-          const { data: prof } = await adminSupabase
-            .from("members")
-            .select("profiles(full_name, email)")
-            .eq("id", member.id)
-            .single();
-          const { data: studioData } = await adminSupabase
-            .from("studios")
-            .select("name")
-            .eq("id", member.studio_id)
-            .single();
+          const [{ data: prof }, { data: studioData }, { data: ownerForMemberFailed }] = await Promise.all([
+            adminSupabase.from("members").select("profiles(full_name, email)").eq("id", member.id).single(),
+            adminSupabase.from("studios").select("name").eq("id", member.studio_id).single(),
+            adminSupabase.from("profiles").select("full_name, email").eq("studio_id", member.studio_id).eq("role", "owner").limit(1).single(),
+          ]);
           const p = (prof as { profiles?: { full_name?: string; email?: string } })?.profiles;
           const pf = Array.isArray(p) ? p[0] : p;
           const failedMemberName = pf?.full_name ?? "Member";
@@ -987,15 +915,6 @@ export async function POST(request: Request) {
               templateName: "payment_failed",
             });
           }
-
-          // Notify studio owner of member payment failure
-          const { data: ownerForMemberFailed } = await adminSupabase
-            .from("profiles")
-            .select("full_name, email")
-            .eq("studio_id", member.studio_id)
-            .eq("role", "owner")
-            .limit(1)
-            .single();
           if (ownerForMemberFailed?.email) {
             const notice = memberPaymentFailedOwnerNotice({
               ownerName: ownerForMemberFailed.full_name ?? "Studio Owner",
@@ -1100,36 +1019,18 @@ export async function POST(request: Request) {
         const payoutsEnabled = account.payouts_enabled ?? false;
         const onboardingComplete = chargesEnabled && payoutsEnabled;
 
-        // Check if this is an instructor account
-        const { data: inst } = await adminSupabase
-          .from("instructors")
-          .select("id, stripe_onboarding_complete")
-          .eq("stripe_account_id", accountId)
-          .maybeSingle();
+        const [{ data: inst }, { data: studioAcct }] = await Promise.all([
+          adminSupabase.from("instructors").select("id, stripe_onboarding_complete").eq("stripe_account_id", accountId).maybeSingle(),
+          adminSupabase.from("studios").select("id, stripe_connect_onboarding_complete").eq("stripe_connect_account_id", accountId).maybeSingle(),
+        ]);
 
         if (inst) {
           if (onboardingComplete !== inst.stripe_onboarding_complete) {
-            await adminSupabase
-              .from("instructors")
-              .update({ stripe_onboarding_complete: onboardingComplete })
-              .eq("id", inst.id);
+            await adminSupabase.from("instructors").update({ stripe_onboarding_complete: onboardingComplete }).eq("id", inst.id);
           }
-          break;
-        }
-
-        // Check if this is a studio account
-        const { data: studioAcct } = await adminSupabase
-          .from("studios")
-          .select("id, stripe_connect_onboarding_complete")
-          .eq("stripe_connect_account_id", accountId)
-          .maybeSingle();
-
-        if (studioAcct) {
+        } else if (studioAcct) {
           if (onboardingComplete !== studioAcct.stripe_connect_onboarding_complete) {
-            await adminSupabase
-              .from("studios")
-              .update({ stripe_connect_onboarding_complete: onboardingComplete })
-              .eq("id", studioAcct.id);
+            await adminSupabase.from("studios").update({ stripe_connect_onboarding_complete: onboardingComplete }).eq("id", studioAcct.id);
           }
         }
         break;
@@ -1191,24 +1092,11 @@ async function handlePassSubscriptionCheckout(
   const stripeId = subscriptionId || paymentIntentId;
   if (!memberId || !studioPassId || !stripeId) return;
 
-  // Check if record already exists (idempotency)
-  const { data: existing } = await adminSupabase
-    .from("pass_subscriptions")
-    .select("id")
-    .eq("stripe_subscription_id", stripeId)
-    .maybeSingle();
-
-  if (existing) return;
-
-  // Also check for any active subscription to the same pass by this member
-  const { data: activeDup } = await adminSupabase
-    .from("pass_subscriptions")
-    .select("id")
-    .eq("member_id", memberId)
-    .eq("studio_pass_id", studioPassId)
-    .eq("status", "active")
-    .maybeSingle();
-  if (activeDup) return;
+  const [{ data: existing }, { data: activeDup }] = await Promise.all([
+    adminSupabase.from("pass_subscriptions").select("id").eq("stripe_subscription_id", stripeId).maybeSingle(),
+    adminSupabase.from("pass_subscriptions").select("id").eq("member_id", memberId).eq("studio_pass_id", studioPassId).eq("status", "active").maybeSingle(),
+  ]);
+  if (existing || activeDup) return;
 
   const connectedAccountId = (session as Stripe.Checkout.Session & { account?: string }).account;
   const expiresOn = session.metadata?.expires_on;
@@ -1456,30 +1344,15 @@ async function handleInstructorDirectPayout(
 
   // 6. Send email notification to instructor
   try {
-    const { data: instructorData } = await adminSupabase
-      .from("instructors")
-      .select("profile_id")
-      .eq("id", instructorId)
-      .single();
+    const [{ data: instructorData }, { data: classSession }, { data: studioData }] = await Promise.all([
+      adminSupabase.from("instructors").select("profile_id, profiles(full_name, email)").eq("id", instructorId).single(),
+      adminSupabase.from("class_sessions").select("session_date, start_time, title, classes(name)").eq("id", sessionId).single(),
+      adminSupabase.from("studios").select("name").eq("id", studioId).single(),
+    ]);
 
     if (instructorData) {
-      const { data: instProfile } = await adminSupabase
-        .from("profiles")
-        .select("full_name, email")
-        .eq("id", instructorData.profile_id)
-        .single();
-
-      const { data: classSession } = await adminSupabase
-        .from("class_sessions")
-        .select("session_date, start_time, title, classes(name)")
-        .eq("id", sessionId)
-        .single();
-
-      const { data: studioData } = await adminSupabase
-        .from("studios")
-        .select("name")
-        .eq("id", studioId)
-        .single();
+      const rawProf = Array.isArray(instructorData.profiles) ? (instructorData.profiles as { full_name?: string; email?: string }[])[0] : instructorData.profiles as { full_name?: string; email?: string } | null;
+      const instProfile = rawProf ?? null;
 
       if (instProfile?.email) {
         const cls = classSession as { session_date?: string; start_time?: string; title?: string; classes?: { name?: string } | null } | null;
@@ -1626,27 +1499,12 @@ async function handleEventBookingCheckout(
   if (paymentIntentId) {
     try {
       const stripeClient = stripe;
-      // Retrieve PI from connected account
-      const { data: booking } = await supabase
-        .from("event_bookings")
-        .select("event_id")
-        .eq("id", bookingId)
-        .single();
-
-      const { data: eventData } = booking
-        ? await supabase
-            .from("events")
-            .select("studio_id")
-            .eq("id", booking.event_id)
-            .single()
-        : { data: null };
-
       let connAcct: string | undefined;
-      if (eventData?.studio_id) {
+      if (studioId) {
         const { data: studioData } = await supabase
           .from("studios")
           .select("stripe_connect_account_id")
-          .eq("id", eventData.studio_id)
+          .eq("id", studioId)
           .single();
         connAcct = studioData?.stripe_connect_account_id ?? undefined;
       }
@@ -1662,54 +1520,31 @@ async function handleEventBookingCheckout(
   }
 
   if (paymentType === "installment") {
-    // Update first installment as paid
-    await supabase
-      .from("event_payment_schedule")
-      .update({
-        status: "paid",
-        paid_at: new Date().toISOString(),
-        stripe_payment_intent_id: paymentIntentId,
-      })
-      .eq("event_booking_id", bookingId)
-      .eq("installment_number", 1);
-
-    // Save payment method to ALL schedule records for future off-session charges
+    const now = new Date().toISOString();
+    const installmentUpdates: PromiseLike<unknown>[] = [
+      supabase.from("event_payment_schedule").update({
+        status: "paid", paid_at: now, stripe_payment_intent_id: paymentIntentId,
+      }).eq("event_booking_id", bookingId).eq("installment_number", 1),
+      supabase.from("event_bookings").update({
+        booking_status: "confirmed", payment_status: "partial", updated_at: now,
+      }).eq("id", bookingId),
+    ];
     if (paymentMethodId) {
-      await supabase
-        .from("event_payment_schedule")
-        .update({ stripe_payment_method_id: paymentMethodId })
-        .eq("event_booking_id", bookingId);
+      installmentUpdates.push(
+        supabase.from("event_payment_schedule").update({ stripe_payment_method_id: paymentMethodId }).eq("event_booking_id", bookingId)
+      );
     }
-
-    // Update booking: confirmed + partial
-    await supabase
-      .from("event_bookings")
-      .update({
-        booking_status: "confirmed",
-        payment_status: "partial",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", bookingId);
+    await Promise.all(installmentUpdates);
   } else {
-    // Full payment
-    await supabase
-      .from("event_payment_schedule")
-      .update({
-        status: "paid",
-        paid_at: new Date().toISOString(),
-        stripe_payment_intent_id: paymentIntentId,
-      })
-      .eq("event_booking_id", bookingId)
-      .eq("installment_number", 1);
-
-    await supabase
-      .from("event_bookings")
-      .update({
-        booking_status: "confirmed",
-        payment_status: "fully_paid",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", bookingId);
+    const now = new Date().toISOString();
+    await Promise.all([
+      supabase.from("event_payment_schedule").update({
+        status: "paid", paid_at: now, stripe_payment_intent_id: paymentIntentId,
+      }).eq("event_booking_id", bookingId).eq("installment_number", 1),
+      supabase.from("event_bookings").update({
+        booking_status: "confirmed", payment_status: "fully_paid", updated_at: now,
+      }).eq("id", bookingId),
+    ]);
   }
 
   // Record discount redemption + bump used_count. metadata is stamped by
@@ -1742,46 +1577,34 @@ async function handleEventBookingCheckout(
 
   // Send confirmation email + owner notification
   try {
-    const { data: bookingData } = await supabase
-      .from("event_bookings")
-      .select("guest_name, guest_email, total_amount_cents, payment_type, event_option_id")
-      .eq("id", bookingId)
-      .single();
+    const [{ data: bookingData }, eventResult, studioResult] = await Promise.all([
+      supabase.from("event_bookings").select("guest_name, guest_email, total_amount_cents, payment_type, event_option_id").eq("id", bookingId).single(),
+      eventId
+        ? supabase.from("events").select("name, start_date, end_date, location_name, installment_count, studio_id, cancellation_policy_text, confirmation_subject_override, confirmation_body_override").eq("id", eventId).single()
+        : Promise.resolve({ data: null }),
+      studioId
+        ? supabase.from("studios").select("name, event_confirmation_subject, event_confirmation_body").eq("id", studioId).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
+    const eventData = eventResult?.data ?? null;
+    const studioRow = studioResult?.data ?? null;
 
-    const { data: eventData } = eventId
-      ? await supabase
-          .from("events")
-          .select("name, start_date, end_date, location_name, installment_count, studio_id, cancellation_policy_text, confirmation_subject_override, confirmation_body_override")
-          .eq("id", eventId)
-          .single()
-      : { data: null };
-
-    // Resolve confirmation email overrides: per-event override beats
-    // studio-wide default. Studio defaults sit on studios.event_*.
     let eventOverrideSubject: string | null =
       (eventData as { confirmation_subject_override?: string | null } | null)
         ?.confirmation_subject_override || null;
     let eventOverrideBody: string | null =
       (eventData as { confirmation_body_override?: string | null } | null)
         ?.confirmation_body_override || null;
-    let resolvedStudioName: string | undefined;
-    if (studioId) {
-      const { data: studioRow } = await supabase
-        .from("studios")
-        .select("name, event_confirmation_subject, event_confirmation_body")
-        .eq("id", studioId)
-        .maybeSingle();
-      resolvedStudioName = (studioRow as { name?: string } | null)?.name;
-      if (!eventOverrideSubject) {
-        eventOverrideSubject =
-          (studioRow as { event_confirmation_subject?: string | null } | null)
-            ?.event_confirmation_subject || null;
-      }
-      if (!eventOverrideBody) {
-        eventOverrideBody =
-          (studioRow as { event_confirmation_body?: string | null } | null)
-            ?.event_confirmation_body || null;
-      }
+    const resolvedStudioName = (studioRow as { name?: string } | null)?.name;
+    if (!eventOverrideSubject) {
+      eventOverrideSubject =
+        (studioRow as { event_confirmation_subject?: string | null } | null)
+          ?.event_confirmation_subject || null;
+    }
+    if (!eventOverrideBody) {
+      eventOverrideBody =
+        (studioRow as { event_confirmation_body?: string | null } | null)
+          ?.event_confirmation_body || null;
     }
 
     if (bookingData?.guest_email && eventData) {
@@ -1799,29 +1622,11 @@ async function handleEventBookingCheckout(
       const policySummary = eventData.cancellation_policy_text || "";
 
       if (paymentType === "installment") {
-        // Get next pending schedule
-        const { data: nextSchedule } = await supabase
-          .from("event_payment_schedule")
-          .select("amount_cents, due_date")
-          .eq("event_booking_id", bookingId)
-          .eq("status", "pending")
-          .order("installment_number")
-          .limit(1)
-          .single();
-
-        const { count: remainingCount } = await supabase
-          .from("event_payment_schedule")
-          .select("id", { count: "exact", head: true })
-          .eq("event_booking_id", bookingId)
-          .eq("status", "pending");
-
-        // Get first installment amount (what was just paid)
-        const { data: firstSchedule } = await supabase
-          .from("event_payment_schedule")
-          .select("amount_cents")
-          .eq("event_booking_id", bookingId)
-          .eq("installment_number", 1)
-          .single();
+        const [{ data: nextSchedule }, { count: remainingCount }, { data: firstSchedule }] = await Promise.all([
+          supabase.from("event_payment_schedule").select("amount_cents, due_date").eq("event_booking_id", bookingId).eq("status", "pending").order("installment_number").limit(1).single(),
+          supabase.from("event_payment_schedule").select("id", { count: "exact", head: true }).eq("event_booking_id", bookingId).eq("status", "pending"),
+          supabase.from("event_payment_schedule").select("amount_cents").eq("event_booking_id", bookingId).eq("installment_number", 1).single(),
+        ]);
 
         const email = eventBookingConfirmedInstallment({
           guestName: bookingData.guest_name || "Guest",

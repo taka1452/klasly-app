@@ -33,52 +33,53 @@ export default async function ClassDetailPage({
       )
     : serverSupabase;
 
-  const { data: cls } = await supabase
-    .from("class_templates")
-    .select("*, instructors(profiles(full_name))")
-    .eq("id", id)
-    .single();
-
-  const { data: instructors } = await supabase
-    .from("instructors")
-    .select("id, profiles(full_name)")
-    .eq("studio_id", cls?.studio_id || "")
-    .order("created_at", { ascending: false });
-
-  const { data: rooms } = await supabase
-    .from("rooms")
-    .select("id, name, capacity")
-    .eq("studio_id", cls?.studio_id || "")
-    .eq("is_active", true)
-    .order("name", { ascending: true });
+  // Batch 1: class template + ownerProfile are independent
+  const [{ data: cls }, { data: ownerProfile }] = await Promise.all([
+    supabase
+      .from("class_templates")
+      .select("id, name, description, day_of_week, start_time, duration_minutes, capacity, instructor_id, room_id, is_public, is_online, online_link, is_active, studio_id, created_at, instructors(profiles(full_name))")
+      .eq("id", id)
+      .single(),
+    supabase
+      .from("profiles")
+      .select("studio_id")
+      .eq("id", user.id)
+      .single(),
+  ]);
 
   if (!cls) {
     notFound();
   }
 
-  const { data: ownerProfile } = await supabase
-    .from("profiles")
-    .select("studio_id")
-    .eq("id", user.id)
-    .single();
-
   if (ownerProfile?.studio_id !== cls.studio_id) {
     notFound();
   }
 
-  const onlineEnabled = await isFeatureEnabled(cls.studio_id, FEATURE_KEYS.ONLINE_CLASSES);
-
-  // 今後のセッションを取得（最大8件、日付順）
+  // Batch 2: instructors + rooms + sessions + feature flag (all independent, need studio_id)
   const today = new Date().toISOString().split("T")[0];
-  const { data: sessions } = await supabase
-    .from("class_sessions")
-    .select("id, session_date, capacity, is_cancelled, is_public")
-    .eq("class_id", id)
-    .gte("session_date", today)
-    .order("session_date", { ascending: true })
-    .limit(8);
+  const [{ data: instructors }, { data: rooms }, { data: sessions }, onlineEnabled] = await Promise.all([
+    supabase
+      .from("instructors")
+      .select("id, profiles(full_name)")
+      .eq("studio_id", cls.studio_id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("rooms")
+      .select("id, name, capacity")
+      .eq("studio_id", cls.studio_id)
+      .eq("is_active", true)
+      .order("name", { ascending: true }),
+    supabase
+      .from("class_sessions")
+      .select("id, session_date, capacity, is_cancelled, is_public")
+      .eq("class_id", id)
+      .gte("session_date", today)
+      .order("session_date", { ascending: true })
+      .limit(8),
+    isFeatureEnabled(cls.studio_id, FEATURE_KEYS.ONLINE_CLASSES),
+  ]);
 
-  // 各セッションの予約数を取得
+  // Batch 3: bookings for sessions
   const sessionIds = (sessions || []).map((s) => s.id);
   const { data: bookings } =
     sessionIds.length > 0

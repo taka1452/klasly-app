@@ -58,10 +58,15 @@ export async function GET(request: Request) {
     reminderDate.setDate(reminderDate.getDate() + 7);
     const targetDate = reminderDate.toISOString().slice(0, 10);
 
-    // Get pending installments due in 7 days
+    // Get pending installments due in 7 days — single JOIN query
     const { data: upcomingInstallments } = await supabase
       .from("event_payment_schedule")
-      .select("id, event_booking_id, amount_cents, due_date")
+      .select(`
+        id, event_booking_id, amount_cents, due_date,
+        event_bookings(guest_name, guest_email, event_id,
+          events(name, studio_id)
+        )
+      `)
       .eq("status", "pending")
       .eq("due_date", targetDate);
 
@@ -70,47 +75,34 @@ export async function GET(request: Request) {
       return NextResponse.json({ sent: 0 });
     }
 
+    const emailPromises: Promise<void>[] = [];
     for (const installment of upcomingInstallments) {
-      try {
-        const { data: booking } = await supabase
-          .from("event_bookings")
-          .select("guest_name, guest_email, event_id")
-          .eq("id", installment.event_booking_id)
-          .single();
+      const booking = installment.event_bookings as any;
+      if (!booking?.guest_email) continue;
+      const event = booking?.events;
+      if (!event) continue;
 
-        if (!booking?.guest_email) continue;
+      const mail = installmentReminder({
+        guestName: booking.guest_name || "Guest",
+        eventName: event.name,
+        amount: installment.amount_cents,
+        dueDate: installment.due_date,
+      });
 
-        const { data: event } = await supabase
-          .from("events")
-          .select("name, studio_id")
-          .eq("id", booking.event_id)
-          .single();
-
-        if (!event) continue;
-
-        const email = installmentReminder({
-          guestName: booking.guest_name || "Guest",
-          eventName: event.name,
-          amount: installment.amount_cents,
-          dueDate: installment.due_date,
-        });
-
-        await sendEmail({
+      emailPromises.push(
+        sendEmail({
           to: booking.guest_email,
-          subject: email.subject,
-          html: email.html,
+          subject: mail.subject,
+          html: mail.html,
           studioId: event.studio_id,
           templateName: "installment_reminder",
-        });
-
-        sentCount++;
-      } catch (e) {
-        console.error(
-          `[InstallmentReminder] Failed for schedule ${installment.id}:`,
-          e,
-        );
-      }
+        }).then(() => { sentCount++; })
+          .catch((e) => {
+            console.error(`[InstallmentReminder] Failed for schedule ${installment.id}:`, e);
+          })
+      );
     }
+    await Promise.allSettled(emailPromises);
 
     await updateCronLog(cronLogId, "success", sentCount);
     return NextResponse.json({ sent: sentCount });

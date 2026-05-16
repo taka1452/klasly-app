@@ -482,7 +482,9 @@ export default function EditEventPage() {
       await supabase.from("event_options").delete().in("id", idsToDelete);
     }
 
-    // Upsert options: update existing, insert new (with early bird)
+    // Upsert options: batch updates and inserts separately
+    const toUpdate: { id: string; data: Record<string, unknown> }[] = [];
+    const toInsert: Record<string, unknown>[] = [];
     for (let idx = 0; idx < validOptions.length; idx++) {
       const o = validOptions[idx];
       const optionData = {
@@ -501,11 +503,15 @@ export default function EditEventPage() {
             : null,
       };
       if (o.id) {
-        await supabase.from("event_options").update(optionData).eq("id", o.id);
+        toUpdate.push({ id: o.id, data: optionData });
       } else {
-        await supabase.from("event_options").insert(optionData);
+        toInsert.push(optionData);
       }
     }
+    await Promise.all([
+      ...toUpdate.map((u) => supabase.from("event_options").update(u.data).eq("id", u.id)),
+      ...(toInsert.length > 0 ? [supabase.from("event_options").insert(toInsert)] : []),
+    ]);
 
     // Save schedule items: delete old, insert new
     await supabase.from("event_schedule_items").delete().eq("event_id", id);

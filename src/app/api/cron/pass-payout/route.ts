@@ -58,10 +58,25 @@ export async function GET(request: Request) {
       return NextResponse.json({ ok: true, success: 0, failed: 0 });
     }
 
+    // Batch-fetch all instructors with profiles before the loop
+    const instructorIds = Array.from(new Set<string>(distributions.map((d) => d.instructor_id)));
+    const { data: instructorRows } = await supabase
+      .from("instructors")
+      .select("id, stripe_account_id, profile_id, profiles(full_name, email)")
+      .in("id", instructorIds);
+
+    const instructorMap = new Map<string, {
+      stripe_account_id: string | null;
+      profile_id: string;
+      profiles: { full_name: string | null; email: string | null } | null;
+    }>();
+    for (const inst of instructorRows ?? []) {
+      const p = Array.isArray(inst.profiles) ? inst.profiles[0] : inst.profiles;
+      instructorMap.set(inst.id, { stripe_account_id: inst.stripe_account_id, profile_id: inst.profile_id, profiles: p ?? null });
+    }
+
     for (const dist of distributions) {
       try {
-        // Optimistic lock: claim this record by setting status to 'processing'.
-        // If another cron run already claimed it, the update won't match and we skip.
         const { count: claimed } = await supabase
           .from("pass_distributions")
           .update({ status: "processing" })
@@ -70,7 +85,6 @@ export async function GET(request: Request) {
           .is("stripe_transfer_id", null);
 
         if (!claimed || claimed === 0) {
-          // Already being processed by another run — skip
           continue;
         }
 
@@ -83,26 +97,17 @@ export async function GET(request: Request) {
           continue;
         }
 
-        // Get instructor's Stripe account
-        const { data: instructor } = await supabase
-          .from("instructors")
-          .select("id, stripe_account_id, profile_id")
-          .eq("id", dist.instructor_id)
-          .single();
-
+        const instructor = instructorMap.get(dist.instructor_id);
         if (!instructor?.stripe_account_id) {
           await supabase
             .from("pass_distributions")
             .update({ status: "failed" })
             .eq("id", dist.id);
           failCount++;
-
-          // Notify owner
-          await notifyOwnerOfFailure(supabase, dist, "Instructor does not have a connected Stripe account.");
+          await notifyOwnerOfFailure(supabase, dist, "Instructor does not have a connected Stripe account.", instructor?.profiles?.full_name ?? undefined);
           continue;
         }
 
-        // Create Stripe Transfer with idempotency key
         const monthLabel = new Date(dist.period_start + "T00:00:00Z").toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
         const transfer = await stripe.transfers.create(
           {
@@ -119,7 +124,6 @@ export async function GET(request: Request) {
           { idempotencyKey: `pass_dist_${dist.id}` }
         );
 
-        // Update status
         await supabase
           .from("pass_distributions")
           .update({ status: "completed", stripe_transfer_id: transfer.id })
@@ -127,13 +131,7 @@ export async function GET(request: Request) {
 
         successCount++;
 
-        // Send payout notification to instructor
-        const { data: instructorProfile } = await supabase
-          .from("profiles")
-          .select("full_name, email")
-          .eq("id", instructor.profile_id)
-          .single();
-
+        const instructorProfile = instructor.profiles;
         if (instructorProfile?.email) {
           const sharePercent =
             dist.total_pool_classes > 0
@@ -164,7 +162,8 @@ export async function GET(request: Request) {
           .eq("id", dist.id);
         failCount++;
 
-        await notifyOwnerOfFailure(supabase, dist, errMsg);
+        const instrName = instructorMap.get(dist.instructor_id)?.profiles?.full_name ?? undefined;
+        await notifyOwnerOfFailure(supabase, dist, errMsg, instrName);
       }
     }
 
@@ -193,7 +192,8 @@ export async function GET(request: Request) {
 async function notifyOwnerOfFailure(
   supabase: AdminSupabaseClient,
   dist: { studio_id: string; instructor_id: string; payout_amount: number; period_start: string },
-  errorMessage: string
+  errorMessage: string,
+  instructorName?: string,
 ) {
   try {
     const monthLabel = new Date(dist.period_start + "T00:00:00Z").toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
@@ -205,26 +205,10 @@ async function notifyOwnerOfFailure(
       .eq("role", "owner")
       .single();
 
-    let instructorName = "Instructor";
-    const { data: inst } = await supabase
-      .from("instructors")
-      .select("profile_id")
-      .eq("id", dist.instructor_id)
-      .single();
-
-    if (inst?.profile_id) {
-      const { data: instProfile } = await supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("id", inst.profile_id)
-        .single();
-      if (instProfile?.full_name) instructorName = instProfile.full_name;
-    }
-
     if (owner?.email) {
       const { subject, html } = passDistributionFailed({
         ownerName: owner.full_name ?? "Studio Owner",
-        instructorName,
+        instructorName: instructorName ?? "Instructor",
         month: monthLabel,
         payoutAmount: dist.payout_amount,
         errorMessage,

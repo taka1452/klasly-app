@@ -83,6 +83,28 @@ export async function GET(request: Request) {
     return NextResponse.json({ processed: 0 });
   }
 
+  // Batch-fetch all studio owners in a single query
+  const studioIds = studios.map((s) => s.id);
+  const { data: ownerRows } = await supabase
+    .from("profiles")
+    .select("studio_id, full_name, email")
+    .in("studio_id", studioIds)
+    .eq("role", "owner");
+
+  const ownerMap = new Map<string, { full_name: string | null; email: string | null }>();
+  for (const o of ownerRows ?? []) {
+    ownerMap.set(o.studio_id, o);
+  }
+
+  // Bulk update all studios to canceled status
+  await supabase
+    .from("studios")
+    .update({
+      plan_status: "canceled",
+      stripe_subscription_id: null,
+    })
+    .in("id", studioIds);
+
   let updated = 0;
   for (const studio of studios) {
     if (studio.stripe_subscription_id) {
@@ -93,22 +115,7 @@ export async function GET(request: Request) {
       }
     }
 
-    await supabase
-      .from("studios")
-      .update({
-        plan_status: "canceled",
-        stripe_subscription_id: null,
-      })
-      .eq("id", studio.id);
-
-    const { data: owner } = await supabase
-      .from("profiles")
-      .select("full_name, email")
-      .eq("studio_id", studio.id)
-      .eq("role", "owner")
-      .limit(1)
-      .single();
-
+    const owner = ownerMap.get(studio.id);
     if (owner?.email) {
       const subject = "Your Klasly subscription has been suspended";
       const html = `

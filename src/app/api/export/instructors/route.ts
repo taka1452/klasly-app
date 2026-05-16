@@ -21,7 +21,8 @@ export async function GET() {
     .from("instructors")
     .select("bio, specialties, profiles(full_name, email, phone)")
     .eq("studio_id", ctx.studioId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(1000);
 
   const headers = ["Name", "Email", "Phone", "Bio", "Specialties"];
   const lines: string[] = [headers.map(escapeCsvCell).join(",")];

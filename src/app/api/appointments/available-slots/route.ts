@@ -81,35 +81,32 @@ export async function GET(request: Request) {
     const dateObj = new Date(date + "T00:00:00");
     const dayOfWeek = dateObj.getDay();
 
-    // 1. Get instructor availability for this day
-    const { data: availability } = await adminDb
-      .from("instructor_availability")
-      .select("start_time, end_time")
-      .eq("instructor_id", instructorId)
-      .eq("day_of_week", dayOfWeek)
-      .eq("is_active", true)
-      .order("start_time");
+    // All 3 queries are independent — parallelize
+    const [{ data: availability }, { data: existingAppointments }, { data: existingSessions }] = await Promise.all([
+      adminDb
+        .from("instructor_availability")
+        .select("start_time, end_time")
+        .eq("instructor_id", instructorId)
+        .eq("day_of_week", dayOfWeek)
+        .eq("is_active", true)
+        .order("start_time"),
+      adminDb
+        .from("appointments")
+        .select("start_time, end_time, appointment_type_id, appointment_types(buffer_minutes)")
+        .eq("instructor_id", instructorId)
+        .eq("appointment_date", date)
+        .in("status", ["confirmed"]),
+      adminDb
+        .from("class_sessions")
+        .select("start_time, end_time")
+        .eq("instructor_id", instructorId)
+        .eq("session_date", date)
+        .neq("status", "cancelled"),
+    ]);
 
     if (!availability || availability.length === 0) {
       return NextResponse.json({ slots: [] });
     }
-
-    // 2. Get existing confirmed appointments for this instructor + date
-    //    Also join appointment_types to get buffer_minutes for each appointment
-    const { data: existingAppointments } = await adminDb
-      .from("appointments")
-      .select("start_time, end_time, appointment_type_id, appointment_types(buffer_minutes)")
-      .eq("instructor_id", instructorId)
-      .eq("appointment_date", date)
-      .in("status", ["confirmed"]);
-
-    // 3. Get existing class sessions for this instructor + date
-    const { data: existingSessions } = await adminDb
-      .from("class_sessions")
-      .select("start_time, end_time")
-      .eq("instructor_id", instructorId)
-      .eq("session_date", date)
-      .neq("status", "cancelled");
 
     // Build list of busy intervals as [startMin, endMin] (minutes from midnight)
     const busyIntervals: Array<[number, number]> = [];

@@ -2486,6 +2486,7 @@ export const helpArticles: HelpArticle[] = [
       'Each event row uses a coloured left border for urgency: red = critical, amber = warning, green = success, none = informational.',
       'Members only see their own activity (their bookings, their pass purchases, their waiver) plus studio-wide announcements.',
       'Managers see categories that match their permissions — e.g. a Manager without "view payments" will not see the Billing tab.',
+      'Want a quick glance at recent bookings only? Click the "Bookings" tab on the Activity widget — it filters the feed to confirmed/cancelled bookings only.',
     ],
     relatedArticles: [],
   },

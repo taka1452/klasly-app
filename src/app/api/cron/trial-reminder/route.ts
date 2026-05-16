@@ -82,16 +82,22 @@ export async function GET(request: Request) {
     return NextResponse.json({ processed: 0 });
   }
 
+  // Batch-fetch all studio owners in a single query
+  const studioIds = studios.map((s) => s.id);
+  const { data: ownerRows } = await supabase
+    .from("profiles")
+    .select("studio_id, full_name, email")
+    .in("studio_id", studioIds)
+    .eq("role", "owner");
+
+  const ownerMap = new Map<string, { full_name: string | null; email: string | null }>();
+  for (const o of ownerRows ?? []) {
+    ownerMap.set(o.studio_id, o);
+  }
+
   let sent = 0;
   for (const studio of studios) {
-    const { data: owner } = await supabase
-      .from("profiles")
-      .select("full_name, email")
-      .eq("studio_id", studio.id)
-      .eq("role", "owner")
-      .limit(1)
-      .single();
-
+    const owner = ownerMap.get(studio.id);
     if (!owner?.email) continue;
 
     const trialEnd = studio.trial_ends_at

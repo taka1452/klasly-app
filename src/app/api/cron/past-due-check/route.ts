@@ -89,30 +89,41 @@ export async function GET(request: Request) {
     return NextResponse.json({ processed: 0 });
   }
 
-  let updated = 0;
-  for (const studio of studios) {
-    await supabase
+  // Batch fetch all owners for affected studios (eliminates N+1)
+  const studioIds = studios.map((s) => s.id);
+  const [, { data: owners }] = await Promise.all([
+    // Bulk update all studios to grace status
+    supabase
       .from("studios")
       .update({
         plan_status: "grace",
         grace_period_ends_at: graceEnd.toISOString(),
       })
-      .eq("id", studio.id);
-
-    const { data: owner } = await supabase
+      .in("id", studioIds),
+    // Batch fetch owners for all studios
+    supabase
       .from("profiles")
-      .select("full_name, email")
-      .eq("studio_id", studio.id)
-      .eq("role", "owner")
-      .limit(1)
-      .single();
+      .select("studio_id, full_name, email")
+      .in("studio_id", studioIds)
+      .eq("role", "owner"),
+  ]);
+
+  const ownerByStudio = new Map(
+    (owners ?? []).map((o) => [o.studio_id, o])
+  );
+
+  const graceEndStr = graceEnd.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  let updated = 0;
+  const emailPromises: Promise<unknown>[] = [];
+  for (const studio of studios) {
+    const owner = ownerByStudio.get(studio.id);
 
     if (owner?.email) {
-      const graceEndStr = graceEnd.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
       const subject = "Your Klasly account access will be restricted";
       const html = `
         <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">Payment Update Required</h2>
@@ -139,16 +150,19 @@ export async function GET(request: Request) {
   </div>
 </body>
 </html>`;
-      await sendEmail({
-        to: owner.email,
-        subject,
-        html: wrapped,
-        studioId: studio.id,
-        templateName: "past_due_grace_warning",
-      });
+      emailPromises.push(
+        sendEmail({
+          to: owner.email,
+          subject,
+          html: wrapped,
+          studioId: studio.id,
+          templateName: "past_due_grace_warning",
+        })
+      );
     }
     updated++;
   }
+  await Promise.allSettled(emailPromises);
 
     try {
       if (cronLogId) {

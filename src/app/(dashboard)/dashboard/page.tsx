@@ -73,44 +73,6 @@ export default async function DashboardPage() {
     (dashboardPrefs as { setup_checklist_dismissed?: boolean })
       .setup_checklist_dismissed === true;
 
-  // オーナー向け: Setup Checklist 用の studio 情報を取得。
-  // 課金ステータス (past_due/grace/trial) は dashboard layout の
-  // PlanBanner / TrialBanner で表示されるので、このページでは扱わない。
-  let setupTasks: SetupTask[] = [];
-  let setupGuideHref: string | null = null;
-  if (isOwner) {
-    const { data: studioInfo } = await supabase
-      .from("studios")
-      .select(
-        "stripe_connect_onboarding_complete, stripe_subscription_id, payout_model",
-      )
-      .eq("id", profile.studio_id)
-      .single();
-    const info = studioInfo as {
-      stripe_connect_onboarding_complete?: boolean;
-      stripe_subscription_id?: string | null;
-      payout_model?: string | null;
-    } | null;
-
-    const onboardingCompleted =
-      (profile as { onboarding_completed?: boolean }).onboarding_completed ?? true;
-    setupTasks = await getOwnerSetupTasks(
-      supabase,
-      profile.studio_id,
-      info,
-      onboardingCompleted,
-    );
-    setupGuideHref =
-      info?.payout_model === "instructor_direct" ? "/settings/collective-setup" : null;
-  }
-
-  // Activity feed widget needs the studio's alert thresholds.
-  const { data: studioForActivity } = await supabase
-    .from("studios")
-    .select("id, activity_feed_settings")
-    .eq("id", profile.studio_id)
-    .single();
-
   const today = new Date().toISOString().split("T")[0];
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -123,59 +85,153 @@ export default async function DashboardPage() {
     .toISOString()
     .split("T")[0];
 
-  // 1. Active Members count
-  const { count: activeMembersCount } = await supabase
-    .from("members")
-    .select("id", { count: "exact", head: true })
-    .eq("studio_id", profile.studio_id)
-    .eq("status", "active");
+  // --- Batch 1: all independent queries in parallel ---
+  const [
+    studioResult,
+    membersCountResult,
+    todayClassesResult,
+    paidPaymentsResult,
+    prevMonthPaymentsResult,
+    failedPaymentsResult,
+    upcomingEventsResult,
+  ] = await Promise.all([
+    // Single studios query (merged: setup info + activity_feed_settings)
+    supabase
+      .from("studios")
+      .select("id, stripe_connect_onboarding_complete, stripe_subscription_id, payout_model, activity_feed_settings")
+      .eq("id", profile.studio_id)
+      .single(),
+    // Active members count
+    supabase
+      .from("members")
+      .select("id", { count: "exact", head: true })
+      .eq("studio_id", profile.studio_id)
+      .eq("status", "active"),
+    // Today's classes list (single query — also gives us count)
+    supabase
+      .from("class_sessions")
+      .select("id, template_id, session_date, start_time, capacity, class_templates(name)")
+      .eq("studio_id", profile.studio_id)
+      .eq("session_date", today)
+      .eq("is_cancelled", false)
+      .order("start_time", { ascending: true }),
+    // This month's revenue
+    supabase
+      .from("payments")
+      .select("amount, payment_type, type")
+      .eq("studio_id", profile.studio_id)
+      .eq("status", "paid")
+      .gte("paid_at", `${monthStart}T00:00:00Z`)
+      .lt("paid_at", `${nextMonthStart}T00:00:00Z`),
+    // Previous month revenue
+    supabase
+      .from("payments")
+      .select("amount")
+      .eq("studio_id", profile.studio_id)
+      .eq("status", "paid")
+      .gte("paid_at", `${prevMonthStart}T00:00:00Z`)
+      .lt("paid_at", `${monthStart}T00:00:00Z`),
+    // Failed payments
+    supabase
+      .from("payments")
+      .select("id, amount, created_at, member_id, members(profiles(full_name, email))")
+      .eq("studio_id", profile.studio_id)
+      .eq("status", "failed")
+      .order("created_at", { ascending: false })
+      .limit(10),
+    // Upcoming events
+    supabase
+      .from("events")
+      .select("id, name, start_date, end_date, status, max_total_capacity")
+      .eq("studio_id", profile.studio_id)
+      .in("status", ["published", "sold_out"])
+      .gte("end_date", today)
+      .order("start_date", { ascending: true })
+      .limit(5),
+  ]);
 
-  // 2. Today's Classes count
-  const { data: todaySessions } = await supabase
-    .from("class_sessions")
-    .select("id")
-    .eq("studio_id", profile.studio_id)
-    .eq("session_date", today)
-    .eq("is_cancelled", false);
+  const studioInfo = studioResult.data as {
+    id: string;
+    stripe_connect_onboarding_complete?: boolean;
+    stripe_subscription_id?: string | null;
+    payout_model?: string | null;
+    activity_feed_settings?: Record<string, unknown>;
+  } | null;
+  const activeMembersCount = membersCountResult.count;
+  const todayClassesList = todayClassesResult.data;
+  const todayClassesCount = todayClassesList?.length ?? 0;
+  const todaySessionIds = (todayClassesList || []).map((s) => s.id);
+  const paidPayments = paidPaymentsResult.data;
+  const failedPayments = failedPaymentsResult.data;
+  const upcomingEvents = upcomingEventsResult.data;
 
-  const todayClassesCount = todaySessions?.length ?? 0;
-  const todaySessionIds = (todaySessions || []).map((s) => s.id);
+  // --- Setup tasks (owner only, uses studioInfo from batch 1) ---
+  let setupTasks: SetupTask[] = [];
+  let setupGuideHref: string | null = null;
+  if (isOwner) {
+    const onboardingCompleted =
+      (profile as { onboarding_completed?: boolean }).onboarding_completed ?? true;
+    setupTasks = await getOwnerSetupTasks(
+      supabase,
+      profile.studio_id,
+      studioInfo,
+      onboardingCompleted,
+    );
+    setupGuideHref =
+      studioInfo?.payout_model === "instructor_direct" ? "/settings/collective-setup" : null;
+  }
 
-  // 3. Today's Bookings count (confirmed only)
-  const { count: todayBookingsCount } =
+  const studioForActivity = studioInfo
+    ? { id: studioInfo.id, activity_feed_settings: studioInfo.activity_feed_settings ?? {} }
+    : null;
+
+  // --- Batch 2: queries that depend on batch 1 results ---
+  const upcomingEventIds = (upcomingEvents || []).map((e) => e.id);
+
+  const [todayBookingsCountResult, todayBookingsResult, todayDropInsResult, eventBookingCountsResult] = await Promise.all([
+    // Today's bookings count
     todaySessionIds.length > 0
-      ? await supabase
+      ? supabase
           .from("bookings")
           .select("id", { count: "exact", head: true })
           .in("session_id", todaySessionIds)
           .eq("status", "confirmed")
-      : { count: 0 };
+      : Promise.resolve({ count: 0 }),
+    // Today's bookings detail
+    todaySessionIds.length > 0
+      ? supabase
+          .from("bookings")
+          .select("session_id, status, attended")
+          .in("session_id", todaySessionIds)
+          .eq("status", "confirmed")
+      : Promise.resolve({ data: [] as { session_id: string; status: string; attended: boolean }[] }),
+    // Today's drop-ins
+    todaySessionIds.length > 0
+      ? supabase
+          .from("drop_in_attendances")
+          .select("session_id")
+          .in("session_id", todaySessionIds)
+      : Promise.resolve({ data: [] as { session_id: string }[] }),
+    // Event booking counts
+    upcomingEventIds.length > 0
+      ? supabase
+          .from("event_bookings")
+          .select("event_id")
+          .in("event_id", upcomingEventIds)
+          .in("booking_status", ["pending_payment", "confirmed", "completed"])
+      : Promise.resolve({ data: [] as { event_id: string }[] }),
+  ]);
 
-  // 4. This Month's Revenue (payments: status='paid', paid_at this month)
-  const { data: paidPayments } = await supabase
-    .from("payments")
-    .select("amount, payment_type, type")
-    .eq("studio_id", profile.studio_id)
-    .eq("status", "paid")
-    .gte("paid_at", `${monthStart}T00:00:00Z`)
-    .lt("paid_at", `${nextMonthStart}T00:00:00Z`);
+  const todayBookingsCount = todayBookingsCountResult.count;
+  const todayBookings = todayBookingsResult.data;
+  const todayDropIns = todayDropInsResult.data;
 
+  // Revenue calculations
   const monthRevenue =
     paidPayments?.reduce((sum, p) => sum + (p.amount ?? 0), 0) ?? 0;
-
-  // 5. Previous month revenue (for comparison)
-  const { data: prevMonthPayments } = await supabase
-    .from("payments")
-    .select("amount")
-    .eq("studio_id", profile.studio_id)
-    .eq("status", "paid")
-    .gte("paid_at", `${prevMonthStart}T00:00:00Z`)
-    .lt("paid_at", `${monthStart}T00:00:00Z`);
-
   const prevMonthRevenue =
-    prevMonthPayments?.reduce((sum, p) => sum + (p.amount ?? 0), 0) ?? 0;
+    (prevMonthPaymentsResult.data)?.reduce((sum, p) => sum + (p.amount ?? 0), 0) ?? 0;
 
-  // 6. Revenue breakdown for this month (Subscriptions, Class Packs, Drop-ins)
   const subscriptionTypes = ["subscription", "monthly"];
   const classPackTypes = ["pack_5", "pack_10"];
 
@@ -205,50 +261,6 @@ export default async function DashboardPage() {
         .reduce((sum, p) => sum + (p.amount ?? 0), 0) ?? 0,
   };
 
-  // 7. Failed payments (status='failed')
-  const { data: failedPayments } = await supabase
-    .from("payments")
-    .select(`
-      id,
-      amount,
-      created_at,
-      member_id,
-      members (
-        profiles (full_name, email)
-      )
-    `)
-    .eq("studio_id", profile.studio_id)
-    .eq("status", "failed")
-    .order("created_at", { ascending: false })
-    .limit(10);
-
-  // Today's classes list (for display with booking counts)
-  const { data: todayClassesList } = await supabase
-    .from("class_sessions")
-    .select("id, template_id, session_date, start_time, capacity, class_templates(name)")
-    .eq("studio_id", profile.studio_id)
-    .eq("session_date", today)
-    .eq("is_cancelled", false)
-    .order("start_time", { ascending: true });
-
-  const todayListSessionIds = (todayClassesList || []).map((s) => s.id);
-  const { data: todayBookings } =
-    todayListSessionIds.length > 0
-      ? await supabase
-          .from("bookings")
-          .select("session_id, status, attended")
-          .in("session_id", todayListSessionIds)
-          .eq("status", "confirmed")
-      : { data: [] };
-
-  const { data: todayDropIns } =
-    todayListSessionIds.length > 0
-      ? await supabase
-          .from("drop_in_attendances")
-          .select("session_id")
-          .in("session_id", todayListSessionIds)
-      : { data: [] };
-
   const confirmedBySession = (todayBookings || []).reduce((acc, b) => {
     if (b.status === "confirmed") {
       acc[b.session_id] = (acc[b.session_id] || 0) + 1;
@@ -268,27 +280,7 @@ export default async function DashboardPage() {
     return acc;
   }, {} as Record<string, number>);
 
-  // Upcoming events with booking counts
-  const { data: upcomingEvents } = await supabase
-    .from("events")
-    .select("id, name, start_date, end_date, status, max_total_capacity")
-    .eq("studio_id", profile.studio_id)
-    .in("status", ["published", "sold_out"])
-    .gte("end_date", today)
-    .order("start_date", { ascending: true })
-    .limit(5);
-
-  const upcomingEventIds = (upcomingEvents || []).map((e) => e.id);
-  const { data: eventBookingCounts } =
-    upcomingEventIds.length > 0
-      ? await supabase
-          .from("event_bookings")
-          .select("event_id")
-          .in("event_id", upcomingEventIds)
-          .in("booking_status", ["pending_payment", "confirmed", "completed"])
-      : { data: [] };
-
-  const eventBookingMap = (eventBookingCounts || []).reduce(
+  const eventBookingMap = (eventBookingCountsResult.data || []).reduce(
     (acc, b) => {
       acc[b.event_id] = (acc[b.event_id] || 0) + 1;
       return acc;

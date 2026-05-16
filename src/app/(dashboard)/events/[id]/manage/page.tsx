@@ -43,27 +43,28 @@ export default async function EventManagePage({
   const retreatEnabled = await isFeatureEnabled(profile.studio_id, FEATURE_KEYS.RETREAT_BOOKING);
   if (!retreatEnabled) redirect("/dashboard");
 
-  const { data: event } = await supabase
-    .from("events")
-    .select("*")
-    .eq("id", id)
-    .eq("studio_id", profile.studio_id)
-    .single();
+  // All 3 queries use id/studio_id — parallelize
+  const [{ data: event }, { data: options }, { data: bookings }] = await Promise.all([
+    supabase
+      .from("events")
+      .select("*")
+      .eq("id", id)
+      .eq("studio_id", profile.studio_id)
+      .single(),
+    supabase
+      .from("event_options")
+      .select("id, name, description, price_cents, capacity, sort_order, is_active")
+      .eq("event_id", id)
+      .order("sort_order"),
+    supabase
+      .from("event_bookings")
+      .select(
+        "id, event_option_id, guest_name, guest_email, booking_status, total_amount_cents, payment_type, payment_status, created_at, application_responses, group_size, group_members",
+      )
+      .eq("event_id", id)
+      .order("created_at", { ascending: false }),
+  ]);
   if (!event) notFound();
-
-  const { data: options } = await supabase
-    .from("event_options")
-    .select("*")
-    .eq("event_id", id)
-    .order("sort_order");
-
-  const { data: bookings } = await supabase
-    .from("event_bookings")
-    .select(
-      "id, event_option_id, guest_name, guest_email, booking_status, total_amount_cents, payment_type, payment_status, created_at, application_responses, group_size, group_members",
-    )
-    .eq("event_id", id)
-    .order("created_at", { ascending: false });
 
   const allBookings = bookings || [];
   const activeBookings = allBookings.filter(
