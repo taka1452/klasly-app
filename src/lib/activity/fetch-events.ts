@@ -202,7 +202,7 @@ async function fetchBookingEvents(
         subtitle: sessionLine,
         occurredAt: r.created_at,
         ctaLabel: "View bookings",
-        ctaHref: "/dashboard/bookings",
+        ctaHref: "/bookings",
         scope,
       });
     } else if (r.status === "cancelled") {
@@ -304,7 +304,7 @@ async function fetchPassPurchaseEvents(
         : undefined,
       occurredAt: r.created_at,
       ctaLabel: "View passes",
-      ctaHref: "/dashboard/passes",
+      ctaHref: "/passes",
       scope: { memberId: r.members?.profile_id ?? null },
     };
   });
@@ -336,7 +336,7 @@ async function fetchMemberJoinedEvents(
     subtitle: r.plan_type ? `Plan: ${r.plan_type}` : undefined,
     occurredAt: r.joined_at,
     ctaLabel: "View member",
-    ctaHref: `/dashboard/members/${r.id}`,
+    ctaHref: `/members/${r.id}`,
     scope: { memberId: r.profile_id ?? null },
   }));
 }
@@ -419,7 +419,7 @@ async function fetchClassChangeEvents(
       subtitle,
       occurredAt: r.created_at,
       ctaLabel: r.template_id ? "View class" : undefined,
-      ctaHref: r.template_id ? `/dashboard/classes/${r.template_id}` : undefined,
+      ctaHref: r.template_id ? `/classes/${r.template_id}` : undefined,
       scope: {
         templateId: r.template_id ?? null,
         sessionId: r.session_id ?? null,
@@ -485,7 +485,7 @@ async function fetchOverageChargeEvents(
       occurredAt: r.created_at,
       actionRequired: !paid && !waived,
       ctaLabel: "View instructors",
-      ctaHref: "/dashboard/instructors",
+      ctaHref: "/instructors",
       scope: { instructorId: r.instructors?.profile_id ?? null },
     };
   });
@@ -532,7 +532,7 @@ async function fetchReviewEvents(
       subtitle: r.comment ?? undefined,
       occurredAt: r.created_at,
       ctaLabel: "View review",
-      ctaHref: "/dashboard/reviews",
+      ctaHref: "/reviews",
       scope: {
         memberId: r.members?.profile_id ?? null,
         instructorId: r.instructor_id ?? null,
@@ -602,7 +602,7 @@ async function fetchContractEvents(
           : undefined,
         occurredAt: r.completed_at,
         ctaLabel: "View contract",
-        ctaHref: "/dashboard/contracts",
+        ctaHref: "/contracts",
         scope: { instructorId: r.instructors?.profile_id ?? null },
       });
     }
@@ -633,7 +633,7 @@ async function fetchAnnouncementEvents(
     subtitle: r.body ? truncate(r.body, 100) : undefined,
     occurredAt: r.created_at,
     ctaLabel: "View",
-    ctaHref: "/dashboard/studio-announcements",
+    ctaHref: "/studio-announcements",
   }));
 }
 
@@ -669,7 +669,7 @@ async function fetchRoomBookingEvents(
       subtitle: formatSession(r.session_date, r.start_time, null),
       occurredAt: r.created_at,
       ctaLabel: "View rooms",
-      ctaHref: "/dashboard/rooms",
+      ctaHref: "/rooms",
       scope: { instructorId: r.instructor_id ?? null, sessionId: r.id },
     };
   });
@@ -702,7 +702,7 @@ async function fetchPaymentEvents(
     title: `Payment of ${formatCents(r.amount_cents)} received`,
     occurredAt: r.paid_at!,
     ctaLabel: "View payments",
-    ctaHref: "/dashboard/payments",
+    ctaHref: "/payments",
   }));
 }
 

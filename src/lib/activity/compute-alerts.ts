@@ -72,7 +72,7 @@ async function computeConnectIncomplete({
     occurredAt: r.created_at,
     actionRequired: true,
     ctaLabel: "View instructors",
-    ctaHref: "/dashboard/instructors",
+    ctaHref: "/instructors",
     scope: { instructorId: r.profile_id ?? null },
   }));
 }
@@ -123,7 +123,7 @@ async function computeInactiveMembers({
       occurredAt: cutoff.toISOString(),
       actionRequired: true,
       ctaLabel: "Send a message",
-      ctaHref: `/dashboard/members/${m.id}`,
+      ctaHref: `/members/${m.id}`,
       scope: { memberId: m.profile_id ?? null },
     });
   }
@@ -159,7 +159,7 @@ async function computeFailedPayments({
       occurredAt: r.created_at,
       actionRequired: true,
       ctaLabel: "View payments",
-      ctaHref: "/dashboard/payments",
+      ctaHref: "/payments",
     }));
 }
 
@@ -195,7 +195,7 @@ async function computeUnsignedWaivers({
     occurredAt: m.joined_at ?? new Date().toISOString(),
     actionRequired: true,
     ctaLabel: "Send waiver",
-    ctaHref: `/dashboard/members/${m.id}`,
+    ctaHref: `/members/${m.id}`,
     scope: { memberId: m.profile_id ?? null },
   }));
 }
@@ -228,7 +228,7 @@ async function computeStuckContracts({
     subtitle: `In progress since ${r.created_at.slice(0, 10)}`,
     occurredAt: r.created_at,
     ctaLabel: "Open contract",
-    ctaHref: "/dashboard/contracts",
+    ctaHref: "/contracts",
   }));
 }
 
