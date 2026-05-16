@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { logStudioAudit } from "@/lib/audit/studio-audit";
 
 export async function DELETE(
   _request: Request,
@@ -69,6 +70,14 @@ export async function DELETE(
     }
 
     const profileId = instructor.profile_id as string;
+
+    const { data: targetProfile } = await adminSupabase
+      .from("profiles")
+      .select("full_name, email")
+      .eq("id", profileId)
+      .maybeSingle();
+    const targetLabel =
+      targetProfile?.full_name || targetProfile?.email || "an instructor";
 
     // クラスの担当を外す
     await adminSupabase
@@ -152,6 +161,16 @@ export async function DELETE(
         { status: 400 }
       );
     }
+
+    await logStudioAudit(adminSupabase, {
+      studioId: ownerProfile.studio_id,
+      actorProfileId: user.id,
+      actorRole: ownerProfile.role,
+      changeType: "instructor_removed",
+      targetTable: "instructors",
+      targetId: instructorId,
+      summary: `Instructor removed: ${targetLabel}`,
+    });
 
     // 他ロールで使われていなければ Auth ユーザーを削除
     const { data: profile } = await adminSupabase

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/admin/supabase";
+import { logStudioAudit } from "@/lib/audit/studio-audit";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
@@ -170,6 +171,20 @@ export async function POST(request: NextRequest) {
     bookingsCancelled = result.bookingsCancelled;
   }
 
+  const cancelledDetail =
+    sessionsCancelled > 0
+      ? ` (${sessionsCancelled} session${sessionsCancelled === 1 ? "" : "s"} cancelled)`
+      : "";
+  await logStudioAudit(adminDb, {
+    studioId,
+    actorProfileId: userId,
+    changeType: "studio_closure_created",
+    targetTable: "studio_closures",
+    targetId: inserted.id,
+    after: { closure_date: closureDate, label, reason },
+    summary: `Studio closed ${closureDate}: ${label}${cancelledDetail}`,
+  });
+
   return NextResponse.json({
     closure: inserted,
     sessions_cancelled: sessionsCancelled,
@@ -182,13 +197,20 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   const auth = await authorize();
   if (!auth.ok) return auth.response;
-  const { studioId, adminDb } = auth.ctx;
+  const { studioId, userId, adminDb } = auth.ctx;
 
   const url = new URL(request.url);
   const id = url.searchParams.get("id");
   if (!id) {
     return NextResponse.json({ error: "id is required" }, { status: 400 });
   }
+
+  const { data: existing } = await adminDb
+    .from("studio_closures")
+    .select("closure_date, label")
+    .eq("id", id)
+    .eq("studio_id", studioId)
+    .maybeSingle();
 
   const { error } = await adminDb
     .from("studio_closures")
@@ -199,6 +221,18 @@ export async function DELETE(request: NextRequest) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  await logStudioAudit(adminDb, {
+    studioId,
+    actorProfileId: userId,
+    changeType: "studio_closure_deleted",
+    targetTable: "studio_closures",
+    targetId: id,
+    before: existing ?? undefined,
+    summary: existing
+      ? `Studio closure removed: ${existing.closure_date} ${existing.label}`
+      : "Studio closure removed",
+  });
 
   return NextResponse.json({ success: true });
 }

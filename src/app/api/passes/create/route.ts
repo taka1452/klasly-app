@@ -4,6 +4,7 @@ import { stripe } from "@/lib/stripe/server";
 import { NextResponse } from "next/server";
 import { isFeatureEnabled } from "@/lib/features/check-feature";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
+import { logStudioAudit } from "@/lib/audit/studio-audit";
 
 export async function POST(request: Request) {
   try {
@@ -137,6 +138,18 @@ export async function POST(request: Request) {
           class_template_ids.map((tid: string) => ({ pass_id: pass.id, template_id: tid }))
         );
     }
+
+    const priceLabel = `$${(price_cents / 100).toFixed(2)}`;
+    await logStudioAudit(adminSupabase, {
+      studioId: studio.id,
+      actorProfileId: user.id,
+      actorRole: profile.role,
+      changeType: "pass_created",
+      targetTable: "studio_passes",
+      targetId: pass.id,
+      after: { name, price_cents, pass_type: pass_type ?? "monthly" },
+      summary: `Pass created: ${name} (${priceLabel})`,
+    });
 
     return NextResponse.json(pass);
   } catch (err: unknown) {

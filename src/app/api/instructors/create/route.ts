@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email/send";
 import { instructorInvite } from "@/lib/email/templates";
 import { getAppUrl } from "@/lib/app-url";
+import { logStudioAudit } from "@/lib/audit/studio-audit";
 
 export async function POST(request: Request) {
   try {
@@ -241,6 +242,16 @@ export async function POST(request: Request) {
       magicLinkUrl,
     });
     await sendEmail({ to: email, subject: invite.subject, html: invite.html });
+
+    await logStudioAudit(adminSupabase, {
+      studioId: targetStudioId,
+      actorProfileId: user.id,
+      actorRole: ownerProfile.role,
+      changeType: "instructor_added",
+      targetTable: "instructors",
+      targetId: null,
+      summary: `Instructor added: ${fullName}`,
+    });
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {

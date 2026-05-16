@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { logStudioAudit } from "@/lib/audit/studio-audit";
 
 async function getOwnerContext() {
   const serverSupabase = await createServerClient();
@@ -139,6 +140,16 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: insertError.message }, { status: 500 });
       }
 
+      await logStudioAudit(ctx.supabase, {
+        studioId: ctx.studioId,
+        actorProfileId: ctx.userId,
+        actorRole: "owner",
+        changeType: "manager_added",
+        targetTable: "managers",
+        targetId: manager.id,
+        summary: `Manager added: ${email}`,
+      });
+
       return NextResponse.json(manager, { status: 201 });
     }
 
@@ -187,6 +198,16 @@ export async function POST(request: Request) {
         can_issue_refunds: permissions?.canIssueRefunds ?? false,
       });
     }
+
+    await logStudioAudit(ctx.supabase, {
+      studioId: ctx.studioId,
+      actorProfileId: ctx.userId,
+      actorRole: "owner",
+      changeType: "manager_added",
+      targetTable: "managers",
+      targetId: null,
+      summary: `Manager invited: ${email}`,
+    });
 
     return NextResponse.json({ success: true, invited: true }, { status: 201 });
   } catch {
@@ -250,6 +271,27 @@ export async function PATCH(request: Request) {
       .single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    const { data: targetProfile } = await ctx.supabase
+      .from("profiles")
+      .select("full_name, email")
+      .eq("id", targetMgr.profile_id)
+      .maybeSingle();
+    const targetLabel =
+      targetProfile?.full_name || targetProfile?.email || "a manager";
+    const changedKeys = Object.keys(updateData);
+
+    await logStudioAudit(ctx.supabase, {
+      studioId: ctx.studioId,
+      actorProfileId: ctx.userId,
+      actorRole: "owner",
+      changeType: "manager_permissions_updated",
+      targetTable: "managers",
+      targetId: id,
+      after: updateData,
+      summary: `Permissions updated for ${targetLabel} (${changedKeys.length} change${changedKeys.length === 1 ? "" : "s"})`,
+    });
+
     return NextResponse.json(data);
   } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -277,12 +319,30 @@ export async function DELETE(request: Request) {
 
     if (!manager) return NextResponse.json({ error: "Manager not found" }, { status: 404 });
 
+    const { data: targetProfile } = await ctx.supabase
+      .from("profiles")
+      .select("full_name, email")
+      .eq("id", manager.profile_id)
+      .maybeSingle();
+    const targetLabel =
+      targetProfile?.full_name || targetProfile?.email || "a manager";
+
     // managers レコード削除
     await ctx.supabase
       .from("managers")
       .delete()
       .eq("id", id)
       .eq("studio_id", ctx.studioId);
+
+    await logStudioAudit(ctx.supabase, {
+      studioId: ctx.studioId,
+      actorProfileId: ctx.userId,
+      actorRole: "owner",
+      changeType: "manager_removed",
+      targetTable: "managers",
+      targetId: id,
+      summary: `Manager removed: ${targetLabel}`,
+    });
 
     // インストラクターレコードが残っている場合もクリーンアップ
     // （can_teach でインストラクター兼任していた場合の孤立防止）

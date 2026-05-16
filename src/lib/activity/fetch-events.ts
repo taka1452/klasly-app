@@ -41,6 +41,7 @@ export async function fetchActivityEvents(
     payments,
     overages,
     invoices,
+    studioAudit,
     alerts,
   ] = await Promise.all([
     fetchBookingEvents(opts.supabase, opts.studioId, since),
@@ -56,6 +57,7 @@ export async function fetchActivityEvents(
     fetchPaymentEvents(opts.supabase, opts.studioId, since),
     fetchOverageChargeEvents(opts.supabase, opts.studioId, since),
     fetchInstructorInvoiceEvents(opts.supabase, opts.studioId, since),
+    fetchStudioAuditEvents(opts.supabase, opts.studioId, since),
     computeAlertEvents({
       supabase: opts.supabase,
       studioId: opts.studioId,
@@ -77,6 +79,7 @@ export async function fetchActivityEvents(
     ...payments,
     ...overages,
     ...invoices,
+    ...studioAudit,
     ...alerts,
   ];
 
@@ -492,6 +495,71 @@ async function fetchOverageChargeEvents(
       scope: { instructorId: r.instructors?.profile_id ?? null },
     };
   });
+}
+
+async function fetchStudioAuditEvents(
+  supabase: SupabaseClient,
+  studioId: string,
+  since: string,
+): Promise<ActivityEvent[]> {
+  const { data, error } = await supabase
+    .from("studio_audit_log")
+    .select(
+      `id, change_type, summary, created_at, target_table, target_id, actor_profile_id`,
+    )
+    .eq("studio_id", studioId)
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(PER_SOURCE_LIMIT);
+
+  if (error || !data) return [];
+
+  return (data as unknown as RawStudioAuditRow[]).map((r) => {
+    const meta = classifyStudioChangeType(r.change_type);
+    return {
+      id: `studio-audit-${r.id}`,
+      category: "operations" as const,
+      severity: meta.severity,
+      title: r.summary || "Studio updated",
+      occurredAt: r.created_at,
+      ctaLabel: meta.ctaHref ? "Open settings" : undefined,
+      ctaHref: meta.ctaHref,
+    };
+  });
+}
+
+function classifyStudioChangeType(t: string): {
+  severity: ActivityEvent["severity"];
+  ctaHref?: string;
+} {
+  switch (t) {
+    case "manager_added":
+    case "manager_removed":
+    case "manager_permissions_updated":
+      return { severity: "warning", ctaHref: "/managers" };
+    case "instructor_removed":
+      return { severity: "warning", ctaHref: "/instructors" };
+    case "instructor_added":
+      return { severity: "success", ctaHref: "/instructors" };
+    case "studio_closure_created":
+      return { severity: "warning", ctaHref: "/settings/closures" };
+    case "studio_closure_deleted":
+      return { severity: "info", ctaHref: "/settings/closures" };
+    case "pass_created":
+    case "tier_created":
+      return { severity: "success", ctaHref: "/passes" };
+    case "pass_deleted":
+    case "tier_deleted":
+      return { severity: "warning", ctaHref: "/passes" };
+    case "pass_updated":
+    case "tier_updated":
+      return { severity: "info", ctaHref: "/passes" };
+    case "studio_settings_updated":
+    case "studio_policy_updated":
+      return { severity: "info", ctaHref: "/settings" };
+    default:
+      return { severity: "info" };
+  }
 }
 
 async function fetchInstructorInvoiceEvents(
@@ -937,6 +1005,16 @@ interface RawSessionMetaRow {
     profile_id?: string | null;
     profiles?: ProfilePart;
   } | null;
+}
+
+interface RawStudioAuditRow {
+  id: string;
+  change_type: string;
+  summary: string;
+  created_at: string;
+  target_table: string | null;
+  target_id: string | null;
+  actor_profile_id: string | null;
 }
 
 interface RawInvoiceRow {
