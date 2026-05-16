@@ -8,6 +8,7 @@ import type {
   ManagerPerms,
 } from "@/lib/activity/types";
 import { CollapsibleSection } from "@/components/dashboard/collapsible-section";
+import { ActivityFeedRealtime } from "./activity-feed-realtime";
 import { ActivityFeedWidget } from "./activity-feed-widget";
 import { ActivitySettingsPopover } from "./activity-settings-popover";
 
@@ -91,6 +92,7 @@ export async function ActivityFeedSection({
   if (variant === "fullpage") {
     return (
       <div className="space-y-6">
+        <ActivityFeedRealtime studioId={studio.id} />
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
@@ -115,6 +117,7 @@ export async function ActivityFeedSection({
       className=""
       actions={settingsButton}
     >
+      <ActivityFeedRealtime studioId={studio.id} />
       {widget}
     </CollapsibleSection>
   );
