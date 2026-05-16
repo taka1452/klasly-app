@@ -99,7 +99,8 @@ export default function DashboardShell({
           onSidebarToggle={() => setSidebarOpen((o) => !o)}
           showAdminLink={showAdminLink}
         />
-        <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pt-3 pb-32 md:px-6 md:pt-4 md:pb-32">
+        <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pt-3 pb-20 md:px-6 md:pt-4 md:pb-24 lg:px-8 xl:px-10">
+          <div className="mx-auto max-w-5xl">
           {banner && <div className="mb-6">{banner}</div>}
           {planAccess ? (
             <PlanAccessProvider planAccess={planAccess}>
@@ -108,6 +109,7 @@ export default function DashboardShell({
           ) : (
             children
           )}
+          </div>
         </main>
       </div>
       {/* Dashboard page already shows an inline SetupChecklistCard,

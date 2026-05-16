@@ -399,7 +399,7 @@ export default async function DashboardPage() {
         )}
 
         {(canManageMembers || canManageBookings) && (
-          <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-3 md:gap-5 lg:basis-1/2">
+          <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-3 md:grid-cols-1 md:gap-5 lg:grid-cols-3 lg:basis-1/2">
             {canManageMembers && (
               <div
                 className="stats-stagger card flex flex-col justify-between"
@@ -441,11 +441,11 @@ export default async function DashboardPage() {
         )}
       </div>
 
-      {/* Revenue breakdown */}
+      {/* Revenue breakdown — tighter to stats (related data) */}
       {canViewPayments && <CollapsibleSection
         id="revenue-breakdown"
         title="Revenue Breakdown (This Month)"
-        className="widget-section-enter mt-10 md:mt-12"
+        className="widget-section-enter mt-8 md:mt-10"
         style={{ animationDelay: "160ms" }}
       >
         <div className="card space-y-4">
@@ -507,7 +507,7 @@ export default async function DashboardPage() {
         <CollapsibleSection
           id="failed-payments"
           title="Failed Payments"
-          className="widget-section-enter mt-10 md:mt-12"
+          className="widget-section-enter mt-6 md:mt-8"
           style={{ animationDelay: "240ms" }}
         >
           <div className="card overflow-hidden p-0">
@@ -558,8 +558,9 @@ export default async function DashboardPage() {
       )}
 
       {/* Today's classes */}
+      {/* Schedule group — more separation from money group */}
       <CollapsibleSection id="todays-classes" title="Today's Classes"
-        className="widget-section-enter mt-10 md:mt-12"
+        className="widget-section-enter mt-12 md:mt-16"
         style={{ animationDelay: "320ms" }}
       >
         <div className="card overflow-hidden p-0">
@@ -630,7 +631,7 @@ export default async function DashboardPage() {
         <CollapsibleSection
           id="upcoming-events"
           title="Upcoming Events"
-          className="widget-section-enter mt-10 md:mt-12"
+          className="widget-section-enter mt-8 md:mt-10"
           style={{ animationDelay: "400ms" }}
           actions={
             <Link
