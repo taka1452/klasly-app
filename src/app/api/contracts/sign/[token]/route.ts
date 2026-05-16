@@ -36,7 +36,7 @@ export async function GET(
 
     const { data: envelope } = await svc
       .from("contract_envelopes")
-      .select("id, title, status, form_id, studio_id")
+      .select("id, title, status, form_id, studio_id, merge_fields")
       .eq("id", signer.envelope_id)
       .single();
     if (!envelope) {
@@ -67,6 +67,7 @@ export async function GET(
         title: envelope.title,
         status: envelope.status,
         studio_name: studio?.name ?? "Klasly",
+        merge_fields: envelope.merge_fields ?? {},
       },
       signer: {
         id: signer.id,
@@ -382,7 +383,7 @@ export async function DELETE(
     // change. We don't wipe earlier signatures: they're audit history.
     await svc
       .from("contract_envelopes")
-      .update({ status: "voided" })
+      .update({ status: "voided", voided_at: new Date().toISOString() })
       .eq("id", signer.envelope_id);
 
     // Best-effort: notify the creator. Email failure must not break the

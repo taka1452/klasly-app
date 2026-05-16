@@ -8,6 +8,7 @@ export const DEFAULT_ALERT_THRESHOLDS: AlertThresholds = {
   cancellation_rate_threshold: 40,
   follow_up_after_days: 7,
   contract_stuck_days: 7,
+  tier_limit_warning_pct: 80,
 };
 
 export const DEFAULT_DISPLAY_PREFS: DisplayPrefs = {

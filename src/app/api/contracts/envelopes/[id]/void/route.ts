@@ -50,7 +50,7 @@ export async function POST(
 
     const { error } = await ctx.supabase
       .from("contract_envelopes")
-      .update({ status: "voided" })
+      .update({ status: "voided", voided_at: new Date().toISOString() })
       .eq("id", id);
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

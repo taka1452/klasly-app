@@ -39,6 +39,7 @@ export interface AlertThresholds {
   cancellation_rate_threshold: number;
   follow_up_after_days: number;
   contract_stuck_days: number;
+  tier_limit_warning_pct: number;
 }
 
 export interface DisplayPrefs {

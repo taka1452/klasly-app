@@ -175,6 +175,17 @@ export function ActivitySettingsPopover({
                     setThresholds((t) => ({ ...t, contract_stuck_days: v }))
                   }
                 />
+                <ThresholdRow
+                  label="Tier limit warning"
+                  value={thresholds.tier_limit_warning_pct}
+                  unit="%"
+                  onChange={(v) =>
+                    setThresholds((t) => ({
+                      ...t,
+                      tier_limit_warning_pct: Math.min(99, Math.max(50, v)),
+                    }))
+                  }
+                />
               </div>
             </div>
           )}

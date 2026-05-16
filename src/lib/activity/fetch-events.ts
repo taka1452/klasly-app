@@ -40,6 +40,7 @@ export async function fetchActivityEvents(
     roomBookings,
     payments,
     overages,
+    invoices,
     alerts,
   ] = await Promise.all([
     fetchBookingEvents(opts.supabase, opts.studioId, since),
@@ -54,6 +55,7 @@ export async function fetchActivityEvents(
     fetchRoomBookingEvents(opts.supabase, opts.studioId, since),
     fetchPaymentEvents(opts.supabase, opts.studioId, since),
     fetchOverageChargeEvents(opts.supabase, opts.studioId, since),
+    fetchInstructorInvoiceEvents(opts.supabase, opts.studioId, since),
     computeAlertEvents({
       supabase: opts.supabase,
       studioId: opts.studioId,
@@ -74,6 +76,7 @@ export async function fetchActivityEvents(
     ...roomBookings,
     ...payments,
     ...overages,
+    ...invoices,
     ...alerts,
   ];
 
@@ -491,10 +494,67 @@ async function fetchOverageChargeEvents(
   });
 }
 
+async function fetchInstructorInvoiceEvents(
+  supabase: SupabaseClient,
+  studioId: string,
+  since: string,
+): Promise<ActivityEvent[]> {
+  // We surface two transitions: invoice was sent (sent_at) and invoice was
+  // paid (paid_at). Both come from the same row, so this fetch covers both.
+  const { data, error } = await supabase
+    .from("instructor_invoices")
+    .select(
+      `id, period_start, period_end, total_cents, status, sent_at, paid_at,
+       instructor_id,
+       instructors:instructor_id ( profile_id, profiles:profile_id ( full_name ) )`,
+    )
+    .eq("studio_id", studioId)
+    .or(`sent_at.gte.${since},paid_at.gte.${since}`)
+    .limit(PER_SOURCE_LIMIT);
+
+  if (error || !data) return [];
+
+  const events: ActivityEvent[] = [];
+  for (const r of data as unknown as RawInvoiceRow[]) {
+    const name = r.instructors?.profiles?.full_name ?? "An instructor";
+    const amount = `$${(r.total_cents / 100).toFixed(2)}`;
+    const period = formatPeriod(r.period_start);
+    const instructorScope = r.instructors?.profile_id ?? null;
+
+    if (r.sent_at && r.sent_at >= since) {
+      events.push({
+        id: `invoice-sent-${r.id}`,
+        category: "billing",
+        severity: "info",
+        title: `Invoice sent to ${name}`,
+        subtitle: `${amount} for ${period}`,
+        occurredAt: r.sent_at,
+        ctaLabel: "View instructors",
+        ctaHref: "/instructors",
+        scope: { instructorId: instructorScope },
+      });
+    }
+    if (r.paid_at && r.paid_at >= since) {
+      events.push({
+        id: `invoice-paid-${r.id}`,
+        category: "billing",
+        severity: "success",
+        title: `${name}'s invoice paid`,
+        subtitle: `${amount} for ${period}`,
+        occurredAt: r.paid_at,
+        ctaLabel: "View instructors",
+        ctaHref: "/instructors",
+        scope: { instructorId: instructorScope },
+      });
+    }
+  }
+  return events;
+}
+
 function formatHours(h: number): string {
   if (Number.isInteger(h)) return `${h}h`;
   const rounded = Math.round(h * 10) / 10;
-  return Number.isInteger(rounded) ? `${rounded}h` : `${rounded}h`;
+  return `${rounded}h`;
 }
 
 function formatPeriod(isoDate: string): string {
@@ -579,11 +639,13 @@ async function fetchContractEvents(
   const { data, error } = await supabase
     .from("contract_envelopes")
     .select(
-      `id, title, status, created_at, completed_at, instructor_id,
+      `id, title, status, created_at, completed_at, voided_at, instructor_id,
        instructors:instructor_id ( id, profile_id, profiles:profile_id ( full_name ) )`,
     )
     .eq("studio_id", studioId)
-    .or(`created_at.gte.${since},completed_at.gte.${since}`)
+    .or(
+      `completed_at.gte.${since},voided_at.gte.${since}`,
+    )
     .order("created_at", { ascending: false })
     .limit(PER_SOURCE_LIMIT);
 
@@ -591,19 +653,33 @@ async function fetchContractEvents(
 
   const events: ActivityEvent[] = [];
   for (const r of data as unknown as RawContractRow[]) {
+    const signerName = r.instructors?.profiles?.full_name;
+    const instructorScope = r.instructors?.profile_id ?? null;
+
     if (r.status === "completed" && r.completed_at && r.completed_at >= since) {
       events.push({
         id: `contract-completed-${r.id}`,
         category: "member",
         severity: "success",
         title: `Contract "${r.title}" completed`,
-        subtitle: r.instructors?.profiles?.full_name
-          ? `Signer: ${r.instructors.profiles.full_name}`
-          : undefined,
+        subtitle: signerName ? `Signer: ${signerName}` : undefined,
         occurredAt: r.completed_at,
         ctaLabel: "View contract",
         ctaHref: "/contracts",
-        scope: { instructorId: r.instructors?.profile_id ?? null },
+        scope: { instructorId: instructorScope },
+      });
+    }
+    if (r.status === "voided" && r.voided_at && r.voided_at >= since) {
+      events.push({
+        id: `contract-voided-${r.id}`,
+        category: "member",
+        severity: "warning",
+        title: `Contract "${r.title}" voided`,
+        subtitle: signerName ? `Signer: ${signerName}` : undefined,
+        occurredAt: r.voided_at,
+        ctaLabel: "View contract",
+        ctaHref: "/contracts",
+        scope: { instructorId: instructorScope },
       });
     }
   }
@@ -809,6 +885,7 @@ interface RawContractRow {
   status: string;
   created_at: string;
   completed_at: string | null;
+  voided_at: string | null;
   instructor_id: string | null;
   instructors: {
     id?: string;
@@ -855,6 +932,21 @@ interface RawSessionMetaRow {
   id: string;
   cancelled_by_role: string | null;
   hours_returned: boolean | null;
+  instructor_id: string | null;
+  instructors: {
+    profile_id?: string | null;
+    profiles?: ProfilePart;
+  } | null;
+}
+
+interface RawInvoiceRow {
+  id: string;
+  period_start: string;
+  period_end: string;
+  total_cents: number;
+  status: string;
+  sent_at: string | null;
+  paid_at: string | null;
   instructor_id: string | null;
   instructors: {
     profile_id?: string | null;

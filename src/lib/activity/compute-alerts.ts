@@ -16,12 +16,14 @@ export async function computeAlertEvents(
     unsignedWaivers,
     stuckContracts,
     connectIncomplete,
+    tierApproaching,
   ] = await Promise.all([
     computeInactiveMembers(opts),
     computeFailedPayments(opts),
     computeUnsignedWaivers(opts),
     computeStuckContracts(opts),
     computeConnectIncomplete(opts),
+    computeTierLimitApproaching(opts),
   ]);
   return [
     ...inactive,
@@ -29,7 +31,86 @@ export async function computeAlertEvents(
     ...unsignedWaivers,
     ...stuckContracts,
     ...connectIncomplete,
+    ...tierApproaching,
   ];
+}
+
+async function computeTierLimitApproaching({
+  supabase,
+  studioId,
+  thresholds,
+}: ComputeAlertsOptions): Promise<ActivityEvent[]> {
+  const warningPct = Math.max(50, Math.min(99, thresholds.tier_limit_warning_pct));
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    .toISOString()
+    .slice(0, 10);
+  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+    .toISOString()
+    .slice(0, 10);
+
+  const { data: memberships, error } = await supabase
+    .from("instructor_memberships")
+    .select(
+      `id, instructor_id, tier_id,
+       instructors:instructor_id ( profile_id, profiles:profile_id ( full_name ) ),
+       instructor_membership_tiers:tier_id ( name, monthly_minutes )`,
+    )
+    .eq("studio_id", studioId)
+    .eq("status", "active")
+    .limit(100);
+
+  if (error || !memberships) return [];
+
+  const rows = memberships as unknown as MembershipRow[];
+  const instructorIds = rows.map((m) => m.instructor_id).filter(Boolean);
+  if (instructorIds.length === 0) return [];
+
+  const { data: sessions } = await supabase
+    .from("class_sessions")
+    .select("instructor_id, duration_minutes")
+    .eq("studio_id", studioId)
+    .eq("is_cancelled", false)
+    .in("instructor_id", instructorIds)
+    .gte("session_date", monthStart)
+    .lte("session_date", monthEnd);
+
+  const minutesByInstructor = new Map<string, number>();
+  for (const s of (sessions ?? []) as SessionMinutesRow[]) {
+    if (!s.instructor_id) continue;
+    minutesByInstructor.set(
+      s.instructor_id,
+      (minutesByInstructor.get(s.instructor_id) ?? 0) + (s.duration_minutes ?? 0),
+    );
+  }
+
+  const events: ActivityEvent[] = [];
+  for (const m of rows) {
+    const cap = m.instructor_membership_tiers?.monthly_minutes;
+    if (!cap || cap <= 0) continue;
+    const used = minutesByInstructor.get(m.instructor_id ?? "") ?? 0;
+    const pct = Math.round((used / cap) * 100);
+    if (pct < warningPct) continue;
+
+    const name = m.instructors?.profiles?.full_name ?? "An instructor";
+    const tier = m.instructor_membership_tiers?.name ?? "their tier";
+    const usedH = (used / 60).toFixed(used % 60 === 0 ? 0 : 1);
+    const capH = (cap / 60).toFixed(cap % 60 === 0 ? 0 : 1);
+
+    events.push({
+      id: `alert-tier-limit-${m.id}`,
+      category: "alert",
+      severity: pct >= 100 ? "critical" : "warning",
+      title: `${name} at ${pct}% of ${tier}`,
+      subtitle: `${usedH}h of ${capH}h this month`,
+      occurredAt: now.toISOString(),
+      actionRequired: pct >= 100,
+      ctaLabel: "View instructors",
+      ctaHref: "/instructors",
+      scope: { instructorId: m.instructors?.profile_id ?? null },
+    });
+  }
+  return events;
 }
 
 async function computeConnectIncomplete({
@@ -82,6 +163,25 @@ interface InstructorRow {
   created_at: string;
   profile_id: string | null;
   profiles: { full_name?: string | null } | null;
+}
+
+interface MembershipRow {
+  id: string;
+  instructor_id: string | null;
+  tier_id: string | null;
+  instructors: {
+    profile_id?: string | null;
+    profiles?: { full_name?: string | null } | null;
+  } | null;
+  instructor_membership_tiers: {
+    name?: string | null;
+    monthly_minutes?: number | null;
+  } | null;
+}
+
+interface SessionMinutesRow {
+  instructor_id: string | null;
+  duration_minutes: number | null;
 }
 
 async function computeInactiveMembers({

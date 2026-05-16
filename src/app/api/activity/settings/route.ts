@@ -18,7 +18,9 @@ function sanitizeThresholds(
   const out: Partial<AlertThresholds> = {};
   for (const key of Object.keys(DEFAULT_ALERT_THRESHOLDS) as (keyof AlertThresholds)[]) {
     const v = input[key];
-    if (typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= 365) {
+    // tier_limit_warning_pct is a percentage (0-100); everything else is days/count (0-365).
+    const max = key === "tier_limit_warning_pct" ? 100 : 365;
+    if (typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= max) {
       out[key] = Math.floor(v);
     }
   }
