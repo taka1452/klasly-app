@@ -13,6 +13,7 @@ export type DashboardSessionData = SessionData & {
   is_public: boolean;
   event_type?: "class" | "room_booking";
   room_id?: string | null;
+  recurrence_group_id?: string | null;
 };
 
 type Props = {
