@@ -47,6 +47,8 @@ export async function POST(request: Request) {
     const instructorId =
       typeof body.instructor_id === "string" && body.instructor_id ? body.instructor_id : null;
     const signers = Array.isArray(body.signers) ? body.signers : [];
+    const mergeFields =
+      body.merge_fields && typeof body.merge_fields === "object" ? body.merge_fields : {};
 
     if (!formId) {
       return NextResponse.json({ error: "form_id is required" }, { status: 400 });
@@ -115,6 +117,7 @@ export async function POST(request: Request) {
         instructor_id: instructorId,
         status: "in_progress",
         created_by: ctx.userId,
+        merge_fields: mergeFields,
       })
       .select("id, title")
       .single();

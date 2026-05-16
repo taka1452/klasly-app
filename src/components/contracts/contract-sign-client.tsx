@@ -28,6 +28,7 @@ type LoadedData = {
     title: string;
     status: string;
     studio_name: string;
+    merge_fields?: Record<string, string>;
   };
   signer: {
     id: string;
@@ -74,9 +75,12 @@ export default function ContractSignClient({ token }: { token: string }) {
         if (!cancelled) {
           setData(json);
           if (json.signer.status === "signed") setSubmitted(true);
-          // Pre-fill the signature name with the signer's known name as
-          // a convenience — they can always override.
           setSignatureName(json.signer.name);
+          // Pre-fill form responses from envelope merge_fields (admin-set values).
+          const mf = json.envelope.merge_fields;
+          if (mf && typeof mf === "object") {
+            setResponses((prev) => ({ ...prev, ...mf }));
+          }
         }
       } catch {
         if (!cancelled) setLoadError("Couldn't reach the server");
@@ -207,14 +211,18 @@ export default function ContractSignClient({ token }: { token: string }) {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {data.form.fields.map((f) => (
-          <FieldRow
-            key={f.id}
-            field={f}
-            value={responses[f.id]}
-            onChange={(v) => setResponses((r) => ({ ...r, [f.id]: v }))}
-          />
-        ))}
+        {data.form.fields.map((f) => {
+          const isMerged = !!(data.envelope.merge_fields && f.id in data.envelope.merge_fields);
+          return (
+            <FieldRow
+              key={f.id}
+              field={f}
+              value={responses[f.id]}
+              onChange={(v) => setResponses((r) => ({ ...r, [f.id]: v }))}
+              readOnly={isMerged}
+            />
+          );
+        })}
 
         <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white p-4 transition-colors duration-200 focus-within:border-gray-400">
           <label className="block text-xs font-semibold uppercase tracking-wide text-gray-600">
@@ -268,10 +276,12 @@ function FieldRow({
   field,
   value,
   onChange,
+  readOnly,
 }: {
   field: FormField;
   value: string | boolean | string[] | undefined;
   onChange: (v: string | boolean | string[]) => void;
+  readOnly?: boolean;
 }) {
   const labelEl = (
     <label className="block text-sm font-medium text-gray-900">
@@ -291,8 +301,9 @@ function FieldRow({
           value={typeof value === "string" ? value : ""}
           onChange={(e) => onChange(e.target.value)}
           rows={4}
-          className="input-field mt-1 w-full"
+          className={`input-field mt-1 w-full${readOnly ? " bg-gray-100 text-gray-600" : ""}`}
           required={field.required}
+          readOnly={readOnly}
         />
       </div>
     );
@@ -323,8 +334,9 @@ function FieldRow({
         <select
           value={typeof value === "string" ? value : ""}
           onChange={(e) => onChange(e.target.value)}
-          className="input-field mt-1 w-full"
+          className={`input-field mt-1 w-full${readOnly ? " bg-gray-100 text-gray-600" : ""}`}
           required={field.required}
+          disabled={readOnly}
         >
           <option value="">Select…</option>
           {field.options.map((o) => (
@@ -471,8 +483,9 @@ function FieldRow({
         type={inputType}
         value={typeof value === "string" ? value : ""}
         onChange={(e) => onChange(e.target.value)}
-        className="input-field mt-1 w-full"
+        className={`input-field mt-1 w-full${readOnly ? " bg-gray-100 text-gray-600" : ""}`}
         required={field.required}
+        readOnly={readOnly}
       />
     </div>
   );

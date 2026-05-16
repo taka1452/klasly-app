@@ -26,7 +26,16 @@ import { ArrowDown, ArrowUp, GripVertical, Plus, X } from "lucide-react";
  * similar to how Jotform works?"
  */
 
-type FormShape = { id: string; name: string };
+type FormField = {
+  id: string;
+  label: string;
+  type: string;
+  required?: boolean;
+  options?: string[];
+  help_text?: string;
+};
+
+type FormShape = { id: string; name: string; fields?: FormField[] };
 
 type Signer = {
   name: string;
@@ -50,6 +59,8 @@ export default function SendForSigningModal({
     { name: "", email: "", role_label: "" },
     { name: "", email: "", role_label: "" },
   ]);
+  const [mergeFields, setMergeFields] = useState<Record<string, string>>({});
+  const [formFields, setFormFields] = useState<FormField[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -58,18 +69,29 @@ export default function SendForSigningModal({
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/dashboard/instructors");
-        if (!res.ok) return;
-        const data = (await res.json()) as Instructor[];
-        if (!cancelled) setInstructors(data);
+        const [instrRes, formRes] = await Promise.all([
+          fetch("/api/dashboard/instructors"),
+          fetch(`/api/forms/${form.id}`),
+        ]);
+        if (!cancelled && instrRes.ok) {
+          setInstructors((await instrRes.json()) as Instructor[]);
+        }
+        if (!cancelled && formRes.ok) {
+          const formData = await formRes.json();
+          const fields = (formData.fields ?? []) as FormField[];
+          const fillable = fields.filter(
+            (f) => f.type !== "signature" && f.type !== "acknowledgement"
+          );
+          setFormFields(fillable);
+        }
       } catch {
-        // optional list — modal still works without it
+        // optional lists — modal still works without them
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [form.id]);
 
   function updateSigner(idx: number, patch: Partial<Signer>) {
     setSigners((rows) => rows.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
@@ -121,6 +143,7 @@ export default function SendForSigningModal({
         title: title.trim() || form.name,
         instructor_id: instructorId || null,
         signers: cleaned,
+        merge_fields: Object.keys(mergeFields).length > 0 ? mergeFields : null,
       }),
     });
     setSubmitting(false);
@@ -218,6 +241,60 @@ export default function SendForSigningModal({
                 profile for easy access later.
               </p>
             </div>
+
+            {formFields.length > 0 && (
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-gray-600">
+                  Contract details (pre-fill for this envelope)
+                </label>
+                <p className="mt-1 mb-2 text-[11px] text-gray-500">
+                  Fill in the values below. Signers will see these as read-only on the signing page.
+                </p>
+                <div className="space-y-2 rounded-lg border border-gray-200 bg-gray-50/60 p-3">
+                  {formFields.map((f) => (
+                    <div key={f.id}>
+                      <label className="block text-xs font-medium text-gray-700">
+                        {f.label}
+                      </label>
+                      {f.type === "select" && Array.isArray(f.options) ? (
+                        <select
+                          value={mergeFields[f.id] ?? ""}
+                          onChange={(e) =>
+                            setMergeFields((prev) => ({ ...prev, [f.id]: e.target.value }))
+                          }
+                          className="input-field mt-0.5 w-full text-sm"
+                        >
+                          <option value="">— Leave blank —</option>
+                          {f.options.map((o) => (
+                            <option key={o} value={o}>{o}</option>
+                          ))}
+                        </select>
+                      ) : f.type === "textarea" ? (
+                        <textarea
+                          value={mergeFields[f.id] ?? ""}
+                          onChange={(e) =>
+                            setMergeFields((prev) => ({ ...prev, [f.id]: e.target.value }))
+                          }
+                          rows={2}
+                          className="input-field mt-0.5 w-full text-sm"
+                          placeholder={f.help_text || ""}
+                        />
+                      ) : (
+                        <input
+                          type={f.type === "date" ? "date" : f.type === "email" ? "email" : f.type === "tel" ? "tel" : "text"}
+                          value={mergeFields[f.id] ?? ""}
+                          onChange={(e) =>
+                            setMergeFields((prev) => ({ ...prev, [f.id]: e.target.value }))
+                          }
+                          className="input-field mt-0.5 w-full text-sm"
+                          placeholder={f.help_text || ""}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div>
               <div className="mb-2 flex items-center justify-between">

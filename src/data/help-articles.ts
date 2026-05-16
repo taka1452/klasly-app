@@ -829,7 +829,7 @@ export const helpArticles: HelpArticle[] = [
     summary: 'Add many members at once by uploading a spreadsheet. Welcome emails default off so you can stage your roster before launch.',
     category: 'members',
     audience: ['owner', 'manager'],
-    keywords: ['csv', 'import', 'bulk', 'members', 'upload', 'spreadsheet', 'migrate', 'transfer', 'welcome', 'launch'],
+    keywords: ['csv', 'import', 'bulk', 'members', 'upload', 'spreadsheet', 'migrate', 'transfer', 'welcome', 'launch', 'wellnessliving', 'mindbody', 'zen planner'],
     steps: [
       {
         title: 'Upload',
@@ -837,7 +837,7 @@ export const helpArticles: HelpArticle[] = [
       },
       {
         title: 'Map',
-        description: 'Klasly auto-detects column headers (Mindbody / Zen Planner / spreadsheet exports all work) — auto-detected fields show an "Auto-detected" badge. Optional columns: Phone, Date of Birth, Gender, Address, Referred By, Plan Type, Credits, Status, Is Minor, Guardian Email, Notes.',
+        description: 'Klasly auto-detects column headers (Mindbody / Zen Planner / WellnessLiving / spreadsheet exports all work) — auto-detected fields show an "Auto-detected" badge. WellnessLiving exports are automatically parsed: the multi-line Client column is split into Name, Email, and Phone; system rows are filtered out; duplicate members with multiple passes are merged with pass details in Notes. When WellnessLiving format is detected, you\'ll see a "Skip cancelled members" toggle that drops anyone with status code "L" (cancelled). Optional columns: Phone, Date of Birth, Gender, Address, Referred By, Plan Type, Credits, Status, Is Minor, Guardian Email, Notes.',
       },
       {
         title: 'Review',
@@ -849,6 +849,7 @@ export const helpArticles: HelpArticle[] = [
       },
     ],
     tips: [
+      'Migrating a lot of data and want help? Email your raw export to support@klasly.app — for large or messy imports, we can clean and load the data directly so you don\'t have to wrestle with column mapping.',
       'Recommended migration workflow: (1) import existing members with welcome emails OFF and waiver-signed ON, (2) finish setting up waivers / passes / schedule, (3) when ready to launch, send invitations from the Members page or re-import a batch with the toggle ON.',
       'The new required-at-create fields (Phone, Date of Birth, Gender) are optional in the importer so legacy data still flows through.',
       'Dates accept ISO (1992-04-15), US (4/15/1992), EU (15/4/1992), and human-readable ("Apr 15, 1992") formats. Gender accepts female / male / prefer_not_to_say (or single-letter F / M).',
@@ -1045,6 +1046,7 @@ export const helpArticles: HelpArticle[] = [
       'Need an unusual duration like 4 months? Use "Valid for…" and type any number — Klasly converts months × 30 days behind the scenes.',
       'Class restrictions are enforced at booking time — a restricted pass won\'t be offered for classes it doesn\'t cover.',
       'Renewal reminders: Klasly automatically emails members 7 days before their pass expires (and again on the expiry day) so they can buy again before they lose access. Stripe-renewing monthly passes are skipped — Stripe handles those.',
+      'To edit an existing pass, click "Edit" on the pass card on the Passes page. You can change the name, description, price, class limits, expiry rules, class restrictions, and active/inactive status. Price changes create a new Stripe price under the hood — existing subscribers keep their original price.',
     ],
     relatedArticles: ['collective-overview', 'create-products', 'member-pass-freeze-gift'],
   },
@@ -1802,7 +1804,7 @@ export const helpArticles: HelpArticle[] = [
       },
       {
         title: 'Configure the envelope',
-        description: 'Set the title (defaults to the form name) and optionally tie the envelope to an instructor — when set, the signed contract automatically appears on that instructor\'s profile under "Signed contracts."',
+        description: 'Set the title (defaults to the form name) and optionally tie the envelope to an instructor — when set, the signed contract automatically appears on that instructor\'s profile under "Signed contracts." Below the instructor selector, a "Contract details" section appears with one input per fillable form field, so you can pre-fill per-instructor details (Effective Date, Signee Name, Monthly Fee, etc.) before sending. Signers see these values as read-only on the signing page. To pre-fill specific fields, those fields need to exist on the contract form first — the form builder has a "+ Contract template" shortcut that adds the common instructor-contract set in one click.',
       },
       {
         title: 'Add signers in order',
@@ -1817,7 +1819,7 @@ export const helpArticles: HelpArticle[] = [
       'External signers (lawyers, witnesses) don\'t need a Klasly login — the signing page is a public URL secured by a one-time token.',
       'Signers can decline ("I can\'t sign this"); the studio gets notified and the envelope is voided.',
       'Resend rotates the token, so the old link becomes invalid. Void cancels the envelope entirely.',
-      'All form field types (including rating scales and signature fields) are fully supported on the public signing page.',
+      'All form field types (including rating scales and signature fields) are fully supported on the public signing page. Pre-filled (merge) fields appear read-only so the signer can see the terms without editing them.',
       'Print signed copy on the envelope detail page opens a clean letter-style view — Cmd-P → Save as PDF gives you a real PDF.',
     ],
     relatedArticles: ['setup-waiver-template'],
@@ -1847,6 +1849,7 @@ export const helpArticles: HelpArticle[] = [
     tips: [
       'Rating scales work great for wellness intake forms — e.g. PHQ-9 style questionnaires.',
       'Use "Acknowledgement" for terms or waivers the respondent must check to agree.',
+      'Building an instructor contract? Click "+ Contract template" in the field list to add Effective Date, Signee Name, Business Title, Mailing Address, Term, Monthly Fee, Contracted Hours, Security Deposit Amount, and Security Deposit Status (Paid / Unpaid / Waived) in one click. These then become pre-fillable from the Send-for-signing dialog.',
     ],
     relatedArticles: ['multi-signature-contracts'],
   },

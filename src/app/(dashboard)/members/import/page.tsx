@@ -126,6 +126,7 @@ type PreviewData = {
   columns: string[];
   preview: Record<string, string>[];
   totalRows: number;
+  format?: "wellnessliving" | "standard";
 };
 
 type ImportResult = {
@@ -175,6 +176,8 @@ export default function ImportMembersPage() {
   const [defaultStatus, setDefaultStatus] = useState<string>("active");
   const [sendWelcomeEmail, setSendWelcomeEmail] = useState(false);
   const [markWaiverSigned, setMarkWaiverSigned] = useState(false);
+  // WellnessLiving-only: drop members with status code "L" (cancelled).
+  const [skipCancelled, setSkipCancelled] = useState(false);
 
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
@@ -240,7 +243,7 @@ export default function ImportMembersPage() {
     ]
   );
 
-  async function handleFile(f: File) {
+  async function handleFile(f: File, opts: { skipCancelled?: boolean } = {}) {
     setUploadError("");
     const name = (f.name || "").toLowerCase();
     if (!name.endsWith(".csv")) {
@@ -255,6 +258,7 @@ export default function ImportMembersPage() {
     try {
       const form = new FormData();
       form.append("file", f);
+      if (opts.skipCancelled) form.append("skipCancelled", "true");
       const res = await fetch("/api/import/preview", { method: "POST", body: form });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -365,6 +369,7 @@ export default function ImportMembersPage() {
           defaultStatus: resolvedStatus,
           sendWelcomeEmail,
           markWaiverSigned,
+          skipCancelled,
         }),
       });
 
@@ -442,7 +447,7 @@ export default function ImportMembersPage() {
         </h1>
         <p className="mt-1 text-sm text-gray-500">
           {step === 1 &&
-            "Switching from Mindbody, Zen Planner, or a spreadsheet? Import your members in minutes."}
+            "Switching from Mindbody, Zen Planner, WellnessLiving, or a spreadsheet? Import your members in minutes."}
           {step === 2 && "Tell us which columns in your CSV match Klasly's fields."}
           {step === 3 && "Set defaults and confirm."}
           {step === 4 && "Summary of your import."}
@@ -566,6 +571,29 @@ export default function ImportMembersPage() {
 
       {step === 2 && previewData && (
         <div className="space-y-6">
+          {previewData.format === "wellnessliving" && (
+            <div className="toast-enter-top rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
+              <p>
+                <span className="font-semibold">WellnessLiving format detected.</span>{" "}
+                Klasly parsed the multi-line Client column, filtered system rows,
+                and merged duplicate members. Pass details are in the Notes
+                column.
+              </p>
+              <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs text-blue-900">
+                <input
+                  type="checkbox"
+                  checked={skipCancelled}
+                  onChange={async (e) => {
+                    const next = e.target.checked;
+                    setSkipCancelled(next);
+                    if (file) await handleFile(file, { skipCancelled: next });
+                  }}
+                  className="h-3.5 w-3.5 rounded border-blue-300 text-blue-600 focus:ring-blue-500"
+                />
+                Skip cancelled members (status code &ldquo;L&rdquo; in WellnessLiving)
+              </label>
+            </div>
+          )}
           <div className="card space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>

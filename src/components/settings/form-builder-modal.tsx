@@ -62,6 +62,26 @@ export default function FormBuilderModal({ form, onClose, onSaved }: Props) {
     ]);
   }
 
+  // Common-contract preset — addresses Jamie's 2026-05-15 request
+  // ("Forms - Contracts") for per-instructor details that owners
+  // pre-fill from the Send-for-signing dialog. These show up as
+  // fillable fields here; the envelope flow pre-fills them and the
+  // signer sees them read-only on the signing page.
+  function addContractTemplateFields() {
+    const presets: FormField[] = [
+      { id: uid(), label: "Effective Date", type: "date", required: true },
+      { id: uid(), label: "Signee Name", type: "text", required: true },
+      { id: uid(), label: "Business Title", type: "text", required: false },
+      { id: uid(), label: "Signee Mailing Address", type: "textarea", required: false },
+      { id: uid(), label: "Term of Agreement", type: "text", required: false, help_text: "e.g. 12 months, beginning on the effective date" },
+      { id: uid(), label: "Monthly Membership Fee", type: "text", required: false, help_text: "e.g. $300" },
+      { id: uid(), label: "Contracted Monthly Hours", type: "text", required: false, help_text: "e.g. 20 hours" },
+      { id: uid(), label: "Security Deposit Amount", type: "text", required: false },
+      { id: uid(), label: "Security Deposit Status", type: "select", required: false, options: ["Paid", "Unpaid", "Waived"] },
+    ];
+    setFields((fs) => [...fs, ...presets]);
+  }
+
   function move(index: number, dir: -1 | 1) {
     setFields((fs) => {
       const copy = [...fs];
@@ -201,13 +221,23 @@ export default function FormBuilderModal({ form, onClose, onSaved }: Props) {
             <div className="mt-4 border-t border-gray-100 pt-4">
               <div className="mb-2 flex items-center justify-between">
                 <h4 className="text-sm font-semibold">Fields</h4>
-                <button
-                  type="button"
-                  onClick={addField}
-                  className="rounded-lg border border-gray-200 px-2 py-1 text-xs font-medium hover:bg-gray-50"
-                >
-                  + Add field
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={addContractTemplateFields}
+                    className="rounded-lg border border-gray-200 px-2 py-1 text-xs font-medium transition-[background-color,transform] duration-150 ease-out hover:bg-gray-50 active:scale-[0.97]"
+                    title="Adds Effective Date, Signee Name, Business Title, Mailing Address, Term, Monthly Fee, Contracted Hours, and Security Deposit fields"
+                  >
+                    + Contract template
+                  </button>
+                  <button
+                    type="button"
+                    onClick={addField}
+                    className="rounded-lg border border-gray-200 px-2 py-1 text-xs font-medium transition-[background-color,transform] duration-150 ease-out hover:bg-gray-50 active:scale-[0.97]"
+                  >
+                    + Add field
+                  </button>
+                </div>
               </div>
               <ol className="space-y-2">
                 {fields.map((f, i) => (

@@ -224,10 +224,20 @@ export default async function PassesPage() {
                     <p className="mt-1 text-sm text-gray-500">{pass.description}</p>
                   )}
                 </div>
-                <p className="text-lg font-bold text-gray-900">
-                  ${(pass.price_cents / 100).toFixed(2)}
-                  <span className="text-sm font-normal text-gray-500">/month</span>
-                </p>
+                <div className="flex items-center gap-3">
+                  <p className="text-lg font-bold text-gray-900">
+                    ${(pass.price_cents / 100).toFixed(2)}
+                    <span className="text-sm font-normal text-gray-500">/month</span>
+                  </p>
+                  {(ctx.role === "owner" || ctx.permissions?.can_manage_settings) && (
+                    <Link
+                      href={`/passes/${pass.id}/edit`}
+                      className="inline-flex items-center rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 transition-[transform,background-color] duration-150 ease-out hover:bg-gray-50 active:scale-[0.97]"
+                    >
+                      Edit
+                    </Link>
+                  )}
+                </div>
               </div>
 
               <div className="mt-4 flex flex-wrap items-center gap-6 text-sm text-gray-600">

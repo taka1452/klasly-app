@@ -2,6 +2,10 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
 import { parse } from "csv-parse/sync";
 import { NextResponse } from "next/server";
+import {
+  isWellnessLivingFormat,
+  normalizeWellnessLiving,
+} from "@/lib/import/wellnessliving";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const PREVIEW_ROWS = 5;
@@ -52,6 +56,7 @@ export async function POST(request: Request) {
 
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
+    const skipCancelled = formData.get("skipCancelled") === "true";
 
     if (!file) {
       return NextResponse.json(
@@ -84,14 +89,18 @@ export async function POST(request: Request) {
       relax_column_count: true,
     }) as Record<string, string>[];
 
-    const columns = records.length > 0 ? Object.keys(records[0]) : [];
-    const preview = records.slice(0, PREVIEW_ROWS);
-    const totalRows = records.length;
+    const rawColumns = records.length > 0 ? Object.keys(records[0]) : [];
+    const isWL = isWellnessLivingFormat(rawColumns);
+    const normalized = isWL ? normalizeWellnessLiving(records, { skipCancelled }) : records;
+    const columns = normalized.length > 0 ? Object.keys(normalized[0]) : rawColumns;
+    const preview = normalized.slice(0, PREVIEW_ROWS);
+    const totalRows = normalized.length;
 
     return NextResponse.json({
       columns,
       preview,
       totalRows,
+      format: isWL ? "wellnessliving" : "standard",
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to parse CSV";

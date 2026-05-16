@@ -11,6 +11,10 @@ import {
   type PlanType,
   type MemberStatus,
 } from "@/lib/import/csv-utils";
+import {
+  isWellnessLivingFormat,
+  normalizeWellnessLiving,
+} from "@/lib/import/wellnessliving";
 import { checkPlanLimit } from "@/lib/plan-limits";
 import { sendEmail } from "@/lib/email/send";
 import { welcomeMember } from "@/lib/email/templates";
@@ -169,6 +173,7 @@ export async function POST(request: Request) {
       defaultStatus = "active",
       sendWelcomeEmail = false,
       markWaiverSigned = false,
+      skipCancelled = false,
     } = body as {
       csvData?: string;
       nameMode?: "combined" | "separate";
@@ -181,6 +186,7 @@ export async function POST(request: Request) {
       defaultStatus?: string;
       sendWelcomeEmail?: boolean;
       markWaiverSigned?: boolean;
+      skipCancelled?: boolean;
     };
 
     if (!csvData || typeof csvData !== "string") {
@@ -200,14 +206,17 @@ export async function POST(request: Request) {
       );
     }
 
-    const records = parse(csvText, {
+    const rawRecords = parse(csvText, {
       columns: true,
       skip_empty_lines: true,
       trim: true,
       relax_column_count: true,
     }) as Record<string, string>[];
 
-    const columns = records.length > 0 ? Object.keys(records[0]) : [];
+    const rawColumns = rawRecords.length > 0 ? Object.keys(rawRecords[0]) : [];
+    const isWL = isWellnessLivingFormat(rawColumns);
+    const records = isWL ? normalizeWellnessLiving(rawRecords, { skipCancelled }) : rawRecords;
+    const columns = records.length > 0 ? Object.keys(records[0]) : rawColumns;
     const skipped: RowResult[] = [];
     const errors: RowResult[] = [];
     let imported = 0;
