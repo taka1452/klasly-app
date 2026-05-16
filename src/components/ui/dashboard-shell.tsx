@@ -99,7 +99,7 @@ export default function DashboardShell({
           onSidebarToggle={() => setSidebarOpen((o) => !o)}
           showAdminLink={showAdminLink}
         />
-        <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-4 pb-32 md:p-6 md:pb-32">
+        <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pt-3 pb-32 md:px-6 md:pt-4 md:pb-32">
           {banner && <div className="mb-6">{banner}</div>}
           {planAccess ? (
             <PlanAccessProvider planAccess={planAccess}>
