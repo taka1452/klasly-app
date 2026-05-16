@@ -64,56 +64,91 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ report: [], totals: { totalDue: 0, instructorCount: 0 } });
     }
 
-    // Get class counts for per_class instructors
-    // Find classes assigned to each instructor, then count sessions in the month
-    const perClassInstructorIds = instructors
-      .filter((i) => (i as { rental_type: string }).rental_type === "per_class")
+    // Per-class / per-hour both need session-level data for the month.
+    // Per-class counts sessions; per-hour sums duration_minutes from
+    // class_sessions *plus* the duration of any non-cancelled
+    // instructor_room_bookings (ad-hoc room rentals don't go through
+    // class_sessions but the renter should still be billed for them).
+    const usageInstructorIds = instructors
+      .filter((i) => {
+        const t = (i as { rental_type: string }).rental_type;
+        return t === "per_class" || t === "per_hour";
+      })
       .map((i) => i.id);
 
-    let sessionCounts: Record<string, number> = {};
+    const perHourInstructorIds = instructors
+      .filter((i) => (i as { rental_type: string }).rental_type === "per_hour")
+      .map((i) => i.id);
 
-    if (perClassInstructorIds.length > 0) {
+    const sessionCounts: Record<string, number> = {};
+    const sessionMinutes: Record<string, number> = {};
+
+    if (usageInstructorIds.length > 0) {
       // Get classes for these instructors (both legacy and templates)
       const [{ data: legacyClasses }, { data: templateClasses }] = await Promise.all([
         adminDb
           .from("classes")
           .select("id, instructor_id")
           .eq("studio_id", profile.studio_id)
-          .in("instructor_id", perClassInstructorIds),
+          .in("instructor_id", usageInstructorIds),
         adminDb
           .from("class_templates")
           .select("id, instructor_id")
           .eq("studio_id", profile.studio_id)
-          .in("instructor_id", perClassInstructorIds),
+          .in("instructor_id", usageInstructorIds),
       ]);
       const classes = [...(legacyClasses ?? []), ...(templateClasses ?? [])];
 
       if (classes.length > 0) {
         const classIds = classes.map((c) => c.id);
 
-        // Count sessions per class in the month
+        // Pull session count + duration for the month
         const { data: sessions } = await adminDb
           .from("class_sessions")
-          .select("id, class_id")
+          .select("id, class_id, duration_minutes")
           .in("class_id", classIds)
           .gte("session_date", startDate)
           .lt("session_date", endDate)
           .eq("is_cancelled", false);
 
         if (sessions) {
-          // Map class_id → instructor_id
           const classToInstructor: Record<string, string> = {};
           for (const cls of classes) {
             classToInstructor[cls.id] = cls.instructor_id;
           }
 
-          // Count sessions per instructor
           for (const session of sessions) {
             const instId = classToInstructor[session.class_id];
-            if (instId) {
-              sessionCounts[instId] = (sessionCounts[instId] || 0) + 1;
-            }
+            if (!instId) continue;
+            sessionCounts[instId] = (sessionCounts[instId] || 0) + 1;
+            sessionMinutes[instId] =
+              (sessionMinutes[instId] || 0) + (session.duration_minutes ?? 0);
           }
+        }
+      }
+    }
+
+    // Add room-only bookings into the per_hour totals. The room booking
+    // table stores start/end times (no duration column), so compute the
+    // diff in JS — small N, no need for SQL math.
+    if (perHourInstructorIds.length > 0) {
+      const { data: roomBookings } = await adminDb
+        .from("instructor_room_bookings")
+        .select("instructor_id, start_time, end_time, status")
+        .eq("studio_id", profile.studio_id)
+        .in("instructor_id", perHourInstructorIds)
+        .gte("booking_date", startDate)
+        .lt("booking_date", endDate);
+      if (roomBookings) {
+        for (const rb of roomBookings) {
+          // Drop cancelled / pending if those are ever introduced; today
+          // the table doesn't enforce a status enum so be conservative.
+          if (rb.status && /cancel|reject|declin/i.test(rb.status)) continue;
+          const [sH, sM] = (rb.start_time as string).split(":").map(Number);
+          const [eH, eM] = (rb.end_time as string).split(":").map(Number);
+          const minutes = Math.max(0, eH * 60 + eM - (sH * 60 + sM));
+          sessionMinutes[rb.instructor_id] =
+            (sessionMinutes[rb.instructor_id] || 0) + minutes;
         }
       }
     }
@@ -126,6 +161,7 @@ export async function GET(request: NextRequest) {
       rentalType: string;
       rentalAmount: number;
       classCount: number;
+      hoursBilled: number;
       totalDue: number;
     };
 
@@ -148,6 +184,7 @@ export async function GET(request: NextRequest) {
         : rental.profiles;
 
       let classCount = 0;
+      let hoursBilled = 0;
       let due = 0;
 
       if (rental.rental_type === "flat_monthly") {
@@ -155,6 +192,12 @@ export async function GET(request: NextRequest) {
       } else if (rental.rental_type === "per_class") {
         classCount = sessionCounts[rental.id] || 0;
         due = classCount * rental.rental_amount;
+      } else if (rental.rental_type === "per_hour") {
+        const minutes = sessionMinutes[rental.id] || 0;
+        // Round to two decimals to keep the report readable; the actual
+        // due amount stays exact at the cent level.
+        hoursBilled = Math.round((minutes / 60) * 100) / 100;
+        due = Math.round((minutes / 60) * rental.rental_amount);
       }
 
       if (due > 0 || rental.rental_type === "flat_monthly") {
@@ -165,6 +208,7 @@ export async function GET(request: NextRequest) {
           rentalType: rental.rental_type,
           rentalAmount: rental.rental_amount,
           classCount,
+          hoursBilled,
           totalDue: due,
         });
         totalDue += due;

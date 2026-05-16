@@ -9,12 +9,14 @@ import { htmlToMarkdown, markdownToHtml } from "@/lib/waiver-content";
 type Template = { id: string; title: string; content: string } | null;
 type UnsignedMember = { id: string; fullName: string; email: string };
 
+type WaiverTemplateSummary = { id: string; title: string };
 type Props = {
   template: Template;
   studioName: string;
   signedCount: number;
   totalCount: number;
   unsignedMembers: UnsignedMember[];
+  allTemplates?: WaiverTemplateSummary[];
 };
 
 function getReplacedContent(preset: WaiverPreset, studioName: string): string {
@@ -60,6 +62,7 @@ export default function WaiverSettingsClient({
   signedCount,
   totalCount,
   unsignedMembers,
+  allTemplates = [],
 }: Props) {
   const [title, setTitle] = useState(initialTemplate?.title ?? "Liability Waiver");
   const [content, setContent] = useState(
@@ -70,6 +73,38 @@ export default function WaiverSettingsClient({
   const [resendLoading, setResendLoading] = useState<string | null>(null);
   const [bulkLoading, setBulkLoading] = useState(false);
   const [bulkSuccess, setBulkSuccess] = useState<number | null>(null);
+  // Per-template re-sign (T1-2): pick which waiver to ask members to
+  // sign. Defaults to the primary template; visible when the studio has
+  // configured per-class waivers in addition.
+  const [resignTemplateId, setResignTemplateId] = useState<string>(
+    initialTemplate?.id ?? allTemplates[0]?.id ?? ""
+  );
+  const [resignLoading, setResignLoading] = useState(false);
+  const [resignResult, setResignResult] = useState<{
+    sent: number;
+    skippedMinors?: number;
+  } | null>(null);
+
+  async function sendResignRequests() {
+    if (!resignTemplateId) return;
+    setResignLoading(true);
+    setResignResult(null);
+    try {
+      const res = await fetch("/api/waiver/send-bulk-invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ templateId: resignTemplateId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setToastMessage({ text: data.error || "Failed to send", variant: "error" });
+        return;
+      }
+      setResignResult({ sent: data.sent ?? 0, skippedMinors: data.skippedMinors });
+    } finally {
+      setResignLoading(false);
+    }
+  }
   const [showPresetPicker, setShowPresetPicker] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ text: string; variant: "success" | "error" } | null>(null);
 
@@ -282,6 +317,54 @@ export default function WaiverSettingsClient({
           </>
         )}
       </div>
+
+      {/* Per-template re-sign request — only surface when the studio has
+          more than one active waiver template (i.e. per-class waivers
+          configured). The primary "Send to All Unsigned Members"
+          button below still handles the legacy single-waiver case. */}
+      {allTemplates.length > 1 && (
+        <div className="card">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Send a specific waiver to members
+          </h2>
+          <p className="mt-2 text-sm text-gray-600">
+            Pick a waiver template and email every active member who hasn&apos;t
+            signed it. Already-signed members are skipped automatically.
+          </p>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <select
+              value={resignTemplateId}
+              onChange={(e) => setResignTemplateId(e.target.value)}
+              className="input-field w-auto"
+            >
+              {allTemplates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.title}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={sendResignRequests}
+              disabled={resignLoading || !resignTemplateId}
+              className="btn-primary text-sm"
+            >
+              {resignLoading ? "Sending…" : "Send re-sign requests"}
+            </button>
+            {resignResult && (
+              <span className="text-sm font-medium text-green-600">
+                Sent to {resignResult.sent} member
+                {resignResult.sent === 1 ? "" : "s"}
+                {resignResult.skippedMinors
+                  ? ` (skipped ${resignResult.skippedMinors} minor${
+                      resignResult.skippedMinors === 1 ? "" : "s"
+                    } with no guardian email)`
+                  : ""}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="card">
         <h2 className="text-lg font-semibold text-gray-900">Waiver Status</h2>

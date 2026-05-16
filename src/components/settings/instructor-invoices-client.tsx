@@ -17,6 +17,8 @@ type Invoice = {
   flat_fee_cents: number;
   adjustments_cents: number;
   adjustments_note: string | null;
+  discount_code_id: string | null;
+  discount_amount_off_cents: number;
   total_cents: number;
   session_count: number;
   total_minutes: number;
@@ -115,6 +117,27 @@ export default function InstructorInvoicesClient({ instructors }: Props) {
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       setError(data.error || `Failed to ${action}`);
+      return;
+    }
+    await fetchInvoices();
+  }
+
+  async function applyDiscountCode(invoiceId: string) {
+    const code = window.prompt(
+      "Enter discount code to apply (leave blank to remove any existing code):"
+    );
+    if (code === null) return; // user cancelled
+    setBusyId(invoiceId);
+    setError(null);
+    const res = await fetch(`/api/invoices/${invoiceId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ discount_code: code }),
+    });
+    setBusyId(null);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error || "Failed to apply code");
       return;
     }
     await fetchInvoices();
@@ -254,6 +277,11 @@ export default function InstructorInvoicesClient({ instructors }: Props) {
                         adj {dollars(inv.adjustments_cents)}
                       </div>
                     )}
+                    {inv.discount_amount_off_cents > 0 && (
+                      <div className="text-xs text-emerald-600">
+                        -{dollars(inv.discount_amount_off_cents)} code
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <span
@@ -276,6 +304,14 @@ export default function InstructorInvoicesClient({ instructors }: Props) {
                     <div className="flex flex-wrap justify-end gap-1">
                       {inv.status === "draft" && (
                         <>
+                          <button
+                            type="button"
+                            onClick={() => applyDiscountCode(inv.id)}
+                            disabled={busyId === inv.id}
+                            className="rounded border border-emerald-200 px-2 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
+                          >
+                            {inv.discount_amount_off_cents > 0 ? "Edit code" : "Apply code"}
+                          </button>
                           <button
                             type="button"
                             onClick={() => runAction(inv.id, "send")}

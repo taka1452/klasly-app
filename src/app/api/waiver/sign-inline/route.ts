@@ -19,7 +19,11 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { memberId, signedName } = body;
+    const { memberId, signedName, templateId: rawTemplateId } = body;
+    const requestedTemplateId =
+      typeof rawTemplateId === "string" && rawTemplateId.trim()
+        ? rawTemplateId.trim()
+        : null;
 
     if (!memberId || typeof signedName !== "string") {
       return NextResponse.json(
@@ -77,11 +81,25 @@ export async function POST(request: Request) {
       }
     }
 
-    const { data: template } = await supabase
-      .from("waiver_templates")
-      .select("id")
-      .eq("studio_id", member.studio_id)
-      .single();
+    // Resolve which template to sign: explicit templateId (per-class
+    // waiver flow from T2-1) or the studio's primary waiver.
+    let template: { id: string } | null = null;
+    if (requestedTemplateId) {
+      const { data } = await supabase
+        .from("waiver_templates")
+        .select("id")
+        .eq("id", requestedTemplateId)
+        .eq("studio_id", member.studio_id)
+        .maybeSingle();
+      template = data;
+    } else {
+      const { data } = await supabase
+        .from("waiver_templates")
+        .select("id")
+        .eq("studio_id", member.studio_id)
+        .maybeSingle();
+      template = data;
+    }
 
     if (!template) {
       return NextResponse.json(
@@ -121,20 +139,25 @@ export async function POST(request: Request) {
       );
     })();
 
-    const { error: updateError } = await supabase
-      .from("members")
-      .update({
-        waiver_signed: true,
-        waiver_signed_at: signedAt,
-        ...(isAgedOutMinor ? { is_minor: false } : {}),
-      })
-      .eq("id", memberId);
+    // Only update members.waiver_signed when signing the primary studio
+    // waiver. Per-class waivers track their own signatures via
+    // waiver_signatures and shouldn't flip the studio-wide flag.
+    if (!requestedTemplateId) {
+      const { error: updateError } = await supabase
+        .from("members")
+        .update({
+          waiver_signed: true,
+          waiver_signed_at: signedAt,
+          ...(isAgedOutMinor ? { is_minor: false } : {}),
+        })
+        .eq("id", memberId);
 
-    if (updateError) {
-      return NextResponse.json(
-        { error: updateError.message },
-        { status: 500 }
-      );
+      if (updateError) {
+        return NextResponse.json(
+          { error: updateError.message },
+          { status: 500 }
+        );
+      }
     }
 
     return NextResponse.json({ success: true });

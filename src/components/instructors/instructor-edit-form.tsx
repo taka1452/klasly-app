@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Toast from "@/components/ui/toast";
 
-type RentalType = "none" | "flat_monthly" | "per_class";
+type RentalType = "none" | "flat_monthly" | "per_class" | "per_hour";
 type ContractTab = "none" | "hourly" | "flat";
 
 type TierOption = {
@@ -26,6 +26,7 @@ type Props = {
     phone: string;
     bio: string;
     specialties: string;
+    websiteUrl: string;
     rentalType: RentalType;
     rentalAmount: number; // cents
     tierId: string; // current tier assignment ("" = none)
@@ -44,6 +45,7 @@ export default function InstructorEditForm({
   const [phone, setPhone] = useState(initialData.phone);
   const [bio, setBio] = useState(initialData.bio);
   const [specialties, setSpecialties] = useState(initialData.specialties);
+  const [websiteUrl, setWebsiteUrl] = useState(initialData.websiteUrl);
   const [tierId, setTierId] = useState(initialData.tierId);
   const [rentalType, setRentalType] = useState<RentalType>(initialData.rentalType);
   const [rentalAmountDisplay, setRentalAmountDisplay] = useState(
@@ -123,12 +125,14 @@ export default function InstructorEditForm({
     const rentalAmountCents =
       rentalType !== "none" ? Math.round((parseFloat(rentalAmountDisplay) || 0) * 100) : 0;
 
+    const trimmedWebsite = websiteUrl.trim();
     const { error: instructorError } = await supabase
       .from("instructors")
       .update({
         bio: bio || null,
         specialties:
           specialtiesArray.length > 0 ? specialtiesArray : null,
+        website_url: trimmedWebsite || null,
         rental_type: rentalType,
         rental_amount: rentalAmountCents,
       })
@@ -257,6 +261,24 @@ export default function InstructorEditForm({
             className="input-field mt-1"
           />
           <p className="mt-1 text-xs text-gray-400">Comma-separated list</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Website{" "}
+            <span className="font-normal text-gray-400">(optional)</span>
+          </label>
+          <input
+            type="url"
+            value={websiteUrl}
+            onChange={(e) => setWebsiteUrl(e.target.value)}
+            placeholder="https://example.com"
+            className="input-field mt-1"
+          />
+          <p className="mt-1 text-xs text-gray-400">
+            Personal site or social profile, shown on this instructor&rsquo;s
+            public page.
+          </p>
         </div>
 
         {/* Contract */}
@@ -413,6 +435,7 @@ export default function InstructorEditForm({
                   [
                     { value: "flat_monthly" as RentalType, label: "Flat monthly", desc: "Fixed monthly studio usage fee" },
                     { value: "per_class" as RentalType, label: "Per class", desc: "Fee per class taught" },
+                    { value: "per_hour" as RentalType, label: "Per hour", desc: "Pay-as-you-go renters — billed by class duration each month" },
                   ] as const
                 ).map((opt) => (
                   <label
@@ -456,7 +479,11 @@ export default function InstructorEditForm({
                       className="input-field w-32"
                     />
                     <span className="text-sm text-gray-500">
-                      {rentalType === "flat_monthly" ? "/ month" : "/ class"}
+                      {rentalType === "flat_monthly"
+                        ? "/ month"
+                        : rentalType === "per_hour"
+                          ? "/ hour"
+                          : "/ class"}
                     </span>
                   </div>
                 </div>

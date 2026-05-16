@@ -38,6 +38,12 @@ type BookingResult = {
   success: boolean;
   error?: string;
   status?: number;
+  /** Machine-readable code for the client to switch on
+   *  (e.g. "WAIVERS_REQUIRED"). */
+  code?: string;
+  /** When code === "WAIVERS_REQUIRED", the list of unsigned waiver
+   *  template ids the client should surface for signing. */
+  missingWaiverTemplateIds?: string[];
 };
 
 /**
@@ -49,9 +55,10 @@ async function getActivePass(adminSupabase: SupabaseClient, memberId: string, cl
 
   const { data: passSubs } = await adminSupabase
     .from("pass_subscriptions")
-    .select("id, studio_pass_id, classes_used_this_period, studio_passes(id, max_classes_per_month)")
+    .select("id, studio_pass_id, classes_used_this_period, frozen_at, studio_passes(id, max_classes_per_month)")
     .eq("member_id", memberId)
     .eq("status", "active")
+    .is("frozen_at", null)
     .gte("current_period_end", today);
 
   if (!passSubs || passSubs.length === 0) return null;
@@ -412,6 +419,52 @@ export async function executeBookingAction({
         };
       }
     }
+
+    // Per-class required waivers: look up the session's template and
+    // check that the member has a signature for every required waiver
+    // template id. We resolve template id by going session → class_id →
+    // class_templates (when the session was generated from a template).
+    const { data: sessionRow } = await adminSupabase
+      .from("class_sessions")
+      .select("id, class_id, template_id, classes(template_id)")
+      .eq("id", sessionId)
+      .single();
+    const templateIdFromSession =
+      (sessionRow as { template_id?: string | null } | null)?.template_id ??
+      ((sessionRow as { classes?: { template_id?: string | null } } | null)
+        ?.classes?.template_id ?? null);
+    if (templateIdFromSession) {
+      const { data: tmpl } = await adminSupabase
+        .from("class_templates")
+        .select("required_waiver_template_ids")
+        .eq("id", templateIdFromSession)
+        .single();
+      const requiredIds =
+        ((tmpl as { required_waiver_template_ids?: string[] } | null)
+          ?.required_waiver_template_ids) || [];
+      if (requiredIds.length > 0) {
+        const { data: signed } = await adminSupabase
+          .from("waiver_signatures")
+          .select("template_id")
+          .eq("studio_id", member.studio_id)
+          .eq("member_id", member.id)
+          .in("template_id", requiredIds);
+        const signedIds = new Set(
+          (signed || []).map((s: { template_id: string }) => s.template_id)
+        );
+        const missing = requiredIds.filter((id) => !signedIds.has(id));
+        if (missing.length > 0) {
+          return {
+            success: false,
+            error:
+              "This class requires waivers you haven't signed yet.",
+            status: 403,
+            code: "WAIVERS_REQUIRED",
+            missingWaiverTemplateIds: missing,
+          };
+        }
+      }
+    }
   }
 
   // Fetch profile, studio, session info
@@ -459,6 +512,38 @@ export async function executeBookingAction({
   const isOnline = sessionAny.is_online ?? sessionAny.classes?.is_online ?? false;
   const onlineLink = sessionAny.online_link ?? sessionAny.classes?.online_link ?? null;
 
+  // Resolve confirmation-email overrides: per-class beats studio default.
+  // Template id can come via session.template_id (new) or via the legacy
+  // session.classes.template_id join — we already read those above.
+  let confirmationSubjectOverride: string | null = null;
+  let confirmationBodyOverride: string | null = null;
+  const templateIdForEmail =
+    (session as { template_id?: string | null } | null)?.template_id ?? null;
+  if (templateIdForEmail) {
+    const { data: tmpl } = await adminSupabase
+      .from("class_templates")
+      .select("confirmation_subject_override, confirmation_body_override")
+      .eq("id", templateIdForEmail)
+      .maybeSingle();
+    confirmationSubjectOverride = (tmpl as { confirmation_subject_override?: string | null } | null)?.confirmation_subject_override || null;
+    confirmationBodyOverride = (tmpl as { confirmation_body_override?: string | null } | null)?.confirmation_body_override || null;
+  }
+  if (!confirmationSubjectOverride || !confirmationBodyOverride) {
+    const { data: studioDefaults } = await adminSupabase
+      .from("studios")
+      .select("class_confirmation_subject, class_confirmation_body")
+      .eq("id", member.studio_id)
+      .maybeSingle();
+    confirmationSubjectOverride =
+      confirmationSubjectOverride ||
+      ((studioDefaults as { class_confirmation_subject?: string | null } | null)
+        ?.class_confirmation_subject || null);
+    confirmationBodyOverride =
+      confirmationBodyOverride ||
+      ((studioDefaults as { class_confirmation_body?: string | null } | null)
+        ?.class_confirmation_body || null);
+  }
+
   const emailPayload = {
     memberName,
     className,
@@ -467,6 +552,8 @@ export async function executeBookingAction({
     studioName,
     isOnline,
     onlineLink,
+    overrideSubject: confirmationSubjectOverride,
+    overrideBody: confirmationBodyOverride,
   };
 
   // スタジオ設定に基づきクレジット要否を判定

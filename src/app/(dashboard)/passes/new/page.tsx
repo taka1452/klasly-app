@@ -16,14 +16,21 @@ const PASS_TYPE_OPTIONS: { value: PassType; label: string; description: string }
   { value: "drop_in", label: "Drop-in", description: "Single session access pass" },
 ];
 
-const EXPIRY_OPTIONS = [
-  { value: "", label: "No expiry" },
-  { value: "30", label: "30 days" },
-  { value: "60", label: "60 days" },
-  { value: "90", label: "90 days" },
-  { value: "180", label: "6 months" },
-  { value: "365", label: "1 year" },
-  { value: "custom", label: "Custom date" },
+type ExpiryMode = "none" | "duration" | "fixed_date";
+type DurationUnit = "days" | "weeks" | "months";
+
+const DURATION_UNITS: { value: DurationUnit; label: string; daysPerUnit: number }[] = [
+  { value: "days", label: "Days", daysPerUnit: 1 },
+  { value: "weeks", label: "Weeks", daysPerUnit: 7 },
+  { value: "months", label: "Months", daysPerUnit: 30 },
+];
+
+const DURATION_PRESETS: { label: string; value: number; unit: DurationUnit }[] = [
+  { label: "1 month", value: 1, unit: "months" },
+  { label: "3 months", value: 3, unit: "months" },
+  { label: "4 months", value: 4, unit: "months" },
+  { label: "6 months", value: 6, unit: "months" },
+  { label: "1 year", value: 12, unit: "months" },
 ];
 
 export default function NewPassPage() {
@@ -35,7 +42,9 @@ export default function NewPassPage() {
   const [unlimited, setUnlimited] = useState(true);
   const [maxClasses, setMaxClasses] = useState("");
   const [passType, setPassType] = useState<PassType>("monthly");
-  const [expiresAfterDays, setExpiresAfterDays] = useState("");
+  const [expiryMode, setExpiryMode] = useState<ExpiryMode>("none");
+  const [durationValue, setDurationValue] = useState("3");
+  const [durationUnit, setDurationUnit] = useState<DurationUnit>("months");
   const [expiresOn, setExpiresOn] = useState("");
   const [selectedTemplates, setSelectedTemplates] = useState<string[]>([]);
   const [templates, setTemplates] = useState<ClassTemplate[]>([]);
@@ -78,7 +87,17 @@ export default function NewPassPage() {
         return;
       }
     }
-    if (expiresAfterDays === "custom" && !expiresOn) {
+    let expiresAfterDays: number | null = null;
+    if (expiryMode === "duration") {
+      const n = parseInt(durationValue, 10);
+      if (isNaN(n) || n <= 0) {
+        setError("Please enter a positive duration.");
+        return;
+      }
+      const unit = DURATION_UNITS.find((u) => u.value === durationUnit);
+      expiresAfterDays = n * (unit?.daysPerUnit ?? 1);
+    }
+    if (expiryMode === "fixed_date" && !expiresOn) {
       setError("Please select an expiration date.");
       return;
     }
@@ -94,8 +113,8 @@ export default function NewPassPage() {
           price_cents: Math.round(priceNum * 100),
           max_classes_per_month: passType === "monthly" && !unlimited ? parseInt(maxClasses, 10) : null,
           pass_type: passType,
-          expires_after_days: expiresAfterDays && expiresAfterDays !== "custom" ? parseInt(expiresAfterDays, 10) : null,
-          expires_on: expiresAfterDays === "custom" ? expiresOn : null,
+          expires_after_days: expiryMode === "duration" ? expiresAfterDays : null,
+          expires_on: expiryMode === "fixed_date" ? expiresOn : null,
           class_template_ids: selectedTemplates.length > 0 ? selectedTemplates : null,
         }),
       });
@@ -260,24 +279,91 @@ export default function NewPassPage() {
               helpSlug="studio-pass"
             />
           </label>
-          <select
-            value={expiresAfterDays}
-            onChange={(e) => {
-              setExpiresAfterDays(e.target.value);
-              if (e.target.value !== "custom") setExpiresOn("");
-            }}
-            className="input-field mt-1"
-          >
-            {EXPIRY_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
+          <div className="mt-2 space-y-2">
+            {(
+              [
+                { value: "none" as ExpiryMode, label: "No expiry", desc: "Pass never expires" },
+                { value: "duration" as ExpiryMode, label: "Valid for…", desc: "Expires N days/weeks/months after purchase" },
+                { value: "fixed_date" as ExpiryMode, label: "Fixed expiry date", desc: "All passes expire on the same date (e.g. end of season)" },
+              ] as const
+            ).map((opt) => (
+              <label
+                key={opt.value}
+                className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm transition-colors ${
+                  expiryMode === opt.value
+                    ? "border-brand-400 bg-brand-50"
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="expiryMode"
+                  value={opt.value}
+                  checked={expiryMode === opt.value}
+                  onChange={() => {
+                    setExpiryMode(opt.value);
+                    if (opt.value !== "fixed_date") setExpiresOn("");
+                  }}
+                  className="mt-0.5 accent-brand-500"
+                />
+                <div>
+                  <p className="font-medium text-gray-900">{opt.label}</p>
+                  <p className="text-xs text-gray-500">{opt.desc}</p>
+                </div>
+              </label>
             ))}
-          </select>
-          {expiresAfterDays === "custom" && (
-            <div className="mt-2">
+          </div>
+
+          {expiryMode === "duration" && (
+            <div className="mt-3 rounded-lg border border-gray-200 p-3">
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min="1"
+                  value={durationValue}
+                  onChange={(e) => setDurationValue(e.target.value)}
+                  className="input-field w-24"
+                />
+                <select
+                  value={durationUnit}
+                  onChange={(e) => setDurationUnit(e.target.value as DurationUnit)}
+                  className="input-field w-32"
+                >
+                  {DURATION_UNITS.map((u) => (
+                    <option key={u.value} value={u.value}>
+                      {u.label}
+                    </option>
+                  ))}
+                </select>
+                <span className="text-xs text-gray-500">after purchase</span>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {DURATION_PRESETS.map((p) => (
+                  <button
+                    key={p.label}
+                    type="button"
+                    onClick={() => {
+                      setDurationValue(String(p.value));
+                      setDurationUnit(p.unit);
+                    }}
+                    className="rounded-full border border-gray-200 px-2.5 py-0.5 text-xs text-gray-600 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700"
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+              {durationUnit === "months" && (
+                <p className="mt-2 text-xs text-gray-400">
+                  Months are counted as 30-day periods.
+                </p>
+              )}
+            </div>
+          )}
+
+          {expiryMode === "fixed_date" && (
+            <div className="mt-3 rounded-lg border border-gray-200 p-3">
               <label className="block text-xs text-gray-500">
-                All subscriptions to this pass expire on this date
+                All purchases of this pass expire on this date
               </label>
               <input
                 type="date"

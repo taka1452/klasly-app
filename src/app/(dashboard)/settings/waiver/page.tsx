@@ -40,7 +40,16 @@ export default async function WaiverSettingsPage() {
     .from("waiver_templates")
     .select("id, title, content")
     .eq("studio_id", profile.studio_id)
-    .single();
+    .maybeSingle();
+
+  // All active waiver templates for the per-template re-sign picker.
+  // Studios typically have 1 main template plus a few per-class waivers
+  // (e.g. Aerial Yoga, Pre-natal). Used by T1-2 bulk re-sign UI.
+  const { data: allTemplates } = await supabase
+    .from("waiver_templates")
+    .select("id, title, is_active")
+    .eq("studio_id", profile.studio_id)
+    .order("created_at", { ascending: true });
 
   const { data: members } = await supabase
     .from("members")
@@ -90,6 +99,7 @@ export default async function WaiverSettingsPage() {
           fullName: (m.profiles as { full_name?: string })?.full_name || "—",
           email: (m.profiles as { email?: string })?.email || "—",
         }))}
+        allTemplates={(allTemplates || []).filter((t) => t.is_active !== false)}
       />
     </div>
   );

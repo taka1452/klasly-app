@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
+import {
+  resolveDiscountCode,
+  recordDiscountRedemption,
+} from "@/lib/discounts/apply";
 
 /**
  * Per-invoice operations: view / update / delete / transition state.
@@ -119,14 +123,54 @@ export async function PATCH(
         : null;
   }
 
-  // Recalculate total_cents.
+  // Optional discount_code (Sarah's "discount before sending"). Admin
+  // types a code on the draft; we resolve via the shared helper and
+  // store the resolved amount on the invoice. Pass an empty string to
+  // clear an applied code.
+  if (body.discount_code !== undefined) {
+    if (typeof body.discount_code !== "string" || !body.discount_code.trim()) {
+      updates.discount_code_id = null;
+      updates.discount_amount_off_cents = 0;
+    } else {
+      const grossForDiscount =
+        (invoice.tier_charge_cents || 0) +
+        (invoice.overage_charge_cents || 0) +
+        (invoice.flat_fee_cents || 0) +
+        ((updates.adjustments_cents as number) ??
+          (invoice.adjustments_cents || 0));
+      const result = await resolveDiscountCode(ctx.supabase, {
+        studioId: ctx.studioId,
+        memberId: null,
+        amountCents: Math.max(0, grossForDiscount),
+        context: "contract_invoice",
+        codeInput: body.discount_code,
+      });
+      if (!result.ok) {
+        return NextResponse.json(
+          { error: result.reason, code: "DISCOUNT_INVALID" },
+          { status: 400 }
+        );
+      }
+      updates.discount_code_id = result.code.id;
+      updates.discount_amount_off_cents = result.amountOffCents;
+    }
+  }
+
+  // Recalculate total_cents. Adjustments can be negative (refund-style
+  // credit). Discount subtracts on top — keep it separate from
+  // adjustments so we can attribute the savings to a specific code.
+  const resolvedAdjustments =
+    (updates.adjustments_cents as number) ?? (invoice.adjustments_cents || 0);
+  const resolvedDiscountOff =
+    (updates.discount_amount_off_cents as number) ??
+    (invoice.discount_amount_off_cents || 0);
   const newTotal =
     (invoice.tier_charge_cents || 0) +
     (invoice.overage_charge_cents || 0) +
     (invoice.flat_fee_cents || 0) +
-    ((updates.adjustments_cents as number) ??
-      (invoice.adjustments_cents || 0));
-  updates.total_cents = newTotal;
+    resolvedAdjustments -
+    resolvedDiscountOff;
+  updates.total_cents = Math.max(0, newTotal);
 
   const { data, error } = await ctx.supabase
     .from("instructor_invoices")
@@ -194,6 +238,24 @@ export async function POST(
       .select("*")
       .single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    // Record the discount redemption now that the invoice has actually
+    // been issued. Once recorded the used_count / one-time-per-member
+    // checks lock the code for the same member next time.
+    if (updated?.discount_code_id && (updated.discount_amount_off_cents ?? 0) > 0) {
+      try {
+        await recordDiscountRedemption(ctx.supabase, {
+          studioId: ctx.studioId,
+          discountCodeId: updated.discount_code_id as string,
+          memberId: null,
+          amountOffCents: updated.discount_amount_off_cents as number,
+          context: "contract_invoice",
+          contextId: updated.id as string,
+        });
+      } catch (err) {
+        console.warn("[invoices] discount redemption record failed:", err);
+      }
+    }
 
     // Email best-effort — never block the transition on email failure.
     void sendInvoiceEmail(ctx.supabase, ctx.studioId, updated).catch((err) =>
@@ -270,6 +332,7 @@ async function sendInvoiceEmail(
         <tr><td>Overage charges</td><td style="text-align:right;">${dollars((invoice.overage_charge_cents as number) || 0)}</td></tr>
         <tr><td>Flat / per-class fees</td><td style="text-align:right;">${dollars((invoice.flat_fee_cents as number) || 0)}</td></tr>
         <tr><td>Adjustments</td><td style="text-align:right;">${dollars((invoice.adjustments_cents as number) || 0)}</td></tr>
+        ${(invoice.discount_amount_off_cents as number) > 0 ? `<tr><td>Discount</td><td style="text-align:right;">-${dollars((invoice.discount_amount_off_cents as number) || 0)}</td></tr>` : ""}
         <tr style="border-top:1px solid #ccc;font-weight:bold;"><td>Total</td><td style="text-align:right;">${dollars((invoice.total_cents as number) || 0)}</td></tr>
       </table>
       ${invoice.notes ? `<p>${String(invoice.notes).replace(/</g, "&lt;")}</p>` : ""}

@@ -39,7 +39,42 @@ type BookingParams = {
   onlineLink?: string | null;
   /** TZ abbreviation (e.g. "PT") to display next to the start time. */
   studioTzAbbrev?: string | null;
+  /** Optional admin-authored overrides (per-class beats studio-wide).
+   *  Both fields support {memberName} {className} {sessionDate}
+   *  {startTime} {studioName} interpolation. When body is provided,
+   *  paragraphs are rendered preserving line breaks; the class details
+   *  block is always appended below the custom body. */
+  overrideSubject?: string | null;
+  overrideBody?: string | null;
 };
+
+function interpolateBookingVars(
+  template: string,
+  vars: {
+    memberName: string;
+    className: string;
+    sessionDate: string;
+    startTime: string;
+    studioName: string;
+  }
+): string {
+  return template
+    .replaceAll("{memberName}", vars.memberName)
+    .replaceAll("{className}", vars.className)
+    .replaceAll("{eventName}", vars.className)
+    .replaceAll("{sessionDate}", vars.sessionDate)
+    .replaceAll("{startTime}", vars.startTime)
+    .replaceAll("{studioName}", vars.studioName);
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
 
 export function bookingConfirmation(params: BookingParams) {
   const {
@@ -51,7 +86,10 @@ export function bookingConfirmation(params: BookingParams) {
     isOnline,
     onlineLink,
     studioTzAbbrev,
+    overrideSubject,
+    overrideBody,
   } = params;
+  const vars = { memberName, className, sessionDate, startTime, studioName };
   const onlineSection = isOnline && onlineLink
     ? `<p style="margin:12px 0 0;">
         <a href="${onlineLink}" style="display:inline-block;background:${BRAND_COLOR};color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">
@@ -62,22 +100,38 @@ export function bookingConfirmation(params: BookingParams) {
       ? `<p style="margin:8px 0 0;font-size:14px;color:#6b7280;">📹 Online class</p>`
       : "";
   const tzSuffix = isOnline && studioTzAbbrev ? ` ${studioTzAbbrev}` : "";
+
+  const customBodyHtml =
+    overrideBody && overrideBody.trim()
+      ? escapeHtml(interpolateBookingVars(overrideBody, vars))
+          .split(/\r?\n\r?\n/)
+          .map(
+            (para) =>
+              `<p style="margin:0 0 12px;font-size:15px;line-height:1.55;">${para.replaceAll(/\r?\n/g, "<br>")}</p>`
+          )
+          .join("")
+      : `<p style="margin:0 0 8px;font-size:15px;">Hi ${escapeHtml(memberName)},</p>
+         <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">Your booking has been confirmed for:</p>`;
+
   const content = `
     <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">Booking Confirmed</h2>
-    <p style="margin:0 0 8px;font-size:15px;">Hi ${memberName},</p>
-    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
-      Your booking has been confirmed for:
-    </p>
+    ${customBodyHtml}
     <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
-      <p style="margin:0;font-weight:600;color:${BRAND_COLOR};">${isOnline ? "📹 " : ""}${className}</p>
-      <p style="margin:8px 0 0;font-size:14px;">${sessionDate} · ${startTime}${tzSuffix}</p>
-      <p style="margin:4px 0 0;font-size:14px;color:#6b7280;">${studioName}</p>
+      <p style="margin:0;font-weight:600;color:${BRAND_COLOR};">${isOnline ? "📹 " : ""}${escapeHtml(className)}</p>
+      <p style="margin:8px 0 0;font-size:14px;">${escapeHtml(sessionDate)} · ${escapeHtml(startTime)}${tzSuffix}</p>
+      <p style="margin:4px 0 0;font-size:14px;color:#6b7280;">${escapeHtml(studioName)}</p>
       ${onlineSection}
     </div>
-    <p style="margin:0;font-size:14px;">${isOnline ? "See you online!" : "We look forward to seeing you!"}</p>
+    ${overrideBody ? "" : `<p style="margin:0;font-size:14px;">${isOnline ? "See you online!" : "We look forward to seeing you!"}</p>`}
   `;
+
+  const subject =
+    overrideSubject && overrideSubject.trim()
+      ? interpolateBookingVars(overrideSubject, vars)
+      : `Booking Confirmed - ${className}`;
+
   return {
-    subject: `Booking Confirmed - ${className}`,
+    subject,
     html: baseHtml(content),
   };
 }
@@ -1018,27 +1072,55 @@ export function eventBookingConfirmedFull(params: {
   optionName: string;
   amountCents: number;
   cancellationPolicySummary: string;
+  /** Optional admin-authored overrides (per-event beats studio-wide).
+   *  Both fields support {memberName} {eventName} {sessionDate}
+   *  {startTime} {studioName} interpolation. */
+  overrideSubject?: string | null;
+  overrideBody?: string | null;
+  studioName?: string;
 }) {
-  const { guestName, eventName, startDate, endDate, locationName, optionName, amountCents, cancellationPolicySummary } = params;
+  const { guestName, eventName, startDate, endDate, locationName, optionName, amountCents, cancellationPolicySummary, overrideSubject, overrideBody, studioName } = params;
   const formattedAmount = `$${(amountCents / 100).toFixed(2)}`;
+  const vars = {
+    memberName: guestName,
+    className: eventName,
+    sessionDate: startDate,
+    startTime: "",
+    studioName: studioName ?? "",
+  };
+  const customBodyHtml =
+    overrideBody && overrideBody.trim()
+      ? escapeHtml(interpolateBookingVars(overrideBody, vars))
+          .split(/\r?\n\r?\n/)
+          .map(
+            (para) =>
+              `<p style="margin:0 0 12px;font-size:15px;line-height:1.55;">${para.replaceAll(/\r?\n/g, "<br>")}</p>`
+          )
+          .join("")
+      : `<p style="margin:0 0 8px;font-size:15px;">Hi ${escapeHtml(guestName)},</p>
+         <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">Your booking has been confirmed. Here are the details:</p>`;
+
   const content = `
     <h2 style="margin:0 0 16px;font-size:18px;color:#059669;">Booking Confirmed!</h2>
-    <p style="margin:0 0 8px;font-size:15px;">Hi ${guestName},</p>
-    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
-      Your booking has been confirmed. Here are the details:
-    </p>
+    ${customBodyHtml}
     <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
-      <p style="margin:0;font-weight:600;color:${BRAND_COLOR};">${eventName}</p>
-      <p style="margin:8px 0 0;font-size:14px;">${startDate} – ${endDate}</p>
-      ${locationName ? `<p style="margin:4px 0 0;font-size:14px;color:#6b7280;">${locationName}</p>` : ""}
-      <p style="margin:8px 0 0;font-size:14px;">Option: <strong>${optionName}</strong></p>
+      <p style="margin:0;font-weight:600;color:${BRAND_COLOR};">${escapeHtml(eventName)}</p>
+      <p style="margin:8px 0 0;font-size:14px;">${escapeHtml(startDate)} – ${escapeHtml(endDate)}</p>
+      ${locationName ? `<p style="margin:4px 0 0;font-size:14px;color:#6b7280;">${escapeHtml(locationName)}</p>` : ""}
+      <p style="margin:8px 0 0;font-size:14px;">Option: <strong>${escapeHtml(optionName)}</strong></p>
       <p style="margin:4px 0 0;font-size:14px;font-weight:600;">Paid: ${formattedAmount}</p>
     </div>
     ${cancellationPolicySummary ? `<p style="margin:0 0 16px;font-size:13px;color:#6b7280;">${cancellationPolicySummary}</p>` : ""}
-    <p style="margin:0;font-size:14px;">We look forward to seeing you there!</p>
+    ${overrideBody ? "" : `<p style="margin:0;font-size:14px;">We look forward to seeing you there!</p>`}
   `;
+
+  const subject =
+    overrideSubject && overrideSubject.trim()
+      ? interpolateBookingVars(overrideSubject, vars)
+      : `Booking Confirmed — ${eventName}`;
+
   return {
-    subject: `Booking Confirmed — ${eventName}`,
+    subject,
     html: baseHtml(content),
   };
 }
@@ -1891,6 +1973,217 @@ export function passwordReset(params: { resetUrl: string }) {
   `;
   return {
     subject: "Reset your password — Klasly",
+    html: baseHtml(content),
+  };
+}
+
+// ============================================================
+// Generic studio-authored message (T2-2 bulk email)
+// ============================================================
+
+export function baseStudioMessage(params: {
+  memberName: string;
+  studioName: string;
+  subject: string;
+  body: string;
+}) {
+  const { memberName, studioName, subject, body } = params;
+  // Interpolate {memberName} {studioName} variables and convert paragraphs
+  // to <p> blocks. Plain-text only — no HTML in admin-authored body.
+  const interpolated = body
+    .replaceAll("{memberName}", memberName)
+    .replaceAll("{studioName}", studioName);
+  const escaped = interpolated
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+  const paragraphs = escaped
+    .split(/\r?\n\r?\n/)
+    .map(
+      (p) =>
+        `<p style="margin:0 0 12px;font-size:15px;line-height:1.55;">${p.replaceAll(/\r?\n/g, "<br>")}</p>`
+    )
+    .join("");
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">${subject
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")}</h2>
+    ${paragraphs}
+    <p style="margin:24px 0 0;font-size:13px;color:#6b7280;">— ${studioName}</p>
+  `;
+  return {
+    subject: subject
+      .replaceAll("{memberName}", memberName)
+      .replaceAll("{studioName}", studioName),
+    html: baseHtml(content),
+  };
+}
+
+// ============================================================
+// Class booking reminder (T1-3) — sent the day before (24h) and an
+// hour before. Reuses the bookingConfirmation layout for visual
+// consistency but with a different headline and copy.
+// ============================================================
+
+export function classBookingReminder(params: {
+  memberName: string;
+  className: string;
+  sessionDate: string;
+  startTime: string;
+  studioName: string;
+  isOnline?: boolean;
+  onlineLink?: string | null;
+  studioTzAbbrev?: string | null;
+  /** "24h" or "1h" — drives the headline only; body content is the same. */
+  window: "24h" | "1h";
+}) {
+  const {
+    memberName,
+    className,
+    sessionDate,
+    startTime,
+    studioName,
+    isOnline,
+    onlineLink,
+    studioTzAbbrev,
+    window,
+  } = params;
+  const headline =
+    window === "24h" ? "See you tomorrow" : "Starting in about an hour";
+  const subjectLead =
+    window === "24h" ? "Tomorrow's class" : "Starting soon";
+  const onlineSection =
+    isOnline && onlineLink
+      ? `<p style="margin:12px 0 0;">
+          <a href="${onlineLink}" style="display:inline-block;background:${BRAND_COLOR};color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">
+            Join Online →
+          </a>
+        </p>`
+      : isOnline
+        ? `<p style="margin:8px 0 0;font-size:14px;color:#6b7280;">📹 Online class</p>`
+        : "";
+  const tzSuffix = isOnline && studioTzAbbrev ? ` ${studioTzAbbrev}` : "";
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#111827;">${headline}</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${memberName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      Quick reminder about your upcoming class:
+    </p>
+    <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-weight:600;color:${BRAND_COLOR};">${isOnline ? "📹 " : ""}${className}</p>
+      <p style="margin:8px 0 0;font-size:14px;">${sessionDate} · ${startTime}${tzSuffix}</p>
+      <p style="margin:4px 0 0;font-size:14px;color:#6b7280;">${studioName}</p>
+      ${onlineSection}
+    </div>
+    <p style="margin:0;font-size:14px;color:#6b7280;">
+      Need to cancel? Open Klasly and tap your booking before class.
+    </p>
+  `;
+  return {
+    subject: `${subjectLead} — ${className}`,
+    html: baseHtml(content),
+  };
+}
+
+// ============================================================
+// Instructor 80% hour-usage alert (T2-3)
+// ============================================================
+
+export function instructorTier80Alert(params: {
+  instructorName: string;
+  studioName: string;
+  tierName: string;
+  usedMinutes: number;
+  includedMinutes: number;
+  remainingMinutes: number;
+  estimatedOverageCents?: number;
+  allowsOverage: boolean;
+}) {
+  const {
+    instructorName,
+    studioName,
+    tierName,
+    usedMinutes,
+    includedMinutes,
+    remainingMinutes,
+    estimatedOverageCents,
+    allowsOverage,
+  } = params;
+  const fmt = (m: number) => {
+    const h = Math.floor(m / 60);
+    const mm = m % 60;
+    if (h === 0) return `${mm} min`;
+    if (mm === 0) return `${h}h`;
+    return `${h}h ${mm}min`;
+  };
+  const pct = Math.round((usedMinutes / Math.max(1, includedMinutes)) * 100);
+  const overageLine = allowsOverage
+    ? estimatedOverageCents !== undefined && estimatedOverageCents > 0
+      ? `If you book all your scheduled classes, you'll go over the plan and be billed about <strong>$${(estimatedOverageCents / 100).toFixed(2)}</strong> on the 1st.`
+      : `Booking past your remaining ${fmt(remainingMinutes)} will be billed at your plan's overage rate on the 1st.`
+    : `Your plan blocks new bookings once you hit ${fmt(includedMinutes)} — make the most of the ${fmt(remainingMinutes)} you have left.`;
+
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#b45309;">You've used ${pct}% of your monthly hours</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${instructorName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      Heads-up — at ${studioName}, your <strong>${tierName}</strong> plan
+      is at <strong>${fmt(usedMinutes)} / ${fmt(includedMinutes)}</strong>
+      this month with <strong>${fmt(remainingMinutes)}</strong> remaining.
+    </p>
+    <div style="background:${BG_LIGHT};border-radius:8px;padding:16px;margin:16px 0;">
+      <p style="margin:0;font-size:14px;line-height:1.6;">${overageLine}</p>
+    </div>
+    <p style="margin:0;font-size:13px;color:#6b7280;">
+      You can see live usage anytime at <a href="https://app.klasly.app/instructor/membership" style="color:${BRAND_COLOR};">your membership page</a>.
+    </p>
+  `;
+  return {
+    subject: `${pct}% of ${tierName} used — ${fmt(remainingMinutes)} left`,
+    html: baseHtml(content),
+  };
+}
+
+// ============================================================
+// Pass renewal reminder (T1-5)
+// ============================================================
+
+export function passRenewalReminder(params: {
+  memberName: string;
+  passName: string;
+  expiresOn: string; // YYYY-MM-DD
+  daysLeft: number;
+  studioName: string;
+  purchaseUrl: string;
+}) {
+  const { memberName, passName, expiresOn, daysLeft, studioName, purchaseUrl } = params;
+  const headline =
+    daysLeft <= 0
+      ? "Your pass expires today"
+      : daysLeft === 1
+        ? "Your pass expires tomorrow"
+        : `Your pass expires in ${daysLeft} days`;
+
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:18px;color:#b45309;">${headline}</h2>
+    <p style="margin:0 0 8px;font-size:15px;">Hi ${memberName},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+      A quick heads-up — your <strong>${passName}</strong> at ${studioName}
+      expires on <strong>${expiresOn}</strong>. Renew now to keep your
+      bookings without interruption.
+    </p>
+    <p style="margin:0 0 24px;">
+      <a href="${purchaseUrl}" style="display:inline-block;background:${BRAND_COLOR};color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;">
+        Renew Pass →
+      </a>
+    </p>
+    <p style="margin:0;font-size:13px;color:#6b7280;">
+      Thank you for being part of the studio!
+    </p>
+  `;
+  return {
+    subject: `${headline} — ${passName}`,
     html: baseHtml(content),
   };
 }

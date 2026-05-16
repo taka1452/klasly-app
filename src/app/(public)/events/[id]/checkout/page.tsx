@@ -71,6 +71,15 @@ export default function EventCheckoutPage() {
   const [guestEmail, setGuestEmail] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
   const [paymentChoice, setPaymentChoice] = useState<"full" | "installment">("full");
+  const [discountCode, setDiscountCode] = useState("");
+  const [discountOpen, setDiscountOpen] = useState(false);
+  // Sliding scale: surfaces a per-person amount input when the chosen
+  // option opted into Pay What You Can. The first submit returns 422
+  // with min/suggested; we populate this state and resubmit.
+  const [slidingScale, setSlidingScale] = useState<
+    | { minCents: number; suggestedCents: number; amountDollars: string }
+    | null
+  >(null);
   const [agreedToPolicy, setAgreedToPolicy] = useState(false);
   const [appResponses, setAppResponses] = useState<Record<string, string | boolean>>({});
 
@@ -214,11 +223,35 @@ export default function EventCheckoutPage() {
           group_size: groupSize,
           group_members: groupSize > 1 ? groupMembers : [],
           ...(hasAppFields ? { application_responses: appResponses } : {}),
+          ...(discountCode.trim() ? { discount_code: discountCode.trim() } : {}),
+          ...(slidingScale
+            ? {
+                custom_amount: Math.round(
+                  parseFloat(slidingScale.amountDollars) * 100
+                ),
+              }
+            : {}),
           ...(isWaitlist ? { waitlist: true } : {}),
         }),
       });
 
       const data = await res.json();
+
+      if (
+        res.status === 422 &&
+        data?.code === "SLIDING_SCALE_AMOUNT_REQUIRED"
+      ) {
+        // First-time encounter — show the amount picker pre-filled at
+        // the suggested price and let the user submit again.
+        setSlidingScale({
+          minCents: data.min_cents ?? 0,
+          suggestedCents: data.suggested_cents ?? 0,
+          amountDollars: ((data.suggested_cents ?? 0) / 100).toFixed(2),
+        });
+        setSubmitting(false);
+        return;
+      }
+
       if (!res.ok) {
         setError(data.error || "Checkout failed");
         setSubmitting(false);
@@ -780,6 +813,84 @@ export default function EventCheckoutPage() {
                   I agree to the cancellation policy
                 </span>
               </label>
+            </div>
+          )}
+
+          {/* Sliding scale picker — appears after the first submit when
+              the option is Pay What You Can. Lets the attendee type any
+              amount at or above the minimum (per person). */}
+          {slidingScale && !isWaitlist && (
+            <div className="rounded-lg border border-blue-200 bg-blue-50/40 p-3">
+              <p className="text-sm font-medium text-gray-700">
+                Pay What You Can
+              </p>
+              <p className="mt-0.5 text-xs text-gray-500">
+                Minimum ${(slidingScale.minCents / 100).toFixed(2)} ·
+                Suggested ${(slidingScale.suggestedCents / 100).toFixed(2)}
+                {groupSize > 1 && ` (per person, × ${groupSize})`}
+              </p>
+              <div className="mt-2 flex items-center gap-2">
+                <span className="text-sm text-gray-500">$</span>
+                <input
+                  type="number"
+                  min={slidingScale.minCents / 100}
+                  step="0.01"
+                  value={slidingScale.amountDollars}
+                  onChange={(e) =>
+                    setSlidingScale((prev) =>
+                      prev ? { ...prev, amountDollars: e.target.value } : prev
+                    )
+                  }
+                  className="w-28 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none"
+                  autoFocus
+                />
+                <span className="text-xs text-gray-500">per person</span>
+                <button
+                  type="button"
+                  onClick={() => setSlidingScale(null)}
+                  className="ml-auto text-xs text-gray-400 hover:text-gray-600"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Optional discount code — collapsed by default, expands to a
+              short text input. Server validates and returns DISCOUNT_INVALID
+              with a helpful reason if the code is rejected. */}
+          {!isWaitlist && (
+            <div className="border-t border-gray-100 pt-3">
+              {discountOpen ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={discountCode}
+                    onChange={(e) => setDiscountCode(e.target.value)}
+                    placeholder="DISCOUNT CODE"
+                    className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm uppercase focus:border-blue-500 focus:outline-none"
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDiscountOpen(false);
+                      setDiscountCode("");
+                    }}
+                    className="text-xs text-gray-400 hover:text-gray-600"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setDiscountOpen(true)}
+                  className="text-sm text-blue-600 underline-offset-2 hover:underline"
+                >
+                  Have a discount code?
+                </button>
+              )}
             </div>
           )}
 

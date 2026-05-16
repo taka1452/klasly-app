@@ -12,6 +12,7 @@ import { useViewerPermissions } from "@/lib/auth/viewer-context";
 
 type InstructorOption = { id: string; full_name: string; isMe?: boolean };
 type RoomOption = { id: string; name: string };
+type WaiverOption = { id: string; title: string };
 
 type TemplateData = {
   id: string;
@@ -31,6 +32,12 @@ type TemplateData = {
   recurrence_end_date: string | null;
   transition_minutes: number | null;
   special_instructions: string | null;
+  cancellation_policy: string | null;
+  pricing_mode: "fixed" | "sliding_scale" | null;
+  price_min_cents: number | null;
+  required_waiver_template_ids: string[] | null;
+  confirmation_subject_override: string | null;
+  confirmation_body_override: string | null;
   instructors: {
     id: string;
     profiles: { full_name: string } | null;
@@ -61,6 +68,8 @@ export default function TemplateForm({ templateId, duplicateData }: Props) {
   const [durationMins, setDurationMins] = useState(0);
   const [capacity, setCapacity] = useState(15);
   const [priceDollars, setPriceDollars] = useState("");
+  const [pricingMode, setPricingMode] = useState<"fixed" | "sliding_scale">("fixed");
+  const [priceMinDollars, setPriceMinDollars] = useState("");
   const [onlineLink, setOnlineLink] = useState("");
   const [instructorId, setInstructorId] = useState("");
   const [roomId, setRoomId] = useState("");
@@ -68,12 +77,18 @@ export default function TemplateForm({ templateId, duplicateData }: Props) {
   const [recurrenceEndDate, setRecurrenceEndDate] = useState("");
   const [transitionMinutes, setTransitionMinutes] = useState(0);
   const [specialInstructions, setSpecialInstructions] = useState("");
+  const [cancellationPolicy, setCancellationPolicy] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
 
   const [instructors, setInstructors] = useState<InstructorOption[]>([]);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
+  const [waivers, setWaivers] = useState<WaiverOption[]>([]);
+  const [requiredWaiverIds, setRequiredWaiverIds] = useState<string[]>([]);
+  const [confirmationSubjectOverride, setConfirmationSubjectOverride] = useState("");
+  const [confirmationBodyOverride, setConfirmationBodyOverride] = useState("");
+  const [showEmailOverride, setShowEmailOverride] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(!!templateId);
@@ -82,13 +97,14 @@ export default function TemplateForm({ templateId, duplicateData }: Props) {
   // State for post-creation "Schedule Now" flow
   const [createdId, setCreatedId] = useState<string | null>(null);
 
-  // Fetch instructors and rooms via API
+  // Fetch instructors, rooms and waivers via API
   useEffect(() => {
     async function fetchData() {
       try {
-        const [instrRes, roomsRes] = await Promise.all([
+        const [instrRes, roomsRes, waiversRes] = await Promise.all([
           fetch("/api/dashboard/instructors"),
           fetch("/api/dashboard/rooms"),
+          fetch("/api/waiver-templates"),
         ]);
 
         if (instrRes.ok) {
@@ -106,6 +122,17 @@ export default function TemplateForm({ templateId, duplicateData }: Props) {
           }));
           setRooms(list);
         }
+
+        if (waiversRes.ok) {
+          const w = await waiversRes.json();
+          const list: WaiverOption[] = (Array.isArray(w) ? w : w?.templates || [])
+            .filter((t: { is_active?: boolean }) => t.is_active !== false)
+            .map((t: Record<string, unknown>) => ({
+              id: t.id as string,
+              title: (t.title as string) || "Untitled waiver",
+            }));
+          setWaivers(list);
+        }
       } catch {
         // non-critical
       }
@@ -119,6 +146,7 @@ export default function TemplateForm({ templateId, duplicateData }: Props) {
     setName((duplicateData.name as string) || "");
     setDescription((duplicateData.description as string) || "");
     setSpecialInstructions((duplicateData.special_instructions as string) || "");
+    setCancellationPolicy((duplicateData.cancellation_policy as string) || "");
     const ct = (duplicateData.class_type as string) || "in_person";
     setClassType(ct as "in_person" | "online" | "hybrid");
     const dm = (duplicateData.duration_minutes as number) || 60;
@@ -160,6 +188,12 @@ export default function TemplateForm({ templateId, duplicateData }: Props) {
             ? (t.price_cents / 100).toFixed(2)
             : ""
         );
+        setPricingMode((t.pricing_mode as "fixed" | "sliding_scale") || "fixed");
+        setPriceMinDollars(
+          t.price_min_cents !== null && t.price_min_cents !== undefined
+            ? (t.price_min_cents / 100).toFixed(2)
+            : ""
+        );
         setOnlineLink(t.online_link || "");
         setInstructorId(t.instructor_id || "");
         setRoomId(t.room_id || "");
@@ -167,6 +201,17 @@ export default function TemplateForm({ templateId, duplicateData }: Props) {
         setRecurrenceEndDate(t.recurrence_end_date || "");
         setTransitionMinutes(t.transition_minutes || 0);
         setSpecialInstructions(t.special_instructions || "");
+        setCancellationPolicy(t.cancellation_policy || "");
+        setRequiredWaiverIds(
+          Array.isArray(t.required_waiver_template_ids)
+            ? t.required_waiver_template_ids
+            : []
+        );
+        setConfirmationSubjectOverride(t.confirmation_subject_override || "");
+        setConfirmationBodyOverride(t.confirmation_body_override || "");
+        if (t.confirmation_subject_override || t.confirmation_body_override) {
+          setShowEmailOverride(true);
+        }
         if (t.image_url) {
           setExistingImageUrl(t.image_url);
           setImagePreview(t.image_url);
@@ -216,6 +261,29 @@ export default function TemplateForm({ templateId, duplicateData }: Props) {
       return;
     }
 
+    let priceMinCents: number | null = null;
+    if (pricingMode === "sliding_scale") {
+      if (priceCents === null) {
+        setError("Sliding scale requires a suggested price.");
+        setLoading(false);
+        return;
+      }
+      priceMinCents =
+        priceMinDollars.trim() === ""
+          ? 0
+          : Math.round(parseFloat(priceMinDollars) * 100);
+      if (isNaN(priceMinCents) || priceMinCents < 0) {
+        setError("Minimum price must be $0 or higher.");
+        setLoading(false);
+        return;
+      }
+      if (priceMinCents > priceCents) {
+        setError("Minimum price cannot be more than the suggested price.");
+        setLoading(false);
+        return;
+      }
+    }
+
     const payload = {
       name: name.trim(),
       description: description.trim() || null,
@@ -234,6 +302,16 @@ export default function TemplateForm({ templateId, duplicateData }: Props) {
       recurrence_end_date: recurrenceEndDate || null,
       transition_minutes: transitionMinutes || null,
       special_instructions: specialInstructions.trim() || null,
+      cancellation_policy: cancellationPolicy.trim() || null,
+      pricing_mode: pricingMode,
+      price_min_cents: pricingMode === "sliding_scale" ? priceMinCents : null,
+      required_waiver_template_ids: requiredWaiverIds,
+      confirmation_subject_override: showEmailOverride
+        ? confirmationSubjectOverride.trim() || null
+        : null,
+      confirmation_body_override: showEmailOverride
+        ? confirmationBodyOverride.trim() || null
+        : null,
     };
 
     try {
@@ -418,6 +496,76 @@ export default function TemplateForm({ templateId, duplicateData }: Props) {
           </p>
         </div>
 
+        {/* Required waivers — members must sign every listed waiver before
+            they can book. Already-signed waivers are skipped at checkout. */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Required waivers{" "}
+            <span className="font-normal text-gray-400">(optional)</span>
+          </label>
+          {waivers.length === 0 ? (
+            <p className="mt-1 text-xs text-gray-500">
+              No waiver templates configured yet.{" "}
+              <Link
+                href="/settings/waiver"
+                className="font-medium text-brand-600 hover:text-brand-700"
+              >
+                Create one →
+              </Link>
+            </p>
+          ) : (
+            <>
+              <p className="mt-0.5 text-xs text-gray-500">
+                Members must sign every selected waiver before booking. Leave
+                empty to use only your studio-wide waiver.
+              </p>
+              <div className="mt-2 max-h-40 overflow-y-auto rounded-lg border border-gray-200 divide-y divide-gray-100">
+                {waivers.map((w) => (
+                  <label
+                    key={w.id}
+                    className="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-gray-50"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={requiredWaiverIds.includes(w.id)}
+                      onChange={() =>
+                        setRequiredWaiverIds((prev) =>
+                          prev.includes(w.id)
+                            ? prev.filter((x) => x !== w.id)
+                            : [...prev, w.id]
+                        )
+                      }
+                      className="h-4 w-4 rounded border-gray-300 text-brand-600"
+                    />
+                    <span className="text-sm text-gray-700">{w.title}</span>
+                  </label>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Cancellation policy — falls back to the studio-wide policy when
+            blank. Per-class override is useful for retreats or workshops
+            with stricter refund windows. */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Cancellation policy{" "}
+            <span className="font-normal text-gray-400">(optional)</span>
+          </label>
+          <textarea
+            value={cancellationPolicy}
+            onChange={(e) => setCancellationPolicy(e.target.value)}
+            rows={3}
+            placeholder="e.g. Full refund up to 24 hours before. After that, the session is non-refundable."
+            className="input-field mt-1"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Shown on the booking page and in confirmation emails. Leave blank
+            to use your studio-wide policy.
+          </p>
+        </div>
+
         {/* Class Type */}
         <div>
           <label className="block text-sm font-medium text-gray-700">
@@ -528,25 +676,83 @@ export default function TemplateForm({ templateId, duplicateData }: Props) {
         {canManageClassPricing && (
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Price (USD)
+              Pricing
             </label>
-            <div className="relative mt-1">
-              <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                $
-              </span>
-              <input
-                type="number"
-                value={priceDollars}
-                onChange={(e) => setPriceDollars(e.target.value)}
-                placeholder="0.00"
-                min="0"
-                step="0.01"
-                className="input-field pl-7"
-              />
+            <div className="mt-2 flex gap-2">
+              {(
+                [
+                  { value: "fixed" as const, label: "Fixed price" },
+                  { value: "sliding_scale" as const, label: "Pay What You Can" },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setPricingMode(opt.value)}
+                  className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
+                    pricingMode === opt.value
+                      ? "border-brand-400 bg-brand-50 text-brand-700"
+                      : "border-gray-200 text-gray-600 hover:border-gray-300"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
-            <p className="mt-1 text-xs text-gray-500">
-              Leave blank for free or studio pricing.
-            </p>
+
+            <div className="mt-3">
+              <label className="block text-xs font-medium text-gray-600">
+                {pricingMode === "sliding_scale"
+                  ? "Suggested price (USD)"
+                  : "Price (USD)"}
+              </label>
+              <div className="relative mt-1">
+                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                  $
+                </span>
+                <input
+                  type="number"
+                  value={priceDollars}
+                  onChange={(e) => setPriceDollars(e.target.value)}
+                  placeholder="0.00"
+                  min="0"
+                  step="0.01"
+                  className="input-field pl-7"
+                />
+              </div>
+              {pricingMode === "fixed" && (
+                <p className="mt-1 text-xs text-gray-500">
+                  Leave blank for free or studio pricing.
+                </p>
+              )}
+            </div>
+
+            {pricingMode === "sliding_scale" && (
+              <div className="mt-3">
+                <label className="block text-xs font-medium text-gray-600">
+                  Minimum price (USD)
+                </label>
+                <div className="relative mt-1">
+                  <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                    $
+                  </span>
+                  <input
+                    type="number"
+                    value={priceMinDollars}
+                    onChange={(e) => setPriceMinDollars(e.target.value)}
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                    className="input-field pl-7"
+                  />
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  Attendees can pay anything from the minimum up to the
+                  suggested price (or more) at checkout. Use $0.00 to allow
+                  fully free claims.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -666,6 +872,65 @@ export default function TemplateForm({ templateId, duplicateData }: Props) {
           <p className="mt-1 text-xs text-gray-500">
             Buffer time after each session to prevent back-to-back classes.
           </p>
+        </div>
+
+        {/* Confirmation email override — when set, replaces the studio
+            default for this class only. Variables {memberName} {className}
+            {sessionDate} {startTime} {studioName} are substituted at send
+            time. */}
+        <div>
+          <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+            <input
+              type="checkbox"
+              checked={showEmailOverride}
+              onChange={(e) => setShowEmailOverride(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-brand-600"
+            />
+            Custom confirmation email for this class
+          </label>
+          {showEmailOverride && (
+            <div className="mt-3 rounded-lg border border-gray-200 p-4 space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600">
+                  Subject{" "}
+                  <span className="font-normal text-gray-400">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={confirmationSubjectOverride}
+                  onChange={(e) =>
+                    setConfirmationSubjectOverride(e.target.value)
+                  }
+                  placeholder="See you at {className}, {memberName}!"
+                  className="input-field mt-1"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600">
+                  Body{" "}
+                  <span className="font-normal text-gray-400">(optional)</span>
+                </label>
+                <textarea
+                  value={confirmationBodyOverride}
+                  onChange={(e) =>
+                    setConfirmationBodyOverride(e.target.value)
+                  }
+                  rows={5}
+                  placeholder={`Hi {memberName},\n\nThanks for booking {className}! A few things to know before you arrive...`}
+                  className="input-field mt-1"
+                />
+              </div>
+              <p className="text-xs text-gray-500">
+                Available variables:{" "}
+                <code className="font-mono">{`{memberName}`}</code>,{" "}
+                <code className="font-mono">{`{className}`}</code>,{" "}
+                <code className="font-mono">{`{sessionDate}`}</code>,{" "}
+                <code className="font-mono">{`{startTime}`}</code>,{" "}
+                <code className="font-mono">{`{studioName}`}</code>. The
+                class details block is always appended automatically.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Class Image */}

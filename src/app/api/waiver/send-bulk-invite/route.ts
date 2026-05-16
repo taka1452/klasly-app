@@ -7,11 +7,28 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 
 /**
- * Bulk send waiver invites to all unsigned members.
- * Skips members who already have an unused (token_used = false) invite.
+ * Bulk send waiver invites.
+ *
+ * Two modes:
+ *   - No body: legacy mode — sends the studio's single waiver template
+ *     to every active member with members.waiver_signed = false.
+ *   - { templateId: "<uuid>" }: targets one specific waiver template
+ *     (e.g. "Aerial Yoga Liability"). Sends to every active member
+ *     who hasn't signed THAT template, regardless of whether they've
+ *     signed others. Useful after adding a per-class waiver to an
+ *     existing class — Jamie's "please re-sign" workflow.
+ *
+ * Skips members who already have an unused (token_used = false) invite
+ * for the same template.
  */
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    const body = await request.json().catch(() => ({}));
+    const requestedTemplateId =
+      typeof body.templateId === "string" && body.templateId.trim()
+        ? body.templateId.trim()
+        : null;
+
     const serverSupabase = await createServerClient();
     const {
       data: { user },
@@ -57,11 +74,25 @@ export async function POST() {
       }
     }
 
-    const { data: template } = await adminSupabase
-      .from("waiver_templates")
-      .select("id")
-      .eq("studio_id", ownerProfile.studio_id)
-      .single();
+    // Pick the template: explicit id wins; otherwise fall back to the
+    // single legacy template (back-compat).
+    let template: { id: string } | null = null;
+    if (requestedTemplateId) {
+      const { data } = await adminSupabase
+        .from("waiver_templates")
+        .select("id")
+        .eq("id", requestedTemplateId)
+        .eq("studio_id", ownerProfile.studio_id)
+        .maybeSingle();
+      template = data;
+    } else {
+      const { data } = await adminSupabase
+        .from("waiver_templates")
+        .select("id")
+        .eq("studio_id", ownerProfile.studio_id)
+        .maybeSingle();
+      template = data;
+    }
 
     if (!template) {
       return NextResponse.json(
@@ -70,12 +101,38 @@ export async function POST() {
       );
     }
 
-    const { data: unsignedMembers } = await adminSupabase
-      .from("members")
-      .select("id, profile_id, is_minor, guardian_email")
-      .eq("studio_id", ownerProfile.studio_id)
-      .eq("waiver_signed", false)
-      .eq("status", "active");
+    // Build "members who haven't signed this template" set. In template-
+    // targeted mode we check waiver_signatures directly (signed_at IS NOT
+    // NULL = real signature). Legacy mode uses the per-studio bool.
+    let unsignedMembers: { id: string; profile_id: string; is_minor: boolean | null; guardian_email: string | null }[] = [];
+
+    if (requestedTemplateId) {
+      const { data: allActive } = await adminSupabase
+        .from("members")
+        .select("id, profile_id, is_minor, guardian_email")
+        .eq("studio_id", ownerProfile.studio_id)
+        .eq("status", "active");
+
+      const { data: signed } = await adminSupabase
+        .from("waiver_signatures")
+        .select("member_id")
+        .eq("studio_id", ownerProfile.studio_id)
+        .eq("template_id", template.id)
+        .not("signed_at", "is", null);
+
+      const signedSet = new Set(
+        (signed || []).map((s: { member_id: string }) => s.member_id)
+      );
+      unsignedMembers = (allActive || []).filter((m) => !signedSet.has(m.id));
+    } else {
+      const { data } = await adminSupabase
+        .from("members")
+        .select("id, profile_id, is_minor, guardian_email")
+        .eq("studio_id", ownerProfile.studio_id)
+        .eq("waiver_signed", false)
+        .eq("status", "active");
+      unsignedMembers = data || [];
+    }
 
     if (!unsignedMembers?.length) {
       return NextResponse.json({ sent: 0 });
@@ -105,11 +162,12 @@ export async function POST() {
         .from("waiver_signatures")
         .select("id")
         .eq("member_id", member.id)
+        .eq("template_id", template.id)
         .eq("token_used", false)
-        .single();
+        .maybeSingle();
 
       if (existing) {
-        continue; // Skip: already has unused invite
+        continue; // Skip: already has unused invite for this template
       }
 
       const { data: profile } = await adminSupabase

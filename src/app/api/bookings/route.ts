@@ -42,7 +42,13 @@ export async function POST(request: Request) {
 
     if (!result.success) {
       return NextResponse.json(
-        { error: result.error },
+        {
+          error: result.error,
+          ...(result.code ? { code: result.code } : {}),
+          ...(result.missingWaiverTemplateIds
+            ? { missing_waiver_template_ids: result.missingWaiverTemplateIds }
+            : {}),
+        },
         { status: result.status || 400 }
       );
     }

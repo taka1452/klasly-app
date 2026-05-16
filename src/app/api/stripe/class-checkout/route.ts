@@ -3,6 +3,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { stripe } from "@/lib/stripe/server";
 import { NextResponse } from "next/server";
 import { resolveStudioFee, calculateStudioFee } from "@/lib/fee/resolve-fee";
+import { resolveDiscountCode } from "@/lib/discounts/apply";
 import { isTestAccount, TEST_ACCOUNT_STRIPE_ERROR } from "@/lib/auth/test-account-guard";
 export const runtime = "nodejs";
 
@@ -39,7 +40,12 @@ export async function POST(request: Request) {
     );
 
     const body = await request.json();
-    const { sessionId, memberId } = body;
+    const { sessionId, memberId, customAmount, discountCode } = body as {
+      sessionId?: string;
+      memberId?: string;
+      customAmount?: number;
+      discountCode?: string;
+    };
 
     if (!sessionId || !memberId) {
       return NextResponse.json(
@@ -51,7 +57,7 @@ export async function POST(request: Request) {
     // Verify member belongs to user
     const { data: member } = await adminSupabase
       .from("members")
-      .select("id, studio_id, profile_id")
+      .select("id, studio_id, profile_id, tags")
       .eq("id", memberId)
       .single();
 
@@ -62,7 +68,7 @@ export async function POST(request: Request) {
     // Look up session with class_templates join
     const { data: session } = await adminSupabase
       .from("class_sessions")
-      .select("id, template_id, studio_id, session_date, start_time, instructor_id, price_cents, title, class_templates(id, name, instructor_id, price_cents)")
+      .select("id, template_id, studio_id, session_date, start_time, instructor_id, price_cents, title, class_templates(id, name, instructor_id, price_cents, pricing_mode, price_min_cents)")
       .eq("id", sessionId)
       .single();
 
@@ -99,7 +105,47 @@ export async function POST(request: Request) {
     let productId: string | null = null;
     let productDescription: string | null = null;
 
-    if (
+    // Sliding scale ("Pay What You Can"): if the template opted in and we
+    // have no session-level price override, the attendee picks the amount
+    // before checkout. The first request lacks customAmount → we ask the
+    // client to surface the picker; second request includes customAmount
+    // and we validate it against the configured minimum.
+    const templatePricingMode =
+      (templateData as { pricing_mode?: string } | null)?.pricing_mode ?? "fixed";
+    const templateMinCents =
+      (templateData as { price_min_cents?: number | null } | null)?.price_min_cents ?? null;
+    const slidingScaleActive =
+      templatePricingMode === "sliding_scale" &&
+      (session.price_cents === null || session.price_cents === undefined) &&
+      studio.payout_model === "instructor_direct" &&
+      templateData?.price_cents != null;
+
+    if (slidingScaleActive) {
+      const suggestedCents = templateData!.price_cents as number;
+      const minCents = templateMinCents ?? 0;
+      if (typeof customAmount !== "number") {
+        return NextResponse.json(
+          {
+            code: "SLIDING_SCALE_AMOUNT_REQUIRED",
+            min_cents: minCents,
+            suggested_cents: suggestedCents,
+            currency,
+          },
+          { status: 422 }
+        );
+      }
+      if (!Number.isFinite(customAmount) || customAmount < minCents) {
+        return NextResponse.json(
+          {
+            error: `Amount must be at least $${(minCents / 100).toFixed(2)}.`,
+            code: "SLIDING_SCALE_BELOW_MIN",
+            min_cents: minCents,
+          },
+          { status: 400 }
+        );
+      }
+      amount = Math.round(customAmount);
+    } else if (
       session.price_cents !== null &&
       session.price_cents !== undefined
     ) {
@@ -135,6 +181,31 @@ export async function POST(request: Request) {
       currency = (dropInProduct.currency ?? "usd").toLowerCase();
       productId = dropInProduct.id;
       productDescription = dropInProduct.description ?? null;
+    }
+
+    // Resolve discount code — typed by attendee or auto-applied via tag.
+    // Done before platform fee so the fee applies on the discounted total.
+    let discountCodeId: string | null = null;
+    let discountAmountOff = 0;
+    const memberTags = (member as { tags?: string[] }).tags || [];
+    const discountResult = await resolveDiscountCode(adminSupabase, {
+      studioId: studio.id,
+      memberId,
+      memberTags,
+      amountCents: amount,
+      context: "class_booking",
+      codeInput: discountCode ?? null,
+    });
+    if (discountResult.ok) {
+      discountCodeId = discountResult.code.id;
+      discountAmountOff = discountResult.amountOffCents;
+      amount = discountResult.finalAmountCents;
+    } else if (discountCode) {
+      // Attendee typed a code but it didn't resolve — surface the reason.
+      return NextResponse.json(
+        { error: discountResult.reason, code: "DISCOUNT_INVALID" },
+        { status: 400 }
+      );
     }
 
     // Get platform fee
@@ -258,6 +329,10 @@ export async function POST(request: Request) {
     }
     if (productId) {
       metadata.product_id = productId;
+    }
+    if (discountCodeId) {
+      metadata.discount_code_id = discountCodeId;
+      metadata.discount_amount_off = String(discountAmountOff);
     }
     if (instructorId) {
       metadata.instructor_id = instructorId;

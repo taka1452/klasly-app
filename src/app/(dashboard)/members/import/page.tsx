@@ -42,6 +42,7 @@ type AutoMapping = {
   referredByColumn: string;
   isMinorColumn: string;
   guardianEmailColumn: string;
+  tagsColumn: string;
 };
 
 function autoMapColumns(columns: string[]): AutoMapping {
@@ -95,6 +96,7 @@ function autoMapColumns(columns: string[]): AutoMapping {
   const guardianEmail = columns.find(
     (c) => /guardian|parent.*email/i.test(c)
   );
+  const tags = columns.find((c) => /^tags?$|segment|categor/i.test(c));
 
   const nameMode =
     first && last ? NAME_SEPARATE : combined ? NAME_COMBINED : NAME_SEPARATE;
@@ -116,6 +118,7 @@ function autoMapColumns(columns: string[]): AutoMapping {
     referredByColumn: referredBy || "",
     isMinorColumn: isMinor || "",
     guardianEmailColumn: guardianEmail || "",
+    tagsColumn: tags || "",
   };
 }
 
@@ -160,6 +163,7 @@ export default function ImportMembersPage() {
   const [referredByColumn, setReferredByColumn] = useState("");
   const [isMinorColumn, setIsMinorColumn] = useState("");
   const [guardianEmailColumn, setGuardianEmailColumn] = useState("");
+  const [tagsColumn, setTagsColumn] = useState("");
   // Captures which columns the auto-mapper picked, so we can render an
   // "Auto-detected" badge next to those dropdowns. Manual changes are not
   // tracked back to this — once the user touches a dropdown, the badge
@@ -286,6 +290,7 @@ export default function ImportMembersPage() {
       setReferredByColumn(auto.referredByColumn);
       setIsMinorColumn(auto.isMinorColumn);
       setGuardianEmailColumn(auto.guardianEmailColumn);
+      setTagsColumn(auto.tagsColumn);
 
       setAutoMappedColumns(
         new Set(
@@ -305,6 +310,7 @@ export default function ImportMembersPage() {
             auto.referredByColumn && "referred_by",
             auto.isMinorColumn && "is_minor",
             auto.guardianEmailColumn && "guardian_email",
+            auto.tagsColumn && "tags",
           ].filter(Boolean) as string[]
         )
       );
@@ -352,6 +358,7 @@ export default function ImportMembersPage() {
             referred_by: referredByColumn || undefined,
             is_minor: isMinorColumn || undefined,
             guardian_email: guardianEmailColumn || undefined,
+            tags: tagsColumn || undefined,
           },
           defaultPlanType: resolvedPlanType,
           defaultCredits: resolvedCredits,
@@ -864,6 +871,27 @@ export default function ImportMembersPage() {
                     </option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Tags
+                  {autoBadge("tags")}
+                </label>
+                <select
+                  className="input-field mt-1 w-full"
+                  value={tagsColumn}
+                  onChange={(e) => setTagsColumn(e.target.value)}
+                >
+                  {dropdownOptions.map((c) => (
+                    <option key={c} value={c === SKIP ? "" : c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-[11px] text-gray-500">
+                  Comma or semicolon separated. Used for discount auto-apply
+                  (e.g. <code>veteran, first responder</code>).
+                </p>
               </div>
               <div className="sm:col-span-2">
                 <label className="block text-sm font-medium text-gray-700">

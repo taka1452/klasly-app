@@ -106,6 +106,12 @@ export async function POST(request: Request) {
       recurrence_end_date,
       transition_minutes,
       special_instructions,
+      cancellation_policy,
+      pricing_mode,
+      price_min_cents,
+      required_waiver_template_ids,
+      confirmation_subject_override,
+      confirmation_body_override,
     } = body;
 
     // --- Validation ---
@@ -181,6 +187,26 @@ export async function POST(request: Request) {
           recurrence_end_date: recurrence_end_date || null,
           transition_minutes: transition_minutes || null,
           special_instructions: special_instructions?.trim?.() || null,
+          cancellation_policy: cancellation_policy?.trim?.() || null,
+          pricing_mode: pricing_mode === "sliding_scale" ? "sliding_scale" : "fixed",
+          price_min_cents:
+            pricing_mode === "sliding_scale" &&
+            typeof price_min_cents === "number"
+              ? price_min_cents
+              : null,
+          required_waiver_template_ids: Array.isArray(required_waiver_template_ids)
+            ? required_waiver_template_ids
+            : [],
+          confirmation_subject_override:
+            typeof confirmation_subject_override === "string" &&
+            confirmation_subject_override.trim()
+              ? confirmation_subject_override.trim()
+              : null,
+          confirmation_body_override:
+            typeof confirmation_body_override === "string" &&
+            confirmation_body_override.trim()
+              ? confirmation_body_override.trim()
+              : null,
         })
         .select("*, instructors(id, profiles(full_name))")
         .single();
@@ -218,6 +244,7 @@ export async function POST(request: Request) {
         recurrence_end_date: recurrence_end_date || null,
         transition_minutes: transition_minutes || null,
         special_instructions: special_instructions?.trim?.() || null,
+        cancellation_policy: cancellation_policy?.trim?.() || null,
       })
       .select("*, instructors(id, profiles(full_name))")
       .single();

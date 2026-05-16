@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email/send";
 import { paymentReceipt, paymentFailed, instructorPaymentNotification, eventBookingConfirmation, eventBookingConfirmedFull, eventBookingConfirmedInstallment, ownerNewBookingNotification, memberPaymentSuccessOwnerNotice, memberPaymentFailedOwnerNotice } from "@/lib/email/templates";
 import { insertWebhookLog } from "@/lib/admin/logs";
+import { recordDiscountRedemption } from "@/lib/discounts/apply";
 
 /** session.subscription は string | Subscription (expand時) のため、必ずID文字列を返す */
 function getSubscriptionId(sub: string | Stripe.Subscription | null): string | null {
@@ -1430,6 +1431,29 @@ async function handleInstructorDirectPayout(
     paid_at: new Date().toISOString(),
   });
 
+  // 5b. Record discount redemption + bump used_count. The class-checkout
+  // route stamped these onto session.metadata when the code resolved
+  // (typed-in or auto-applied by member tag).
+  const discountCodeId = session.metadata?.discount_code_id;
+  const discountAmountOff = parseInt(
+    session.metadata?.discount_amount_off ?? "0",
+    10
+  );
+  if (discountCodeId && discountAmountOff > 0) {
+    try {
+      await recordDiscountRedemption(adminSupabase, {
+        studioId,
+        discountCodeId,
+        memberId,
+        amountOffCents: discountAmountOff,
+        context: "class_booking",
+        contextId: bookingId ?? null,
+      });
+    } catch (err) {
+      console.error("Failed to record discount redemption:", err);
+    }
+  }
+
   // 6. Send email notification to instructor
   try {
     const { data: instructorData } = await adminSupabase
@@ -1688,6 +1712,34 @@ async function handleEventBookingCheckout(
       .eq("id", bookingId);
   }
 
+  // Record discount redemption + bump used_count. metadata is stamped by
+  // /api/events/checkout when a code resolves (typed-in or auto-applied
+  // via member tag). Best effort — failures don't break the booking.
+  const eventDiscountCodeId = session.metadata?.discount_code_id;
+  const eventDiscountAmountOff = parseInt(
+    session.metadata?.discount_amount_off ?? "0",
+    10
+  );
+  if (eventDiscountCodeId && eventDiscountAmountOff > 0 && studioId) {
+    try {
+      const { data: bk } = await supabase
+        .from("event_bookings")
+        .select("member_id")
+        .eq("id", bookingId)
+        .single();
+      await recordDiscountRedemption(supabase, {
+        studioId,
+        discountCodeId: eventDiscountCodeId,
+        memberId: bk?.member_id ?? null,
+        amountOffCents: eventDiscountAmountOff,
+        context: "event_booking",
+        contextId: bookingId,
+      });
+    } catch (err) {
+      console.error("Failed to record event discount redemption:", err);
+    }
+  }
+
   // Send confirmation email + owner notification
   try {
     const { data: bookingData } = await supabase
@@ -1699,10 +1751,38 @@ async function handleEventBookingCheckout(
     const { data: eventData } = eventId
       ? await supabase
           .from("events")
-          .select("name, start_date, end_date, location_name, installment_count, studio_id, cancellation_policy_text")
+          .select("name, start_date, end_date, location_name, installment_count, studio_id, cancellation_policy_text, confirmation_subject_override, confirmation_body_override")
           .eq("id", eventId)
           .single()
       : { data: null };
+
+    // Resolve confirmation email overrides: per-event override beats
+    // studio-wide default. Studio defaults sit on studios.event_*.
+    let eventOverrideSubject: string | null =
+      (eventData as { confirmation_subject_override?: string | null } | null)
+        ?.confirmation_subject_override || null;
+    let eventOverrideBody: string | null =
+      (eventData as { confirmation_body_override?: string | null } | null)
+        ?.confirmation_body_override || null;
+    let resolvedStudioName: string | undefined;
+    if (studioId) {
+      const { data: studioRow } = await supabase
+        .from("studios")
+        .select("name, event_confirmation_subject, event_confirmation_body")
+        .eq("id", studioId)
+        .maybeSingle();
+      resolvedStudioName = (studioRow as { name?: string } | null)?.name;
+      if (!eventOverrideSubject) {
+        eventOverrideSubject =
+          (studioRow as { event_confirmation_subject?: string | null } | null)
+            ?.event_confirmation_subject || null;
+      }
+      if (!eventOverrideBody) {
+        eventOverrideBody =
+          (studioRow as { event_confirmation_body?: string | null } | null)
+            ?.event_confirmation_body || null;
+      }
+    }
 
     if (bookingData?.guest_email && eventData) {
       // Get option name
@@ -1775,6 +1855,9 @@ async function handleEventBookingCheckout(
           optionName,
           amountCents: bookingData.total_amount_cents,
           cancellationPolicySummary: policySummary,
+          overrideSubject: eventOverrideSubject,
+          overrideBody: eventOverrideBody,
+          studioName: resolvedStudioName,
         });
 
         await sendEmail({

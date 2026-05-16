@@ -245,7 +245,11 @@ export const helpArticles: HelpArticle[] = [
       },
       {
         title: 'Set the price (optional)',
-        description: 'If members pay per class (drop-in), enter the price. If they use credits or a subscription, leave this blank.',
+        description: 'Pick Fixed price (single price for everyone — leave blank for free or studio-pricing) or Pay What You Can (set a Suggested price and a Minimum price; attendees pick any amount in that range — or more — at checkout). Both work with Collective Mode pay-per-class.',
+      },
+      {
+        title: 'Set a cancellation policy (optional)',
+        description: 'Add a short policy on the class template ("Full refund up to 24 hours before"). Shown on the booking page and in confirmation emails. Leave blank to fall back to your studio-wide policy.',
       },
       {
         title: 'Save',
@@ -257,8 +261,89 @@ export const helpArticles: HelpArticle[] = [
       'You can change the generation period in Settings (4, 6, 8, or 12 weeks ahead).',
       'To create a one-time class that doesn\'t repeat, use "Create Session" on the Schedule page instead.',
       'Class templates are reusable blueprints — you can create sessions from any template.',
+      'Pay What You Can: set Minimum to $0 if you want to allow fully free claims. The "Suggested" number is shown as a hint at checkout, never enforced.',
+      'Required waivers (optional): pick one or more waiver templates an attendee must sign before booking this class. Already-signed waivers are skipped automatically.',
+      'Custom confirmation email (optional): override the studio default for just this class. Variables {memberName} {className} {sessionDate} {startTime} {studioName} are substituted at send time. Class details are always appended automatically.',
     ],
-    relatedArticles: ['edit-cancel-session', 'import-classes-csv', 'session-generation-period'],
+    relatedArticles: ['edit-cancel-session', 'import-classes-csv', 'session-generation-period', 'discount-codes', 'confirmation-emails'],
+  },
+
+  {
+    id: 'discount-codes',
+    title: 'Set up discount codes',
+    summary: 'Create codes attendees type in at checkout, or tag-based codes that auto-apply for eligible members.',
+    category: 'payments',
+    audience: ['owner', 'manager'],
+    keywords: ['discount', 'coupon', 'code', 'promo', 'percent', 'off', 'veteran', 'first responder', 'tag', 'auto-apply'],
+    steps: [
+      {
+        title: 'Go to Settings → Discount Codes',
+        description: 'Click "+ New code".',
+      },
+      {
+        title: 'Pick code and amount',
+        description: 'Set a short code (e.g. VETS10), choose % off or $ off, and enter the amount. Percent must be 100 or less.',
+      },
+      {
+        title: 'Set the scope',
+        description: 'Limit the code to All purchases, Class bookings only, Event bookings only, Memberships only, or Contract invoices only.',
+      },
+      {
+        title: 'Auto-apply via member tag (optional)',
+        description: 'Enter a member tag like "veteran" to auto-apply the code for any member whose profile carries that tag. Leave blank to make it a regular type-it-in code.',
+      },
+      {
+        title: 'Add limits (optional)',
+        description: 'Set an expiry date, a total usage cap across all members, and/or one-use-per-member.',
+      },
+      {
+        title: 'Save',
+        description: 'Active codes immediately work at the Book & Pay checkout. Attendees see a "Have a code?" link under the Book button.',
+      },
+    ],
+    tips: [
+      'Codes are case-insensitive — Klasly upper-cases everything on save and at lookup.',
+      'The discount applies before platform / studio fees are calculated, so the studio fee percentage is taken on the discounted total.',
+      'A typed-in code overrides any auto-applied tag code, so members can still use a special promo code even if they\'re tagged.',
+      'Tag-based auto-apply works for class bookings AND event bookings AND instructor contract invoices. Same code system, picks the best matching one when a tagged member checks out.',
+      'CSV member import has a "Tags" column — comma- or semicolon-separated values (e.g. "veteran, first_responder") so auto-apply works from day one without manual tagging.',
+    ],
+    relatedArticles: ['create-recurring-class', 'confirmation-emails', 'import-members-csv'],
+  },
+
+  {
+    id: 'confirmation-emails',
+    title: 'Customize confirmation emails',
+    summary: 'Edit the default subject and body that members receive when they book — or override for a single class.',
+    category: 'messaging',
+    audience: ['owner'],
+    keywords: ['email', 'confirmation', 'booking', 'subject', 'body', 'template', 'sender', 'customize', 'variables'],
+    steps: [
+      {
+        title: 'Open Settings → Confirmation emails',
+        description: 'Edit the studio-wide default for class bookings and a separate default for event bookings.',
+      },
+      {
+        title: 'Use variables for personalization',
+        description: 'Type {memberName}, {className} (or {eventName}), {sessionDate}, {startTime}, or {studioName} anywhere in the subject or body. They\'re substituted at send time.',
+      },
+      {
+        title: 'Set a custom sender name (optional)',
+        description: 'The "From" name on confirmation emails. Defaults to Klasly when blank.',
+      },
+      {
+        title: 'Per-class override (optional)',
+        description: 'On any class template, tick "Custom confirmation email for this class" and write a class-specific subject and body. Overrides the studio default for that class only.',
+      },
+    ],
+    tips: [
+      'Plain text only — no HTML — but paragraph breaks are preserved.',
+      'The class/event details block (date, time, online link if any) is always appended automatically, so you don\'t need to repeat it in your body.',
+      'Per-class overrides win over studio defaults, which win over the Klasly default. Leave both blank to keep using Klasly\'s message.',
+      'Per-event override too: tick "Custom confirmation email for this event" on the event Edit page (Basic Info step) to override just that event.',
+      'Test before saving: each section has a "Send test to me" link in the top-right corner that emails a preview to your owner address using sample data (Member Name = your name, Session Date = a placeholder). Iterate on your wording without bothering real members.',
+    ],
+    relatedArticles: ['create-recurring-class', 'discount-codes', 'class-reminder-emails'],
   },
 
   {
@@ -941,7 +1026,7 @@ export const helpArticles: HelpArticle[] = [
       },
       {
         title: 'Set pass details',
-        description: 'Name, price, and optional class limit (unlimited or X per month). Choose an expiry period (30–365 days from purchase) or pick "Custom date" to set a fixed end date — ideal for class series that all expire on the last session date.',
+        description: 'Name, price, and optional class limit (unlimited or X per month). Three expiry modes: No expiry (pass never lapses); Valid for N days / weeks / months after purchase (preset shortcuts for 1, 3, 4, 6 months and 1 year — months are counted as 30-day periods); Fixed expiry date (all purchases end on the same calendar date — ideal for class series that all expire on the last session date).',
       },
       {
         title: 'Restrict to specific classes (optional)',
@@ -956,10 +1041,47 @@ export const helpArticles: HelpArticle[] = [
       'Start with semi-auto to review distribution amounts before they\'re sent to instructors.',
       'Stripe fees, Klasly fees, and Studio Fee are deducted before distribution.',
       'Distributions are calculated on the 1st of each month based on previous month\'s usage.',
-      'Use "Custom date" expiry for class series — set the last day of the series so all subscriptions expire together regardless of when each member signed up.',
+      'Use "Fixed expiry date" for class series — set the last day of the series so all subscriptions expire together regardless of when each member signed up.',
+      'Need an unusual duration like 4 months? Use "Valid for…" and type any number — Klasly converts months × 30 days behind the scenes.',
       'Class restrictions are enforced at booking time — a restricted pass won\'t be offered for classes it doesn\'t cover.',
+      'Renewal reminders: Klasly automatically emails members 7 days before their pass expires (and again on the expiry day) so they can buy again before they lose access. Stripe-renewing monthly passes are skipped — Stripe handles those.',
     ],
-    relatedArticles: ['collective-overview', 'create-products'],
+    relatedArticles: ['collective-overview', 'create-products', 'member-pass-freeze-gift'],
+  },
+
+  {
+    id: 'member-pass-freeze-gift',
+    title: 'Pause or gift your pass',
+    summary: 'Take a vacation hold so you don\'t lose days, or gift remaining classes to a friend.',
+    category: 'payments',
+    audience: ['member'],
+    keywords: ['pass', 'freeze', 'pause', 'vacation', 'hold', 'gift', 'transfer', 'birthday', 'renewal'],
+    featureFlag: 'extension.studio_pass',
+    steps: [
+      {
+        title: 'Open My Passes',
+        description: 'In the sidebar, tap My Passes. Each of your active passes has two new actions: Pause / Vacation hold and Gift classes.',
+      },
+      {
+        title: 'Pause / Vacation hold',
+        description: 'Tap Pause, pick the date you want to come back, and confirm. Bookings are blocked while paused. When you resume (manually or on that date), Klasly pushes your pass expiry forward by the number of days you skipped — so you don\'t lose what you paid for.',
+      },
+      {
+        title: 'Gift classes (class packs only)',
+        description: 'Tap Gift classes, enter a friend\'s email, the number of classes to send, and an optional message. The classes are subtracted from your remaining count immediately so you can\'t double-spend.',
+      },
+      {
+        title: 'Recipient claims the gift',
+        description: 'The recipient sees a Pending Gifts card at the top of their My Passes page with a Claim button. Clicking creates a fresh pass subscription with the gifted classes.',
+      },
+    ],
+    tips: [
+      'Pause limit: your hold can\'t extend past your current pass expiry. If you need a longer freeze, talk to your studio.',
+      'You can resume early by tapping "Resume now" — the days you didn\'t use are still added to your expiry.',
+      'Gifts can be revoked if the recipient hasn\'t claimed yet — your classes come back to you automatically.',
+      'Unlimited passes can\'t be gifted (no fixed count to share); only class packs.',
+    ],
+    relatedArticles: ['member-studio-pass', 'studio-pass-setup'],
   },
 
   // ═══════════════════════════════════════
@@ -997,10 +1119,10 @@ export const helpArticles: HelpArticle[] = [
   {
     id: 'send-waiver-bulk',
     title: 'Send waiver requests to all members',
-    summary: 'Send a signing request to all members who haven\'t signed yet.',
+    summary: 'Send a signing request to all members who haven\'t signed yet. Works for both the main studio waiver and per-class waivers.',
     category: 'waivers',
     audience: ['owner', 'manager'],
-    keywords: ['waiver', 'send', 'bulk', 'all', 'unsigned', 'request', 'email'],
+    keywords: ['waiver', 'send', 'bulk', 'all', 'unsigned', 'request', 'email', 're-sign', 'per-class', 'aerial'],
     steps: [
       {
         title: 'Go to Waivers',
@@ -1008,14 +1130,48 @@ export const helpArticles: HelpArticle[] = [
       },
       {
         title: 'Click "Send to All Unsigned"',
-        description: 'This sends an email with a signing link to every member who hasn\'t signed yet.',
+        description: 'This sends an email with a signing link to every member who hasn\'t signed yet for your primary studio waiver.',
+      },
+      {
+        title: 'Per-template re-sign (when you have multiple waivers)',
+        description: 'When you have more than one active waiver (e.g. main waiver + Aerial Yoga), a "Send a specific waiver to members" panel appears above. Pick the template, click "Send re-sign requests", and Klasly emails every active member who hasn\'t signed THAT waiver — others are skipped automatically.',
       },
     ],
     tips: [
       'You can also send to individual members by clicking their name in the list.',
       'Members sign directly from the email link — no login required.',
+      'Use this right after adding a new per-class waiver to bring all existing members up to date without emailing them one by one.',
+      'Members with an unused invite from a previous send are skipped (no duplicate emails).',
     ],
-    relatedArticles: ['setup-waiver-template', 'member-minor-waiver'],
+    relatedArticles: ['setup-waiver-template', 'member-minor-waiver', 'sign-waiver-at-checkout'],
+  },
+
+  {
+    id: 'sign-waiver-at-checkout',
+    title: 'Sign required waivers at checkout',
+    summary: 'When a class requires a waiver you haven\'t signed, Klasly opens a sign-it-here modal during booking — no leaving the page.',
+    category: 'waivers',
+    audience: ['member'],
+    keywords: ['waiver', 'sign', 'checkout', 'booking', 'modal', 'aerial', 'required'],
+    steps: [
+      {
+        title: 'Tap Book on a class with required waivers',
+        description: 'If you haven\'t signed every waiver this class requires, Klasly opens a modal showing the waiver content right there.',
+      },
+      {
+        title: 'Read, agree, and type your name',
+        description: 'Check the agreement box and type your full legal name. That counts as your electronic signature.',
+      },
+      {
+        title: 'Continue or book',
+        description: 'If multiple waivers are required, the modal walks through them one by one. After the last one, your booking is completed automatically.',
+      },
+    ],
+    tips: [
+      'Waivers you\'ve already signed are skipped — only the missing ones show up.',
+      'Tap Cancel at any time to back out without signing; nothing is saved until you submit.',
+    ],
+    relatedArticles: ['member-studio-pass'],
   },
 
   // ═══════════════════════════════════════
@@ -1073,6 +1229,56 @@ export const helpArticles: HelpArticle[] = [
       },
     ],
     relatedArticles: ['send-message-member'],
+  },
+
+  {
+    id: 'class-reminder-emails',
+    title: 'Automatic class reminder emails',
+    summary: 'Klasly emails every confirmed attendee 24 hours and 1 hour before each class — no setup required.',
+    category: 'messaging',
+    audience: ['owner', 'manager', 'member'],
+    keywords: ['reminder', 'email', '24h', '1h', 'no-show', 'before class', 'tomorrow'],
+    steps: [
+      {
+        title: 'It just works',
+        description: 'Once a member books a class, Klasly automatically sends them two reminders: one ~24 hours before start time ("See you tomorrow"), and one ~1 hour before ("Starting in about an hour"). Each booking gets exactly one of each — never duplicates.',
+      },
+      {
+        title: 'What the emails contain',
+        description: 'Class name, date, time, studio/room name, and (for online classes) a Join button with the meeting link. Cancellation policy is included as a footer when set on the class template.',
+      },
+    ],
+    tips: [
+      'Reminders are skipped for cancelled bookings and non-confirmed statuses (waitlist).',
+      'Customize the look of these emails on Settings → Confirmation emails — they use the same body template as booking confirmations.',
+      'No-show rates typically drop 20–30% once reminders are in place.',
+    ],
+    relatedArticles: ['confirmation-emails', 'manage-bookings'],
+  },
+
+  {
+    id: 'segment-bulk-email',
+    title: 'Email a tagged segment of members',
+    summary: 'Filter members by tag (e.g. "veteran") and send everyone in that group a custom message in one click.',
+    category: 'messaging',
+    audience: ['owner', 'manager'],
+    keywords: ['tag', 'segment', 'bulk', 'email', 'campaign', 'veteran', 'first responder', 'filter'],
+    steps: [
+      {
+        title: 'Filter the member list',
+        description: 'Go to Members → pick a tag from the Tag dropdown next to the status filter. The list narrows to that segment and a blue "Email these members" bar appears.',
+      },
+      {
+        title: 'Compose and send',
+        description: 'Click "Email these members" → type subject + body (you can use {memberName} and {studioName} variables) → click Send. Each tagged member receives a personalized copy.',
+      },
+    ],
+    tips: [
+      'Tags come from the members CSV importer (Tags column, comma- or semicolon-separated) or can be set manually on each member.',
+      'Tagged-discount auto-apply uses the same tag values, so segments stay in sync with your promotions.',
+      'Body is plain text — paragraph breaks are preserved. No HTML.',
+    ],
+    relatedArticles: ['discount-codes', 'import-members-csv'],
   },
 
   // ═══════════════════════════════════════
@@ -1141,7 +1347,9 @@ export const helpArticles: HelpArticle[] = [
       'In Collective Mode, the instructor will also be prompted to connect their Stripe account.',
       'You can create an instructor without sending an invitation if you prefer to set up their profile first.',
       'Upload a profile photo from the instructor detail page — JPG, PNG, or WebP up to 2 MB. The photo appears in the instructor list and on member-facing pages.',
+      'Add an optional Website link (Instagram, personal site, etc.) on the instructor detail page — it appears in the Instructor Info card alongside email and phone.',
       'You can also import instructors in bulk via CSV.',
+      'Teaching at your own studio? Owners and managers can now add themselves as an instructor using their existing email — their admin role is preserved. The sidebar automatically grows a "My Classes" and "My Earnings" link so they can switch between the admin and instructor views without logging out.',
     ],
     relatedArticles: ['collective-overview', 'assign-manager-role'],
   },
@@ -1259,7 +1467,7 @@ export const helpArticles: HelpArticle[] = [
       },
       {
         title: 'Flat & per-class fees',
-        description: 'For instructors who pay a simple fixed monthly amount or per-class fee. Manual settlement via the monthly invoice report.',
+        description: 'Three flavours on the same tab: Flat monthly (fixed amount each month), Per class (rate × number of classes taught), or Per hour (rate × actual class minutes that month — designed for ad-hoc renters who use the room as-needed). All settle manually via the monthly invoice report.',
       },
       {
         title: 'Overage charges ledger',
@@ -1275,6 +1483,10 @@ export const helpArticles: HelpArticle[] = [
       'When an instructor books a room that would put them over their tier, they get a confirmation modal saying "This booking will cost you $X in overage — proceed?" (explicit consent required).',
       'At month-end, overage is auto-charged to their card on file via Stripe.',
       'Instructors see "This month: 12h used of 10h, estimated overage $50" on /instructor/membership.',
+      'Per hour vs. Hourly plan: the new "Per hour" option in Flat & per-class is for renters with no monthly commitment ($X × hours taught, billed manually). "Hourly plan" is a Stripe subscription with a fixed monthly hour pool — pick that one when the instructor has a predictable monthly schedule.',
+      'Per hour now includes ad-hoc room bookings (instructor-driven room rentals that don\'t belong to a class) in addition to class session minutes — the monthly report sums both.',
+      'Invoice discounts: open a draft invoice from Settings → Instructor Invoices and click "Apply code" to subtract a percent or fixed amount. The code is recorded as a redemption when you click "Send".',
+      '80% alert: instructors who pass 80% of their monthly hour pool get an automatic heads-up email with remaining hours and (when applicable) the projected overage charge. Fires once per month per instructor.',
     ],
     relatedArticles: ['collective-overview', 'invite-instructor', 'instructor-cancellation-hours'],
   },
@@ -1420,8 +1632,12 @@ export const helpArticles: HelpArticle[] = [
       'You can create private events (not visible publicly) for corporate retreats or invite-only events.',
       'Guests can apply without a Klasly account — great for one-time retreat attendees.',
       'Installments are collected automatically. You\'ll be notified if a payment fails.',
+      'Pay What You Can per option: in the Edit page, each room option has a Fixed price / Pay What You Can toggle. Pick Pay What You Can to set a Minimum and let the attendee pick any amount in the range at checkout (per person).',
+      'Required waivers per event: in Basic Info, pick one or more waiver templates members must sign before booking. Existing valid signatures are skipped automatically.',
+      'Custom confirmation email per event: in Basic Info, tick "Custom confirmation email for this event" to override the studio-wide default. Variables: {memberName} {eventName} {sessionDate} {startTime} {studioName}.',
+      'Attendees see "Have a discount code?" at checkout. Codes can also auto-apply for tagged members.',
     ],
-    relatedArticles: ['manage-retreat-bookings'],
+    relatedArticles: ['manage-retreat-bookings', 'discount-codes', 'confirmation-emails'],
   },
 
   {

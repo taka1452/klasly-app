@@ -61,10 +61,39 @@ export default async function InstructorDetailPage({
 
   const { data: membership } = await supabase
     .from("instructor_memberships")
-    .select("tier_id, stripe_subscription_id, cancel_at_period_end, current_period_end, instructor_membership_tiers(name, monthly_price)")
+    .select("tier_id, stripe_subscription_id, cancel_at_period_end, current_period_end, instructor_membership_tiers(name, monthly_price, monthly_minutes, allow_overage, overage_rate_cents)")
     .eq("instructor_id", id)
     .eq("status", "active")
     .maybeSingle();
+
+  // Current-month usage so the admin can see "X hr used / Y hr remaining"
+  // without waiting for month-end billing. Sums duration_minutes from
+  // class_sessions taught by this instructor in the current calendar month.
+  // (Cancelled sessions excluded — matches the rental report logic.)
+  let monthlyUsedMinutes = 0;
+  if (membership?.tier_id) {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    const monthStart = `${year}-${String(month).padStart(2, "0")}-01`;
+    const nextYear = month === 12 ? year + 1 : year;
+    const nextMonth = month === 12 ? 1 : month + 1;
+    const monthEnd = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`;
+
+    const { data: monthSessions } = await supabase
+      .from("class_sessions")
+      .select("duration_minutes")
+      .eq("instructor_id", id)
+      .gte("session_date", monthStart)
+      .lt("session_date", monthEnd)
+      .eq("is_cancelled", false);
+
+    if (monthSessions) {
+      for (const s of monthSessions) {
+        monthlyUsedMinutes += s.duration_minutes ?? 0;
+      }
+    }
+  }
 
   const [{ data: assignedClasses }, { data: assignedTemplates }] = await Promise.all([
     supabase
@@ -141,7 +170,8 @@ export default async function InstructorDetailPage({
               phone: rawProfile?.phone || "",
               bio: instructor.bio || "",
               specialties: (specialties || []).join(", "),
-              rentalType: (instructor as { rental_type?: string }).rental_type as "none" | "flat_monthly" | "per_class" ?? "none",
+              websiteUrl: (instructor as { website_url?: string }).website_url || "",
+              rentalType: (instructor as { rental_type?: string }).rental_type as "none" | "flat_monthly" | "per_class" | "per_hour" ?? "none",
               rentalAmount: (instructor as { rental_amount?: number }).rental_amount ?? 0,
               tierId: membership?.tier_id || "",
               avatarUrl: rawProfile?.avatar_url || "",
@@ -188,6 +218,21 @@ export default async function InstructorDetailPage({
                   {rawProfile?.phone || "—"}
                 </dd>
               </div>
+              {(instructor as { website_url?: string }).website_url && (
+                <div>
+                  <dt className="text-xs text-gray-400">Website</dt>
+                  <dd className="text-sm font-medium text-gray-900 break-all">
+                    <a
+                      href={(instructor as { website_url?: string }).website_url!}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-brand-600 hover:text-brand-700"
+                    >
+                      {(instructor as { website_url?: string }).website_url}
+                    </a>
+                  </dd>
+                </div>
+              )}
               <div>
                 <dt className="text-xs text-gray-400">Joined</dt>
                 <dd className="text-sm font-medium text-gray-900">
@@ -199,10 +244,47 @@ export default async function InstructorDetailPage({
 
           {membership && (() => {
             const rawTier = membership.instructor_membership_tiers as unknown;
-            const tierInfo = (Array.isArray(rawTier) ? rawTier[0] : rawTier) as { name: string; monthly_price: number } | null;
+            const tierInfo = (Array.isArray(rawTier) ? rawTier[0] : rawTier) as {
+              name: string;
+              monthly_price: number;
+              monthly_minutes?: number;
+              allow_overage?: boolean | null;
+              overage_rate_cents?: number | null;
+            } | null;
             if (!tierInfo) return null;
             const hasSubscription = !!membership.stripe_subscription_id;
             const isFree = tierInfo.monthly_price <= 0;
+            const tierMinutes = tierInfo.monthly_minutes ?? 0;
+            const unlimited = tierMinutes === -1;
+            const remainingMinutes = unlimited
+              ? null
+              : Math.max(0, tierMinutes - monthlyUsedMinutes);
+            const overMinutes =
+              unlimited || tierMinutes === 0
+                ? 0
+                : Math.max(0, monthlyUsedMinutes - tierMinutes);
+            const usagePct =
+              unlimited || tierMinutes === 0
+                ? 0
+                : Math.min(
+                    100,
+                    Math.round((monthlyUsedMinutes / tierMinutes) * 100)
+                  );
+            const formatMinutes = (mins: number) => {
+              const h = Math.floor(mins / 60);
+              const m = mins % 60;
+              if (h === 0) return `${m}min`;
+              if (m === 0) return `${h}h`;
+              return `${h}h ${m}min`;
+            };
+            const estimatedOverageCents =
+              overMinutes > 0 && tierInfo.allow_overage && tierInfo.overage_rate_cents
+                ? Math.round((overMinutes / 60) * tierInfo.overage_rate_cents)
+                : 0;
+            const monthLabel = new Date().toLocaleString("en-US", {
+              month: "long",
+              year: "numeric",
+            });
             return (
               <div className="card">
                 <h3 className="text-sm font-medium text-gray-500">
@@ -235,6 +317,53 @@ export default async function InstructorDetailPage({
                         <span className="ml-1 inline-flex items-center rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-600">Cancelling</span>
                       )}
                     </dd>
+                  </div>
+
+                  <div className="border-t border-gray-100 pt-3">
+                    <dt className="text-xs text-gray-400">
+                      Hours this month
+                      <span className="ml-1 text-gray-300">({monthLabel})</span>
+                    </dt>
+                    {unlimited ? (
+                      <dd className="mt-1 text-sm font-medium text-gray-900">
+                        {formatMinutes(monthlyUsedMinutes)} used · Unlimited
+                      </dd>
+                    ) : (
+                      <>
+                        <dd className="mt-1 text-sm font-medium text-gray-900">
+                          {formatMinutes(monthlyUsedMinutes)} used of{" "}
+                          {formatMinutes(tierMinutes)}
+                          {remainingMinutes !== null && remainingMinutes > 0 && (
+                            <span className="ml-1 font-normal text-gray-500">
+                              · {formatMinutes(remainingMinutes)} left
+                            </span>
+                          )}
+                        </dd>
+                        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+                          <div
+                            className={`h-full rounded-full transition-all ${
+                              overMinutes > 0
+                                ? "bg-amber-500"
+                                : usagePct >= 80
+                                  ? "bg-amber-400"
+                                  : "bg-brand-500"
+                            }`}
+                            style={{ width: `${usagePct}%` }}
+                          />
+                        </div>
+                        {overMinutes > 0 && (
+                          <p className="mt-1.5 text-xs text-amber-700">
+                            {formatMinutes(overMinutes)} over.
+                            {estimatedOverageCents > 0 &&
+                              ` Estimated overage $${(
+                                estimatedOverageCents / 100
+                              ).toFixed(2)} at month-end.`}
+                            {tierInfo.allow_overage === false &&
+                              " Overage not allowed on this plan — further bookings will be blocked."}
+                          </p>
+                        )}
+                      </>
+                    )}
                   </div>
                 </dl>
               </div>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import MemberSearch from "@/components/members/member-search";
 import MembersListClient from "@/components/members/members-list-client";
 import MembersToolbarActions from "@/components/members/members-toolbar-actions";
+import BulkEmailBar from "@/components/members/bulk-email-bar";
 import FlowHintPanel from "@/components/ui/flow-hint-panel";
 import { checkManagerPermission } from "@/lib/auth/check-manager-permission";
 import ContextHelpLink from "@/components/help/context-help-link";
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
 export default async function MembersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string }>;
+  searchParams: Promise<{ q?: string; status?: string; tag?: string }>;
 }) {
   const params = await searchParams;
   const serverSupabase = await createServerClient();
@@ -67,7 +68,19 @@ export default async function MembersPage({
     query = query.eq("status", params.status);
   }
 
+  // タグフィルター: members.tags は text[]
+  if (params.tag && params.tag !== "all") {
+    query = query.contains("tags", [params.tag]);
+  }
+
   const { data: members } = await query;
+
+  // Collect distinct tags across this studio for the filter dropdown.
+  const tagSet = new Set<string>();
+  for (const m of (members || []) as { tags?: string[] }[]) {
+    for (const t of m.tags || []) tagSet.add(t);
+  }
+  const allTags = Array.from(tagSet).sort();
 
   // Fetch instructor profile_ids so we can badge members who are also instructors
   const { data: instructorRows } = await supabase
@@ -112,6 +125,14 @@ export default async function MembersPage({
       <MemberSearch
         currentQuery={params.q || ""}
         currentStatus={params.status || "all"}
+        currentTag={params.tag || "all"}
+        allTags={allTags}
+      />
+
+      {/* Bulk-email bar — only appears when a tag filter is active. */}
+      <BulkEmailBar
+        tag={params.tag || "all"}
+        filteredCount={filteredMembers.length}
       />
 
       {/* 会員一覧 */}

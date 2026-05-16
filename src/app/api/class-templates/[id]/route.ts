@@ -192,6 +192,12 @@ export async function PUT(request: Request, context: RouteContext) {
       recurrence_end_date,
       transition_minutes,
       special_instructions,
+      cancellation_policy,
+      pricing_mode,
+      price_min_cents,
+      required_waiver_template_ids,
+      confirmation_subject_override,
+      confirmation_body_override,
     } = body;
 
     // --- Validation ---
@@ -278,6 +284,48 @@ export async function PUT(request: Request, context: RouteContext) {
         updates.special_instructions =
           typeof special_instructions === "string" && special_instructions.trim().length > 0
             ? special_instructions.trim()
+            : null;
+      }
+      if (cancellation_policy !== undefined) {
+        updates.cancellation_policy =
+          typeof cancellation_policy === "string" && cancellation_policy.trim().length > 0
+            ? cancellation_policy.trim()
+            : null;
+      }
+      if (pricing_mode !== undefined) {
+        updates.pricing_mode =
+          pricing_mode === "sliding_scale" ? "sliding_scale" : "fixed";
+        // Always pair with the matching price_min_cents — wiping the bound
+        // when switching back to "fixed" keeps the check constraint happy.
+        if (pricing_mode !== "sliding_scale") {
+          updates.price_min_cents = null;
+        }
+      }
+      if (price_min_cents !== undefined && updates.pricing_mode !== "fixed") {
+        updates.price_min_cents =
+          typeof price_min_cents === "number" && price_min_cents >= 0
+            ? price_min_cents
+            : null;
+      }
+      if (required_waiver_template_ids !== undefined) {
+        updates.required_waiver_template_ids = Array.isArray(
+          required_waiver_template_ids
+        )
+          ? required_waiver_template_ids
+          : [];
+      }
+      if (confirmation_subject_override !== undefined) {
+        updates.confirmation_subject_override =
+          typeof confirmation_subject_override === "string" &&
+          confirmation_subject_override.trim()
+            ? confirmation_subject_override.trim()
+            : null;
+      }
+      if (confirmation_body_override !== undefined) {
+        updates.confirmation_body_override =
+          typeof confirmation_body_override === "string" &&
+          confirmation_body_override.trim()
+            ? confirmation_body_override.trim()
             : null;
       }
 

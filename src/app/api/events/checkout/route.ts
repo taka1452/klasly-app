@@ -6,6 +6,7 @@ import { sendEmail } from "@/lib/email/send";
 import { eventBookingConfirmation } from "@/lib/email/templates";
 import { isFeatureEnabled } from "@/lib/features/check-feature";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
+import { resolveDiscountCode } from "@/lib/discounts/apply";
 
 export const runtime = "nodejs";
 
@@ -43,6 +44,8 @@ export async function POST(request: Request) {
       application_responses,
       group_size: rawGroupSize,
       group_members: rawGroupMembers,
+      discount_code: rawDiscountCode,
+      custom_amount: rawCustomAmount,
     } = body;
 
     const groupSize = parseInt(rawGroupSize || "1", 10);
@@ -81,6 +84,46 @@ export async function POST(request: Request) {
     const retreatEnabled = await isFeatureEnabled(event.studio_id, FEATURE_KEYS.RETREAT_BOOKING);
     if (!retreatEnabled) {
       return NextResponse.json({ error: "Feature not available" }, { status: 404 });
+    }
+
+    // Per-event required waivers (Jamie 2026-05-14). When the booker is a
+    // logged-in member we look up their signatures; for guest checkout we
+    // can't verify ahead of time, so the waiver becomes a required
+    // post-booking step (UI surfaces this on the confirmation page).
+    const requiredWaiverIds: string[] = Array.isArray(
+      (event as { required_waiver_template_ids?: string[] }).required_waiver_template_ids
+    )
+      ? (event as { required_waiver_template_ids: string[] }).required_waiver_template_ids
+      : [];
+    if (requiredWaiverIds.length > 0 && user) {
+      const { data: memberRow } = await adminSupabase
+        .from("members")
+        .select("id")
+        .eq("studio_id", event.studio_id)
+        .eq("profile_id", user.id)
+        .maybeSingle();
+      if (memberRow) {
+        const { data: signed } = await adminSupabase
+          .from("waiver_signatures")
+          .select("template_id")
+          .eq("studio_id", event.studio_id)
+          .eq("member_id", memberRow.id)
+          .in("template_id", requiredWaiverIds);
+        const signedIds = new Set(
+          (signed || []).map((s: { template_id: string }) => s.template_id)
+        );
+        const missing = requiredWaiverIds.filter((id) => !signedIds.has(id));
+        if (missing.length > 0) {
+          return NextResponse.json(
+            {
+              error: "This event requires waivers you haven't signed yet. Open Waivers in your account to sign and try again.",
+              code: "WAIVERS_REQUIRED",
+              missing_waiver_template_ids: missing,
+            },
+            { status: 403 }
+          );
+        }
+      }
     }
 
     // 2. Fetch option
@@ -149,8 +192,82 @@ export async function POST(request: Request) {
     const hasEarlyBird = option.early_bird_price_cents != null
       && option.early_bird_deadline
       && new Date(option.early_bird_deadline) > now;
-    const unitPriceCents = hasEarlyBird ? option.early_bird_price_cents : option.price_cents;
-    const totalAmountCents = unitPriceCents * groupSize;
+    let unitPriceCents = hasEarlyBird ? option.early_bird_price_cents : option.price_cents;
+
+    // Sliding scale ("Pay What You Can"): when the chosen option opted in
+    // we treat option.price_cents as the suggested amount and require the
+    // attendee to pick a value at least `price_min_cents` (per person).
+    // The first request from the checkout page won't include
+    // custom_amount → tell the client to surface the picker; second
+    // request includes it and we validate against the option's min.
+    const optionPricingMode =
+      (option as { pricing_mode?: string }).pricing_mode ?? "fixed";
+    const optionMinCents =
+      (option as { price_min_cents?: number | null }).price_min_cents ?? null;
+    if (optionPricingMode === "sliding_scale" && !hasEarlyBird) {
+      const minPerPerson = optionMinCents ?? 0;
+      const suggestedPerPerson = option.price_cents;
+      if (typeof rawCustomAmount !== "number") {
+        return NextResponse.json(
+          {
+            code: "SLIDING_SCALE_AMOUNT_REQUIRED",
+            min_cents: minPerPerson,
+            suggested_cents: suggestedPerPerson,
+            currency: "usd",
+          },
+          { status: 422 }
+        );
+      }
+      if (!Number.isFinite(rawCustomAmount) || rawCustomAmount < minPerPerson) {
+        return NextResponse.json(
+          {
+            error: `Amount must be at least $${(minPerPerson / 100).toFixed(2)}.`,
+            code: "SLIDING_SCALE_BELOW_MIN",
+            min_cents: minPerPerson,
+          },
+          { status: 400 }
+        );
+      }
+      unitPriceCents = Math.round(rawCustomAmount);
+    }
+
+    let totalAmountCents = unitPriceCents * groupSize;
+
+    // Discount code: typed by attendee (or auto-applied if a logged-in
+    // member has a matching tag). Logged-in member required for the
+    // auto-apply branch — guest checkouts can still type a code.
+    let discountCodeId: string | null = null;
+    let discountAmountOff = 0;
+    let memberTags: string[] = [];
+    let memberIdForDiscount: string | null = null;
+    if (user) {
+      const { data: m } = await adminSupabase
+        .from("members")
+        .select("id, tags")
+        .eq("profile_id", user.id)
+        .eq("studio_id", event.studio_id)
+        .maybeSingle();
+      memberIdForDiscount = m?.id ?? null;
+      memberTags = (m as { tags?: string[] } | null)?.tags || [];
+    }
+    const discountResult = await resolveDiscountCode(adminSupabase, {
+      studioId: event.studio_id,
+      memberId: memberIdForDiscount,
+      memberTags,
+      amountCents: totalAmountCents,
+      context: "event_booking",
+      codeInput: typeof rawDiscountCode === "string" ? rawDiscountCode : null,
+    });
+    if (discountResult.ok) {
+      discountCodeId = discountResult.code.id;
+      discountAmountOff = discountResult.amountOffCents;
+      totalAmountCents = discountResult.finalAmountCents;
+    } else if (rawDiscountCode) {
+      return NextResponse.json(
+        { error: discountResult.reason, code: "DISCOUNT_INVALID" },
+        { status: 400 }
+      );
+    }
 
     const platformFee =
       platformFeePercent > 0
@@ -372,6 +489,12 @@ export async function POST(request: Request) {
             payment_type: "installment",
             installment_number: "1",
             studio_id: event.studio_id,
+            ...(discountCodeId
+              ? {
+                  discount_code_id: discountCodeId,
+                  discount_amount_off: String(discountAmountOff),
+                }
+              : {}),
           },
         },
         { stripeAccount: destinationAccount },
@@ -419,6 +542,12 @@ export async function POST(request: Request) {
             event_booking_id: booking.id,
             payment_type: "full",
             studio_id: event.studio_id,
+            ...(discountCodeId
+              ? {
+                  discount_code_id: discountCodeId,
+                  discount_amount_off: String(discountAmountOff),
+                }
+              : {}),
           },
         },
         { stripeAccount: destinationAccount },

@@ -3,6 +3,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { getPlanAccess } from "@/lib/plan-guard";
 import MemberPasses from "@/components/passes/member-passes";
+import PendingGifts from "@/components/passes/pending-gifts";
 import { isFeatureEnabled } from "@/lib/features/check-feature";
 import { FEATURE_KEYS } from "@/lib/features/feature-keys";
 
@@ -112,7 +113,7 @@ export default async function MemberPassesPage() {
   // Fetch member's active subscriptions
   const { data: subscriptions } = await supabase
     .from("pass_subscriptions")
-    .select("id, studio_pass_id, status, cancel_at_period_end, current_period_start, current_period_end, classes_used_this_period")
+    .select("id, studio_pass_id, status, cancel_at_period_end, current_period_start, current_period_end, classes_used_this_period, frozen_at, frozen_until, total_frozen_days")
     .eq("member_id", member.id)
     .in("status", ["active", "cancelled"]);
 
@@ -126,6 +127,8 @@ export default async function MemberPassesPage() {
           Monthly membership plans for this studio
         </p>
       </header>
+
+      <PendingGifts />
 
       <MemberPasses
         memberId={member.id}

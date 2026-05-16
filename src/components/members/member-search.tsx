@@ -6,9 +6,16 @@ import { useState } from "react";
 type Props = {
   currentQuery: string;
   currentStatus: string;
+  currentTag?: string;
+  allTags?: string[];
 };
 
-export default function MemberSearch({ currentQuery, currentStatus }: Props) {
+export default function MemberSearch({
+  currentQuery,
+  currentStatus,
+  currentTag = "all",
+  allTags = [],
+}: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(currentQuery);
@@ -52,6 +59,20 @@ export default function MemberSearch({ currentQuery, currentStatus }: Props) {
         <option value="paused">Paused</option>
         <option value="cancelled">Cancelled</option>
       </select>
+      {allTags.length > 0 && (
+        <select
+          value={currentTag}
+          onChange={(e) => updateParams("tag", e.target.value)}
+          className="input-field w-full sm:w-40"
+        >
+          <option value="all">All tags</option>
+          {allTags.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
+      )}
     </div>
   );
 }

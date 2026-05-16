@@ -129,18 +129,55 @@ export async function POST(request: Request) {
         );
       }
 
-      // 別スタジオ or studio_id が NULL → 既存ユーザーを再利用
+      // Owner/manager のロールは絶対に上書きしない。Jamie 2026-05-13 の
+      // 事故 — オーナーが自分のメールで instructor として追加すると
+      // profile.role が "instructor" に降格してダッシュボードから締め
+      // 出されていた。今は role-switcher (T1-6) で同じユーザーが両方の
+      // ロールを持てるので、role は据え置きで instructors レコードだけ
+      // 追加する。
+      const { data: existingProfile } = await adminSupabase
+        .from("profiles")
+        .select("role, studio_id")
+        .eq("id", existingAuthUser.id)
+        .maybeSingle();
+
+      // 別スタジオへの所属切替を試みている場合は弾く（owner/manager除く
+      // — 彼らが自分自身を instructor にするのはOK）。
+      if (
+        existingProfile?.studio_id &&
+        existingProfile.studio_id !== targetStudioId &&
+        existingProfile.role !== "owner" &&
+        existingProfile.role !== "manager"
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              "This email is already associated with another studio. Please contact support to transfer.",
+          },
+          { status: 409 }
+        );
+      }
+
       authUserId = existingAuthUser.id;
-      await adminSupabase.from("profiles").update({
+      const profileUpdates: Record<string, unknown> = {
         studio_id: targetStudioId,
-        role: "instructor",
         full_name: fullName,
         phone: phone || null,
-      }).eq("id", authUserId);
+      };
+      // role は owner/manager は据え置き、それ以外（member など）は
+      // instructor に切り替える。
+      if (
+        !existingProfile ||
+        (existingProfile.role !== "owner" && existingProfile.role !== "manager")
+      ) {
+        profileUpdates.role = "instructor";
+      }
+      await adminSupabase.from("profiles").update(profileUpdates).eq("id", authUserId);
     } else {
       authUserId = authData!.user.id;
       // trigger (handle_new_user) が profile を INSERT するが、
-      // 万一タイミングでまだ存在しない場合にも対応するため upsert を使用
+      // 万一タイミングでまだ存在しない場合にも対応するため upsert を使用。
+      // 新規 auth ユーザーなので owner/manager 降格の心配はない。
       await adminSupabase.from("profiles").upsert({
         id: authUserId,
         email: emailNorm,

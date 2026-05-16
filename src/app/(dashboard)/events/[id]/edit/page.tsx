@@ -19,6 +19,8 @@ type OptionDraft = {
   capacity: string;
   earlyBirdDollars: string;
   earlyBirdDeadline: string;
+  pricingMode: "fixed" | "sliding_scale";
+  priceMinDollars: string;
 };
 
 type ScheduleItemDraft = {
@@ -98,7 +100,7 @@ export default function EditEventPage() {
 
   // Step 3: Options
   const [options, setOptions] = useState<OptionDraft[]>([
-    { name: "", description: "", priceDollars: "", capacity: "10", earlyBirdDollars: "", earlyBirdDeadline: "" },
+    { name: "", description: "", priceDollars: "", capacity: "10", earlyBirdDollars: "", earlyBirdDeadline: "", pricingMode: "fixed", priceMinDollars: "" },
   ]);
 
   // Step 4: Schedule
@@ -115,6 +117,39 @@ export default function EditEventPage() {
   // Step 7: Application Form
   type AppField = { id: string; label: string; type: string; required: boolean; placeholder: string; options: string };
   const [appFields, setAppFields] = useState<AppField[]>([]);
+
+  // Required waivers — surfaced in Basic Info step. Members must sign
+  // every selected waiver before they can book. Already-signed waivers
+  // are skipped automatically at checkout.
+  const [waiverOptions, setWaiverOptions] = useState<{ id: string; title: string }[]>([]);
+  const [requiredWaiverIds, setRequiredWaiverIds] = useState<string[]>([]);
+
+  // Per-event custom confirmation email override. When set, overrides
+  // the studio-wide default. Variables {memberName} {eventName}
+  // {sessionDate} {startTime} {studioName} are substituted at send time.
+  const [confirmationSubjectOverride, setConfirmationSubjectOverride] = useState("");
+  const [confirmationBodyOverride, setConfirmationBodyOverride] = useState("");
+  const [showEmailOverride, setShowEmailOverride] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/waiver-templates")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => {
+        if (cancelled) return;
+        const list = (Array.isArray(data) ? data : data?.templates || [])
+          .filter((t: { is_active?: boolean }) => t.is_active !== false)
+          .map((t: { id: string; title: string }) => ({
+            id: t.id,
+            title: t.title || "Untitled waiver",
+          }));
+        setWaiverOptions(list);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Load existing event
   useEffect(() => {
@@ -162,6 +197,16 @@ export default function EditEventPage() {
       setLocationLng(event.location_lng ? String(event.location_lng) : "");
       setWaitlistEnabled(event.waitlist_enabled ?? false);
       setScheduleOverview(event.schedule_overview || "");
+      setRequiredWaiverIds(
+        Array.isArray(event.required_waiver_template_ids)
+          ? event.required_waiver_template_ids
+          : []
+      );
+      setConfirmationSubjectOverride(event.confirmation_subject_override || "");
+      setConfirmationBodyOverride(event.confirmation_body_override || "");
+      if (event.confirmation_subject_override || event.confirmation_body_override) {
+        setShowEmailOverride(true);
+      }
 
       // Load application fields
       if (Array.isArray(event.application_fields) && event.application_fields.length > 0) {
@@ -201,6 +246,11 @@ export default function EditEventPage() {
             capacity: o.capacity.toString(),
             earlyBirdDollars: o.early_bird_price_cents ? (o.early_bird_price_cents / 100).toString() : "",
             earlyBirdDeadline: fmtDTLocal(o.early_bird_deadline),
+            pricingMode: (o.pricing_mode === "sliding_scale" ? "sliding_scale" : "fixed") as "fixed" | "sliding_scale",
+            priceMinDollars:
+              o.price_min_cents !== null && o.price_min_cents !== undefined
+                ? (o.price_min_cents / 100).toString()
+                : "",
           })),
         );
       }
@@ -268,7 +318,19 @@ export default function EditEventPage() {
 
   // Option helpers
   function addOption() {
-    setOptions((o) => [...o, { name: "", description: "", priceDollars: "", capacity: "10", earlyBirdDollars: "", earlyBirdDeadline: "" }]);
+    setOptions((o) => [
+      ...o,
+      {
+        name: "",
+        description: "",
+        priceDollars: "",
+        capacity: "10",
+        earlyBirdDollars: "",
+        earlyBirdDeadline: "",
+        pricingMode: "fixed",
+        priceMinDollars: "",
+      },
+    ]);
   }
   const [optionsWithBookings, setOptionsWithBookings] = useState<Set<string>>(new Set());
 
@@ -297,8 +359,20 @@ export default function EditEventPage() {
     }
     setOptions((o) => o.filter((_, idx) => idx !== i));
   }
-  function updateOption(i: number, field: keyof OptionDraft, value: string) {
-    setOptions((o) => o.map((opt, idx) => (idx === i ? { ...opt, [field]: value } : opt)));
+  function updateOption(
+    i: number,
+    field: keyof OptionDraft,
+    value: string
+  ) {
+    // Use a cast on the value: pricingMode receives "fixed" | "sliding_scale"
+    // which is a string subtype, the other fields receive plain strings.
+    setOptions((o) =>
+      o.map((opt, idx) =>
+        idx === i
+          ? ({ ...opt, [field]: value } as OptionDraft)
+          : opt
+      )
+    );
   }
 
   function addTier() {
@@ -372,6 +446,13 @@ export default function EditEventPage() {
         location_lng: locationLng ? parseFloat(locationLng) : null,
         waitlist_enabled: waitlistEnabled,
         schedule_overview: scheduleOverview.trim() || null,
+        required_waiver_template_ids: requiredWaiverIds,
+        confirmation_subject_override: showEmailOverride
+          ? confirmationSubjectOverride.trim() || null
+          : null,
+        confirmation_body_override: showEmailOverride
+          ? confirmationBodyOverride.trim() || null
+          : null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id);
@@ -413,6 +494,11 @@ export default function EditEventPage() {
         sort_order: idx,
         early_bird_price_cents: o.earlyBirdDollars ? Math.round(parseFloat(o.earlyBirdDollars) * 100) : null,
         early_bird_deadline: o.earlyBirdDeadline ? (() => { const [dp, tp] = o.earlyBirdDeadline.split("T"); const [y, mo, d] = dp.split("-").map(Number); const [h, mi] = tp.split(":").map(Number); return new Date(y, mo - 1, d, h, mi).toISOString(); })() : null,
+        pricing_mode: o.pricingMode,
+        price_min_cents:
+          o.pricingMode === "sliding_scale"
+            ? Math.round(parseFloat(o.priceMinDollars || "0") * 100)
+            : null,
       };
       if (o.id) {
         await supabase.from("event_options").update(optionData).eq("id", o.id);
@@ -592,6 +678,103 @@ export default function EditEventPage() {
                 </label>
               </div>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Required waivers{" "}
+                <span className="font-normal text-gray-400">(optional)</span>
+              </label>
+              {waiverOptions.length === 0 ? (
+                <p className="mt-1 text-xs text-gray-500">
+                  No waiver templates configured yet.{" "}
+                  <Link
+                    href="/settings/waiver"
+                    className="font-medium text-brand-600 hover:text-brand-700"
+                  >
+                    Create one →
+                  </Link>
+                </p>
+              ) : (
+                <>
+                  <p className="mt-0.5 text-xs text-gray-500">
+                    Attendees must sign every selected waiver before they can
+                    book. Already-signed waivers are skipped automatically.
+                  </p>
+                  <div className="mt-2 max-h-40 overflow-y-auto rounded-lg border border-gray-200 divide-y divide-gray-100">
+                    {waiverOptions.map((w) => (
+                      <label
+                        key={w.id}
+                        className="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-gray-50"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={requiredWaiverIds.includes(w.id)}
+                          onChange={() =>
+                            setRequiredWaiverIds((prev) =>
+                              prev.includes(w.id)
+                                ? prev.filter((x) => x !== w.id)
+                                : [...prev, w.id]
+                            )
+                          }
+                          className="h-4 w-4 rounded border-gray-300 text-brand-600"
+                        />
+                        <span className="text-sm text-gray-700">{w.title}</span>
+                      </label>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={showEmailOverride}
+                  onChange={(e) => setShowEmailOverride(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-brand-600"
+                />
+                Custom confirmation email for this event
+              </label>
+              {showEmailOverride && (
+                <div className="mt-3 rounded-lg border border-gray-200 p-4 space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600">
+                      Subject{" "}
+                      <span className="font-normal text-gray-400">(optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={confirmationSubjectOverride}
+                      onChange={(e) => setConfirmationSubjectOverride(e.target.value)}
+                      placeholder="See you at {eventName}, {memberName}!"
+                      className="input-field mt-1"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600">
+                      Body{" "}
+                      <span className="font-normal text-gray-400">(optional)</span>
+                    </label>
+                    <textarea
+                      value={confirmationBodyOverride}
+                      onChange={(e) => setConfirmationBodyOverride(e.target.value)}
+                      rows={5}
+                      placeholder={`Hi {memberName},\n\nThanks for booking {eventName}! A few things to know before you arrive...`}
+                      className="input-field mt-1"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Variables: <code className="font-mono">{`{memberName}`}</code>,{" "}
+                    <code className="font-mono">{`{eventName}`}</code>,{" "}
+                    <code className="font-mono">{`{sessionDate}`}</code>,{" "}
+                    <code className="font-mono">{`{startTime}`}</code>,{" "}
+                    <code className="font-mono">{`{studioName}`}</code>. The
+                    event details block is always appended automatically.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -765,7 +948,9 @@ export default function EditEventPage() {
                     <input type="text" value={opt.description} onChange={(e) => updateOption(i, "description", e.target.value)} placeholder="Twin beds, ocean view" className="input-field mt-1" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-500">Price ($)</label>
+                    <label className="block text-xs font-medium text-gray-500">
+                      {opt.pricingMode === "sliding_scale" ? "Suggested price ($)" : "Price ($)"}
+                    </label>
                     <input type="number" value={opt.priceDollars} onChange={(e) => updateOption(i, "priceDollars", e.target.value)} placeholder="1500" min="0" step="0.01" className="input-field mt-1" />
                   </div>
                   <div>
@@ -773,6 +958,53 @@ export default function EditEventPage() {
                     <input type="number" value={opt.capacity} onChange={(e) => updateOption(i, "capacity", e.target.value)} placeholder="10" min="1" className="input-field mt-1" />
                   </div>
                 </div>
+
+                {/* Pricing mode toggle */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500">Pricing</label>
+                  <div className="mt-1 flex gap-2">
+                    {(
+                      [
+                        { value: "fixed" as const, label: "Fixed price" },
+                        { value: "sliding_scale" as const, label: "Pay What You Can" },
+                      ] as const
+                    ).map((p) => (
+                      <button
+                        key={p.value}
+                        type="button"
+                        onClick={() => updateOption(i, "pricingMode", p.value)}
+                        className={`rounded-lg border px-3 py-1 text-xs transition-colors ${
+                          opt.pricingMode === p.value
+                            ? "border-brand-400 bg-brand-50 text-brand-700"
+                            : "border-gray-200 text-gray-600 hover:border-gray-300"
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                  {opt.pricingMode === "sliding_scale" && (
+                    <div className="mt-2">
+                      <label className="block text-xs font-medium text-gray-500">
+                        Minimum price ($)
+                      </label>
+                      <input
+                        type="number"
+                        value={opt.priceMinDollars}
+                        onChange={(e) => updateOption(i, "priceMinDollars", e.target.value)}
+                        placeholder="0.00"
+                        min="0"
+                        step="0.01"
+                        className="input-field mt-1 max-w-xs"
+                      />
+                      <p className="mt-1 text-[11px] text-gray-500">
+                        Attendees can pay anything from minimum up to the
+                        suggested price (or more) per person at checkout.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
                 {/* Early Bird */}
                 <div className="rounded-lg bg-green-50 p-3">
                   <p className="text-xs font-medium text-green-700 mb-2">Early Bird Pricing (optional)</p>

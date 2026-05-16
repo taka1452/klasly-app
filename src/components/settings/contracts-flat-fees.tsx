@@ -7,10 +7,29 @@ type RentalReport = {
   instructorId: string;
   name: string;
   email: string;
-  rentalType: "flat_monthly" | "per_class";
+  rentalType: "flat_monthly" | "per_class" | "per_hour";
   rentalAmount: number;
   classCount: number;
+  hoursBilled: number;
   totalDue: number;
+};
+
+const RENTAL_TYPE_LABEL: Record<RentalReport["rentalType"], string> = {
+  flat_monthly: "Monthly",
+  per_class: "Per class",
+  per_hour: "Per hour",
+};
+
+const RENTAL_TYPE_BADGE: Record<RentalReport["rentalType"], string> = {
+  flat_monthly: "bg-brand-100 text-brand-700",
+  per_class: "bg-blue-100 text-blue-700",
+  per_hour: "bg-amber-100 text-amber-700",
+};
+
+const RENTAL_RATE_SUFFIX: Record<RentalReport["rentalType"], string> = {
+  flat_monthly: " / month",
+  per_class: " / class",
+  per_hour: " / hour",
 };
 
 type Totals = {
@@ -106,15 +125,9 @@ export default function ContractsFlatFees() {
                         <p className="text-sm text-gray-500">{r.email}</p>
                       </div>
                       <span
-                        className={`rounded-full px-3 py-1 text-xs font-medium ${
-                          r.rentalType === "flat_monthly"
-                            ? "bg-brand-100 text-brand-700"
-                            : "bg-blue-100 text-blue-700"
-                        }`}
+                        className={`rounded-full px-3 py-1 text-xs font-medium ${RENTAL_TYPE_BADGE[r.rentalType]}`}
                       >
-                        {r.rentalType === "flat_monthly"
-                          ? "Monthly"
-                          : "Per class"}
+                        {RENTAL_TYPE_LABEL[r.rentalType]}
                       </span>
                     </div>
                     <div className="mt-4 space-y-2 text-sm">
@@ -122,7 +135,7 @@ export default function ContractsFlatFees() {
                         <span className="text-gray-500">Rate</span>
                         <span className="font-medium text-gray-900">
                           {formatCents(r.rentalAmount)}
-                          {r.rentalType === "per_class" ? " / class" : " / month"}
+                          {RENTAL_RATE_SUFFIX[r.rentalType]}
                         </span>
                       </div>
                       {r.rentalType === "per_class" && (
@@ -130,6 +143,14 @@ export default function ContractsFlatFees() {
                           <span className="text-gray-500">Classes taught</span>
                           <span className="font-medium text-gray-900">
                             {r.classCount}
+                          </span>
+                        </div>
+                      )}
+                      {r.rentalType === "per_hour" && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Hours billed</span>
+                          <span className="font-medium text-gray-900">
+                            {r.hoursBilled.toFixed(2)} hr
                           </span>
                         </div>
                       )}

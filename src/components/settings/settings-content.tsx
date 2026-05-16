@@ -549,6 +549,45 @@ export default function SettingsContent({
             </div>
           )}
 
+          {/* Discount Codes — owner or manager with settings permission */}
+          {(isOwner || canManageSettings) && (
+            <div className="card">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Discount Codes
+              </h3>
+              <p className="mt-2 text-sm text-gray-600">
+                Create codes attendees enter at checkout, or tag-based codes
+                that auto-apply for eligible members (e.g. veterans, first
+                responders).
+              </p>
+              <Link
+                href="/settings/discount-codes"
+                className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+              >
+                Manage Codes →
+              </Link>
+            </div>
+          )}
+
+          {/* Confirmation Emails — owner only */}
+          {isOwner && (
+            <div className="card">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Confirmation Emails
+              </h3>
+              <p className="mt-2 text-sm text-gray-600">
+                Customize the default subject and body for booking confirmation
+                emails. Per-class and per-event overrides take priority.
+              </p>
+              <Link
+                href="/settings/confirmation-emails"
+                className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+              >
+                Edit Templates →
+              </Link>
+            </div>
+          )}
+
           {/* Website Widget — owner or manager with settings permission */}
           {(isOwner || canManageSettings) && (
             <div className="card">

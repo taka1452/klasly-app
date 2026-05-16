@@ -317,6 +317,13 @@ export async function POST(request: Request) {
         const epGender = normaliseGender(epGenderRaw);
         const epAddress = resolveValue(row, mapping.address, columns) || null;
         const epReferredBy = resolveValue(row, mapping.referred_by, columns) || null;
+        const epTagsRaw = resolveValue(row, mapping.tags, columns);
+        const epTags = epTagsRaw
+          ? epTagsRaw
+              .split(/[,;]/)
+              .map((t) => t.trim().toLowerCase().replace(/\s+/g, "_"))
+              .filter(Boolean)
+          : [];
         const epPhone = resolveValue(row, mapping.phone, columns) || null;
         const epIsMinorRaw = resolveValue(row, mapping.is_minor, columns);
         const epGuardianEmail = resolveValue(row, mapping.guardian_email, columns) || null;
@@ -344,6 +351,7 @@ export async function POST(request: Request) {
           gender: epGender,
           address: epAddress,
           referred_by: epReferredBy,
+          tags: epTags,
           is_minor: epIsMinor,
           guardian_email: epIsMinor ? epGuardianEmail : null,
           ...(markWaiverSigned
@@ -381,6 +389,16 @@ export async function POST(request: Request) {
       const gender = normaliseGender(genderRaw);
       const address = resolveValue(row, mapping.address, columns) || null;
       const referredBy = resolveValue(row, mapping.referred_by, columns) || null;
+      // Tags: comma/semicolon-separated, lower-cased so they line up with
+      // discount-code member_tag matching. Spaces collapsed to underscore
+      // so "first responder" → "first_responder".
+      const tagsRaw = resolveValue(row, mapping.tags, columns);
+      const tags = tagsRaw
+        ? tagsRaw
+            .split(/[,;]/)
+            .map((t) => t.trim().toLowerCase().replace(/\s+/g, "_"))
+            .filter(Boolean)
+        : [];
       const isMinorRaw = resolveValue(row, mapping.is_minor, columns);
       const guardianEmail = resolveValue(row, mapping.guardian_email, columns) || null;
       // Treat the column as a boolean only when it's clearly truthy. We do
@@ -419,6 +437,7 @@ export async function POST(request: Request) {
         gender,
         address,
         referred_by: referredBy,
+        tags,
         is_minor: isMinor,
         guardian_email: isMinor ? guardianEmail : null,
         ...(markWaiverSigned
