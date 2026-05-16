@@ -522,7 +522,7 @@ async function fetchStudioAuditEvents(
       severity: meta.severity,
       title: r.summary || "Studio updated",
       occurredAt: r.created_at,
-      ctaLabel: meta.ctaHref ? "Open settings" : undefined,
+      ctaLabel: meta.ctaLabel,
       ctaHref: meta.ctaHref,
     };
   });
@@ -531,32 +531,33 @@ async function fetchStudioAuditEvents(
 function classifyStudioChangeType(t: string): {
   severity: ActivityEvent["severity"];
   ctaHref?: string;
+  ctaLabel?: string;
 } {
   switch (t) {
     case "manager_added":
     case "manager_removed":
     case "manager_permissions_updated":
-      return { severity: "warning", ctaHref: "/managers" };
+      return { severity: "warning", ctaHref: "/managers", ctaLabel: "View managers" };
     case "instructor_removed":
-      return { severity: "warning", ctaHref: "/instructors" };
+      return { severity: "warning", ctaHref: "/instructors", ctaLabel: "View instructors" };
     case "instructor_added":
-      return { severity: "success", ctaHref: "/instructors" };
+      return { severity: "success", ctaHref: "/instructors", ctaLabel: "View instructors" };
     case "studio_closure_created":
-      return { severity: "warning", ctaHref: "/settings/closures" };
+      return { severity: "warning", ctaHref: "/settings/closures", ctaLabel: "View closures" };
     case "studio_closure_deleted":
-      return { severity: "info", ctaHref: "/settings/closures" };
+      return { severity: "info", ctaHref: "/settings/closures", ctaLabel: "View closures" };
     case "pass_created":
     case "tier_created":
-      return { severity: "success", ctaHref: "/passes" };
+      return { severity: "success", ctaHref: "/passes", ctaLabel: "View passes" };
     case "pass_deleted":
     case "tier_deleted":
-      return { severity: "warning", ctaHref: "/passes" };
+      return { severity: "warning", ctaHref: "/passes", ctaLabel: "View passes" };
     case "pass_updated":
     case "tier_updated":
-      return { severity: "info", ctaHref: "/passes" };
+      return { severity: "info", ctaHref: "/passes", ctaLabel: "View passes" };
     case "studio_settings_updated":
     case "studio_policy_updated":
-      return { severity: "info", ctaHref: "/settings" };
+      return { severity: "info", ctaHref: "/settings", ctaLabel: "View settings" };
     default:
       return { severity: "info" };
   }
@@ -730,7 +731,7 @@ async function fetchContractEvents(
         category: "member",
         severity: "success",
         title: `Contract "${r.title}" completed`,
-        subtitle: signerName ? `Signer: ${signerName}` : undefined,
+        subtitle: signerName ? `For: ${signerName}` : undefined,
         occurredAt: r.completed_at,
         ctaLabel: "View contract",
         ctaHref: "/contracts",
@@ -743,7 +744,7 @@ async function fetchContractEvents(
         category: "member",
         severity: "warning",
         title: `Contract "${r.title}" voided`,
-        subtitle: signerName ? `Signer: ${signerName}` : undefined,
+        subtitle: signerName ? `For: ${signerName}` : undefined,
         occurredAt: r.voided_at,
         ctaLabel: "View contract",
         ctaHref: "/contracts",

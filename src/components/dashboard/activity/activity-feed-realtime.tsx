@@ -16,23 +16,45 @@ import { createClient } from "@/lib/supabase/client";
  * Debounced 3s so a burst of writes (e.g. a multi-row import) refreshes
  * the page once, not N times.
  *
+ * When the tab is hidden we don't refresh — we just remember that
+ * something changed and replay one refresh the next time the tab is
+ * visible. Sonner: handle edge cases invisibly.
+ *
  * No UI — this is purely a side-effect component mounted next to the
  * feed widget.
  */
 export function ActivityFeedRealtime({ studioId }: { studioId: string }) {
   const router = useRouter();
   const timer = useRef<number | null>(null);
+  const pending = useRef(false);
 
   useEffect(() => {
     const supabase = createClient();
+
+    const runRefresh = () => {
+      if (typeof document !== "undefined" && document.hidden) {
+        pending.current = true;
+        return;
+      }
+      pending.current = false;
+      router.refresh();
+    };
+
     const scheduleRefresh = () => {
       if (timer.current !== null) {
         window.clearTimeout(timer.current);
       }
       timer.current = window.setTimeout(() => {
         timer.current = null;
-        router.refresh();
+        runRefresh();
       }, 3000);
+    };
+
+    const onVisibilityChange = () => {
+      if (!document.hidden && pending.current) {
+        pending.current = false;
+        router.refresh();
+      }
     };
 
     const channel = supabase
@@ -69,11 +91,14 @@ export function ActivityFeedRealtime({ studioId }: { studioId: string }) {
       )
       .subscribe();
 
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
     return () => {
       if (timer.current !== null) {
         window.clearTimeout(timer.current);
         timer.current = null;
       }
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       supabase.removeChannel(channel);
     };
   }, [router, studioId]);
