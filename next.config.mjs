@@ -10,6 +10,20 @@ const withSerwist = withSerwistInit({
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Workaround for Windows + webpack 5 PackFileCacheStrategy: the
+  // filesystem cache tries to atomically rename .pack.gz_ → .pack.gz
+  // and Windows file locking sometimes refuses the rename (EPERM).
+  // That leaves the cache half-written, which then surfaces as
+  // "useContext is null" / "__webpack_modules__[id] is not a function"
+  // on the next request. Switching to a memory cache in dev avoids
+  // the rename entirely. Linux/macOS keep the default filesystem
+  // cache; production builds are unaffected.
+  webpack: (config, { dev }) => {
+    if (dev && process.platform === "win32") {
+      config.cache = { type: "memory" };
+    }
+    return config;
+  },
   images: {
     remotePatterns: [
       // Supabase Storage (user-uploaded content)
